@@ -84,6 +84,33 @@ serve(async (req: Request) => {
       throw error;
     }
 
+    // Create notification for important events
+    if (eventType === 'inquiry_submitted' || eventType === 'page_view') {
+      const cityText = location.city || 'Unknown';
+      const countryText = location.country || 'Unknown';
+      
+      let message = '';
+      if (eventType === 'page_view') {
+        message = `New visitor from ${cityText}, ${countryText} viewed the property`;
+      } else if (eventType === 'inquiry_submitted') {
+        message = `New inquiry from ${cityText}, ${countryText}`;
+      }
+
+      await supabase
+        .from('notifications')
+        .insert({
+          property_id: propertyId,
+          event_type: eventType,
+          message,
+          metadata: {
+            city: location.city,
+            country: location.country,
+            device_type: deviceType,
+            ip_address: ipAddress,
+          },
+        });
+    }
+
     return new Response(
       JSON.stringify({ success: true }),
       {
