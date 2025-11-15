@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      properties: {
+        Row: {
+          address: string
+          cash_offer_amount: number
+          city: string
+          created_at: string
+          estimated_value: number
+          id: string
+          property_image_url: string | null
+          slug: string
+          state: string
+          status: string
+          updated_at: string
+          zip_code: string
+        }
+        Insert: {
+          address: string
+          cash_offer_amount: number
+          city?: string
+          created_at?: string
+          estimated_value: number
+          id?: string
+          property_image_url?: string | null
+          slug: string
+          state?: string
+          status?: string
+          updated_at?: string
+          zip_code: string
+        }
+        Update: {
+          address?: string
+          cash_offer_amount?: number
+          city?: string
+          created_at?: string
+          estimated_value?: number
+          id?: string
+          property_image_url?: string | null
+          slug?: string
+          state?: string
+          status?: string
+          updated_at?: string
+          zip_code?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
