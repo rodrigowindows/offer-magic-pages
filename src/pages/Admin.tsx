@@ -30,6 +30,8 @@ import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { AIPropertyImport } from "@/components/AIPropertyImport";
 import { LeadStatusBadge, LeadStatus } from "@/components/LeadStatusBadge";
 import { LeadStatusSelect } from "@/components/LeadStatusSelect";
+import { PropertyFilters } from "@/components/PropertyFilters";
+import { BulkActionsBar } from "@/components/BulkActionsBar";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -92,6 +94,8 @@ const Admin = () => {
     noteText: "",
     followUpDate: "",
   });
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all');
 
   useEffect(() => {
     checkAuth();
@@ -313,6 +317,106 @@ const Admin = () => {
     }
   };
 
+  const togglePropertySelection = (propertyId: string) => {
+    setSelectedProperties(prev => 
+      prev.includes(propertyId) 
+        ? prev.filter(id => id !== propertyId)
+        : [...prev, propertyId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProperties.length === filteredProperties.length) {
+      setSelectedProperties([]);
+    } else {
+      setSelectedProperties(filteredProperties.map(p => p.id));
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: LeadStatus) => {
+    const { error } = await supabase
+      .from("properties")
+      .update({ lead_status: newStatus })
+      .in("id", selectedProperties);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update properties",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success!",
+        description: `Updated ${selectedProperties.length} properties to ${newStatus.replace('_', ' ')}`,
+      });
+      setSelectedProperties([]);
+      fetchProperties();
+    }
+  };
+
+  const handleGenerateQRCodes = () => {
+    const selectedProps = properties.filter(p => selectedProperties.includes(p.id));
+    const qrCodeUrls = selectedProps.map(property => {
+      const url = encodeURIComponent(`${window.location.origin}/property/${property.slug}`);
+      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${url}`;
+    });
+
+    // Open a new page with all QR codes
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>QR Codes - ${selectedProps.length} Properties</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              .qr-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+              .qr-item { border: 2px solid #ddd; padding: 15px; text-align: center; break-inside: avoid; }
+              .qr-item img { max-width: 100%; height: auto; }
+              .qr-item h3 { margin: 10px 0 5px; font-size: 14px; }
+              .qr-item p { margin: 5px 0; font-size: 12px; color: #666; }
+              @media print { 
+                .qr-container { grid-template-columns: repeat(2, 1fr); }
+                body { padding: 10px; }
+              }
+            </style>
+          </head>
+          <body>
+            <h1>QR Codes for ${selectedProps.length} Properties</h1>
+            <button onclick="window.print()" style="margin: 10px 0; padding: 10px 20px; font-size: 16px;">Print</button>
+            <div class="qr-container">
+              ${selectedProps.map((property, index) => `
+                <div class="qr-item">
+                  <img src="${qrCodeUrls[index]}" alt="QR Code for ${property.address}" />
+                  <h3>${property.address}</h3>
+                  <p>${property.city}, ${property.state} ${property.zip_code}</p>
+                  <p><strong>Cash Offer:</strong> $${property.cash_offer_amount.toLocaleString()}</p>
+                </div>
+              `).join('')}
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    toast({
+      title: "QR Codes Generated!",
+      description: `Generated ${selectedProps.length} QR codes in new window`,
+    });
+  };
+
+  const filteredProperties = filterStatus === 'all' 
+    ? properties 
+    : properties.filter(p => p.lead_status === filterStatus);
+
+  const statusCounts = properties.reduce((acc, property) => {
+    acc[property.lead_status] = (acc[property.lead_status] || 0) + 1;
+    acc.all = (acc.all || 0) + 1;
+    return acc;
+  }, {} as Record<LeadStatus | 'all', number>);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -329,6 +433,12 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <PropertyFilters 
+          selectedStatus={filterStatus}
+          onStatusChange={setFilterStatus}
+          statusCounts={statusCounts}
+        />
+        
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>
           <div className="flex gap-2">
@@ -434,6 +544,13 @@ const Admin = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedProperties.length === filteredProperties.length && filteredProperties.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Select all properties"
+                  />
+                </TableHead>
                 <TableHead>Address</TableHead>
                 <TableHead>Cash Offer</TableHead>
                 <TableHead>Estimated Value</TableHead>
@@ -444,15 +561,25 @@ const Admin = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {properties.length === 0 ? (
+              {filteredProperties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    No properties yet. Add your first property to get started!
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    {filterStatus === 'all' 
+                      ? 'No properties yet. Add your first property to get started!'
+                      : `No properties with status "${filterStatus.replace('_', ' ')}"`
+                    }
                   </TableCell>
                 </TableRow>
               ) : (
-                properties.map((property) => (
+                filteredProperties.map((property) => (
                   <TableRow key={property.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedProperties.includes(property.id)}
+                        onCheckedChange={() => togglePropertySelection(property.id)}
+                        aria-label={`Select ${property.address}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       {property.address}, {property.city}, {property.state}
                     </TableCell>
@@ -655,6 +782,13 @@ const Admin = () => {
           </DialogContent>
         </Dialog>
       </main>
+      
+      <BulkActionsBar
+        selectedCount={selectedProperties.length}
+        onClearSelection={() => setSelectedProperties([])}
+        onBulkStatusChange={handleBulkStatusChange}
+        onGenerateQRCodes={handleGenerateQRCodes}
+      />
     </div>
   );
 };
