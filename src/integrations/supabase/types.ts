@@ -62,6 +62,7 @@ export type Database = {
           email_sent: boolean
           estimated_value: number
           id: string
+          lead_status: string
           letter_sent: boolean
           meeting_scheduled: boolean
           phone_call_made: boolean
@@ -82,6 +83,7 @@ export type Database = {
           email_sent?: boolean
           estimated_value: number
           id?: string
+          lead_status?: string
           letter_sent?: boolean
           meeting_scheduled?: boolean
           phone_call_made?: boolean
@@ -102,6 +104,7 @@ export type Database = {
           email_sent?: boolean
           estimated_value?: number
           id?: string
+          lead_status?: string
           letter_sent?: boolean
           meeting_scheduled?: boolean
           phone_call_made?: boolean

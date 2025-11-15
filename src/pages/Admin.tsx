@@ -28,6 +28,8 @@ import { z } from "zod";
 import { PropertyAnalytics } from "@/components/PropertyAnalytics";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { AIPropertyImport } from "@/components/AIPropertyImport";
+import { LeadStatusBadge, LeadStatus } from "@/components/LeadStatusBadge";
+import { LeadStatusSelect } from "@/components/LeadStatusSelect";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -50,6 +52,7 @@ interface Property {
   estimated_value: number;
   cash_offer_amount: number;
   status: string;
+  lead_status: LeadStatus;
   created_at: string;
   sms_sent: boolean;
   email_sent: boolean;
@@ -115,7 +118,7 @@ const Admin = () => {
         variant: "destructive",
       });
     } else {
-      setProperties(data || []);
+      setProperties((data || []) as Property[]);
     }
   };
 
@@ -289,6 +292,27 @@ const Admin = () => {
     }
   };
 
+  const updateLeadStatus = async (propertyId: string, newStatus: LeadStatus) => {
+    const { error } = await supabase
+      .from("properties")
+      .update({ lead_status: newStatus })
+      .eq("id", propertyId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update lead status",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Status updated!",
+        description: `Lead status changed to ${newStatus.replace('_', ' ')}`,
+      });
+      fetchProperties();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
@@ -413,6 +437,7 @@ const Admin = () => {
                 <TableHead>Address</TableHead>
                 <TableHead>Cash Offer</TableHead>
                 <TableHead>Estimated Value</TableHead>
+                <TableHead>Lead Status</TableHead>
                 <TableHead>Communication</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -421,7 +446,7 @@ const Admin = () => {
             <TableBody>
               {properties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     No properties yet. Add your first property to get started!
                   </TableCell>
                 </TableRow>
@@ -433,6 +458,15 @@ const Admin = () => {
                     </TableCell>
                     <TableCell>${property.cash_offer_amount.toLocaleString()}</TableCell>
                     <TableCell>${property.estimated_value.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-2">
+                        <LeadStatusBadge status={property.lead_status} />
+                        <LeadStatusSelect 
+                          value={property.lead_status}
+                          onValueChange={(newStatus) => updateLeadStatus(property.id, newStatus)}
+                        />
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
                         <div className="flex items-center space-x-1">
