@@ -7,9 +7,10 @@ import { Phone, Mail, MapPin } from "lucide-react";
 
 interface ContactFormProps {
   propertyAddress?: string;
+  propertyId?: string;
 }
 
-const ContactForm = ({ propertyAddress = "" }: ContactFormProps) => {
+const ContactForm = ({ propertyAddress = "", propertyId }: ContactFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -19,9 +20,30 @@ const ContactForm = ({ propertyAddress = "" }: ContactFormProps) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const trackInquiry = async () => {
+    if (!propertyId) return;
+    
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase.functions.invoke('track-analytics', {
+        body: {
+          propertyId,
+          eventType: 'inquiry_submitted',
+          referrer: document.referrer || 'direct',
+          userAgent: navigator.userAgent,
+        },
+      });
+    } catch (error) {
+      console.error('Error tracking inquiry:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+
+    // Track inquiry submission
+    await trackInquiry();
 
     // Track form submission with GA4
     if (typeof window !== 'undefined' && (window as any).gtag) {

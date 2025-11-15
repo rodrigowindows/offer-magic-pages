@@ -34,6 +34,21 @@ const Property = () => {
     }
   }, [slug]);
 
+  const trackAnalytics = async (propertyId: string, eventType: string) => {
+    try {
+      await supabase.functions.invoke('track-analytics', {
+        body: {
+          propertyId,
+          eventType,
+          referrer: document.referrer || 'direct',
+          userAgent: navigator.userAgent,
+        },
+      });
+    } catch (error) {
+      console.error('Error tracking analytics:', error);
+    }
+  };
+
   const fetchProperty = async (propertySlug: string) => {
     const { data, error } = await supabase
       .from("properties")
@@ -46,6 +61,10 @@ const Property = () => {
       console.error("Error fetching property:", error);
     } else {
       setProperty(data);
+      // Track page view after property is loaded
+      if (data) {
+        trackAnalytics(data.id, 'page_view');
+      }
     }
     setLoading(false);
   };
@@ -114,7 +133,7 @@ const Property = () => {
       
       <TestimonialsSection />
       
-      <ContactForm propertyAddress={fullAddress} />
+      <ContactForm propertyAddress={fullAddress} propertyId={property.id} />
       
       <footer className="bg-foreground text-background py-12">
         <div className="container mx-auto px-4">

@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { z } from "zod";
+import { PropertyAnalytics } from "@/components/PropertyAnalytics";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -545,13 +546,19 @@ const Admin = () => {
         </div>
 
         <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Property Notes</DialogTitle>
+              <DialogTitle>Property Analytics & Notes</DialogTitle>
               <DialogDescription>
-                Track communication and follow-ups for this property
+                Track analytics, communication and follow-ups for this property
               </DialogDescription>
             </DialogHeader>
+            
+            {selectedPropertyId && (
+              <div className="mb-6">
+                <PropertyAnalytics propertyId={selectedPropertyId} />
+              </div>
+            )}
             
             <form onSubmit={handleNoteSubmit} className="space-y-4 border-b pb-4 mb-4">
               <div className="space-y-2">
