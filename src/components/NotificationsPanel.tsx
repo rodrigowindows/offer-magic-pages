@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, X, Eye, Send, CheckCheck } from "lucide-react";
+import { Bell, X, Eye, Send, CheckCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -23,13 +23,21 @@ interface Notification {
   created_at: string;
 }
 
+interface Property {
+  id: string;
+  slug: string;
+  address: string;
+}
+
 export const NotificationsPanel = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [properties, setProperties] = useState<Map<string, Property>>(new Map());
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     fetchNotifications();
+    fetchProperties();
 
     // Subscribe to real-time notifications
     const channel = supabase
@@ -53,6 +61,22 @@ export const NotificationsPanel = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  const fetchProperties = async () => {
+    const { data, error } = await supabase
+      .from('properties')
+      .select('id, slug, address');
+
+    if (error) {
+      console.error('Error fetching properties:', error);
+      return;
+    }
+
+    if (data) {
+      const propertyMap = new Map(data.map(p => [p.id, p]));
+      setProperties(propertyMap);
+    }
+  };
 
   const fetchNotifications = async () => {
     const { data, error } = await supabase
@@ -191,41 +215,67 @@ export const NotificationsPanel = () => {
             </div>
           ) : (
             <div className="space-y-2">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                    notification.is_read
-                      ? 'bg-background hover:bg-muted/50'
-                      : 'bg-primary/5 hover:bg-primary/10 border-primary/20'
-                  }`}
-                  onClick={() => !notification.is_read && markAsRead(notification.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1">{getIcon(notification.event_type)}</div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {notification.message}
-                      </p>
-                      {notification.metadata && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {notification.metadata.device_type && (
-                            <Badge variant="secondary" className="text-xs">
-                              {notification.metadata.device_type}
-                            </Badge>
-                          )}
-                        </div>
+              {notifications.map((notification) => {
+                const property = properties.get(notification.property_id);
+                return (
+                  <div
+                    key={notification.id}
+                    className={`p-4 rounded-lg border transition-colors ${
+                      notification.is_read
+                        ? 'bg-background'
+                        : 'bg-primary/5 border-primary/20'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1">{getIcon(notification.event_type)}</div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {notification.message}
+                        </p>
+                        {notification.metadata && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {notification.metadata.device_type && (
+                              <Badge variant="secondary" className="text-xs">
+                                {notification.metadata.device_type}
+                              </Badge>
+                            )}
+                            {notification.metadata.ip_address && (
+                              <Badge variant="outline" className="text-xs">
+                                IP: {notification.metadata.ip_address}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        {property && (
+                          <a
+                            href={`/property/${property.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+                            onClick={() => markAsRead(notification.id)}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            View Property: {property.address}
+                          </a>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {formatTimestamp(notification.created_at)}
+                        </p>
+                      </div>
+                      {!notification.is_read && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2"
+                          onClick={() => markAsRead(notification.id)}
+                        >
+                          <CheckCheck className="h-3 w-3" />
+                        </Button>
                       )}
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {formatTimestamp(notification.created_at)}
-                      </p>
                     </div>
-                    {!notification.is_read && (
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2" />
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>

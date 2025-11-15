@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Phone, Mail, MapPin } from "lucide-react";
+import { ChatBot } from "@/components/ChatBot";
 
 interface ContactFormProps {
   propertyAddress?: string;
@@ -78,7 +79,9 @@ const ContactForm = ({ propertyAddress = "", propertyId }: ContactFormProps) => 
   };
 
   return (
-    <section id="contact-form" className="py-16 md:py-20 bg-gradient-to-br from-secondary/10 to-primary/5">
+    <>
+      <ChatBot />
+      <section id="contact-form" className="py-16 md:py-20 bg-gradient-to-br from-secondary/10 to-primary/5">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-card rounded-2xl shadow-strong p-8 md:p-12 border border-border">
@@ -189,7 +192,8 @@ const ContactForm = ({ propertyAddress = "", propertyId }: ContactFormProps) => 
           </div>
         </div>
       </div>
-    </section>
+     </section>
+    </>
   );
 };
 

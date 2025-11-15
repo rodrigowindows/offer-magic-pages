@@ -21,6 +21,7 @@ interface AnalyticsSummary {
     country: string;
     created_at: string;
     device_type: string;
+    ip_address?: string;
   }>;
 }
 
@@ -220,6 +221,7 @@ export const PropertyAnalytics = ({ propertyId }: PropertyAnalyticsProps) => {
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {activity.city || 'Unknown'}, {activity.country || 'Unknown'} • {activity.device_type}
+                        {activity.ip_address && ` • IP: ${activity.ip_address}`}
                       </div>
                     </div>
                   </div>
