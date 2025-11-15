@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LogOut, ExternalLink, Copy, QrCode } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -48,12 +50,29 @@ interface Property {
   created_at: string;
 }
 
+interface PropertyNote {
+  id: string;
+  property_id: string;
+  note_text: string;
+  sms_sent: boolean;
+  email_sent: boolean;
+  letter_sent: boolean;
+  card_sent: boolean;
+  phone_call_made: boolean;
+  meeting_scheduled: boolean;
+  follow_up_date: string | null;
+  created_at: string;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const [propertyNotes, setPropertyNotes] = useState<PropertyNote[]>([]);
   const [formData, setFormData] = useState({
     address: "",
     city: "Miami",
@@ -62,6 +81,16 @@ const Admin = () => {
     estimatedValue: "",
     cashOfferAmount: "",
     propertyImageUrl: "",
+  });
+  const [noteFormData, setNoteFormData] = useState({
+    noteText: "",
+    smsSent: false,
+    emailSent: false,
+    letterSent: false,
+    cardSent: false,
+    phoneCallMade: false,
+    meetingScheduled: false,
+    followUpDate: "",
   });
 
   useEffect(() => {
@@ -183,6 +212,75 @@ const Admin = () => {
   const openQRGenerator = (slug: string) => {
     const url = encodeURIComponent(`${window.location.origin}/property/${slug}`);
     window.open(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${url}`, '_blank');
+  };
+
+  const openNotesDialog = async (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+    setIsNotesDialogOpen(true);
+    await fetchPropertyNotes(propertyId);
+  };
+
+  const fetchPropertyNotes = async (propertyId: string) => {
+    const { data, error } = await supabase
+      .from("property_notes")
+      .select("*")
+      .eq("property_id", propertyId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load notes",
+        variant: "destructive",
+      });
+    } else {
+      setPropertyNotes(data || []);
+    }
+  };
+
+  const handleNoteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPropertyId || !noteFormData.noteText.trim()) return;
+    
+    setIsLoading(true);
+
+    const { error } = await supabase.from("property_notes").insert({
+      property_id: selectedPropertyId,
+      note_text: noteFormData.noteText,
+      sms_sent: noteFormData.smsSent,
+      email_sent: noteFormData.emailSent,
+      letter_sent: noteFormData.letterSent,
+      card_sent: noteFormData.cardSent,
+      phone_call_made: noteFormData.phoneCallMade,
+      meeting_scheduled: noteFormData.meetingScheduled,
+      follow_up_date: noteFormData.followUpDate || null,
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success!",
+        description: "Note added successfully",
+      });
+      setNoteFormData({
+        noteText: "",
+        smsSent: false,
+        emailSent: false,
+        letterSent: false,
+        cardSent: false,
+        phoneCallMade: false,
+        meetingScheduled: false,
+        followUpDate: "",
+      });
+      await fetchPropertyNotes(selectedPropertyId);
+    }
+    
+    setIsLoading(false);
   };
 
   return (
@@ -350,6 +448,13 @@ const Admin = () => {
                         >
                           <QrCode className="w-4 h-4" />
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openNotesDialog(property.id)}
+                        >
+                          <FileText className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -358,6 +463,180 @@ const Admin = () => {
             </TableBody>
           </Table>
         </div>
+
+        <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Property Notes</DialogTitle>
+              <DialogDescription>
+                Track communication and follow-ups for this property
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleNoteSubmit} className="space-y-4 border-b pb-4 mb-4">
+              <div className="space-y-2">
+                <Label htmlFor="noteText">Add Note *</Label>
+                <Textarea
+                  id="noteText"
+                  value={noteFormData.noteText}
+                  onChange={(e) => setNoteFormData({ ...noteFormData, noteText: e.target.value })}
+                  placeholder="Enter your note here..."
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="smsSent"
+                    checked={noteFormData.smsSent}
+                    onCheckedChange={(checked) => 
+                      setNoteFormData({ ...noteFormData, smsSent: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="smsSent" className="font-normal cursor-pointer">
+                    SMS Sent
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="emailSent"
+                    checked={noteFormData.emailSent}
+                    onCheckedChange={(checked) => 
+                      setNoteFormData({ ...noteFormData, emailSent: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="emailSent" className="font-normal cursor-pointer">
+                    Email Sent
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="letterSent"
+                    checked={noteFormData.letterSent}
+                    onCheckedChange={(checked) => 
+                      setNoteFormData({ ...noteFormData, letterSent: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="letterSent" className="font-normal cursor-pointer">
+                    Letter Sent
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="cardSent"
+                    checked={noteFormData.cardSent}
+                    onCheckedChange={(checked) => 
+                      setNoteFormData({ ...noteFormData, cardSent: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="cardSent" className="font-normal cursor-pointer">
+                    Card Sent
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="phoneCallMade"
+                    checked={noteFormData.phoneCallMade}
+                    onCheckedChange={(checked) => 
+                      setNoteFormData({ ...noteFormData, phoneCallMade: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="phoneCallMade" className="font-normal cursor-pointer">
+                    Phone Call Made
+                  </Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="meetingScheduled"
+                    checked={noteFormData.meetingScheduled}
+                    onCheckedChange={(checked) => 
+                      setNoteFormData({ ...noteFormData, meetingScheduled: checked as boolean })
+                    }
+                  />
+                  <Label htmlFor="meetingScheduled" className="font-normal cursor-pointer">
+                    Meeting Scheduled
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="followUpDate">Follow-up Date (optional)</Label>
+                <Input
+                  id="followUpDate"
+                  type="date"
+                  value={noteFormData.followUpDate}
+                  onChange={(e) => setNoteFormData({ ...noteFormData, followUpDate: e.target.value })}
+                />
+              </div>
+
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Adding..." : "Add Note"}
+              </Button>
+            </form>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Previous Notes</h3>
+              {propertyNotes.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  No notes yet. Add your first note above.
+                </p>
+              ) : (
+                propertyNotes.map((note) => (
+                  <div key={note.id} className="border rounded-lg p-4 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(note.created_at).toLocaleString()}
+                    </p>
+                    <p className="text-foreground">{note.note_text}</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {note.sms_sent && (
+                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                          SMS Sent
+                        </span>
+                      )}
+                      {note.email_sent && (
+                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                          Email Sent
+                        </span>
+                      )}
+                      {note.letter_sent && (
+                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                          Letter Sent
+                        </span>
+                      )}
+                      {note.card_sent && (
+                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                          Card Sent
+                        </span>
+                      )}
+                      {note.phone_call_made && (
+                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                          Phone Call
+                        </span>
+                      )}
+                      {note.meeting_scheduled && (
+                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
+                          Meeting
+                        </span>
+                      )}
+                      {note.follow_up_date && (
+                        <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded">
+                          Follow-up: {new Date(note.follow_up_date).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
