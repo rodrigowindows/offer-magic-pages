@@ -55,16 +55,27 @@ export type Database = {
       properties: {
         Row: {
           address: string
+          answer_flag: boolean | null
           card_sent: boolean
+          carta: string | null
           cash_offer_amount: number
           city: string
+          comparative_price: number | null
           created_at: string
+          dnc_flag: boolean | null
           email_sent: boolean
           estimated_value: number
+          evaluation: string | null
+          focar: string | null
           id: string
           lead_status: string
           letter_sent: boolean
           meeting_scheduled: boolean
+          neighborhood: string | null
+          origem: string | null
+          owner_address: string | null
+          owner_name: string | null
+          owner_phone: string | null
           phone_call_made: boolean
           property_image_url: string | null
           slug: string
@@ -72,20 +83,32 @@ export type Database = {
           state: string
           status: string
           updated_at: string
+          zillow_url: string | null
           zip_code: string
         }
         Insert: {
           address: string
+          answer_flag?: boolean | null
           card_sent?: boolean
+          carta?: string | null
           cash_offer_amount: number
           city?: string
+          comparative_price?: number | null
           created_at?: string
+          dnc_flag?: boolean | null
           email_sent?: boolean
           estimated_value: number
+          evaluation?: string | null
+          focar?: string | null
           id?: string
           lead_status?: string
           letter_sent?: boolean
           meeting_scheduled?: boolean
+          neighborhood?: string | null
+          origem?: string | null
+          owner_address?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone_call_made?: boolean
           property_image_url?: string | null
           slug: string
@@ -93,20 +116,32 @@ export type Database = {
           state?: string
           status?: string
           updated_at?: string
+          zillow_url?: string | null
           zip_code: string
         }
         Update: {
           address?: string
+          answer_flag?: boolean | null
           card_sent?: boolean
+          carta?: string | null
           cash_offer_amount?: number
           city?: string
+          comparative_price?: number | null
           created_at?: string
+          dnc_flag?: boolean | null
           email_sent?: boolean
           estimated_value?: number
+          evaluation?: string | null
+          focar?: string | null
           id?: string
           lead_status?: string
           letter_sent?: boolean
           meeting_scheduled?: boolean
+          neighborhood?: string | null
+          origem?: string | null
+          owner_address?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
           phone_call_made?: boolean
           property_image_url?: string | null
           slug?: string
@@ -114,6 +149,7 @@ export type Database = {
           state?: string
           status?: string
           updated_at?: string
+          zillow_url?: string | null
           zip_code?: string
         }
         Relationships: []
