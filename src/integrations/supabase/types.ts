@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_tests: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          session_id: string
+          source: string | null
+          submitted_form: boolean | null
+          time_on_page: number | null
+          variant: string
+          viewed_benefits: boolean | null
+          viewed_form: boolean | null
+          viewed_hero: boolean | null
+          viewed_offer: boolean | null
+          viewed_process: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          session_id: string
+          source?: string | null
+          submitted_form?: boolean | null
+          time_on_page?: number | null
+          variant: string
+          viewed_benefits?: boolean | null
+          viewed_form?: boolean | null
+          viewed_hero?: boolean | null
+          viewed_offer?: boolean | null
+          viewed_process?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          session_id?: string
+          source?: string | null
+          submitted_form?: boolean | null
+          time_on_page?: number | null
+          variant?: string
+          viewed_benefits?: boolean | null
+          viewed_form?: boolean | null
+          viewed_hero?: boolean | null
+          viewed_offer?: boolean | null
+          viewed_process?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_tests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null

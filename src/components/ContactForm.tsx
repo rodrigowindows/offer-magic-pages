@@ -8,9 +8,10 @@ import { Phone, Mail, MapPin } from "lucide-react";
 interface ContactFormProps {
   propertyAddress?: string;
   propertyId?: string;
+  onSubmit?: () => void;
 }
 
-const ContactForm = ({ propertyAddress = "", propertyId }: ContactFormProps) => {
+const ContactForm = ({ propertyAddress = "", propertyId, onSubmit }: ContactFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -60,6 +61,9 @@ const ContactForm = ({ propertyAddress = "", propertyId }: ContactFormProps) => 
       title: "Thank you for your interest!",
       description: "We'll review your information and get back to you within 24 hours.",
     });
+
+    // Call onSubmit callback if provided (for A/B test tracking)
+    onSubmit?.();
 
     setIsSubmitting(false);
     setFormData({
