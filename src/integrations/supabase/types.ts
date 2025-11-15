@@ -17,13 +17,19 @@ export type Database = {
       properties: {
         Row: {
           address: string
+          card_sent: boolean
           cash_offer_amount: number
           city: string
           created_at: string
+          email_sent: boolean
           estimated_value: number
           id: string
+          letter_sent: boolean
+          meeting_scheduled: boolean
+          phone_call_made: boolean
           property_image_url: string | null
           slug: string
+          sms_sent: boolean
           state: string
           status: string
           updated_at: string
@@ -31,13 +37,19 @@ export type Database = {
         }
         Insert: {
           address: string
+          card_sent?: boolean
           cash_offer_amount: number
           city?: string
           created_at?: string
+          email_sent?: boolean
           estimated_value: number
           id?: string
+          letter_sent?: boolean
+          meeting_scheduled?: boolean
+          phone_call_made?: boolean
           property_image_url?: string | null
           slug: string
+          sms_sent?: boolean
           state?: string
           status?: string
           updated_at?: string
@@ -45,13 +57,19 @@ export type Database = {
         }
         Update: {
           address?: string
+          card_sent?: boolean
           cash_offer_amount?: number
           city?: string
           created_at?: string
+          email_sent?: boolean
           estimated_value?: number
           id?: string
+          letter_sent?: boolean
+          meeting_scheduled?: boolean
+          phone_call_made?: boolean
           property_image_url?: string | null
           slug?: string
+          sms_sent?: boolean
           state?: string
           status?: string
           updated_at?: string
@@ -61,46 +79,28 @@ export type Database = {
       }
       property_notes: {
         Row: {
-          card_sent: boolean
           created_at: string
           created_by: string | null
-          email_sent: boolean
           follow_up_date: string | null
           id: string
-          letter_sent: boolean
-          meeting_scheduled: boolean
           note_text: string
-          phone_call_made: boolean
           property_id: string
-          sms_sent: boolean
         }
         Insert: {
-          card_sent?: boolean
           created_at?: string
           created_by?: string | null
-          email_sent?: boolean
           follow_up_date?: string | null
           id?: string
-          letter_sent?: boolean
-          meeting_scheduled?: boolean
           note_text: string
-          phone_call_made?: boolean
           property_id: string
-          sms_sent?: boolean
         }
         Update: {
-          card_sent?: boolean
           created_at?: string
           created_by?: string | null
-          email_sent?: boolean
           follow_up_date?: string | null
           id?: string
-          letter_sent?: boolean
-          meeting_scheduled?: boolean
           note_text?: string
-          phone_call_made?: boolean
           property_id?: string
-          sms_sent?: boolean
         }
         Relationships: [
           {
