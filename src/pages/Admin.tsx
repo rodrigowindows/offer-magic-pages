@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ABTestDashboard } from "@/components/ABTestDashboard";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -510,6 +511,14 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* A/B Test Dashboard Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
+          <div className="bg-card rounded-lg border border-border p-6">
+            <ABTestDashboard />
+          </div>
+        </div>
+
         <PropertyFilters 
           selectedStatus={filterStatus}
           onStatusChange={setFilterStatus}
