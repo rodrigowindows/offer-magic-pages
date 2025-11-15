@@ -62,6 +62,18 @@ interface Property {
   card_sent: boolean;
   phone_call_made: boolean;
   meeting_scheduled: boolean;
+  owner_address?: string;
+  owner_name?: string;
+  owner_phone?: string;
+  answer_flag?: boolean;
+  dnc_flag?: boolean;
+  neighborhood?: string;
+  origem?: string;
+  carta?: string;
+  zillow_url?: string;
+  evaluation?: string;
+  focar?: string;
+  comparative_price?: number;
 }
 
 interface PropertyNote {
@@ -78,6 +90,7 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [propertyNotes, setPropertyNotes] = useState<PropertyNote[]>([]);
@@ -90,6 +103,7 @@ const Admin = () => {
     cashOfferAmount: "",
     propertyImageUrl: "",
   });
+  const [editFormData, setEditFormData] = useState<Partial<Property>>({});
   const [noteFormData, setNoteFormData] = useState({
     noteText: "",
     followUpDate: "",
@@ -129,6 +143,61 @@ const Admin = () => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
+  };
+
+  const openEditDialog = (property: Property) => {
+    setSelectedPropertyId(property.id);
+    setEditFormData(property);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateProperty = async () => {
+    if (!selectedPropertyId) return;
+
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from("properties")
+        .update({
+          address: editFormData.address,
+          city: editFormData.city,
+          state: editFormData.state,
+          zip_code: editFormData.zip_code,
+          estimated_value: editFormData.estimated_value,
+          cash_offer_amount: editFormData.cash_offer_amount,
+          property_image_url: editFormData.property_image_url,
+          owner_address: editFormData.owner_address,
+          owner_name: editFormData.owner_name,
+          owner_phone: editFormData.owner_phone,
+          answer_flag: editFormData.answer_flag,
+          dnc_flag: editFormData.dnc_flag,
+          neighborhood: editFormData.neighborhood,
+          origem: editFormData.origem,
+          carta: editFormData.carta,
+          zillow_url: editFormData.zillow_url,
+          evaluation: editFormData.evaluation,
+          focar: editFormData.focar,
+          comparative_price: editFormData.comparative_price,
+        })
+        .eq("id", selectedPropertyId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Property updated successfully",
+      });
+      setIsEditDialogOpen(false);
+      fetchProperties();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update property",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const generateSlug = (address: string): string => {
@@ -680,6 +749,14 @@ const Admin = () => {
                         <Button
                           variant="outline"
                           size="sm"
+                          onClick={() => openEditDialog(property)}
+                          title="Edit property"
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => window.open(`/property/${property.slug}`, '_blank')}
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -728,56 +805,257 @@ const Admin = () => {
                 <PropertyAnalytics propertyId={selectedPropertyId} />
               </div>
             )}
-            
-            <form onSubmit={handleNoteSubmit} className="space-y-4 border-b pb-4 mb-4">
-              <div className="space-y-2">
-                <Label htmlFor="noteText">Add Note *</Label>
-                <Textarea
-                  id="noteText"
-                  value={noteFormData.noteText}
-                  onChange={(e) => setNoteFormData({ ...noteFormData, noteText: e.target.value })}
-                  placeholder="Enter your note here..."
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="followUpDate">Follow-up Date (optional)</Label>
-                <Input
-                  id="followUpDate"
-                  type="date"
-                  value={noteFormData.followUpDate}
-                  onChange={(e) => setNoteFormData({ ...noteFormData, followUpDate: e.target.value })}
-                />
-              </div>
-
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Adding..." : "Add Note"}
-              </Button>
-            </form>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Previous Notes</h3>
-              {propertyNotes.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No notes yet. Add your first note above.
-                </p>
-              ) : (
-                propertyNotes.map((note) => (
-                  <div key={note.id} className="border rounded-lg p-4 space-y-2">
-                    <p className="text-sm text-muted-foreground">
+              <form onSubmit={handleNoteSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="noteText">Note</Label>
+                  <Textarea
+                    id="noteText"
+                    value={noteFormData.noteText}
+                    onChange={(e) => setNoteFormData({...noteFormData, noteText: e.target.value})}
+                    placeholder="Add a note..."
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="followUpDate">Follow-up Date</Label>
+                  <Input
+                    id="followUpDate"
+                    type="date"
+                    value={noteFormData.followUpDate}
+                    onChange={(e) => setNoteFormData({...noteFormData, followUpDate: e.target.value})}
+                  />
+                </div>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Adding..." : "Add Note"}
+                </Button>
+              </form>
+
+              <div className="space-y-2">
+                <h3 className="font-semibold">Previous Notes</h3>
+                {propertyNotes.map((note) => (
+                  <div key={note.id} className="p-3 bg-muted rounded-lg">
+                    <p>{note.note_text}</p>
+                    {note.follow_up_date && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Follow up: {new Date(note.follow_up_date).toLocaleDateString()}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
                       {new Date(note.created_at).toLocaleString()}
                     </p>
-                    <p className="text-foreground">{note.note_text}</p>
-                    {note.follow_up_date && (
-                      <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded inline-block">
-                        Follow-up: {new Date(note.follow_up_date).toLocaleDateString()}
-                      </span>
-                    )}
                   </div>
-                ))
-              )}
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Property</DialogTitle>
+              <DialogDescription>
+                Update property information and internal tracking details
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-address">Property Address</Label>
+                    <Input
+                      id="edit-address"
+                      value={editFormData.address || ""}
+                      onChange={(e) => setEditFormData({...editFormData, address: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-city">City</Label>
+                    <Input
+                      id="edit-city"
+                      value={editFormData.city || ""}
+                      onChange={(e) => setEditFormData({...editFormData, city: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-state">State</Label>
+                    <Input
+                      id="edit-state"
+                      value={editFormData.state || ""}
+                      onChange={(e) => setEditFormData({...editFormData, state: e.target.value})}
+                      maxLength={2}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-zip">ZIP Code</Label>
+                    <Input
+                      id="edit-zip"
+                      value={editFormData.zip_code || ""}
+                      onChange={(e) => setEditFormData({...editFormData, zip_code: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-estimated">Estimated Value</Label>
+                    <Input
+                      id="edit-estimated"
+                      type="number"
+                      value={editFormData.estimated_value || ""}
+                      onChange={(e) => setEditFormData({...editFormData, estimated_value: parseFloat(e.target.value)})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-cash">Cash Offer Amount</Label>
+                    <Input
+                      id="edit-cash"
+                      type="number"
+                      value={editFormData.cash_offer_amount || ""}
+                      onChange={(e) => setEditFormData({...editFormData, cash_offer_amount: parseFloat(e.target.value)})}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="edit-image">Property Image URL</Label>
+                    <Input
+                      id="edit-image"
+                      value={editFormData.property_image_url || ""}
+                      onChange={(e) => setEditFormData({...editFormData, property_image_url: e.target.value})}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Owner Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                    <Label htmlFor="edit-owner-name">Owner Name</Label>
+                    <Input
+                      id="edit-owner-name"
+                      value={editFormData.owner_name || ""}
+                      onChange={(e) => setEditFormData({...editFormData, owner_name: e.target.value})}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="edit-owner-address">Owner Address</Label>
+                    <Input
+                      id="edit-owner-address"
+                      value={editFormData.owner_address || ""}
+                      onChange={(e) => setEditFormData({...editFormData, owner_address: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-owner-phone">Owner Phone</Label>
+                    <Input
+                      id="edit-owner-phone"
+                      value={editFormData.owner_phone || ""}
+                      onChange={(e) => setEditFormData({...editFormData, owner_phone: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-neighborhood">Neighborhood</Label>
+                    <Input
+                      id="edit-neighborhood"
+                      value={editFormData.neighborhood || ""}
+                      onChange={(e) => setEditFormData({...editFormData, neighborhood: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Tracking & Analysis</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-origem">Origem (Origin)</Label>
+                    <Input
+                      id="edit-origem"
+                      value={editFormData.origem || ""}
+                      onChange={(e) => setEditFormData({...editFormData, origem: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-carta">Carta (Letter)</Label>
+                    <Input
+                      id="edit-carta"
+                      value={editFormData.carta || ""}
+                      onChange={(e) => setEditFormData({...editFormData, carta: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-evaluation">Evaluation</Label>
+                    <Input
+                      id="edit-evaluation"
+                      value={editFormData.evaluation || ""}
+                      onChange={(e) => setEditFormData({...editFormData, evaluation: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-focar">FOCAR</Label>
+                    <Input
+                      id="edit-focar"
+                      value={editFormData.focar || ""}
+                      onChange={(e) => setEditFormData({...editFormData, focar: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-comparative">Comparative Price</Label>
+                    <Input
+                      id="edit-comparative"
+                      type="number"
+                      value={editFormData.comparative_price || ""}
+                      onChange={(e) => setEditFormData({...editFormData, comparative_price: parseFloat(e.target.value)})}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="edit-zillow">Zillow URL</Label>
+                    <Input
+                      id="edit-zillow"
+                      value={editFormData.zillow_url || ""}
+                      onChange={(e) => setEditFormData({...editFormData, zillow_url: e.target.value})}
+                      placeholder="https://zillow.com/..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Flags</h3>
+                <div className="flex gap-6">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="edit-answer-flag"
+                      checked={editFormData.answer_flag || false}
+                      onCheckedChange={(checked) => setEditFormData({...editFormData, answer_flag: checked as boolean})}
+                    />
+                    <Label htmlFor="edit-answer-flag" className="cursor-pointer">
+                      Answer Flag
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="edit-dnc-flag"
+                      checked={editFormData.dnc_flag || false}
+                      onCheckedChange={(checked) => setEditFormData({...editFormData, dnc_flag: checked as boolean})}
+                    />
+                    <Label htmlFor="edit-dnc-flag" className="cursor-pointer">
+                      DNC Flag (Do Not Call)
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateProperty} disabled={isLoading}>
+                  {isLoading ? "Updating..." : "Update Property"}
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
