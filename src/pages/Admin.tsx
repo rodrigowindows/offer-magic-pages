@@ -32,6 +32,7 @@ import { LeadStatusBadge, LeadStatus } from "@/components/LeadStatusBadge";
 import { LeadStatusSelect } from "@/components/LeadStatusSelect";
 import { PropertyFilters } from "@/components/PropertyFilters";
 import { BulkActionsBar } from "@/components/BulkActionsBar";
+import { CashOfferDialog } from "@/components/CashOfferDialog";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -110,6 +111,8 @@ const Admin = () => {
   });
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all');
+  const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
+  const [selectedPropertyForOffer, setSelectedPropertyForOffer] = useState<Property | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -149,6 +152,11 @@ const Admin = () => {
     setSelectedPropertyId(property.id);
     setEditFormData(property);
     setIsEditDialogOpen(true);
+  };
+
+  const openOfferDialog = (property: Property) => {
+    setSelectedPropertyForOffer(property);
+    setIsOfferDialogOpen(true);
   };
 
   const handleUpdateProperty = async () => {
@@ -747,6 +755,15 @@ const Admin = () => {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => openOfferDialog(property)}
+                          title="Generate cash offer letter"
+                          className="bg-primary"
+                        >
+                          Offer Letter
+                        </Button>
+                        <Button
                           variant="outline"
                           size="sm"
                           onClick={() => openEditDialog(property)}
@@ -1059,6 +1076,12 @@ const Admin = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        <CashOfferDialog
+          property={selectedPropertyForOffer}
+          open={isOfferDialogOpen}
+          onOpenChange={setIsOfferDialogOpen}
+        />
       </main>
       
       <BulkActionsBar

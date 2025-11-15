@@ -1,0 +1,110 @@
+import { Card } from "@/components/ui/card";
+import { QRCodeSVG } from "qrcode.react";
+
+interface CashOfferLetterProps {
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  cashOffer: number;
+  estimatedValue: number;
+  propertySlug: string;
+  phone?: string;
+  email?: string;
+  source?: string;
+}
+
+export const CashOfferLetter = ({
+  address,
+  city,
+  state,
+  zipCode,
+  cashOffer,
+  estimatedValue,
+  propertySlug,
+  phone = "(305) 555-0123",
+  email = "info@mylocalinvest.com",
+  source = "letter"
+}: CashOfferLetterProps) => {
+  const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
+  const offerUrl = `${window.location.origin}/property/${propertySlug}?src=${source}`;
+  
+  return (
+    <Card className="max-w-2xl mx-auto p-8 bg-[#fffef9] border-2 border-border print:border-0 print:shadow-none">
+      <div className="space-y-6 font-sans">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">We Want to Buy Your House</h1>
+          <p className="text-lg text-muted-foreground">{fullAddress}</p>
+        </div>
+
+        {/* Offer Box */}
+        <div className="bg-primary/10 border-2 border-primary rounded-lg p-6 text-center space-y-2">
+          <p className="text-5xl font-bold text-primary">${cashOffer.toLocaleString()}</p>
+          <p className="text-lg text-muted-foreground">Cash Offer</p>
+          <p className="text-sm text-muted-foreground">
+            (Fair Market Value: ${estimatedValue.toLocaleString()})
+          </p>
+          <p className="text-xl font-semibold text-foreground mt-4">
+            No repairs • No fees • Close in 7 days
+          </p>
+        </div>
+
+        {/* Benefits */}
+        <div className="space-y-3">
+          <h2 className="text-xl font-bold text-foreground">We Help You:</h2>
+          <ul className="space-y-2 text-lg">
+            <li className="flex items-start">
+              <span className="text-primary mr-2">✓</span>
+              <span>Stop tax foreclosure</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-primary mr-2">✓</span>
+              <span>Pay off your tax debt</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-primary mr-2">✓</span>
+              <span>Sell as-is (any condition)</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-primary mr-2">✓</span>
+              <span>You pick the date</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* CTA */}
+        <div className="bg-accent/20 border-2 border-accent rounded-lg p-6 text-center space-y-3">
+          <h2 className="text-2xl font-bold text-foreground">Just Reply "YES"</h2>
+          <p className="text-xl">
+            Text or call: <span className="font-bold text-primary">{phone}</span>
+          </p>
+          <p className="text-base text-muted-foreground">
+            We'll send your official offer in writing — no pressure, no cost.
+          </p>
+        </div>
+
+        {/* QR Code */}
+        <div className="flex flex-col items-center space-y-3 pt-4 border-t-2 border-dashed border-border">
+          <p className="text-lg font-semibold text-foreground">Scan to Save Your Offer</p>
+          <div className="bg-white p-4 rounded-lg border-2 border-border">
+            <QRCodeSVG value={offerUrl} size={150} level="H" />
+          </div>
+          <p className="text-sm text-muted-foreground italic">
+            Your personal link — track every scan
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center space-y-2 pt-4 border-t-2 border-border">
+          <h3 className="text-2xl font-bold text-foreground">MyLocalInvest</h3>
+          <p className="text-base text-muted-foreground">Miami locals since 2015</p>
+          <p className="text-base text-muted-foreground">{email}</p>
+          <p className="text-sm italic text-muted-foreground pt-2">
+            Zero commissions. Zero closing costs. 100% confidential.
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+};
