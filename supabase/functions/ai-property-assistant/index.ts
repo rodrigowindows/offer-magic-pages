@@ -13,6 +13,18 @@ interface PropertyData {
   zipCode?: string;
   estimatedValue?: number;
   cashOfferAmount?: number;
+  ownerAddress?: string;
+  ownerName?: string;
+  ownerPhone?: string;
+  answerFlag?: boolean;
+  dncFlag?: boolean;
+  neighborhood?: string;
+  origem?: string;
+  carta?: string;
+  zillowUrl?: string;
+  evaluation?: string;
+  focar?: string;
+  comparativePrice?: number;
 }
 
 const fetchPropertyImage = async (address: string): Promise<string | null> => {
@@ -60,7 +72,7 @@ const parsePropertyData = async (input: string): Promise<PropertyData[]> => {
       messages: [
         {
           role: 'system',
-          content: 'You are a property data parser. Extract property information from the provided text and return it as structured JSON. Each property should have: address, city (default: "Miami"), state (default: "FL"), zipCode, estimatedValue, cashOfferAmount. If values are missing, use reasonable defaults.',
+          content: 'You are a property data parser. Extract property information from the provided text and return it as structured JSON. Each property should have: address, city (default: "Miami"), state (default: "FL"), zipCode, estimatedValue, cashOfferAmount, ownerAddress, ownerName, ownerPhone, answerFlag (boolean), dncFlag (boolean), neighborhood, origem, carta, zillowUrl, evaluation, focar, comparativePrice (number). If values are missing, use reasonable defaults or null.',
         },
         {
           role: 'user',
@@ -87,6 +99,18 @@ const parsePropertyData = async (input: string): Promise<PropertyData[]> => {
                       zipCode: { type: 'string' },
                       estimatedValue: { type: 'number' },
                       cashOfferAmount: { type: 'number' },
+                      ownerAddress: { type: 'string' },
+                      ownerName: { type: 'string' },
+                      ownerPhone: { type: 'string' },
+                      answerFlag: { type: 'boolean' },
+                      dncFlag: { type: 'boolean' },
+                      neighborhood: { type: 'string' },
+                      origem: { type: 'string' },
+                      carta: { type: 'string' },
+                      zillowUrl: { type: 'string' },
+                      evaluation: { type: 'string' },
+                      focar: { type: 'string' },
+                      comparativePrice: { type: 'number' },
                     },
                     required: ['address'],
                   },
@@ -171,6 +195,18 @@ serve(async (req: Request) => {
         estimated_value: p.estimatedValue || 0,
         cash_offer_amount: p.cashOfferAmount || 0,
         property_image_url: p.imageUrl || null,
+        owner_address: p.ownerAddress || null,
+        owner_name: p.ownerName || null,
+        owner_phone: p.ownerPhone || null,
+        answer_flag: p.answerFlag || false,
+        dnc_flag: p.dncFlag || false,
+        neighborhood: p.neighborhood || null,
+        origem: p.origem || null,
+        carta: p.carta || null,
+        zillow_url: p.zillowUrl || null,
+        evaluation: p.evaluation || null,
+        focar: p.focar || null,
+        comparative_price: p.comparativePrice || null,
       }));
 
       const { data: insertedData, error } = await supabase
