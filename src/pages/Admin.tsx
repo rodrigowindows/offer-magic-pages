@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/dialog";
 import { z } from "zod";
 import { PropertyAnalytics } from "@/components/PropertyAnalytics";
+import { NotificationsPanel } from "@/components/NotificationsPanel";
+import { AIPropertyImport } from "@/components/AIPropertyImport";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -292,23 +294,28 @@ const Admin = () => {
       <header className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">Property Management</h1>
-          <Button onClick={handleLogout} variant="outline" size="sm">
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <NotificationsPanel />
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-secondary hover:bg-secondary/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Property
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <AIPropertyImport onImportComplete={fetchProperties} />
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-secondary hover:bg-secondary/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Property
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Add New Property</DialogTitle>
@@ -396,6 +403,7 @@ const Admin = () => {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className="bg-card rounded-lg border border-border overflow-hidden">
