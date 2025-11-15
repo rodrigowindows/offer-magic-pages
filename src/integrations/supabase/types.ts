@@ -59,6 +59,59 @@ export type Database = {
         }
         Relationships: []
       }
+      property_notes: {
+        Row: {
+          card_sent: boolean
+          created_at: string
+          created_by: string | null
+          email_sent: boolean
+          follow_up_date: string | null
+          id: string
+          letter_sent: boolean
+          meeting_scheduled: boolean
+          note_text: string
+          phone_call_made: boolean
+          property_id: string
+          sms_sent: boolean
+        }
+        Insert: {
+          card_sent?: boolean
+          created_at?: string
+          created_by?: string | null
+          email_sent?: boolean
+          follow_up_date?: string | null
+          id?: string
+          letter_sent?: boolean
+          meeting_scheduled?: boolean
+          note_text: string
+          phone_call_made?: boolean
+          property_id: string
+          sms_sent?: boolean
+        }
+        Update: {
+          card_sent?: boolean
+          created_at?: string
+          created_by?: string | null
+          email_sent?: boolean
+          follow_up_date?: string | null
+          id?: string
+          letter_sent?: boolean
+          meeting_scheduled?: boolean
+          note_text?: string
+          phone_call_made?: boolean
+          property_id?: string
+          sms_sent?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_notes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
