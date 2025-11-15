@@ -1,5 +1,4 @@
 import { Card } from "@/components/ui/card";
-import { QRCodeSVG } from "qrcode.react";
 
 interface CashOfferLetterProps {
   address: string;
@@ -34,7 +33,7 @@ export const CashOfferLetter = ({
       <div className="space-y-6 font-sans">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">We Want to Buy Your House</h1>
+          <h1 className="text-3xl font-bold text-foreground">CASH OFFER FOR Your Home!</h1>
           <p className="text-lg text-muted-foreground">{fullAddress}</p>
         </div>
 
@@ -84,16 +83,6 @@ export const CashOfferLetter = ({
           </p>
         </div>
 
-        {/* QR Code */}
-        <div className="flex flex-col items-center space-y-3 pt-4 border-t-2 border-dashed border-border">
-          <p className="text-lg font-semibold text-foreground">Scan to Save Your Offer</p>
-          <div className="bg-white p-4 rounded-lg border-2 border-border">
-            <QRCodeSVG value={offerUrl} size={150} level="H" />
-          </div>
-          <p className="text-sm text-muted-foreground italic">
-            Your personal link — track every scan
-          </p>
-        </div>
 
         {/* Footer */}
         <div className="text-center space-y-2 pt-4 border-t-2 border-border">
