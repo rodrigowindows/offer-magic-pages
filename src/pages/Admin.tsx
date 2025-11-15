@@ -48,18 +48,18 @@ interface Property {
   cash_offer_amount: number;
   status: string;
   created_at: string;
-}
-
-interface PropertyNote {
-  id: string;
-  property_id: string;
-  note_text: string;
   sms_sent: boolean;
   email_sent: boolean;
   letter_sent: boolean;
   card_sent: boolean;
   phone_call_made: boolean;
   meeting_scheduled: boolean;
+}
+
+interface PropertyNote {
+  id: string;
+  property_id: string;
+  note_text: string;
   follow_up_date: string | null;
   created_at: string;
 }
@@ -84,12 +84,6 @@ const Admin = () => {
   });
   const [noteFormData, setNoteFormData] = useState({
     noteText: "",
-    smsSent: false,
-    emailSent: false,
-    letterSent: false,
-    cardSent: false,
-    phoneCallMade: false,
-    meetingScheduled: false,
     followUpDate: "",
   });
 
@@ -247,12 +241,6 @@ const Admin = () => {
     const { error } = await supabase.from("property_notes").insert({
       property_id: selectedPropertyId,
       note_text: noteFormData.noteText,
-      sms_sent: noteFormData.smsSent,
-      email_sent: noteFormData.emailSent,
-      letter_sent: noteFormData.letterSent,
-      card_sent: noteFormData.cardSent,
-      phone_call_made: noteFormData.phoneCallMade,
-      meeting_scheduled: noteFormData.meetingScheduled,
       follow_up_date: noteFormData.followUpDate || null,
     });
 
@@ -269,18 +257,33 @@ const Admin = () => {
       });
       setNoteFormData({
         noteText: "",
-        smsSent: false,
-        emailSent: false,
-        letterSent: false,
-        cardSent: false,
-        phoneCallMade: false,
-        meetingScheduled: false,
         followUpDate: "",
       });
       await fetchPropertyNotes(selectedPropertyId);
     }
     
     setIsLoading(false);
+  };
+
+  const updatePropertyCommunication = async (propertyId: string, field: string, value: boolean) => {
+    const { error } = await supabase
+      .from("properties")
+      .update({ [field]: value })
+      .eq("id", propertyId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update communication status",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success!",
+        description: "Communication status updated",
+      });
+      fetchProperties();
+    }
   };
 
   return (
@@ -401,6 +404,7 @@ const Admin = () => {
                 <TableHead>Address</TableHead>
                 <TableHead>Cash Offer</TableHead>
                 <TableHead>Estimated Value</TableHead>
+                <TableHead>Communication</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -408,7 +412,7 @@ const Admin = () => {
             <TableBody>
               {properties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     No properties yet. Add your first property to get started!
                   </TableCell>
                 </TableRow>
@@ -420,6 +424,82 @@ const Admin = () => {
                     </TableCell>
                     <TableCell>${property.cash_offer_amount.toLocaleString()}</TableCell>
                     <TableCell>${property.estimated_value.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <div className="flex items-center space-x-1">
+                          <Checkbox
+                            id={`sms-${property.id}`}
+                            checked={property.sms_sent}
+                            onCheckedChange={(checked) => 
+                              updatePropertyCommunication(property.id, 'sms_sent', checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={`sms-${property.id}`} className="text-xs cursor-pointer">
+                            SMS
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Checkbox
+                            id={`email-${property.id}`}
+                            checked={property.email_sent}
+                            onCheckedChange={(checked) => 
+                              updatePropertyCommunication(property.id, 'email_sent', checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={`email-${property.id}`} className="text-xs cursor-pointer">
+                            Email
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Checkbox
+                            id={`letter-${property.id}`}
+                            checked={property.letter_sent}
+                            onCheckedChange={(checked) => 
+                              updatePropertyCommunication(property.id, 'letter_sent', checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={`letter-${property.id}`} className="text-xs cursor-pointer">
+                            Letter
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Checkbox
+                            id={`card-${property.id}`}
+                            checked={property.card_sent}
+                            onCheckedChange={(checked) => 
+                              updatePropertyCommunication(property.id, 'card_sent', checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={`card-${property.id}`} className="text-xs cursor-pointer">
+                            Card
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Checkbox
+                            id={`phone-${property.id}`}
+                            checked={property.phone_call_made}
+                            onCheckedChange={(checked) => 
+                              updatePropertyCommunication(property.id, 'phone_call_made', checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={`phone-${property.id}`} className="text-xs cursor-pointer">
+                            Phone
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Checkbox
+                            id={`meeting-${property.id}`}
+                            checked={property.meeting_scheduled}
+                            onCheckedChange={(checked) => 
+                              updatePropertyCommunication(property.id, 'meeting_scheduled', checked as boolean)
+                            }
+                          />
+                          <Label htmlFor={`meeting-${property.id}`} className="text-xs cursor-pointer">
+                            Meeting
+                          </Label>
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-success/10 text-success">
                         {property.status}
@@ -486,86 +566,6 @@ const Admin = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="smsSent"
-                    checked={noteFormData.smsSent}
-                    onCheckedChange={(checked) => 
-                      setNoteFormData({ ...noteFormData, smsSent: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="smsSent" className="font-normal cursor-pointer">
-                    SMS Sent
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="emailSent"
-                    checked={noteFormData.emailSent}
-                    onCheckedChange={(checked) => 
-                      setNoteFormData({ ...noteFormData, emailSent: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="emailSent" className="font-normal cursor-pointer">
-                    Email Sent
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="letterSent"
-                    checked={noteFormData.letterSent}
-                    onCheckedChange={(checked) => 
-                      setNoteFormData({ ...noteFormData, letterSent: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="letterSent" className="font-normal cursor-pointer">
-                    Letter Sent
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="cardSent"
-                    checked={noteFormData.cardSent}
-                    onCheckedChange={(checked) => 
-                      setNoteFormData({ ...noteFormData, cardSent: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="cardSent" className="font-normal cursor-pointer">
-                    Card Sent
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="phoneCallMade"
-                    checked={noteFormData.phoneCallMade}
-                    onCheckedChange={(checked) => 
-                      setNoteFormData({ ...noteFormData, phoneCallMade: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="phoneCallMade" className="font-normal cursor-pointer">
-                    Phone Call Made
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="meetingScheduled"
-                    checked={noteFormData.meetingScheduled}
-                    onCheckedChange={(checked) => 
-                      setNoteFormData({ ...noteFormData, meetingScheduled: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="meetingScheduled" className="font-normal cursor-pointer">
-                    Meeting Scheduled
-                  </Label>
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="followUpDate">Follow-up Date (optional)</Label>
                 <Input
@@ -594,43 +594,11 @@ const Admin = () => {
                       {new Date(note.created_at).toLocaleString()}
                     </p>
                     <p className="text-foreground">{note.note_text}</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {note.sms_sent && (
-                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
-                          SMS Sent
-                        </span>
-                      )}
-                      {note.email_sent && (
-                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
-                          Email Sent
-                        </span>
-                      )}
-                      {note.letter_sent && (
-                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
-                          Letter Sent
-                        </span>
-                      )}
-                      {note.card_sent && (
-                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
-                          Card Sent
-                        </span>
-                      )}
-                      {note.phone_call_made && (
-                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
-                          Phone Call
-                        </span>
-                      )}
-                      {note.meeting_scheduled && (
-                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">
-                          Meeting
-                        </span>
-                      )}
-                      {note.follow_up_date && (
-                        <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded">
-                          Follow-up: {new Date(note.follow_up_date).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
+                    {note.follow_up_date && (
+                      <span className="text-xs px-2 py-1 bg-accent/10 text-accent rounded inline-block">
+                        Follow-up: {new Date(note.follow_up_date).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 ))
               )}
