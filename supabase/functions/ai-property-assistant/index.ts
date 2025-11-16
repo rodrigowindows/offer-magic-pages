@@ -209,17 +209,26 @@ serve(async (req: Request) => {
         comparative_price: p.comparativePrice || null,
       }));
 
-      const { data: insertedData, error } = await supabase
+      // Use upsert to handle duplicates - update existing properties
+      const { data: upsertedData, error } = await supabase
         .from('properties')
-        .insert(insertData)
+        .upsert(insertData, { 
+          onConflict: 'slug',
+          ignoreDuplicates: false // Update existing records
+        })
         .select();
 
       if (error) {
+        console.error('Upsert error:', error);
         throw error;
       }
 
       return new Response(
-        JSON.stringify({ success: true, count: insertedData?.length || 0 }),
+        JSON.stringify({ 
+          success: true, 
+          count: upsertedData?.length || 0,
+          message: `Successfully imported/updated ${upsertedData?.length || 0} properties`
+        }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200,
