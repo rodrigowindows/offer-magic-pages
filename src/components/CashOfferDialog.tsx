@@ -27,7 +27,7 @@ interface CashOfferDialogProps {
 
 export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialogProps) => {
   const { toast } = useToast();
-  const [phone, setPhone] = useState("(305) 555-0123");
+  const [phone, setPhone] = useState("786 882 8251");
   const [email, setEmail] = useState("info@mylocalinvest.com");
 
   if (!property) return null;

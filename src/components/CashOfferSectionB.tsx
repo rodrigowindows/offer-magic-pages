@@ -40,7 +40,7 @@ const CashOfferSectionB = ({
           </Button>
           
           <p className="text-sm text-muted-foreground">
-            Text or call: (305) 555-0123
+            Call: 786 882 8251
           </p>
         </div>
       </div>
