@@ -433,6 +433,32 @@ const Admin = () => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedProperties.length} ${selectedProperties.length === 1 ? 'property' : 'properties'}? This cannot be undone.`)) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from("properties")
+      .delete()
+      .in("id", selectedProperties);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete properties",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Deleted!",
+        description: `Successfully deleted ${selectedProperties.length} ${selectedProperties.length === 1 ? 'property' : 'properties'}`,
+      });
+      setSelectedProperties([]);
+      fetchProperties();
+    }
+  };
+
   const handleGenerateQRCodes = () => {
     const selectedProps = properties.filter(p => selectedProperties.includes(p.id));
     const qrCodeUrls = selectedProps.map(property => {
@@ -1097,6 +1123,7 @@ const Admin = () => {
         selectedCount={selectedProperties.length}
         onClearSelection={() => setSelectedProperties([])}
         onBulkStatusChange={handleBulkStatusChange}
+        onBulkDelete={handleBulkDelete}
         onGenerateQRCodes={handleGenerateQRCodes}
       />
     </div>
