@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { QRCodeSVG } from "qrcode.react";
 
 interface CashOfferLetterProps {
   address: string;
@@ -21,7 +22,7 @@ export const CashOfferLetter = ({
   cashOffer,
   estimatedValue,
   propertySlug,
-  phone = "(305) 555-0123",
+  phone = "786 882 8251",
   email = "info@mylocalinvest.com",
   source = "letter"
 }: CashOfferLetterProps) => {
@@ -76,11 +77,20 @@ export const CashOfferLetter = ({
         <div className="bg-accent/20 border-2 border-accent rounded-lg p-6 text-center space-y-3">
           <h2 className="text-2xl font-bold text-foreground">Just Reply "YES"</h2>
           <p className="text-xl">
-            Text or call: <span className="font-bold text-primary">{phone}</span>
+            Call: <span className="font-bold text-primary">{phone}</span>
           </p>
           <p className="text-base text-muted-foreground">
             We'll send your official offer in writing — no pressure, no cost.
           </p>
+          
+          {/* QR Code - Only visible in print */}
+          <div className="hidden print:block mt-4 pt-4 border-t border-border">
+            <p className="text-sm text-muted-foreground mb-2">Scan to view your offer online:</p>
+            <div className="flex justify-center">
+              <QRCodeSVG value={offerUrl} size={120} level="H" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">{offerUrl}</p>
+          </div>
         </div>
 
 
