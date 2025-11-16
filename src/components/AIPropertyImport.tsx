@@ -114,7 +114,7 @@ export const AIPropertyImport = ({ onImportComplete }: { onImportComplete: () =>
 
       toast({
         title: "Success!",
-        description: `Imported ${data.count} properties successfully`,
+        description: data.message || `Imported/updated ${data.count} properties successfully`,
       });
 
       setIsOpen(false);
