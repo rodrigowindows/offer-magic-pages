@@ -29,6 +29,18 @@ interface ParsedProperty {
   estimatedValue?: number;
   cashOfferAmount?: number;
   imageUrl?: string;
+  ownerAddress?: string;
+  ownerName?: string;
+  ownerPhone?: string;
+  answerFlag?: boolean;
+  dncFlag?: boolean;
+  neighborhood?: string;
+  origem?: string;
+  carta?: string;
+  zillowUrl?: string;
+  evaluation?: string;
+  focar?: string;
+  comparativePrice?: number;
 }
 
 export const AIPropertyImport = ({ onImportComplete }: { onImportComplete: () => void }) => {
@@ -198,26 +210,52 @@ export const AIPropertyImport = ({ onImportComplete }: { onImportComplete: () =>
               <p className="text-sm text-muted-foreground mb-4">
                 Found {parsedProperties.length} properties. Review and click Import to add them.
               </p>
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Address</TableHead>
-                      <TableHead>City</TableHead>
-                      <TableHead>ZIP</TableHead>
-                      <TableHead>Est. Value</TableHead>
-                      <TableHead>Offer</TableHead>
-                      <TableHead>Image</TableHead>
+                      <TableHead className="min-w-[200px]">Property Address</TableHead>
+                      <TableHead className="min-w-[200px]">Owner Address</TableHead>
+                      <TableHead className="min-w-[150px]">Owner Name</TableHead>
+                      <TableHead className="min-w-[120px]">Owner Phone</TableHead>
+                      <TableHead className="min-w-[100px]">Answer Flag</TableHead>
+                      <TableHead className="min-w-[100px]">DNC Flag</TableHead>
+                      <TableHead className="min-w-[120px]">Neighborhood</TableHead>
+                      <TableHead className="min-w-[150px]">Origem</TableHead>
+                      <TableHead className="min-w-[150px]">Carta</TableHead>
+                      <TableHead className="min-w-[120px]">Est. Value</TableHead>
+                      <TableHead className="min-w-[120px]">Cash Offer</TableHead>
+                      <TableHead className="min-w-[150px]">Zillow URL</TableHead>
+                      <TableHead className="min-w-[150px]">Evaluation</TableHead>
+                      <TableHead className="min-w-[100px]">FOCAR</TableHead>
+                      <TableHead className="min-w-[120px]">Comparative Price</TableHead>
+                      <TableHead className="min-w-[100px]">Image</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {parsedProperties.map((property, idx) => (
                       <TableRow key={idx}>
                         <TableCell className="font-medium">{property.address}</TableCell>
-                        <TableCell>{property.city}</TableCell>
-                        <TableCell>{property.zipCode}</TableCell>
-                        <TableCell>${property.estimatedValue?.toLocaleString()}</TableCell>
-                        <TableCell>${property.cashOfferAmount?.toLocaleString()}</TableCell>
+                        <TableCell className="text-xs">{property.ownerAddress || '-'}</TableCell>
+                        <TableCell>{property.ownerName || '-'}</TableCell>
+                        <TableCell>{property.ownerPhone || '-'}</TableCell>
+                        <TableCell>{property.answerFlag ? 'Yes' : 'No'}</TableCell>
+                        <TableCell>{property.dncFlag ? 'Yes' : 'No'}</TableCell>
+                        <TableCell>{property.neighborhood || '-'}</TableCell>
+                        <TableCell className="text-xs">{property.origem || '-'}</TableCell>
+                        <TableCell className="text-xs">{property.carta || '-'}</TableCell>
+                        <TableCell>${property.estimatedValue?.toLocaleString() || '-'}</TableCell>
+                        <TableCell>${property.cashOfferAmount?.toLocaleString() || '-'}</TableCell>
+                        <TableCell className="text-xs">
+                          {property.zillowUrl ? (
+                            <a href={property.zillowUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                              Link
+                            </a>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell className="text-xs">{property.evaluation || '-'}</TableCell>
+                        <TableCell>{property.focar || '-'}</TableCell>
+                        <TableCell>${property.comparativePrice?.toLocaleString() || '-'}</TableCell>
                         <TableCell>
                           {property.imageUrl && (
                             <img
