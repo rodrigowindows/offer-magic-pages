@@ -214,25 +214,19 @@ const Property = () => {
     );
   }
 
+  // A/B test: randomly select 3 sections - memo this to prevent re-render issues
+  const [selectedSectionIds] = useState(() => {
+    const sectionIds = ['benefits', 'process', 'trust', 'testimonials'];
+    const shuffled = [...sectionIds].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  });
+
   const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
   const propertyUrl = `${window.location.origin}/property/${property.slug}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
   
   const imageUrl = property.property_image_url || 
     "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80";
-
-  // A/B test: randomly select 3 sections from available middle sections
-  const allSections = [
-    { component: <BenefitsSection />, id: 'benefits-section' },
-    { component: <ProcessSection />, id: 'process-section' },
-    { component: <TrustSection />, id: 'trust-section' },
-    { component: <TestimonialsSection />, id: 'testimonials-section' },
-  ];
-  
-  const [selectedSections] = useState(() => {
-    const shuffled = [...allSections].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
-  });
 
   return (
     <main className="min-h-screen">
@@ -253,11 +247,29 @@ const Property = () => {
         />
       )}
       
-      {selectedSections.map((section, idx) => (
-        <div key={section.id} id={section.id}>
-          {section.component}
+      {selectedSectionIds.includes('benefits') && (
+        <div id="benefits-section">
+          <BenefitsSection />
         </div>
-      ))}
+      )}
+      
+      {selectedSectionIds.includes('process') && (
+        <div id="process-section">
+          <ProcessSection />
+        </div>
+      )}
+      
+      {selectedSectionIds.includes('trust') && (
+        <div id="trust-section">
+          <TrustSection />
+        </div>
+      )}
+      
+      {selectedSectionIds.includes('testimonials') && (
+        <div id="testimonials-section">
+          <TestimonialsSection />
+        </div>
+      )}
       
       <ContactForm propertyAddress={fullAddress} propertyId={property.id} />
       

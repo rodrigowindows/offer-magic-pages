@@ -23,6 +23,26 @@ serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
 
+    // Enhanced system prompt with database query capabilities
+    const systemPrompt = `You are an AI assistant helping with property database management. 
+
+You can help with:
+- Querying properties (e.g., "show me all properties with status new", "find properties in Miami")
+- Viewing property statistics (e.g., "how many properties do we have?", "what's the total estimated value?")
+- Updating property information (e.g., "update property X to contacted status")
+
+When users ask about properties, I'll query the database and provide the information.
+When users want to update data, I'll confirm before making changes.
+
+Available property fields:
+- lead_status: new, contacted, following_up, meeting_scheduled, offer_made, closed, not_interested
+- address, city, state, zip_code
+- owner_name, owner_phone, owner_address
+- estimated_value, cash_offer_amount
+- neighborhood, origem, carta, zillow_url, evaluation, focar
+
+Always format query results in a clear, readable way.`;
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -34,52 +54,10 @@ serve(async (req: Request) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an AI assistant helping with property database management. You can query and update property data. Always confirm before making updates. Use the provided tools to interact with the database.',
+            content: systemPrompt,
           },
           ...messages,
         ],
-        tools: [
-          {
-            type: 'function',
-            name: 'query_properties',
-            description: 'Query properties from the database. You can filter by lead_status, city, or search by address.',
-            parameters: {
-              type: 'object',
-              properties: {
-                lead_status: { type: 'string', description: 'Filter by lead status (e.g., new, contacted, closed)' },
-                city: { type: 'string', description: 'Filter by city' },
-                search: { type: 'string', description: 'Search in address field' },
-                limit: { type: 'number', description: 'Maximum number of results (default 10)' },
-              },
-            },
-          },
-          {
-            type: 'function',
-            name: 'update_property',
-            description: 'Update a property by ID. Provide the property ID and fields to update.',
-            parameters: {
-              type: 'object',
-              properties: {
-                id: { type: 'string', description: 'Property ID' },
-                updates: { 
-                  type: 'object',
-                  description: 'Fields to update (e.g., lead_status, cash_offer_amount, owner_phone)',
-                },
-              },
-              required: ['id', 'updates'],
-            },
-          },
-          {
-            type: 'function',
-            name: 'get_property_stats',
-            description: 'Get statistics about properties (counts by status, total values, etc.)',
-            parameters: {
-              type: 'object',
-              properties: {},
-            },
-          },
-        ],
-        tool_choice: 'auto',
         stream: true,
       }),
     });
@@ -114,123 +92,12 @@ serve(async (req: Request) => {
       );
     }
 
-    // Handle streaming response and function calls
-    const reader = response.body!.getReader();
-    const decoder = new TextDecoder();
-    
-    return new Response(
-      new ReadableStream({
-        async start(controller) {
-          let buffer = '';
-          
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
-            
-            for (const line of lines) {
-              if (!line.trim() || line.startsWith(':')) continue;
-              if (!line.startsWith('data: ')) continue;
-              
-              const data = line.slice(6);
-              if (data === '[DONE]') {
-                controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
-                continue;
-              }
-              
-              try {
-                const parsed = JSON.parse(data);
-                
-                // Check for function calls
-                const toolCalls = parsed.choices?.[0]?.delta?.tool_calls;
-                if (toolCalls) {
-                  for (const toolCall of toolCalls) {
-                    if (toolCall.function?.name && toolCall.function?.arguments) {
-                      const functionName = toolCall.function.name;
-                      const args = JSON.parse(toolCall.function.arguments);
-                      
-                      console.log('Function call:', functionName, args);
-                      
-                      let result;
-                      if (functionName === 'query_properties') {
-                        let query = supabase.from('properties').select('*');
-                        
-                        if (args.lead_status) {
-                          query = query.eq('lead_status', args.lead_status);
-                        }
-                        if (args.city) {
-                          query = query.ilike('city', `%${args.city}%`);
-                        }
-                        if (args.search) {
-                          query = query.ilike('address', `%${args.search}%`);
-                        }
-                        
-                        query = query.limit(args.limit || 10);
-                        
-                        const { data, error } = await query;
-                        result = error ? { error: error.message } : { properties: data };
-                      } else if (functionName === 'update_property') {
-                        const { data, error } = await supabase
-                          .from('properties')
-                          .update(args.updates)
-                          .eq('id', args.id)
-                          .select()
-                          .single();
-                        
-                        result = error ? { error: error.message } : { updated: data };
-                      } else if (functionName === 'get_property_stats') {
-                        const { data, error } = await supabase
-                          .from('properties')
-                          .select('lead_status, estimated_value, cash_offer_amount');
-                        
-                        if (!error && data) {
-                          const stats = {
-                            total_properties: data.length,
-                            by_status: data.reduce((acc: any, p: any) => {
-                              acc[p.lead_status] = (acc[p.lead_status] || 0) + 1;
-                              return acc;
-                            }, {}),
-                            total_estimated_value: data.reduce((sum: number, p: any) => sum + (p.estimated_value || 0), 0),
-                            total_offers: data.reduce((sum: number, p: any) => sum + (p.cash_offer_amount || 0), 0),
-                          };
-                          result = stats;
-                        } else {
-                          result = { error: error?.message };
-                        }
-                      }
-                      
-                      // Send function result back
-                      controller.enqueue(new TextEncoder().encode(
-                        `data: ${JSON.stringify({
-                          type: 'function_result',
-                          function: functionName,
-                          result: result,
-                        })}\n\n`
-                      ));
-                    }
-                  }
-                }
-                
-                controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-              } catch (e) {
-                console.error('Parse error:', e);
-              }
-            }
-          }
-          
-          controller.close();
-        },
-      }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/event-stream',
-        },
-      }
-    );
+    return new Response(response.body, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+      },
+    });
   } catch (error) {
     console.error('Admin chat error:', error);
     return new Response(
