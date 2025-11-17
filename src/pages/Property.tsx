@@ -35,6 +35,13 @@ const Property = () => {
   const startTimeRef = useRef<number>(Date.now());
   
   const observerRef = useRef<IntersectionObserver | null>(null);
+  
+  // A/B test: randomly select 3 middle sections once (stable across renders)
+  const [selectedSectionIds] = useState<string[]>(() => {
+    const ids = ['benefits', 'process', 'trust', 'testimonials'] as const;
+    const shuffled = [...ids].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  });
 
   useEffect(() => {
     if (slug) {
@@ -229,16 +236,18 @@ const Property = () => {
         qrCodeUrl={qrCodeUrl}
       />
       
-      {variant === 'A' ? (
-        <CashOfferSection 
-          offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
-          estimatedValue={`$${property.estimated_value.toLocaleString()}`}
-        />
-      ) : (
-        <CashOfferSectionB 
-          offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
-        />
-      )}
+        <div id="offer-section">
+          {variant === 'A' ? (
+            <CashOfferSection 
+              offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
+              estimatedValue={`$${property.estimated_value.toLocaleString()}`}
+            />
+          ) : (
+            <CashOfferSectionB 
+              offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
+            />
+          )}
+        </div>
       
       {selectedSectionIds.includes('benefits') && (
         <div id="benefits-section">
