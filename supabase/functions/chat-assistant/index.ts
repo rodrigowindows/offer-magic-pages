@@ -11,11 +11,42 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, propertyId, propertyAddress, contactInfo } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
+    // Create notification when user sends first message with contact info
+    if (contactInfo && propertyId && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/notifications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_SERVICE_ROLE_KEY,
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            'Prefer': 'return=minimal',
+          },
+          body: JSON.stringify({
+            event_type: 'chat_inquiry',
+            message: `New chat inquiry from ${contactInfo.name} (${contactInfo.email})`,
+            property_id: propertyId,
+            metadata: {
+              contact_name: contactInfo.name,
+              contact_email: contactInfo.email,
+              contact_phone: contactInfo.phone,
+              property_address: propertyAddress,
+              first_message: messages[messages.length - 1]?.content,
+            },
+          }),
+        });
+      } catch (notifError) {
+        console.error('Error creating notification:', notifError);
+      }
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

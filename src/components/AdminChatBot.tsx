@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Message {
@@ -10,20 +10,13 @@ interface Message {
   content: string;
 }
 
-interface ChatBotProps {
-  propertyId?: string;
-  propertyAddress?: string;
-}
-
-export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
+export const AdminChatBot = () => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '' });
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Hi! I\'m your MyLocalInvest assistant. How can I help you today?',
+      content: 'Hi! I\'m your database assistant. I can help you query properties, update records, and get statistics. What would you like to know?',
     },
   ]);
   const [input, setInput] = useState('');
@@ -42,19 +35,13 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Show contact form after first message if not provided yet
-    if (!contactInfo.email && messages.length === 1) {
-      setShowContactForm(true);
-      return;
-    }
-
     const userMessage: Message = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assistant`;
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-chat`;
       
       const response = await fetch(CHAT_URL, {
         method: 'POST',
@@ -64,9 +51,6 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
-          propertyId,
-          propertyAddress,
-          contactInfo: contactInfo.email ? contactInfo : null,
         }),
       });
 
@@ -116,6 +100,22 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
 
           try {
             const parsed = JSON.parse(jsonStr);
+            
+            // Handle function results
+            if (parsed.type === 'function_result') {
+              const resultText = `\n\n[Function: ${parsed.function}]\nResult: ${JSON.stringify(parsed.result, null, 2)}\n\n`;
+              assistantMessage += resultText;
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                newMessages[newMessages.length - 1] = {
+                  role: 'assistant',
+                  content: assistantMessage,
+                };
+                return newMessages;
+              });
+              continue;
+            }
+            
             const content = parsed.choices?.[0]?.delta?.content;
             if (content) {
               assistantMessage += content;
@@ -141,7 +141,6 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
         description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
-      // Remove the empty assistant message
       setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
@@ -157,27 +156,24 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
 
   return (
     <>
-      {/* Floating Chat Button */}
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
+          className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-secondary hover:bg-secondary/90"
           size="icon"
         >
-          <MessageCircle className="h-6 w-6" />
+          <Database className="h-6 w-6" />
         </Button>
       )}
 
-      {/* Chat Window */}
       {isOpen && (
         <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-card border border-border rounded-lg shadow-2xl z-50 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border bg-primary/5">
+          <div className="flex items-center justify-between p-4 border-b border-border bg-secondary/5">
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-primary" />
+              <Database className="h-5 w-5 text-secondary" />
               <div>
-                <h3 className="font-semibold text-foreground">AI Assistant</h3>
-                <p className="text-xs text-muted-foreground">Ask me anything</p>
+                <h3 className="font-semibold text-foreground">Database Assistant</h3>
+                <p className="text-xs text-muted-foreground">Query & update properties</p>
               </div>
             </div>
             <Button
@@ -190,102 +186,56 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
             </Button>
           </div>
 
-          {/* Messages */}
           <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-            {showContactForm ? (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Please share your contact info so we can better assist you:
-                </p>
-                <Input
-                  placeholder="Your name"
-                  value={contactInfo.name}
-                  onChange={(e) => setContactInfo(prev => ({ ...prev, name: e.target.value }))}
-                />
-                <Input
-                  type="email"
-                  placeholder="Your email"
-                  value={contactInfo.email}
-                  onChange={(e) => setContactInfo(prev => ({ ...prev, email: e.target.value }))}
-                />
-                <Input
-                  type="tel"
-                  placeholder="Your phone (optional)"
-                  value={contactInfo.phone}
-                  onChange={(e) => setContactInfo(prev => ({ ...prev, phone: e.target.value }))}
-                />
-                <Button
-                  onClick={() => {
-                    if (contactInfo.email && contactInfo.name) {
-                      setShowContactForm(false);
-                      handleSend();
-                    } else {
-                      toast({
-                        title: 'Required fields',
-                        description: 'Please enter your name and email',
-                        variant: 'destructive',
-                      });
-                    }
-                  }}
-                  className="w-full"
+            <div className="space-y-4">
+              {messages.map((message, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${
+                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
                 >
-                  Continue
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {messages.map((message, idx) => (
                   <div
-                    key={idx}
-                    className={`flex ${
-                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      message.role === 'user'
+                        ? 'bg-secondary text-secondary-foreground'
+                        : 'bg-muted'
                     }`}
                   >
-                    <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
-                      }`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    </div>
+                    <p className="text-sm whitespace-pre-wrap font-mono">{message.content}</p>
                   </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-lg p-3">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg p-3">
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
           </ScrollArea>
 
-          {/* Input */}
-          {!showContactForm && (
-            <div className="p-4 border-t border-border">
-              <div className="flex gap-2">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type your message..."
-                  disabled={isLoading}
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleSend}
-                  disabled={isLoading || !input.trim()}
-                  size="icon"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+          <div className="p-4 border-t border-border">
+            <div className="flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask about properties..."
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleSend}
+                disabled={isLoading || !input.trim()}
+                size="icon"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
-          )}
+          </div>
         </div>
       )}
     </>

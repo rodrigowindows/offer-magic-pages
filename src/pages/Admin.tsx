@@ -34,6 +34,7 @@ import { LeadStatusSelect } from "@/components/LeadStatusSelect";
 import { PropertyFilters } from "@/components/PropertyFilters";
 import { BulkActionsBar } from "@/components/BulkActionsBar";
 import { CashOfferDialog } from "@/components/CashOfferDialog";
+import { AdminChatBot } from "@/components/AdminChatBot";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -1126,6 +1127,8 @@ const Admin = () => {
         onBulkDelete={handleBulkDelete}
         onGenerateQRCodes={handleGenerateQRCodes}
       />
+      
+      <AdminChatBot />
     </div>
   );
 };
