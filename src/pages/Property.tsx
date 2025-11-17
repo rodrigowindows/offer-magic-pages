@@ -214,13 +214,6 @@ const Property = () => {
     );
   }
 
-  // A/B test: randomly select 3 sections - memo this to prevent re-render issues
-  const [selectedSectionIds] = useState(() => {
-    const sectionIds = ['benefits', 'process', 'trust', 'testimonials'];
-    const shuffled = [...sectionIds].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
-  });
-
   const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
   const propertyUrl = `${window.location.origin}/property/${property.slug}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
