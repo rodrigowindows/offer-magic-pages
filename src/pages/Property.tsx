@@ -9,6 +9,7 @@ import ProcessSection from "@/components/ProcessSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import TrustSection from "@/components/TrustSection";
 import ContactForm from "@/components/ContactForm";
+import { ChatBot } from "@/components/ChatBot";
 
 interface PropertyData {
   id: string;
@@ -220,6 +221,19 @@ const Property = () => {
   const imageUrl = property.property_image_url || 
     "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80";
 
+  // A/B test: randomly select 3 sections from available middle sections
+  const allSections = [
+    { component: <BenefitsSection />, id: 'benefits-section' },
+    { component: <ProcessSection />, id: 'process-section' },
+    { component: <TrustSection />, id: 'trust-section' },
+    { component: <TestimonialsSection />, id: 'testimonials-section' },
+  ];
+  
+  const [selectedSections] = useState(() => {
+    const shuffled = [...allSections].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 3);
+  });
+
   return (
     <main className="min-h-screen">
       <PropertyHero 
@@ -228,20 +242,26 @@ const Property = () => {
         qrCodeUrl={qrCodeUrl}
       />
       
-      <CashOfferSection 
-        offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
-        estimatedValue={`$${property.estimated_value.toLocaleString()}`}
-      />
+      {variant === 'A' ? (
+        <CashOfferSection 
+          offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
+          estimatedValue={`$${property.estimated_value.toLocaleString()}`}
+        />
+      ) : (
+        <CashOfferSectionB 
+          offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
+        />
+      )}
       
-      <BenefitsSection />
-      
-      <ProcessSection />
-      
-      <TrustSection />
-      
-      <TestimonialsSection />
+      {selectedSections.map((section, idx) => (
+        <div key={section.id} id={section.id}>
+          {section.component}
+        </div>
+      ))}
       
       <ContactForm propertyAddress={fullAddress} propertyId={property.id} />
+      
+      <ChatBot propertyId={property.id} propertyAddress={fullAddress} />
       
       <footer className="bg-foreground text-background py-12">
         <div className="container mx-auto px-4">
