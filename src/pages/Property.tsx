@@ -37,11 +37,13 @@ const Property = () => {
   const observerRef = useRef<IntersectionObserver | null>(null);
   
   // A/B test: randomly select 3 middle sections once (stable across renders)
-  const [selectedSectionIds] = useState<string[]>(() => {
+  const selectedSectionIdsRef = useRef<string[] | null>(null);
+  if (!selectedSectionIdsRef.current) {
     const ids = ['benefits', 'process', 'trust', 'testimonials'] as const;
     const shuffled = [...ids].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 3);
-  });
+    selectedSectionIdsRef.current = shuffled.slice(0, 3);
+  }
+  const selectedSectionIds = selectedSectionIdsRef.current!;
 
   useEffect(() => {
     if (slug) {
