@@ -36,12 +36,12 @@ const Property = () => {
   
   const observerRef = useRef<IntersectionObserver | null>(null);
   
-  // A/B test: randomly select 3 middle sections once (stable across renders)
+  // A/B test: randomly select 2 middle sections once (stable across renders)
   const selectedSectionIdsRef = useRef<string[] | null>(null);
   if (!selectedSectionIdsRef.current) {
     const ids = ['benefits', 'process', 'trust', 'testimonials'] as const;
     const shuffled = [...ids].sort(() => Math.random() - 0.5);
-    selectedSectionIdsRef.current = shuffled.slice(0, 3);
+    selectedSectionIdsRef.current = shuffled.slice(0, 2);
   }
   const selectedSectionIds = selectedSectionIdsRef.current!;
 
