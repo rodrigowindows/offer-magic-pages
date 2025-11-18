@@ -665,6 +665,8 @@ const Admin = () => {
                   />
                 </TableHead>
                 <TableHead>Address</TableHead>
+                <TableHead>Owner Name</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Cash Offer</TableHead>
                 <TableHead>Estimated Value</TableHead>
                 <TableHead>Lead Status</TableHead>
@@ -676,7 +678,7 @@ const Admin = () => {
             <TableBody>
               {filteredProperties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     {filterStatus === 'all' 
                       ? 'No properties yet. Add your first property to get started!'
                       : `No properties with status "${filterStatus.replace('_', ' ')}"`
@@ -696,6 +698,8 @@ const Admin = () => {
                     <TableCell className="font-medium">
                       {property.address}, {property.city}, {property.state}
                     </TableCell>
+                    <TableCell>{property.owner_name || '-'}</TableCell>
+                    <TableCell>{property.owner_phone || '-'}</TableCell>
                     <TableCell>${property.cash_offer_amount.toLocaleString()}</TableCell>
                     <TableCell>${property.estimated_value.toLocaleString()}</TableCell>
                     <TableCell>
