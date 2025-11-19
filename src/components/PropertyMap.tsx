@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 interface PropertyMapProps {
   address: string;
@@ -13,17 +15,22 @@ const PropertyMap = ({ address, city, state, zipCode }: PropertyMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
+  const [mapboxToken, setMapboxToken] = useState<string>(
+    localStorage.getItem('mapbox_token') || ''
+  );
+  const [showTokenInput, setShowTokenInput] = useState(!mapboxToken);
+
+  const handleTokenSubmit = () => {
+    if (mapboxToken.trim()) {
+      localStorage.setItem('mapbox_token', mapboxToken.trim());
+      setShowTokenInput(false);
+    }
+  };
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current || !mapboxToken || showTokenInput) return;
 
-    // Get Mapbox token from environment or use a placeholder
-    const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
-    
-    if (!token) {
-      console.error('Mapbox token not found. Please add MAPBOX_PUBLIC_TOKEN to secrets.');
-      return;
-    }
+    const token = mapboxToken;
 
     mapboxgl.accessToken = token;
 
@@ -98,7 +105,40 @@ const PropertyMap = ({ address, city, state, zipCode }: PropertyMapProps) => {
     return () => {
       map.current?.remove();
     };
-  }, [fullAddress]);
+  }, [fullAddress, mapboxToken, showTokenInput]);
+
+  if (showTokenInput) {
+    return (
+      <div className="relative w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-strong border border-border bg-muted/30 flex items-center justify-center">
+        <div className="max-w-md mx-auto p-6 bg-card rounded-lg shadow-lg space-y-4">
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-foreground">Enter Mapbox Token</h3>
+            <p className="text-sm text-muted-foreground">
+              Get your free public token at{' '}
+              <a 
+                href="https://account.mapbox.com/access-tokens/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                mapbox.com
+              </a>
+            </p>
+          </div>
+          <Input
+            type="text"
+            placeholder="pk.eyJ1..."
+            value={mapboxToken}
+            onChange={(e) => setMapboxToken(e.target.value)}
+            className="w-full"
+          />
+          <Button onClick={handleTokenSubmit} className="w-full">
+            Load Map
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-strong border border-border">
