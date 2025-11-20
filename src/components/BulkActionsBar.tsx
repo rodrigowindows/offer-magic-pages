@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, QrCode, Trash2 } from "lucide-react";
+import { X, QrCode, Trash2, FileText } from "lucide-react";
 import { LeadStatusSelect } from "./LeadStatusSelect";
 import { LeadStatus } from "./LeadStatusBadge";
 import { useState } from "react";
@@ -10,6 +10,7 @@ interface BulkActionsBarProps {
   onBulkStatusChange: (status: LeadStatus) => void;
   onBulkDelete: () => void;
   onGenerateQRCodes: () => void;
+  onPrintOffers: () => void;
 }
 
 export const BulkActionsBar = ({
@@ -18,6 +19,7 @@ export const BulkActionsBar = ({
   onBulkStatusChange,
   onBulkDelete,
   onGenerateQRCodes,
+  onPrintOffers,
 }: BulkActionsBarProps) => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
 
@@ -58,6 +60,16 @@ export const BulkActionsBar = ({
         >
           <QrCode className="h-4 w-4" />
           Generate QR Codes
+        </Button>
+
+        <Button
+          variant="default"
+          size="sm"
+          onClick={onPrintOffers}
+          className="gap-2 bg-primary"
+        >
+          <FileText className="h-4 w-4" />
+          Print Offers
         </Button>
 
         <Button
