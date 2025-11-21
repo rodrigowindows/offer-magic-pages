@@ -95,14 +95,43 @@ export const CashOfferLetter = ({
 
 
         {/* Footer */}
-        <div className="text-center space-y-2 pt-4 border-t-2 border-border" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+        <div 
+          className="text-center space-y-2 pt-4 border-t-2 border-border" 
+          style={{ 
+            pageBreakInside: 'avoid', 
+            breakInside: 'avoid',
+            display: 'block'
+          }}
+        >
           <h3 className="text-2xl font-bold text-foreground">MyLocalInvest</h3>
           <p className="text-base text-muted-foreground">Miami locals since 2015</p>
           <p className="text-base text-muted-foreground">{email}</p>
-          <p className="text-sm italic text-muted-foreground pt-2" style={{ whiteSpace: 'nowrap', wordBreak: 'keep-all' }}>
+          <p 
+            className="text-sm italic text-muted-foreground pt-2" 
+            style={{ 
+              whiteSpace: 'nowrap', 
+              wordBreak: 'keep-all',
+              pageBreakInside: 'avoid',
+              pageBreakBefore: 'avoid',
+              pageBreakAfter: 'avoid'
+            }}
+          >
             Zero commissions. Zero closing costs. 100% confidential.
           </p>
         </div>
+        <style>{`
+          @media print {
+            .text-center.space-y-2.pt-4 {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .text-center.space-y-2.pt-4 p {
+              page-break-before: avoid !important;
+              page-break-after: avoid !important;
+              page-break-inside: avoid !important;
+            }
+          }
+        `}</style>
       </div>
     </Card>
   );
