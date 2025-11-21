@@ -51,26 +51,20 @@ export const CashOfferLetter = ({
         </div>
 
         {/* Benefits */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           <h2 className="text-lg font-bold text-foreground">We Help You:</h2>
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-base">
-            <li className="flex items-start">
-              <span className="text-primary mr-2">✓</span>
-              <span>Stop tax foreclosure</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-primary mr-2">✓</span>
-              <span>Pay off your tax debt</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-primary mr-2">✓</span>
-              <span>Sell as-is (any condition)</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-primary mr-2">✓</span>
-              <span>You pick the date</span>
-            </li>
-          </ul>
+          <div className="text-sm space-y-0.5">
+            <div>
+              <span className="text-primary">✓</span> Stop tax foreclosure
+              <span className="mx-2">•</span>
+              <span className="text-primary">✓</span> Pay off your tax debt
+            </div>
+            <div>
+              <span className="text-primary">✓</span> Sell as-is (any condition)
+              <span className="mx-2">•</span>
+              <span className="text-primary">✓</span> You pick the date
+            </div>
+          </div>
         </div>
 
         {/* CTA */}
