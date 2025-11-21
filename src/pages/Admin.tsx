@@ -540,63 +540,79 @@ const Admin = () => {
                 page-break-after: always;
                 page-break-inside: avoid;
                 break-inside: avoid;
+                position: relative;
               }
               .offer-letter:last-child { page-break-after: auto; }
-              .header { text-align: center; margin-bottom: 30px; }
-              .header h1 { font-size: 36px; font-weight: bold; color: #1a1a1a; margin-bottom: 10px; }
-              .header p { font-size: 18px; color: #666; }
+              .header { text-align: center; margin-bottom: 25px; }
+              .header h1 { font-size: 32px; font-weight: bold; color: #1a1a1a; margin-bottom: 8px; }
+              .header p { font-size: 16px; color: #666; }
               .offer-box { 
                 background: rgba(var(--primary-rgb, 59, 130, 246), 0.1); 
                 border: 2px solid rgb(var(--primary-rgb, 59, 130, 246)); 
                 border-radius: 8px; 
-                padding: 30px; 
+                padding: 25px; 
                 text-align: center; 
-                margin-bottom: 30px; 
+                margin-bottom: 25px; 
               }
-              .offer-amount { font-size: 60px; font-weight: bold; color: rgb(var(--primary-rgb, 59, 130, 246)); margin-bottom: 10px; }
-              .offer-label { font-size: 18px; color: #666; margin-bottom: 5px; }
-              .offer-subtitle { font-size: 14px; color: #666; }
-              .offer-tagline { font-size: 24px; font-weight: 600; margin-top: 20px; color: #1a1a1a; }
-              .benefits { margin-bottom: 30px; }
-              .benefits h2 { font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #1a1a1a; }
+              .offer-amount { font-size: 52px; font-weight: bold; color: rgb(var(--primary-rgb, 59, 130, 246)); margin-bottom: 8px; }
+              .offer-label { font-size: 16px; color: #666; margin-bottom: 4px; }
+              .offer-subtitle { font-size: 13px; color: #666; }
+              .offer-tagline { font-size: 20px; font-weight: 600; margin-top: 15px; color: #1a1a1a; }
+              .benefits { margin-bottom: 25px; }
+              .benefits h2 { font-size: 20px; font-weight: bold; margin-bottom: 12px; color: #1a1a1a; }
               .benefits ul { list-style: none; }
-              .benefits li { font-size: 18px; margin-bottom: 10px; display: flex; align-items: start; }
+              .benefits li { font-size: 16px; margin-bottom: 8px; display: flex; align-items: start; }
               .benefits li::before { content: "✓"; color: rgb(var(--primary-rgb, 59, 130, 246)); margin-right: 10px; font-weight: bold; }
               .cta { 
                 background: rgba(var(--accent-rgb, 251, 191, 36), 0.2); 
                 border: 2px solid rgb(var(--accent-rgb, 251, 191, 36)); 
                 border-radius: 8px; 
-                padding: 30px; 
+                padding: 25px; 
                 text-align: center; 
-                margin-bottom: 30px; 
+                margin-bottom: 25px; 
               }
-              .cta h2 { font-size: 28px; font-weight: bold; margin-bottom: 15px; color: #1a1a1a; }
-              .cta .phone { font-size: 24px; margin-bottom: 10px; }
+              .cta h2 { font-size: 24px; font-weight: bold; margin-bottom: 12px; color: #1a1a1a; }
+              .cta .phone { font-size: 20px; margin-bottom: 8px; }
               .cta .phone strong { color: rgb(var(--primary-rgb, 59, 130, 246)); }
-              .cta p { font-size: 16px; color: #666; margin-top: 10px; }
-              .qr-section { margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd; }
-              .qr-section p { font-size: 14px; color: #666; margin-bottom: 10px; }
-              .qr-section img { max-width: 120px; height: auto; }
-              .footer { text-align: center; padding-top: 20px; border-top: 2px solid #ddd; }
-              .footer h3 { font-size: 28px; font-weight: bold; margin-bottom: 10px; color: #1a1a1a; }
-              .footer p { font-size: 16px; color: #666; margin-bottom: 5px; }
-              .footer .italic { font-style: italic; font-size: 14px; margin-top: 10px; }
+              .cta p { font-size: 14px; color: #666; margin-top: 8px; }
+              .qr-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #ddd; }
+              .qr-section p { font-size: 12px; color: #666; margin-bottom: 8px; }
+              .qr-section img { max-width: 100px; height: auto; }
+              .footer { text-align: center; padding-top: 15px; border-top: 2px solid #ddd; }
+              .footer h3 { font-size: 24px; font-weight: bold; margin-bottom: 8px; color: #1a1a1a; }
+              .footer p { font-size: 14px; color: #666; margin-bottom: 4px; }
+              .footer .italic { font-style: italic; font-size: 12px; margin-top: 8px; }
               .no-print { display: block; text-align: center; margin: 20px; }
               @media print {
-                @page { margin: 0.5in; }
-                body { padding: 0; margin: 0; }
-                .offer-letter { 
-                  margin: 0; 
-                  padding: 20px;
-                  border: none;
-                  box-shadow: none;
-                  page-break-after: always;
-                  page-break-inside: avoid;
-                  break-inside: avoid;
-                  max-height: 100vh;
+                @page { 
+                  margin: 0.4in; 
+                  size: letter;
                 }
-                .offer-letter:last-child { page-break-after: auto; }
-                .no-print { display: none; }
+                body { 
+                  padding: 0; 
+                  margin: 0;
+                  overflow: hidden;
+                }
+                .offer-letter { 
+                  margin: 0 !important; 
+                  padding: 30px !important;
+                  border: none !important;
+                  box-shadow: none !important;
+                  page-break-after: always !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  position: relative;
+                  overflow: hidden;
+                  height: auto;
+                  min-height: 0;
+                }
+                .offer-letter:last-child { page-break-after: auto !important; }
+                .no-print { display: none !important; }
+                .header { margin-bottom: 20px; }
+                .offer-box { padding: 20px; margin-bottom: 20px; }
+                .benefits { margin-bottom: 20px; }
+                .cta { padding: 20px; margin-bottom: 20px; }
+                .footer { padding-top: 15px; }
               }
             </style>
           </head>
