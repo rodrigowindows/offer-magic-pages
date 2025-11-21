@@ -53,11 +53,11 @@ export const CashOfferLetter = ({
         {/* Benefits */}
         <div className="space-y-1">
           <h2 className="text-base font-bold text-foreground">We Help You:</h2>
-          <div className="text-xs leading-tight space-y-0">
-            <p className="whitespace-nowrap">
+          <div className="text-xs leading-tight space-y-0" style={{ display: 'block' }}>
+            <p style={{ display: 'block', whiteSpace: 'nowrap', pageBreakInside: 'avoid' }}>
               <span className="text-primary">✓</span> Stop tax foreclosure <span className="mx-1">•</span> <span className="text-primary">✓</span> Pay off your tax debt
             </p>
-            <p className="whitespace-nowrap">
+            <p style={{ display: 'block', whiteSpace: 'nowrap', pageBreakInside: 'avoid' }}>
               <span className="text-primary">✓</span> Sell as-is (any condition) <span className="mx-1">•</span> <span className="text-primary">✓</span> You pick the date
             </p>
           </div>
