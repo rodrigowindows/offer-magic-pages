@@ -51,9 +51,9 @@ export const CashOfferLetter = ({
         </div>
 
         {/* Benefits */}
-        <div className="space-y-3">
-          <h2 className="text-xl font-bold text-foreground">We Help You:</h2>
-          <ul className="space-y-2 text-lg">
+        <div className="space-y-2">
+          <h2 className="text-lg font-bold text-foreground">We Help You:</h2>
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-base">
             <li className="flex items-start">
               <span className="text-primary mr-2">✓</span>
               <span>Stop tax foreclosure</span>
