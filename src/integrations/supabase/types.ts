@@ -70,6 +70,47 @@ export type Database = {
           },
         ]
       }
+      email_campaigns: {
+        Row: {
+          id: string
+          opened_at: string | null
+          opened_count: number
+          property_id: string
+          recipient_email: string
+          sent_at: string
+          subject: string
+          tracking_id: string
+        }
+        Insert: {
+          id?: string
+          opened_at?: string | null
+          opened_count?: number
+          property_id: string
+          recipient_email: string
+          sent_at?: string
+          subject: string
+          tracking_id?: string
+        }
+        Update: {
+          id?: string
+          opened_at?: string | null
+          opened_count?: number
+          property_id?: string
+          recipient_email?: string
+          sent_at?: string
+          subject?: string
+          tracking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
