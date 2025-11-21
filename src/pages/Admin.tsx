@@ -538,6 +538,8 @@ const Admin = () => {
                 background: #fffef9; 
                 border: 2px solid #ddd;
                 page-break-after: always;
+                page-break-inside: avoid;
+                break-inside: avoid;
               }
               .offer-letter:last-child { page-break-after: auto; }
               .header { text-align: center; margin-bottom: 30px; }
@@ -581,13 +583,19 @@ const Admin = () => {
               .footer .italic { font-style: italic; font-size: 14px; margin-top: 10px; }
               .no-print { display: block; text-align: center; margin: 20px; }
               @media print {
-                body { padding: 0; }
+                @page { margin: 0.5in; }
+                body { padding: 0; margin: 0; }
                 .offer-letter { 
                   margin: 0; 
-                  padding: 30px;
+                  padding: 20px;
                   border: none;
                   box-shadow: none;
+                  page-break-after: always;
+                  page-break-inside: avoid;
+                  break-inside: avoid;
+                  max-height: 100vh;
                 }
+                .offer-letter:last-child { page-break-after: auto; }
                 .no-print { display: none; }
               }
             </style>
