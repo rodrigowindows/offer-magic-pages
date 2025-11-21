@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, QrCode, Trash2, FileText, Mail } from "lucide-react";
+import { X, QrCode, Trash2, FileText, Mail, Sparkles } from "lucide-react";
 import { LeadStatusSelect } from "./LeadStatusSelect";
 import { LeadStatus } from "./LeadStatusBadge";
 import { useState } from "react";
@@ -12,6 +12,7 @@ interface BulkActionsBarProps {
   onGenerateQRCodes: () => void;
   onPrintOffers: () => void;
   onSendEmails: () => void;
+  onAISuggestions: () => void;
 }
 
 export const BulkActionsBar = ({
@@ -22,6 +23,7 @@ export const BulkActionsBar = ({
   onGenerateQRCodes,
   onPrintOffers,
   onSendEmails,
+  onAISuggestions,
 }: BulkActionsBarProps) => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
 
@@ -72,6 +74,16 @@ export const BulkActionsBar = ({
         >
           <FileText className="h-4 w-4" />
           Print Offers
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onAISuggestions}
+          className="gap-2"
+        >
+          <Sparkles className="h-4 w-4" />
+          AI Suggestions
         </Button>
 
         <Button

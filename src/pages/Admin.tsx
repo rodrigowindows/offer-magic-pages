@@ -37,6 +37,7 @@ import { CashOfferDialog } from "@/components/CashOfferDialog";
 import { AdminChatBot } from "@/components/AdminChatBot";
 import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/EmailCampaignStats";
+import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -118,6 +119,7 @@ const Admin = () => {
   const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
   const [selectedPropertyForOffer, setSelectedPropertyForOffer] = useState<Property | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isSuggestionsDialogOpen, setIsSuggestionsDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -676,6 +678,10 @@ const Admin = () => {
 
   const handleSendEmails = () => {
     setIsEmailDialogOpen(true);
+  };
+
+  const handleAISuggestions = () => {
+    setIsSuggestionsDialogOpen(true);
   };
 
   const filteredProperties = filterStatus === 'all' 
@@ -1304,6 +1310,13 @@ const Admin = () => {
             setSelectedProperties([]);
           }}
         />
+
+        <LeadSuggestionsDialog
+          open={isSuggestionsDialogOpen}
+          onOpenChange={setIsSuggestionsDialogOpen}
+          propertyIds={selectedProperties}
+          onRefresh={fetchProperties}
+        />
       </main>
       
       <BulkActionsBar
@@ -1314,6 +1327,7 @@ const Admin = () => {
         onGenerateQRCodes={handleGenerateQRCodes}
         onPrintOffers={handleBulkPrintOffers}
         onSendEmails={handleSendEmails}
+        onAISuggestions={handleAISuggestions}
       />
       
       <AdminChatBot />
