@@ -559,10 +559,9 @@ const Admin = () => {
               .offer-subtitle { font-size: 13px; color: #666; }
               .offer-tagline { font-size: 20px; font-weight: 600; margin-top: 15px; color: #1a1a1a; }
               .benefits { margin-bottom: 25px; }
-              .benefits h2 { font-size: 20px; font-weight: bold; margin-bottom: 12px; color: #1a1a1a; }
-              .benefits ul { list-style: none; }
-              .benefits li { font-size: 16px; margin-bottom: 8px; display: flex; align-items: start; }
-              .benefits li::before { content: "✓"; color: rgb(var(--primary-rgb, 59, 130, 246)); margin-right: 10px; font-weight: bold; }
+              .benefits h2 { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #1a1a1a; }
+              .benefits-grid { font-size: 12px; line-height: 1.4; }
+              .benefits-grid p { margin-bottom: 0; }
               .cta { 
                 background: rgba(var(--accent-rgb, 251, 191, 36), 0.2); 
                 border: 2px solid rgb(var(--accent-rgb, 251, 191, 36)); 
@@ -634,12 +633,10 @@ const Admin = () => {
 
                 <div class="benefits">
                   <h2>We Help You:</h2>
-                  <ul>
-                    <li>Stop tax foreclosure</li>
-                    <li>Pay off your tax debt</li>
-                    <li>Sell as-is (any condition)</li>
-                    <li>You pick the date</li>
-                  </ul>
+                  <div class="benefits-grid">
+                    <p style="white-space: nowrap;"><span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> Stop tax foreclosure <span style="margin: 0 4px;">•</span> <span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> Pay off your tax debt</p>
+                    <p style="white-space: nowrap;"><span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> Sell as-is (any condition) <span style="margin: 0 4px;">•</span> <span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> You pick the date</p>
+                  </div>
                 </div>
 
                 <div class="cta">
