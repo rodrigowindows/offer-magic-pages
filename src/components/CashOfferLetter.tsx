@@ -95,11 +95,11 @@ export const CashOfferLetter = ({
 
 
         {/* Footer */}
-        <div className="text-center space-y-2 pt-4 border-t-2 border-border">
+        <div className="text-center space-y-2 pt-4 border-t-2 border-border print:break-inside-avoid">
           <h3 className="text-2xl font-bold text-foreground">MyLocalInvest</h3>
           <p className="text-base text-muted-foreground">Miami locals since 2015</p>
           <p className="text-base text-muted-foreground">{email}</p>
-          <p className="text-sm italic text-muted-foreground pt-2">
+          <p className="text-sm italic text-muted-foreground pt-2 whitespace-nowrap">
             Zero commissions. Zero closing costs. 100% confidential.
           </p>
         </div>
