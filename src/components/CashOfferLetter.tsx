@@ -96,18 +96,18 @@ export const CashOfferLetter = ({
 
         {/* Footer */}
         <div 
-          className="text-center space-y-2 pt-4 border-t-2 border-border" 
+          className="text-center space-y-1 pt-3 border-t-2 border-border" 
           style={{ 
             pageBreakInside: 'avoid', 
             breakInside: 'avoid',
             display: 'block'
           }}
         >
-          <h3 className="text-2xl font-bold text-foreground">MyLocalInvest</h3>
-          <p className="text-base text-muted-foreground">Miami locals since 2015</p>
-          <p className="text-base text-muted-foreground">{email}</p>
+          <h3 className="text-xl font-bold text-foreground">MyLocalInvest</h3>
+          <p className="text-sm text-muted-foreground">Miami locals since 2015</p>
+          <p className="text-sm text-muted-foreground">{email}</p>
           <p 
-            className="text-sm italic text-muted-foreground pt-2" 
+            className="text-xs italic text-muted-foreground pt-1" 
             style={{ 
               whiteSpace: 'nowrap', 
               wordBreak: 'keep-all',
