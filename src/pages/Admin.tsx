@@ -35,6 +35,8 @@ import { PropertyFilters } from "@/components/PropertyFilters";
 import { BulkActionsBar } from "@/components/BulkActionsBar";
 import { CashOfferDialog } from "@/components/CashOfferDialog";
 import { AdminChatBot } from "@/components/AdminChatBot";
+import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
+import { EmailCampaignStats } from "@/components/EmailCampaignStats";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -115,6 +117,7 @@ const Admin = () => {
   const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all');
   const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
   const [selectedPropertyForOffer, setSelectedPropertyForOffer] = useState<Property | null>(null);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -671,6 +674,10 @@ const Admin = () => {
     });
   };
 
+  const handleSendEmails = () => {
+    setIsEmailDialogOpen(true);
+  };
+
   const filteredProperties = filterStatus === 'all' 
     ? properties 
     : properties.filter(p => p.lead_status === filterStatus);
@@ -703,6 +710,12 @@ const Admin = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <ABTestDashboard />
           </div>
+        </div>
+
+        {/* Email Campaign Stats Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-foreground mb-4">Email Campaigns</h2>
+          <EmailCampaignStats />
         </div>
 
         <PropertyFilters 
@@ -1281,6 +1294,16 @@ const Admin = () => {
           open={isOfferDialogOpen}
           onOpenChange={setIsOfferDialogOpen}
         />
+
+        <EmailCampaignDialog
+          properties={properties.filter(p => selectedProperties.includes(p.id))}
+          open={isEmailDialogOpen}
+          onOpenChange={setIsEmailDialogOpen}
+          onSuccess={() => {
+            fetchProperties();
+            setSelectedProperties([]);
+          }}
+        />
       </main>
       
       <BulkActionsBar
@@ -1290,6 +1313,7 @@ const Admin = () => {
         onBulkDelete={handleBulkDelete}
         onGenerateQRCodes={handleGenerateQRCodes}
         onPrintOffers={handleBulkPrintOffers}
+        onSendEmails={handleSendEmails}
       />
       
       <AdminChatBot />
