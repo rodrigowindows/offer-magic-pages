@@ -111,6 +111,42 @@ export type Database = {
           },
         ]
       }
+      email_settings: {
+        Row: {
+          created_at: string | null
+          from_email: string
+          from_name: string
+          id: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_user: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          from_email: string
+          from_name: string
+          id?: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port?: number
+          smtp_user: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          from_email?: string
+          from_name?: string
+          id?: string
+          smtp_host?: string
+          smtp_password?: string
+          smtp_port?: number
+          smtp_user?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
