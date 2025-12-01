@@ -73,8 +73,8 @@ export const CashOfferLetter = ({
             We'll send your official offer in writing — no pressure, no cost.
           </p>
           
-          {/* QR Code - Only visible in print */}
-          <div className="hidden print:block mt-4 pt-4 border-t border-border">
+          {/* QR Code */}
+          <div className="mt-4 pt-4 border-t border-border">
             <p className="text-sm text-muted-foreground mb-2">Scan to view your offer online:</p>
             <div className="flex justify-center">
               <QRCodeSVG value={offerUrl} size={120} level="H" />
