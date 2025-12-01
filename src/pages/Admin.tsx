@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -38,6 +38,7 @@ import { AdminChatBot } from "@/components/AdminChatBot";
 import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/EmailCampaignStats";
 import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
+import { EmailSettingsDialog } from "@/components/EmailSettingsDialog";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -120,6 +121,7 @@ const Admin = () => {
   const [selectedPropertyForOffer, setSelectedPropertyForOffer] = useState<Property | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isSuggestionsDialogOpen, setIsSuggestionsDialogOpen] = useState(false);
+  const [isEmailSettingsOpen, setIsEmailSettingsOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -700,6 +702,14 @@ const Admin = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">Property Management</h1>
           <div className="flex gap-2">
+            <Button 
+              onClick={() => setIsEmailSettingsOpen(true)} 
+              variant="outline" 
+              size="sm"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Email Settings
+            </Button>
             <NotificationsPanel />
             <Button onClick={handleLogout} variant="outline" size="sm">
               <LogOut className="w-4 h-4 mr-2" />
@@ -1305,10 +1315,16 @@ const Admin = () => {
           properties={properties.filter(p => selectedProperties.includes(p.id))}
           open={isEmailDialogOpen}
           onOpenChange={setIsEmailDialogOpen}
+          onOpenSettings={() => setIsEmailSettingsOpen(true)}
           onSuccess={() => {
             fetchProperties();
             setSelectedProperties([]);
           }}
+        />
+
+        <EmailSettingsDialog
+          open={isEmailSettingsOpen}
+          onOpenChange={setIsEmailSettingsOpen}
         />
 
         <LeadSuggestionsDialog

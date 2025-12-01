@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Loader2 } from "lucide-react";
+import { Mail, Loader2, Settings } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Property {
   id: string;
@@ -24,6 +24,7 @@ interface EmailCampaignDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export function EmailCampaignDialog({
@@ -31,9 +32,12 @@ export function EmailCampaignDialog({
   open,
   onOpenChange,
   onSuccess,
+  onOpenSettings,
 }: EmailCampaignDialogProps) {
   const { toast } = useToast();
   const [sending, setSending] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(true);
+  const [hasSettings, setHasSettings] = useState(false);
   const [formData, setFormData] = useState({
     recipientEmail: "",
     recipientName: "",
@@ -45,6 +49,45 @@ export function EmailCampaignDialog({
     fromEmail: "",
     fromName: "Property Investment Team",
   });
+
+  useEffect(() => {
+    if (open) {
+      loadEmailSettings();
+    }
+  }, [open]);
+
+  const loadEmailSettings = async () => {
+    try {
+      setLoadingSettings(true);
+      const { data, error } = await supabase
+        .from("email_settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setHasSettings(true);
+        setFormData(prev => ({
+          ...prev,
+          smtpHost: data.smtp_host,
+          smtpPort: data.smtp_port.toString(),
+          smtpUser: data.smtp_user,
+          smtpPassword: data.smtp_password,
+          fromEmail: data.from_email,
+          fromName: data.from_name,
+        }));
+      } else {
+        setHasSettings(false);
+      }
+    } catch (error) {
+      console.error("Error loading email settings:", error);
+      setHasSettings(false);
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
 
   const handleSend = async () => {
     if (!formData.recipientEmail || !formData.smtpPassword || !formData.fromEmail) {
@@ -127,6 +170,26 @@ export function EmailCampaignDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          {!hasSettings && !loadingSettings && (
+            <Alert>
+              <Settings className="h-4 w-4" />
+              <AlertDescription className="flex items-center justify-between">
+                <span>No email settings configured. Configure your SMTP settings first.</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenSettings?.();
+                  }}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="recipientEmail">Recipient Email *</Label>
             <Input
@@ -158,46 +221,24 @@ export function EmailCampaignDialog({
             />
           </div>
 
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">SMTP Configuration</h3>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fromEmail">From Email *</Label>
-                <Input
-                  id="fromEmail"
-                  type="email"
-                  placeholder="noreply@yourdomain.com"
-                  value={formData.fromEmail}
-                  onChange={(e) => setFormData({ ...formData, fromEmail: e.target.value })}
-                />
+          {hasSettings && (
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">Using configured email settings</span>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="fromName">From Name</Label>
-                <Input
-                  id="fromName"
-                  placeholder="Your Company"
-                  value={formData.fromName}
-                  onChange={(e) => setFormData({ ...formData, fromName: e.target.value })}
-                />
-              </div>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  onOpenSettings?.();
+                }}
+              >
+                Edit Settings
+              </Button>
             </div>
-
-            <div className="space-y-2 mt-4">
-              <Label htmlFor="smtpPassword">SMTP API Key / Password *</Label>
-              <Input
-                id="smtpPassword"
-                type="password"
-                placeholder="Your SMTP API key or password"
-                value={formData.smtpPassword}
-                onChange={(e) => setFormData({ ...formData, smtpPassword: e.target.value })}
-              />
-              <p className="text-xs text-muted-foreground">
-                This uses SMTP2GO API. Get your API key from smtp2go.com
-              </p>
-            </div>
-          </div>
+          )}
 
           <div className="bg-muted p-4 rounded-lg">
             <h4 className="font-medium mb-2">Properties to send:</h4>
@@ -214,7 +255,7 @@ export function EmailCampaignDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
               Cancel
             </Button>
-            <Button onClick={handleSend} disabled={sending}>
+            <Button onClick={handleSend} disabled={sending || !hasSettings || loadingSettings}>
               {sending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
