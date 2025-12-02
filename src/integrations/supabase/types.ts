@@ -70,6 +70,39 @@ export type Database = {
           },
         ]
       }
+      call_settings: {
+        Row: {
+          account_sid: string
+          auth_token: string
+          created_at: string | null
+          from_number: string
+          id: string
+          provider: string
+          updated_at: string | null
+          voice_url: string | null
+        }
+        Insert: {
+          account_sid: string
+          auth_token: string
+          created_at?: string | null
+          from_number: string
+          id?: string
+          provider?: string
+          updated_at?: string | null
+          voice_url?: string | null
+        }
+        Update: {
+          account_sid?: string
+          auth_token?: string
+          created_at?: string | null
+          from_number?: string
+          id?: string
+          provider?: string
+          updated_at?: string | null
+          voice_url?: string | null
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           id: string
@@ -368,6 +401,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sms_settings: {
+        Row: {
+          account_sid: string
+          auth_token: string
+          created_at: string | null
+          from_number: string
+          id: string
+          provider: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_sid: string
+          auth_token: string
+          created_at?: string | null
+          from_number: string
+          id?: string
+          provider?: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_sid?: string
+          auth_token?: string
+          created_at?: string | null
+          from_number?: string
+          id?: string
+          provider?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

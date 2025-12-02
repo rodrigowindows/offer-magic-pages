@@ -39,6 +39,9 @@ import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/EmailCampaignStats";
 import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
 import { EmailSettingsDialog } from "@/components/EmailSettingsDialog";
+import { SmsSettingsDialog } from "@/components/SmsSettingsDialog";
+import { CallSettingsDialog } from "@/components/CallSettingsDialog";
+import { MessageSquare, Phone } from "lucide-react";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -122,6 +125,8 @@ const Admin = () => {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isSuggestionsDialogOpen, setIsSuggestionsDialogOpen] = useState(false);
   const [isEmailSettingsOpen, setIsEmailSettingsOpen] = useState(false);
+  const [isSmsSettingsOpen, setIsSmsSettingsOpen] = useState(false);
+  const [isCallSettingsOpen, setIsCallSettingsOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -708,7 +713,23 @@ const Admin = () => {
               size="sm"
             >
               <Settings className="w-4 h-4 mr-2" />
-              Email Settings
+              Email
+            </Button>
+            <Button 
+              onClick={() => setIsSmsSettingsOpen(true)} 
+              variant="outline" 
+              size="sm"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              SMS
+            </Button>
+            <Button 
+              onClick={() => setIsCallSettingsOpen(true)} 
+              variant="outline" 
+              size="sm"
+            >
+              <Phone className="w-4 h-4 mr-2" />
+              Call
             </Button>
             <NotificationsPanel />
             <Button onClick={handleLogout} variant="outline" size="sm">
@@ -1325,6 +1346,16 @@ const Admin = () => {
         <EmailSettingsDialog
           open={isEmailSettingsOpen}
           onOpenChange={setIsEmailSettingsOpen}
+        />
+
+        <SmsSettingsDialog
+          open={isSmsSettingsOpen}
+          onOpenChange={setIsSmsSettingsOpen}
+        />
+
+        <CallSettingsDialog
+          open={isCallSettingsOpen}
+          onOpenChange={setIsCallSettingsOpen}
         />
 
         <LeadSuggestionsDialog
