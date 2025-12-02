@@ -10,13 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -31,7 +24,7 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
   const [fetching, setFetching] = useState(true);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    provider: "twilio",
+    provider: "",
     accountSid: "",
     authToken: "",
     fromNumber: "",
@@ -74,8 +67,8 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
   };
 
   const handleSave = async () => {
-    if (!formData.accountSid || !formData.authToken || !formData.fromNumber) {
-      toast.error("Please fill in all required fields");
+    if (!formData.provider || !formData.accountSid || !formData.authToken || !formData.fromNumber) {
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
@@ -136,29 +129,22 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
         ) : (
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="provider">Provider *</Label>
-              <Select
+              <Label htmlFor="provider">Provider / Vendor *</Label>
+              <Input
+                id="provider"
+                placeholder="Ex: Twilio, Vonage, Plivo, etc."
                 value={formData.provider}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, provider: value })
+                onChange={(e) =>
+                  setFormData({ ...formData, provider: e.target.value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="twilio">Twilio</SelectItem>
-                  <SelectItem value="vonage">Vonage (Nexmo)</SelectItem>
-                  <SelectItem value="plivo">Plivo</SelectItem>
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="accountSid">Account SID *</Label>
+              <Label htmlFor="accountSid">Account SID / API ID *</Label>
               <Input
                 id="accountSid"
-                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                placeholder="Your account identifier"
                 value={formData.accountSid}
                 onChange={(e) =>
                   setFormData({ ...formData, accountSid: e.target.value })
@@ -171,7 +157,7 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
               <Input
                 id="authToken"
                 type="password"
-                placeholder="Your auth token"
+                placeholder="Your auth token or API key"
                 value={formData.authToken}
                 onChange={(e) =>
                   setFormData({ ...formData, authToken: e.target.value })
@@ -192,39 +178,22 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="voiceUrl">Voice URL (TwiML/XML)</Label>
+              <Label htmlFor="voiceUrl">Voice URL (Webhook)</Label>
               <Input
                 id="voiceUrl"
-                placeholder="https://your-domain.com/voice.xml"
+                placeholder="https://your-domain.com/voice"
                 value={formData.voiceUrl}
                 onChange={(e) =>
                   setFormData({ ...formData, voiceUrl: e.target.value })
                 }
               />
               <p className="text-xs text-muted-foreground">
-                Optional: URL that returns TwiML/XML for call instructions
+                Opcional: URL de webhook para instruções de chamada
               </p>
             </div>
 
             <p className="text-xs text-muted-foreground mt-2">
-              Need a voice provider? Try{" "}
-              <a
-                href="https://twilio.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Twilio
-              </a>{" "}
-              or{" "}
-              <a
-                href="https://plivo.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Plivo
-              </a>
+              Configure as credenciais da API do seu provedor de chamadas
             </p>
           </div>
         )}
