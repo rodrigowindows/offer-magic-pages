@@ -27,6 +27,13 @@ interface EmailCampaignDialogProps {
   onOpenSettings?: () => void;
 }
 
+interface EmailSettings {
+  api_endpoint: string;
+  api_key: string | null;
+  http_method: string;
+  headers: Record<string, string>;
+}
+
 export function EmailCampaignDialog({
   properties,
   open,
@@ -38,16 +45,11 @@ export function EmailCampaignDialog({
   const [sending, setSending] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [hasSettings, setHasSettings] = useState(false);
+  const [emailSettings, setEmailSettings] = useState<EmailSettings | null>(null);
   const [formData, setFormData] = useState({
     recipientEmail: "",
     recipientName: "",
     subject: "Cash Offer for Your Property",
-    smtpHost: "",
-    smtpPort: "587",
-    smtpUser: "",
-    smtpPassword: "",
-    fromEmail: "",
-    fromName: "Property Investment Team",
   });
 
   useEffect(() => {
@@ -69,31 +71,30 @@ export function EmailCampaignDialog({
 
       if (data) {
         setHasSettings(true);
-        setFormData(prev => ({
-          ...prev,
-          smtpHost: data.smtp_host,
-          smtpPort: data.smtp_port.toString(),
-          smtpUser: data.smtp_user,
-          smtpPassword: data.smtp_password,
-          fromEmail: data.from_email,
-          fromName: data.from_name,
-        }));
+        setEmailSettings({
+          api_endpoint: data.api_endpoint,
+          api_key: data.api_key,
+          http_method: data.http_method,
+          headers: (data.headers as Record<string, string>) || {},
+        });
       } else {
         setHasSettings(false);
+        setEmailSettings(null);
       }
     } catch (error) {
       console.error("Error loading email settings:", error);
       setHasSettings(false);
+      setEmailSettings(null);
     } finally {
       setLoadingSettings(false);
     }
   };
 
   const handleSend = async () => {
-    if (!formData.recipientEmail || !formData.smtpPassword || !formData.fromEmail) {
+    if (!formData.recipientEmail || !emailSettings) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
+        title: "Informação Faltando",
+        description: "Preencha todos os campos obrigatórios e configure o servidor de email",
         variant: "destructive",
       });
       return;
@@ -107,26 +108,53 @@ export function EmailCampaignDialog({
 
       for (const property of properties) {
         try {
-          const { data, error } = await supabase.functions.invoke("send-property-email", {
-            body: {
+          // Prepare headers
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+            ...emailSettings.headers,
+          };
+          
+          if (emailSettings.api_key) {
+            headers["Authorization"] = `Bearer ${emailSettings.api_key}`;
+          }
+
+          // Call the user's REST API directly
+          const response = await fetch(emailSettings.api_endpoint, {
+            method: emailSettings.http_method,
+            headers,
+            body: JSON.stringify({
               propertyId: property.id,
               recipientEmail: formData.recipientEmail,
               recipientName: formData.recipientName || property.owner_name || "Property Owner",
               subject: formData.subject,
-              smtpHost: formData.smtpHost,
-              smtpPort: parseInt(formData.smtpPort),
-              smtpUser: formData.smtpUser,
-              smtpPassword: formData.smtpPassword,
-              fromEmail: formData.fromEmail,
-              fromName: formData.fromName,
-            },
+              property: {
+                address: property.address,
+                city: property.city,
+                state: property.state,
+                zip_code: property.zip_code,
+                cash_offer_amount: property.cash_offer_amount,
+                owner_name: property.owner_name,
+              },
+            }),
           });
 
-          if (error) {
-            console.error("Error sending email for property:", property.id, error);
+          if (!response.ok) {
+            console.error("Error sending email for property:", property.id);
             failCount++;
           } else {
-            console.log("Email sent successfully:", data);
+            // Record campaign in database
+            await supabase.from("email_campaigns").insert({
+              property_id: property.id,
+              recipient_email: formData.recipientEmail,
+              subject: formData.subject,
+            });
+            
+            // Mark property as email sent
+            await supabase
+              .from("properties")
+              .update({ email_sent: true })
+              .eq("id", property.id);
+              
             successCount++;
           }
         } catch (err) {
@@ -137,21 +165,21 @@ export function EmailCampaignDialog({
 
       if (successCount > 0) {
         toast({
-          title: "Emails Sent",
-          description: `Successfully sent ${successCount} email${successCount > 1 ? "s" : ""}${
-            failCount > 0 ? `, ${failCount} failed` : ""
+          title: "Emails Enviados",
+          description: `${successCount} email${successCount > 1 ? "s" : ""} enviado${successCount > 1 ? "s" : ""} com sucesso${
+            failCount > 0 ? `, ${failCount} falhou` : ""
           }`,
         });
         onSuccess?.();
         onOpenChange(false);
       } else {
-        throw new Error("All emails failed to send");
+        throw new Error("Todos os emails falharam");
       }
     } catch (error: any) {
       console.error("Email sending error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to send emails",
+        title: "Erro",
+        description: error.message || "Falha ao enviar emails",
         variant: "destructive",
       });
     } finally {
@@ -165,7 +193,7 @@ export function EmailCampaignDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5" />
-            Send Email Campaign ({properties.length} {properties.length === 1 ? "property" : "properties"})
+            Enviar Campanha de Email ({properties.length} {properties.length === 1 ? "propriedade" : "propriedades"})
           </DialogTitle>
         </DialogHeader>
 
@@ -174,7 +202,7 @@ export function EmailCampaignDialog({
             <Alert>
               <Settings className="h-4 w-4" />
               <AlertDescription className="flex items-center justify-between">
-                <span>No email settings configured. Configure your SMTP settings first.</span>
+                <span>Nenhuma configuração de email. Configure seu servidor primeiro.</span>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -184,48 +212,53 @@ export function EmailCampaignDialog({
                   }}
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                  Configurar
                 </Button>
               </AlertDescription>
             </Alert>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="recipientEmail">Recipient Email *</Label>
+            <Label htmlFor="recipientEmail">Email do Destinatário *</Label>
             <Input
               id="recipientEmail"
               type="email"
-              placeholder="owner@example.com"
+              placeholder="proprietario@exemplo.com"
               value={formData.recipientEmail}
               onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="recipientName">Recipient Name</Label>
+            <Label htmlFor="recipientName">Nome do Destinatário</Label>
             <Input
               id="recipientName"
-              placeholder="John Doe"
+              placeholder="João Silva"
               value={formData.recipientName}
               onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subject">Email Subject *</Label>
+            <Label htmlFor="subject">Assunto do Email *</Label>
             <Input
               id="subject"
-              placeholder="Cash Offer for Your Property"
+              placeholder="Oferta para sua propriedade"
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
             />
           </div>
 
-          {hasSettings && (
+          {hasSettings && emailSettings && (
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-              <div className="flex items-center gap-2">
-                <Settings className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm">Using configured email settings</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">Servidor configurado</span>
+                </div>
+                <span className="text-xs text-muted-foreground truncate max-w-[300px]">
+                  {emailSettings.api_endpoint}
+                </span>
               </div>
               <Button 
                 variant="ghost" 
@@ -235,13 +268,13 @@ export function EmailCampaignDialog({
                   onOpenSettings?.();
                 }}
               >
-                Edit Settings
+                Editar
               </Button>
             </div>
           )}
 
           <div className="bg-muted p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Properties to send:</h4>
+            <h4 className="font-medium mb-2">Propriedades a enviar:</h4>
             <ul className="text-sm space-y-1">
               {properties.map((prop) => (
                 <li key={prop.id} className="text-muted-foreground">
@@ -253,18 +286,18 @@ export function EmailCampaignDialog({
 
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-              Cancel
+              Cancelar
             </Button>
             <Button onClick={handleSend} disabled={sending || !hasSettings || loadingSettings}>
               {sending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
+                  Enviando...
                 </>
               ) : (
                 <>
                   <Mail className="mr-2 h-4 w-4" />
-                  Send Email{properties.length > 1 ? "s" : ""}
+                  Enviar Email{properties.length > 1 ? "s" : ""}
                 </>
               )}
             </Button>

@@ -10,6 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -24,11 +32,10 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
   const [fetching, setFetching] = useState(true);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    provider: "",
-    accountSid: "",
-    authToken: "",
-    fromNumber: "",
-    voiceUrl: "",
+    apiEndpoint: "",
+    apiKey: "",
+    httpMethod: "POST",
+    headers: "",
   });
 
   useEffect(() => {
@@ -51,11 +58,10 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
       if (data) {
         setSettingsId(data.id);
         setFormData({
-          provider: data.provider,
-          accountSid: data.account_sid,
-          authToken: data.auth_token,
-          fromNumber: data.from_number,
-          voiceUrl: data.voice_url || "",
+          apiEndpoint: data.api_endpoint,
+          apiKey: data.api_key || "",
+          httpMethod: data.http_method,
+          headers: data.headers ? JSON.stringify(data.headers, null, 2) : "",
         });
       }
     } catch (error: any) {
@@ -67,20 +73,29 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
   };
 
   const handleSave = async () => {
-    if (!formData.provider || !formData.accountSid || !formData.authToken || !formData.fromNumber) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (!formData.apiEndpoint) {
+      toast.error("API Endpoint é obrigatório");
       return;
+    }
+
+    let parsedHeaders = {};
+    if (formData.headers.trim()) {
+      try {
+        parsedHeaders = JSON.parse(formData.headers);
+      } catch {
+        toast.error("Headers inválidos. Use formato JSON válido.");
+        return;
+      }
     }
 
     try {
       setLoading(true);
 
       const callData = {
-        provider: formData.provider,
-        account_sid: formData.accountSid,
-        auth_token: formData.authToken,
-        from_number: formData.fromNumber,
-        voice_url: formData.voiceUrl || null,
+        api_endpoint: formData.apiEndpoint,
+        api_key: formData.apiKey || null,
+        http_method: formData.httpMethod,
+        headers: parsedHeaders,
       };
 
       if (settingsId) {
@@ -90,7 +105,7 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
           .eq("id", settingsId);
 
         if (error) throw error;
-        toast.success("Call settings updated successfully!");
+        toast.success("Configurações de chamada atualizadas!");
       } else {
         const { data, error } = await supabase
           .from("call_settings")
@@ -100,13 +115,13 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
 
         if (error) throw error;
         setSettingsId(data.id);
-        toast.success("Call settings saved successfully!");
+        toast.success("Configurações de chamada salvas!");
       }
 
       onOpenChange(false);
     } catch (error: any) {
       console.error("Error saving Call settings:", error);
-      toast.error("Failed to save Call settings");
+      toast.error("Falha ao salvar configurações");
     } finally {
       setLoading(false);
     }
@@ -116,9 +131,9 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Call Configuration</DialogTitle>
+          <DialogTitle>Configuração de Chamadas</DialogTitle>
           <DialogDescription>
-            Configure your voice call provider settings for making automated calls
+            Configure o endpoint REST do seu servidor para fazer chamadas
           </DialogDescription>
         </DialogHeader>
 
@@ -129,82 +144,74 @@ export function CallSettingsDialog({ open, onOpenChange }: CallSettingsDialogPro
         ) : (
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="provider">Provider / Vendor *</Label>
+              <Label htmlFor="apiEndpoint">API Endpoint *</Label>
               <Input
-                id="provider"
-                placeholder="Ex: Twilio, Vonage, Plivo, etc."
-                value={formData.provider}
+                id="apiEndpoint"
+                placeholder="https://seu-servidor.com/api/make-call"
+                value={formData.apiEndpoint}
                 onChange={(e) =>
-                  setFormData({ ...formData, provider: e.target.value })
+                  setFormData({ ...formData, apiEndpoint: e.target.value })
                 }
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="accountSid">Account SID / API ID *</Label>
-              <Input
-                id="accountSid"
-                placeholder="Your account identifier"
-                value={formData.accountSid}
-                onChange={(e) =>
-                  setFormData({ ...formData, accountSid: e.target.value })
+              <Label htmlFor="httpMethod">Método HTTP</Label>
+              <Select
+                value={formData.httpMethod}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, httpMethod: value })
                 }
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="authToken">Auth Token / API Key *</Label>
+              <Label htmlFor="apiKey">API Key (opcional)</Label>
               <Input
-                id="authToken"
+                id="apiKey"
                 type="password"
-                placeholder="Your auth token or API key"
-                value={formData.authToken}
+                placeholder="Sua chave de API"
+                value={formData.apiKey}
                 onChange={(e) =>
-                  setFormData({ ...formData, authToken: e.target.value })
+                  setFormData({ ...formData, apiKey: e.target.value })
                 }
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="fromNumber">From Number *</Label>
-              <Input
-                id="fromNumber"
-                placeholder="+1234567890"
-                value={formData.fromNumber}
+              <Label htmlFor="headers">Headers Adicionais (JSON)</Label>
+              <Textarea
+                id="headers"
+                placeholder='{"Authorization": "Bearer token", "X-Custom": "value"}'
+                value={formData.headers}
                 onChange={(e) =>
-                  setFormData({ ...formData, fromNumber: e.target.value })
+                  setFormData({ ...formData, headers: e.target.value })
                 }
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="voiceUrl">Voice URL (Webhook)</Label>
-              <Input
-                id="voiceUrl"
-                placeholder="https://your-domain.com/voice"
-                value={formData.voiceUrl}
-                onChange={(e) =>
-                  setFormData({ ...formData, voiceUrl: e.target.value })
-                }
+                rows={3}
               />
               <p className="text-xs text-muted-foreground">
-                Opcional: URL de webhook para instruções de chamada
+                Headers extras para a requisição em formato JSON
               </p>
             </div>
-
-            <p className="text-xs text-muted-foreground mt-2">
-              Configure as credenciais da API do seu provedor de chamadas
-            </p>
           </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleSave} disabled={loading || fetching}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Settings
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>

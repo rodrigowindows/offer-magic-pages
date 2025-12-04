@@ -10,6 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -24,10 +32,10 @@ export function SmsSettingsDialog({ open, onOpenChange }: SmsSettingsDialogProps
   const [fetching, setFetching] = useState(true);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    provider: "",
-    accountSid: "",
-    authToken: "",
-    fromNumber: "",
+    apiEndpoint: "",
+    apiKey: "",
+    httpMethod: "POST",
+    headers: "",
   });
 
   useEffect(() => {
@@ -50,10 +58,10 @@ export function SmsSettingsDialog({ open, onOpenChange }: SmsSettingsDialogProps
       if (data) {
         setSettingsId(data.id);
         setFormData({
-          provider: data.provider,
-          accountSid: data.account_sid,
-          authToken: data.auth_token,
-          fromNumber: data.from_number,
+          apiEndpoint: data.api_endpoint,
+          apiKey: data.api_key || "",
+          httpMethod: data.http_method,
+          headers: data.headers ? JSON.stringify(data.headers, null, 2) : "",
         });
       }
     } catch (error: any) {
@@ -65,19 +73,29 @@ export function SmsSettingsDialog({ open, onOpenChange }: SmsSettingsDialogProps
   };
 
   const handleSave = async () => {
-    if (!formData.provider || !formData.accountSid || !formData.authToken || !formData.fromNumber) {
-      toast.error("Preencha todos os campos obrigatórios");
+    if (!formData.apiEndpoint) {
+      toast.error("API Endpoint é obrigatório");
       return;
+    }
+
+    let parsedHeaders = {};
+    if (formData.headers.trim()) {
+      try {
+        parsedHeaders = JSON.parse(formData.headers);
+      } catch {
+        toast.error("Headers inválidos. Use formato JSON válido.");
+        return;
+      }
     }
 
     try {
       setLoading(true);
 
       const smsData = {
-        provider: formData.provider,
-        account_sid: formData.accountSid,
-        auth_token: formData.authToken,
-        from_number: formData.fromNumber,
+        api_endpoint: formData.apiEndpoint,
+        api_key: formData.apiKey || null,
+        http_method: formData.httpMethod,
+        headers: parsedHeaders,
       };
 
       if (settingsId) {
@@ -87,7 +105,7 @@ export function SmsSettingsDialog({ open, onOpenChange }: SmsSettingsDialogProps
           .eq("id", settingsId);
 
         if (error) throw error;
-        toast.success("SMS settings updated successfully!");
+        toast.success("Configurações de SMS atualizadas!");
       } else {
         const { data, error } = await supabase
           .from("sms_settings")
@@ -97,13 +115,13 @@ export function SmsSettingsDialog({ open, onOpenChange }: SmsSettingsDialogProps
 
         if (error) throw error;
         setSettingsId(data.id);
-        toast.success("SMS settings saved successfully!");
+        toast.success("Configurações de SMS salvas!");
       }
 
       onOpenChange(false);
     } catch (error: any) {
       console.error("Error saving SMS settings:", error);
-      toast.error("Failed to save SMS settings");
+      toast.error("Falha ao salvar configurações");
     } finally {
       setLoading(false);
     }
@@ -113,9 +131,9 @@ export function SmsSettingsDialog({ open, onOpenChange }: SmsSettingsDialogProps
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>SMS Configuration</DialogTitle>
+          <DialogTitle>Configuração de SMS</DialogTitle>
           <DialogDescription>
-            Configure your SMS provider settings for sending text messages
+            Configure o endpoint REST do seu servidor para envio de SMS
           </DialogDescription>
         </DialogHeader>
 
@@ -126,67 +144,74 @@ export function SmsSettingsDialog({ open, onOpenChange }: SmsSettingsDialogProps
         ) : (
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="provider">Provider / Vendor *</Label>
+              <Label htmlFor="apiEndpoint">API Endpoint *</Label>
               <Input
-                id="provider"
-                placeholder="Ex: Twilio, Vonage, MessageBird, etc."
-                value={formData.provider}
+                id="apiEndpoint"
+                placeholder="https://seu-servidor.com/api/send-sms"
+                value={formData.apiEndpoint}
                 onChange={(e) =>
-                  setFormData({ ...formData, provider: e.target.value })
+                  setFormData({ ...formData, apiEndpoint: e.target.value })
                 }
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="accountSid">Account SID / API ID *</Label>
-              <Input
-                id="accountSid"
-                placeholder="Your account identifier"
-                value={formData.accountSid}
-                onChange={(e) =>
-                  setFormData({ ...formData, accountSid: e.target.value })
+              <Label htmlFor="httpMethod">Método HTTP</Label>
+              <Select
+                value={formData.httpMethod}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, httpMethod: value })
                 }
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="authToken">Auth Token / API Key *</Label>
+              <Label htmlFor="apiKey">API Key (opcional)</Label>
               <Input
-                id="authToken"
+                id="apiKey"
                 type="password"
-                placeholder="Your auth token or API key"
-                value={formData.authToken}
+                placeholder="Sua chave de API"
+                value={formData.apiKey}
                 onChange={(e) =>
-                  setFormData({ ...formData, authToken: e.target.value })
+                  setFormData({ ...formData, apiKey: e.target.value })
                 }
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="fromNumber">From Number *</Label>
-              <Input
-                id="fromNumber"
-                placeholder="+1234567890"
-                value={formData.fromNumber}
+              <Label htmlFor="headers">Headers Adicionais (JSON)</Label>
+              <Textarea
+                id="headers"
+                placeholder='{"Authorization": "Bearer token", "X-Custom": "value"}'
+                value={formData.headers}
                 onChange={(e) =>
-                  setFormData({ ...formData, fromNumber: e.target.value })
+                  setFormData({ ...formData, headers: e.target.value })
                 }
+                rows={3}
               />
+              <p className="text-xs text-muted-foreground">
+                Headers extras para a requisição em formato JSON
+              </p>
             </div>
-
-            <p className="text-xs text-muted-foreground mt-2">
-              Configure as credenciais da API do seu provedor de SMS
-            </p>
           </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleSave} disabled={loading || fetching}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Settings
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>
