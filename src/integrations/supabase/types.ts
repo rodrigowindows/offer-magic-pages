@@ -72,34 +72,31 @@ export type Database = {
       }
       call_settings: {
         Row: {
-          account_sid: string
-          auth_token: string
+          api_endpoint: string
+          api_key: string | null
           created_at: string | null
-          from_number: string
+          headers: Json | null
+          http_method: string
           id: string
-          provider: string
           updated_at: string | null
-          voice_url: string | null
         }
         Insert: {
-          account_sid: string
-          auth_token: string
+          api_endpoint: string
+          api_key?: string | null
           created_at?: string | null
-          from_number: string
+          headers?: Json | null
+          http_method?: string
           id?: string
-          provider?: string
           updated_at?: string | null
-          voice_url?: string | null
         }
         Update: {
-          account_sid?: string
-          auth_token?: string
+          api_endpoint?: string
+          api_key?: string | null
           created_at?: string | null
-          from_number?: string
+          headers?: Json | null
+          http_method?: string
           id?: string
-          provider?: string
           updated_at?: string | null
-          voice_url?: string | null
         }
         Relationships: []
       }
@@ -146,36 +143,30 @@ export type Database = {
       }
       email_settings: {
         Row: {
+          api_endpoint: string
+          api_key: string | null
           created_at: string | null
-          from_email: string
-          from_name: string
+          headers: Json | null
+          http_method: string
           id: string
-          smtp_host: string
-          smtp_password: string
-          smtp_port: number
-          smtp_user: string
           updated_at: string | null
         }
         Insert: {
+          api_endpoint: string
+          api_key?: string | null
           created_at?: string | null
-          from_email: string
-          from_name: string
+          headers?: Json | null
+          http_method?: string
           id?: string
-          smtp_host: string
-          smtp_password: string
-          smtp_port?: number
-          smtp_user: string
           updated_at?: string | null
         }
         Update: {
+          api_endpoint?: string
+          api_key?: string | null
           created_at?: string | null
-          from_email?: string
-          from_name?: string
+          headers?: Json | null
+          http_method?: string
           id?: string
-          smtp_host?: string
-          smtp_password?: string
-          smtp_port?: number
-          smtp_user?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -404,30 +395,30 @@ export type Database = {
       }
       sms_settings: {
         Row: {
-          account_sid: string
-          auth_token: string
+          api_endpoint: string
+          api_key: string | null
           created_at: string | null
-          from_number: string
+          headers: Json | null
+          http_method: string
           id: string
-          provider: string
           updated_at: string | null
         }
         Insert: {
-          account_sid: string
-          auth_token: string
+          api_endpoint: string
+          api_key?: string | null
           created_at?: string | null
-          from_number: string
+          headers?: Json | null
+          http_method?: string
           id?: string
-          provider?: string
           updated_at?: string | null
         }
         Update: {
-          account_sid?: string
-          auth_token?: string
+          api_endpoint?: string
+          api_key?: string | null
           created_at?: string | null
-          from_number?: string
+          headers?: Json | null
+          http_method?: string
           id?: string
-          provider?: string
           updated_at?: string | null
         }
         Relationships: []

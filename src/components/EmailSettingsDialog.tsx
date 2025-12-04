@@ -10,6 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -24,12 +32,10 @@ export function EmailSettingsDialog({ open, onOpenChange }: EmailSettingsDialogP
   const [fetching, setFetching] = useState(true);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    smtpHost: "",
-    smtpPort: "587",
-    smtpUser: "",
-    smtpPassword: "",
-    fromEmail: "",
-    fromName: "",
+    apiEndpoint: "",
+    apiKey: "",
+    httpMethod: "POST",
+    headers: "",
   });
 
   useEffect(() => {
@@ -52,12 +58,10 @@ export function EmailSettingsDialog({ open, onOpenChange }: EmailSettingsDialogP
       if (data) {
         setSettingsId(data.id);
         setFormData({
-          smtpHost: data.smtp_host,
-          smtpPort: data.smtp_port.toString(),
-          smtpUser: data.smtp_user,
-          smtpPassword: data.smtp_password,
-          fromEmail: data.from_email,
-          fromName: data.from_name,
+          apiEndpoint: data.api_endpoint,
+          apiKey: data.api_key || "",
+          httpMethod: data.http_method,
+          headers: data.headers ? JSON.stringify(data.headers, null, 2) : "",
         });
       }
     } catch (error: any) {
@@ -69,35 +73,40 @@ export function EmailSettingsDialog({ open, onOpenChange }: EmailSettingsDialogP
   };
 
   const handleSave = async () => {
-    if (!formData.smtpHost || !formData.smtpUser || !formData.smtpPassword || 
-        !formData.fromEmail || !formData.fromName) {
-      toast.error("Please fill in all required fields");
+    if (!formData.apiEndpoint) {
+      toast.error("API Endpoint é obrigatório");
       return;
+    }
+
+    let parsedHeaders = {};
+    if (formData.headers.trim()) {
+      try {
+        parsedHeaders = JSON.parse(formData.headers);
+      } catch {
+        toast.error("Headers inválidos. Use formato JSON válido.");
+        return;
+      }
     }
 
     try {
       setLoading(true);
 
       const emailData = {
-        smtp_host: formData.smtpHost,
-        smtp_port: parseInt(formData.smtpPort),
-        smtp_user: formData.smtpUser,
-        smtp_password: formData.smtpPassword,
-        from_email: formData.fromEmail,
-        from_name: formData.fromName,
+        api_endpoint: formData.apiEndpoint,
+        api_key: formData.apiKey || null,
+        http_method: formData.httpMethod,
+        headers: parsedHeaders,
       };
 
       if (settingsId) {
-        // Update existing settings
         const { error } = await supabase
           .from("email_settings")
           .update(emailData)
           .eq("id", settingsId);
 
         if (error) throw error;
-        toast.success("Email settings updated successfully!");
+        toast.success("Configurações de email atualizadas!");
       } else {
-        // Create new settings
         const { data, error } = await supabase
           .from("email_settings")
           .insert(emailData)
@@ -106,13 +115,13 @@ export function EmailSettingsDialog({ open, onOpenChange }: EmailSettingsDialogP
 
         if (error) throw error;
         setSettingsId(data.id);
-        toast.success("Email settings saved successfully!");
+        toast.success("Configurações de email salvas!");
       }
 
       onOpenChange(false);
     } catch (error: any) {
       console.error("Error saving email settings:", error);
-      toast.error("Failed to save email settings");
+      toast.error("Falha ao salvar configurações");
     } finally {
       setLoading(false);
     }
@@ -122,9 +131,9 @@ export function EmailSettingsDialog({ open, onOpenChange }: EmailSettingsDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Email Configuration</DialogTitle>
+          <DialogTitle>Configuração de Email</DialogTitle>
           <DialogDescription>
-            Configure your SMTP settings for sending email campaigns
+            Configure o endpoint REST do seu servidor para envio de emails
           </DialogDescription>
         </DialogHeader>
 
@@ -135,110 +144,74 @@ export function EmailSettingsDialog({ open, onOpenChange }: EmailSettingsDialogP
         ) : (
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="smtpHost">SMTP Host *</Label>
+              <Label htmlFor="apiEndpoint">API Endpoint *</Label>
               <Input
-                id="smtpHost"
-                placeholder="mail.smtp2go.com"
-                value={formData.smtpHost}
+                id="apiEndpoint"
+                placeholder="https://seu-servidor.com/api/send-email"
+                value={formData.apiEndpoint}
                 onChange={(e) =>
-                  setFormData({ ...formData, smtpHost: e.target.value })
+                  setFormData({ ...formData, apiEndpoint: e.target.value })
                 }
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="smtpPort">SMTP Port *</Label>
-              <Input
-                id="smtpPort"
-                type="number"
-                placeholder="587"
-                value={formData.smtpPort}
-                onChange={(e) =>
-                  setFormData({ ...formData, smtpPort: e.target.value })
+              <Label htmlFor="httpMethod">Método HTTP</Label>
+              <Select
+                value={formData.httpMethod}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, httpMethod: value })
                 }
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="POST">POST</SelectItem>
+                  <SelectItem value="PUT">PUT</SelectItem>
+                  <SelectItem value="PATCH">PATCH</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="smtpUser">SMTP User *</Label>
+              <Label htmlFor="apiKey">API Key (opcional)</Label>
               <Input
-                id="smtpUser"
-                placeholder="your-username"
-                value={formData.smtpUser}
-                onChange={(e) =>
-                  setFormData({ ...formData, smtpUser: e.target.value })
-                }
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="smtpPassword">SMTP Password / API Key *</Label>
-              <Input
-                id="smtpPassword"
+                id="apiKey"
                 type="password"
-                placeholder="your-api-key"
-                value={formData.smtpPassword}
+                placeholder="Sua chave de API"
+                value={formData.apiKey}
                 onChange={(e) =>
-                  setFormData({ ...formData, smtpPassword: e.target.value })
+                  setFormData({ ...formData, apiKey: e.target.value })
                 }
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="fromEmail">From Email *</Label>
-              <Input
-                id="fromEmail"
-                type="email"
-                placeholder="noreply@yourdomain.com"
-                value={formData.fromEmail}
+              <Label htmlFor="headers">Headers Adicionais (JSON)</Label>
+              <Textarea
+                id="headers"
+                placeholder='{"Authorization": "Bearer token", "X-Custom": "value"}'
+                value={formData.headers}
                 onChange={(e) =>
-                  setFormData({ ...formData, fromEmail: e.target.value })
+                  setFormData({ ...formData, headers: e.target.value })
                 }
+                rows={3}
               />
+              <p className="text-xs text-muted-foreground">
+                Headers extras para a requisição em formato JSON
+              </p>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="fromName">From Name *</Label>
-              <Input
-                id="fromName"
-                placeholder="My Company"
-                value={formData.fromName}
-                onChange={(e) =>
-                  setFormData({ ...formData, fromName: e.target.value })
-                }
-              />
-            </div>
-
-            <p className="text-xs text-muted-foreground mt-2">
-              Need an SMTP provider? Try{" "}
-              <a
-                href="https://smtp2go.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                SMTP2GO
-              </a>{" "}
-              or{" "}
-              <a
-                href="https://resend.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Resend
-              </a>
-            </p>
           </div>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button onClick={handleSave} disabled={loading || fetching}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Settings
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>
