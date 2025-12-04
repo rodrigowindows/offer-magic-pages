@@ -41,6 +41,8 @@ import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
 import { EmailSettingsDialog } from "@/components/EmailSettingsDialog";
 import { SmsSettingsDialog } from "@/components/SmsSettingsDialog";
 import { CallSettingsDialog } from "@/components/CallSettingsDialog";
+import { SmsCampaignDialog } from "@/components/SmsCampaignDialog";
+import { CallCampaignDialog } from "@/components/CallCampaignDialog";
 import { MessageSquare, Phone } from "lucide-react";
 
 const propertySchema = z.object({
@@ -127,6 +129,8 @@ const Admin = () => {
   const [isEmailSettingsOpen, setIsEmailSettingsOpen] = useState(false);
   const [isSmsSettingsOpen, setIsSmsSettingsOpen] = useState(false);
   const [isCallSettingsOpen, setIsCallSettingsOpen] = useState(false);
+  const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
+  const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -685,6 +689,14 @@ const Admin = () => {
 
   const handleSendEmails = () => {
     setIsEmailDialogOpen(true);
+  };
+
+  const handleSendSms = () => {
+    setIsSmsDialogOpen(true);
+  };
+
+  const handleMakeCalls = () => {
+    setIsCallDialogOpen(true);
   };
 
   const handleAISuggestions = () => {
@@ -1364,6 +1376,28 @@ const Admin = () => {
           propertyIds={selectedProperties}
           onRefresh={fetchProperties}
         />
+
+        <SmsCampaignDialog
+          open={isSmsDialogOpen}
+          onOpenChange={setIsSmsDialogOpen}
+          propertyIds={selectedProperties}
+          onSmssSent={fetchProperties}
+          onOpenSettings={() => {
+            setIsSmsDialogOpen(false);
+            setIsSmsSettingsOpen(true);
+          }}
+        />
+
+        <CallCampaignDialog
+          open={isCallDialogOpen}
+          onOpenChange={setIsCallDialogOpen}
+          propertyIds={selectedProperties}
+          onCallsMade={fetchProperties}
+          onOpenSettings={() => {
+            setIsCallDialogOpen(false);
+            setIsCallSettingsOpen(true);
+          }}
+        />
       </main>
       
       <BulkActionsBar
@@ -1374,6 +1408,8 @@ const Admin = () => {
         onGenerateQRCodes={handleGenerateQRCodes}
         onPrintOffers={handleBulkPrintOffers}
         onSendEmails={handleSendEmails}
+        onSendSms={handleSendSms}
+        onMakeCalls={handleMakeCalls}
         onAISuggestions={handleAISuggestions}
       />
       

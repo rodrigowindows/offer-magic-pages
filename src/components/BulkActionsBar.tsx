@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, QrCode, Trash2, FileText, Mail, Sparkles } from "lucide-react";
+import { X, QrCode, Trash2, FileText, Mail, Sparkles, MessageSquare, Phone } from "lucide-react";
 import { LeadStatusSelect } from "./LeadStatusSelect";
 import { LeadStatus } from "./LeadStatusBadge";
 import { useState } from "react";
@@ -12,6 +12,8 @@ interface BulkActionsBarProps {
   onGenerateQRCodes: () => void;
   onPrintOffers: () => void;
   onSendEmails: () => void;
+  onSendSms: () => void;
+  onMakeCalls: () => void;
   onAISuggestions: () => void;
 }
 
@@ -23,6 +25,8 @@ export const BulkActionsBar = ({
   onGenerateQRCodes,
   onPrintOffers,
   onSendEmails,
+  onSendSms,
+  onMakeCalls,
   onAISuggestions,
 }: BulkActionsBarProps) => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
@@ -36,7 +40,7 @@ export const BulkActionsBar = ({
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-lg shadow-lg p-4 animate-in slide-in-from-bottom-5">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-sm font-semibold text-primary">{selectedCount}</span>
@@ -63,7 +67,7 @@ export const BulkActionsBar = ({
           className="gap-2"
         >
           <QrCode className="h-4 w-4" />
-          Generate QR Codes
+          QR Codes
         </Button>
 
         <Button
@@ -86,6 +90,8 @@ export const BulkActionsBar = ({
           AI Suggestions
         </Button>
 
+        <div className="h-6 w-px bg-border" />
+
         <Button
           variant="outline"
           size="sm"
@@ -93,8 +99,30 @@ export const BulkActionsBar = ({
           className="gap-2"
         >
           <Mail className="h-4 w-4" />
-          Send Emails
+          Email
         </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onSendSms}
+          className="gap-2"
+        >
+          <MessageSquare className="h-4 w-4" />
+          SMS
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onMakeCalls}
+          className="gap-2"
+        >
+          <Phone className="h-4 w-4" />
+          Call
+        </Button>
+
+        <div className="h-6 w-px bg-border" />
 
         <Button
           variant="destructive"
@@ -105,8 +133,6 @@ export const BulkActionsBar = ({
           <Trash2 className="h-4 w-4" />
           Delete
         </Button>
-
-        <div className="h-6 w-px bg-border" />
 
         <Button
           variant="ghost"
