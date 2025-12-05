@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LeadStatus, LeadStatusBadge } from "./LeadStatusBadge";
 import { Phone, Mail, MapPin, DollarSign, User } from "lucide-react";
+import { useRef, useEffect } from "react";
 
 interface Property {
   id: string;
@@ -57,9 +58,49 @@ export const KanbanBoard = ({ properties, onStatusChange, onPropertyClick }: Kan
     }).format(value);
   };
 
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const topScroll = topScrollRef.current;
+    const contentScroll = contentScrollRef.current;
+
+    if (!topScroll || !contentScroll) return;
+
+    const syncTopToContent = () => {
+      if (contentScroll) contentScroll.scrollLeft = topScroll.scrollLeft;
+    };
+
+    const syncContentToTop = () => {
+      if (topScroll) topScroll.scrollLeft = contentScroll.scrollLeft;
+    };
+
+    topScroll.addEventListener("scroll", syncTopToContent);
+    contentScroll.addEventListener("scroll", syncContentToTop);
+
+    return () => {
+      topScroll.removeEventListener("scroll", syncTopToContent);
+      contentScroll.removeEventListener("scroll", syncContentToTop);
+    };
+  }, []);
+
+  const totalWidth = columns.length * 288 + (columns.length - 1) * 16; // 72 * 4 = 288px per column + 16px gap
+
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-300px)]">
+      {/* Top scroll bar */}
+      <div
+        ref={topScrollRef}
+        className="overflow-x-auto overflow-y-hidden mb-2"
+        style={{ height: "16px" }}
+      >
+        <div style={{ width: `${totalWidth}px`, height: "1px" }} />
+      </div>
+      
+      <div
+        ref={contentScrollRef}
+        className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-300px)]"
+      >
         {columns.map((column) => (
           <div key={column.id} className="flex-shrink-0 w-72">
             <div className={`${column.color} rounded-t-lg px-3 py-2`}>
