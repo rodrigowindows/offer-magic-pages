@@ -1,8 +1,9 @@
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LeadStatus, LeadStatusBadge } from "./LeadStatusBadge";
-import { Phone, Mail, MapPin, DollarSign, User } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { LeadStatus } from "./LeadStatusBadge";
+import { Phone, MapPin, DollarSign, User } from "lucide-react";
 import { useRef, useEffect } from "react";
 
 interface Property {
@@ -23,6 +24,8 @@ interface KanbanBoardProps {
   properties: Property[];
   onStatusChange: (propertyId: string, newStatus: LeadStatus) => void;
   onPropertyClick?: (property: Property) => void;
+  selectedProperties?: string[];
+  onSelectionChange?: (propertyId: string) => void;
 }
 
 const columns: { id: LeadStatus; title: string; color: string }[] = [
@@ -35,7 +38,13 @@ const columns: { id: LeadStatus; title: string; color: string }[] = [
   { id: "not_interested", title: "Not Interested", color: "bg-gray-500" },
 ];
 
-export const KanbanBoard = ({ properties, onStatusChange, onPropertyClick }: KanbanBoardProps) => {
+export const KanbanBoard = ({ 
+  properties, 
+  onStatusChange, 
+  onPropertyClick,
+  selectedProperties = [],
+  onSelectionChange
+}: KanbanBoardProps) => {
   const handleDragEnd = (result: DropResult) => {
     const { destination, draggableId } = result;
 
@@ -84,7 +93,12 @@ export const KanbanBoard = ({ properties, onStatusChange, onPropertyClick }: Kan
     };
   }, []);
 
-  const totalWidth = columns.length * 288 + (columns.length - 1) * 16; // 72 * 4 = 288px per column + 16px gap
+  const totalWidth = columns.length * 288 + (columns.length - 1) * 16;
+
+  const handleCheckboxClick = (e: React.MouseEvent, propertyId: string) => {
+    e.stopPropagation();
+    onSelectionChange?.(propertyId);
+  };
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
@@ -120,59 +134,70 @@ export const KanbanBoard = ({ properties, onStatusChange, onPropertyClick }: Kan
                     snapshot.isDraggingOver ? "bg-muted" : ""
                   }`}
                 >
-                  {getPropertiesByStatus(column.id).map((property, index) => (
-                    <Draggable key={property.id} draggableId={property.id} index={index}>
-                      {(provided, snapshot) => (
-                        <Card
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className={`mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow ${
-                            snapshot.isDragging ? "shadow-lg rotate-2" : ""
-                          }`}
-                          onClick={() => onPropertyClick?.(property)}
-                        >
-                          <CardContent className="p-3 space-y-2">
-                            <div className="flex items-start gap-2">
-                              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p className="font-medium text-sm leading-tight">{property.address}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {property.city}, {property.state} {property.zip_code}
-                                </p>
+                  {getPropertiesByStatus(column.id).map((property, index) => {
+                    const isSelected = selectedProperties.includes(property.id);
+                    return (
+                      <Draggable key={property.id} draggableId={property.id} index={index}>
+                        {(provided, snapshot) => (
+                          <Card
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-all ${
+                              snapshot.isDragging ? "shadow-lg rotate-2" : ""
+                            } ${isSelected ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                            onClick={() => onPropertyClick?.(property)}
+                          >
+                            <CardContent className="p-3 space-y-2">
+                              <div className="flex items-start gap-2">
+                                {onSelectionChange && (
+                                  <div onClick={(e) => handleCheckboxClick(e, property.id)}>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      className="mt-0.5"
+                                    />
+                                  </div>
+                                )}
+                                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm leading-tight truncate">{property.address}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {property.city}, {property.state} {property.zip_code}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
 
-                            {property.owner_name && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <User className="h-3 w-3" />
-                                <span>{property.owner_name}</span>
-                              </div>
-                            )}
+                              {property.owner_name && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <User className="h-3 w-3" />
+                                  <span className="truncate">{property.owner_name}</span>
+                                </div>
+                              )}
 
-                            {property.owner_phone && (
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Phone className="h-3 w-3" />
-                                <span>{property.owner_phone}</span>
-                              </div>
-                            )}
+                              {property.owner_phone && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Phone className="h-3 w-3" />
+                                  <span>{property.owner_phone}</span>
+                                </div>
+                              )}
 
-                            <div className="flex items-center justify-between pt-1 border-t border-border/50">
-                              <div className="flex items-center gap-1 text-xs">
-                                <DollarSign className="h-3 w-3 text-green-600" />
-                                <span className="font-semibold text-green-600">
-                                  {formatCurrency(property.cash_offer_amount)}
+                              <div className="flex items-center justify-between pt-1 border-t border-border/50">
+                                <div className="flex items-center gap-1 text-xs">
+                                  <DollarSign className="h-3 w-3 text-green-600" />
+                                  <span className="font-semibold text-green-600">
+                                    {formatCurrency(property.cash_offer_amount)}
+                                  </span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  Est: {formatCurrency(property.estimated_value)}
                                 </span>
                               </div>
-                              <span className="text-xs text-muted-foreground">
-                                Est: {formatCurrency(property.estimated_value)}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </Draggable>
-                  ))}
+                            </CardContent>
+                          </Card>
+                        )}
+                      </Draggable>
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
               )}

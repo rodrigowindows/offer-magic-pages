@@ -889,10 +889,26 @@ const Admin = () => {
           </TabsList>
 
           <TabsContent value="kanban">
+            {selectedProperties.length > 0 && (
+              <BulkActionsBar
+                selectedCount={selectedProperties.length}
+                onClearSelection={() => setSelectedProperties([])}
+                onBulkStatusChange={handleBulkStatusChange}
+                onBulkDelete={handleBulkDelete}
+                onGenerateQRCodes={handleGenerateQRCodes}
+                onPrintOffers={handleBulkPrintOffers}
+                onSendEmails={() => setIsEmailDialogOpen(true)}
+                onSendSms={() => setIsSmsDialogOpen(true)}
+                onMakeCalls={() => setIsCallDialogOpen(true)}
+                onAISuggestions={() => setIsSuggestionsDialogOpen(true)}
+              />
+            )}
             <KanbanBoard
               properties={filteredProperties}
               onStatusChange={updateLeadStatus}
               onPropertyClick={(property) => openEditDialog(property as Property)}
+              selectedProperties={selectedProperties}
+              onSelectionChange={togglePropertySelection}
             />
           </TabsContent>
 
