@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
 import { PropertyAnalytics } from "@/components/PropertyAnalytics";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
@@ -43,6 +44,7 @@ import { SmsSettingsDialog } from "@/components/SmsSettingsDialog";
 import { CallSettingsDialog } from "@/components/CallSettingsDialog";
 import { SmsCampaignDialog } from "@/components/SmsCampaignDialog";
 import { CallCampaignDialog } from "@/components/CallCampaignDialog";
+import { KanbanBoard } from "@/components/KanbanBoard";
 import { MessageSquare, Phone } from "lucide-react";
 
 const propertySchema = z.object({
@@ -874,6 +876,27 @@ const Admin = () => {
           </div>
         </div>
 
+        <Tabs defaultValue="table" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="table" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              Table
+            </TabsTrigger>
+            <TabsTrigger value="kanban" className="flex items-center gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              Kanban
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="kanban">
+            <KanbanBoard
+              properties={filteredProperties}
+              onStatusChange={updateLeadStatus}
+              onPropertyClick={(property) => openEditDialog(property as Property)}
+            />
+          </TabsContent>
+
+          <TabsContent value="table">
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <Table>
             <TableHeader>
@@ -1068,6 +1091,8 @@ const Admin = () => {
             </TableBody>
           </Table>
         </div>
+          </TabsContent>
+        </Tabs>
 
         <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
