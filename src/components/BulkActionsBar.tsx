@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, QrCode, Trash2, FileText, Mail, Sparkles, MessageSquare, Phone } from "lucide-react";
+import { X, QrCode, Trash2, FileText, Sparkles, Rocket } from "lucide-react";
 import { LeadStatusSelect } from "./LeadStatusSelect";
 import { LeadStatus } from "./LeadStatusBadge";
 import { useState } from "react";
@@ -11,9 +11,7 @@ interface BulkActionsBarProps {
   onBulkDelete: () => void;
   onGenerateQRCodes: () => void;
   onPrintOffers: () => void;
-  onSendEmails: () => void;
-  onSendSms: () => void;
-  onMakeCalls: () => void;
+  onStartCampaign: () => void;
   onAISuggestions: () => void;
 }
 
@@ -24,9 +22,7 @@ export const BulkActionsBar = ({
   onBulkDelete,
   onGenerateQRCodes,
   onPrintOffers,
-  onSendEmails,
-  onSendSms,
-  onMakeCalls,
+  onStartCampaign,
   onAISuggestions,
 }: BulkActionsBarProps) => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
@@ -93,33 +89,13 @@ export const BulkActionsBar = ({
         <div className="h-6 w-px bg-border" />
 
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
-          onClick={onSendEmails}
+          onClick={onStartCampaign}
           className="gap-2"
         >
-          <Mail className="h-4 w-4" />
-          Email
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onSendSms}
-          className="gap-2"
-        >
-          <MessageSquare className="h-4 w-4" />
-          SMS
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onMakeCalls}
-          className="gap-2"
-        >
-          <Phone className="h-4 w-4" />
-          Call
+          <Rocket className="h-4 w-4" />
+          Start Campaign
         </Button>
 
         <div className="h-6 w-px bg-border" />

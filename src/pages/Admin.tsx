@@ -39,13 +39,10 @@ import { AdminChatBot } from "@/components/AdminChatBot";
 import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/EmailCampaignStats";
 import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
-import { EmailSettingsDialog } from "@/components/EmailSettingsDialog";
-import { SmsSettingsDialog } from "@/components/SmsSettingsDialog";
-import { CallSettingsDialog } from "@/components/CallSettingsDialog";
-import { SmsCampaignDialog } from "@/components/SmsCampaignDialog";
-import { CallCampaignDialog } from "@/components/CallCampaignDialog";
+import { MarketingSettingsDialog } from "@/components/MarketingSettingsDialog";
+import { StartCampaignDialog } from "@/components/StartCampaignDialog";
 import { KanbanBoard } from "@/components/KanbanBoard";
-import { MessageSquare, Phone } from "lucide-react";
+import { Rocket } from "lucide-react";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -128,11 +125,8 @@ const Admin = () => {
   const [selectedPropertyForOffer, setSelectedPropertyForOffer] = useState<Property | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isSuggestionsDialogOpen, setIsSuggestionsDialogOpen] = useState(false);
-  const [isEmailSettingsOpen, setIsEmailSettingsOpen] = useState(false);
-  const [isSmsSettingsOpen, setIsSmsSettingsOpen] = useState(false);
-  const [isCallSettingsOpen, setIsCallSettingsOpen] = useState(false);
-  const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
-  const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
+  const [isMarketingSettingsOpen, setIsMarketingSettingsOpen] = useState(false);
+  const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -693,12 +687,8 @@ const Admin = () => {
     setIsEmailDialogOpen(true);
   };
 
-  const handleSendSms = () => {
-    setIsSmsDialogOpen(true);
-  };
-
-  const handleMakeCalls = () => {
-    setIsCallDialogOpen(true);
+  const handleStartCampaign = () => {
+    setIsCampaignDialogOpen(true);
   };
 
   const handleAISuggestions = () => {
@@ -722,28 +712,12 @@ const Admin = () => {
           <h1 className="text-2xl font-bold text-foreground">Property Management</h1>
           <div className="flex gap-2">
             <Button 
-              onClick={() => setIsEmailSettingsOpen(true)} 
+              onClick={() => setIsMarketingSettingsOpen(true)} 
               variant="outline" 
               size="sm"
             >
-              <Settings className="w-4 h-4 mr-2" />
-              Email
-            </Button>
-            <Button 
-              onClick={() => setIsSmsSettingsOpen(true)} 
-              variant="outline" 
-              size="sm"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              SMS
-            </Button>
-            <Button 
-              onClick={() => setIsCallSettingsOpen(true)} 
-              variant="outline" 
-              size="sm"
-            >
-              <Phone className="w-4 h-4 mr-2" />
-              Call
+              <Rocket className="w-4 h-4 mr-2" />
+              Marketing API
             </Button>
             <NotificationsPanel />
             <Button onClick={handleLogout} variant="outline" size="sm">
@@ -897,10 +871,8 @@ const Admin = () => {
                 onBulkDelete={handleBulkDelete}
                 onGenerateQRCodes={handleGenerateQRCodes}
                 onPrintOffers={handleBulkPrintOffers}
-                onSendEmails={() => setIsEmailDialogOpen(true)}
-                onSendSms={() => setIsSmsDialogOpen(true)}
-                onMakeCalls={() => setIsCallDialogOpen(true)}
-                onAISuggestions={() => setIsSuggestionsDialogOpen(true)}
+                onStartCampaign={handleStartCampaign}
+                onAISuggestions={handleAISuggestions}
               />
             )}
             <KanbanBoard
@@ -1389,26 +1361,16 @@ const Admin = () => {
           properties={properties.filter(p => selectedProperties.includes(p.id))}
           open={isEmailDialogOpen}
           onOpenChange={setIsEmailDialogOpen}
-          onOpenSettings={() => setIsEmailSettingsOpen(true)}
+          onOpenSettings={() => setIsMarketingSettingsOpen(true)}
           onSuccess={() => {
             fetchProperties();
             setSelectedProperties([]);
           }}
         />
 
-        <EmailSettingsDialog
-          open={isEmailSettingsOpen}
-          onOpenChange={setIsEmailSettingsOpen}
-        />
-
-        <SmsSettingsDialog
-          open={isSmsSettingsOpen}
-          onOpenChange={setIsSmsSettingsOpen}
-        />
-
-        <CallSettingsDialog
-          open={isCallSettingsOpen}
-          onOpenChange={setIsCallSettingsOpen}
+        <MarketingSettingsDialog
+          open={isMarketingSettingsOpen}
+          onOpenChange={setIsMarketingSettingsOpen}
         />
 
         <LeadSuggestionsDialog
@@ -1418,25 +1380,17 @@ const Admin = () => {
           onRefresh={fetchProperties}
         />
 
-        <SmsCampaignDialog
-          open={isSmsDialogOpen}
-          onOpenChange={setIsSmsDialogOpen}
+        <StartCampaignDialog
+          open={isCampaignDialogOpen}
+          onOpenChange={setIsCampaignDialogOpen}
           propertyIds={selectedProperties}
-          onSmssSent={fetchProperties}
-          onOpenSettings={() => {
-            setIsSmsDialogOpen(false);
-            setIsSmsSettingsOpen(true);
+          onCampaignSent={() => {
+            fetchProperties();
+            setSelectedProperties([]);
           }}
-        />
-
-        <CallCampaignDialog
-          open={isCallDialogOpen}
-          onOpenChange={setIsCallDialogOpen}
-          propertyIds={selectedProperties}
-          onCallsMade={fetchProperties}
           onOpenSettings={() => {
-            setIsCallDialogOpen(false);
-            setIsCallSettingsOpen(true);
+            setIsCampaignDialogOpen(false);
+            setIsMarketingSettingsOpen(true);
           }}
         />
       </main>
@@ -1448,9 +1402,7 @@ const Admin = () => {
         onBulkDelete={handleBulkDelete}
         onGenerateQRCodes={handleGenerateQRCodes}
         onPrintOffers={handleBulkPrintOffers}
-        onSendEmails={handleSendEmails}
-        onSendSms={handleSendSms}
-        onMakeCalls={handleMakeCalls}
+        onStartCampaign={handleStartCampaign}
         onAISuggestions={handleAISuggestions}
       />
       
