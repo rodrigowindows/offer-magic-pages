@@ -25,6 +25,7 @@ export const MarketingSettingsDialog = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     api_endpoint: "",
@@ -113,6 +114,54 @@ export const MarketingSettingsDialog = ({
     }
   };
 
+  const handleTest = async () => {
+    if (!formData.api_endpoint) {
+      toast({
+        title: "Error",
+        description: "API Endpoint is required to test",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setTesting(true);
+    try {
+      const testData = {
+        phone_number: "+1234567890",
+        name: "Test User",
+        address: "123 Test Street, Miami, FL 33101",
+        email: "test@example.com",
+        seller_name: formData.seller_name || "Alex",
+      };
+
+      const response = await fetch(formData.api_endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(testData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "API test successful! Endpoint is working.",
+        });
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (error: any) {
+      console.error("API test failed:", error);
+      toast({
+        title: "Test Failed",
+        description: error.message || "Could not reach the API endpoint",
+        variant: "destructive",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -156,13 +205,22 @@ export const MarketingSettingsDialog = ({
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+            <div className="flex justify-between gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={handleTest}
+                disabled={testing || !formData.api_endpoint}
+              >
+                {testing ? "Testing..." : "Test API"}
               </Button>
-              <Button onClick={handleSave} disabled={loading}>
-                {loading ? "Saving..." : "Save"}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? "Saving..." : "Save"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
