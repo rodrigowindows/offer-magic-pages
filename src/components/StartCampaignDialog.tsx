@@ -142,6 +142,25 @@ export const StartCampaignDialog = ({
           body: JSON.stringify(payload),
         });
 
+        let responseData = null;
+        try {
+          responseData = await response.json();
+        } catch {
+          responseData = { status: response.status, statusText: response.statusText };
+        }
+
+        // Log the campaign to campaign_logs table
+        await supabase.from("campaign_logs").insert({
+          property_id: property.id,
+          campaign_type: "marketing",
+          recipient_phone: property.owner_phone,
+          recipient_name: property.owner_name,
+          property_address: fullAddress,
+          api_response: responseData,
+          api_status: response.status,
+          metadata: { payload, endpoint: apiSettings.api_endpoint },
+        });
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -161,13 +180,14 @@ export const StartCampaignDialog = ({
           address: property.address,
           success: true,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         console.error(`Error sending campaign for ${property.address}:`, error);
         campaignResults.push({
           propertyId: property.id,
           address: property.address,
           success: false,
-          error: error.message,
+          error: errorMessage,
         });
       }
     }

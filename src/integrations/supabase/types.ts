@@ -100,6 +100,68 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_logs: {
+        Row: {
+          api_response: Json | null
+          api_status: number | null
+          campaign_type: string
+          click_count: number | null
+          clicked_at: string | null
+          id: string
+          link_clicked: boolean | null
+          metadata: Json | null
+          property_address: string | null
+          property_id: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          recipient_phone: string | null
+          sent_at: string
+          tracking_id: string
+        }
+        Insert: {
+          api_response?: Json | null
+          api_status?: number | null
+          campaign_type?: string
+          click_count?: number | null
+          clicked_at?: string | null
+          id?: string
+          link_clicked?: boolean | null
+          metadata?: Json | null
+          property_address?: string | null
+          property_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          sent_at?: string
+          tracking_id?: string
+        }
+        Update: {
+          api_response?: Json | null
+          api_status?: number | null
+          campaign_type?: string
+          click_count?: number | null
+          clicked_at?: string | null
+          id?: string
+          link_clicked?: boolean | null
+          metadata?: Json | null
+          property_address?: string | null
+          property_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          sent_at?: string
+          tracking_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_logs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_campaigns: {
         Row: {
           id: string
