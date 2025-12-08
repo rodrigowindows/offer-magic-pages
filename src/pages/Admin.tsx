@@ -42,7 +42,8 @@ import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
 import { MarketingSettingsDialog } from "@/components/MarketingSettingsDialog";
 import { StartCampaignDialog } from "@/components/StartCampaignDialog";
 import { KanbanBoard } from "@/components/KanbanBoard";
-import { Rocket } from "lucide-react";
+import { CampaignAnalytics } from "@/components/CampaignAnalytics";
+import { Rocket, BarChart3 } from "lucide-react";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -734,6 +735,17 @@ const Admin = () => {
           <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
           <div className="bg-card rounded-lg border border-border p-6">
             <ABTestDashboard />
+          </div>
+        </div>
+
+        {/* Campaign Analytics Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BarChart3 className="h-6 w-6" />
+            Campaign Analytics
+          </h2>
+          <div className="bg-card rounded-lg border border-border p-6">
+            <CampaignAnalytics />
           </div>
         </div>
 
