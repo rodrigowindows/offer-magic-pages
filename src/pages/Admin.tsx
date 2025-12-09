@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -43,7 +43,10 @@ import { MarketingSettingsDialog } from "@/components/MarketingSettingsDialog";
 import { StartCampaignDialog } from "@/components/StartCampaignDialog";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { CampaignAnalytics } from "@/components/CampaignAnalytics";
-import { Rocket, BarChart3 } from "lucide-react";
+import { CampaignExport } from "@/components/CampaignExport";
+import { FollowUpAlerts } from "@/components/FollowUpAlerts";
+import { ResponseTimeAnalytics } from "@/components/ResponseTimeAnalytics";
+import { CampaignTemplatesDialog } from "@/components/CampaignTemplatesDialog";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -128,6 +131,7 @@ const Admin = () => {
   const [isSuggestionsDialogOpen, setIsSuggestionsDialogOpen] = useState(false);
   const [isMarketingSettingsOpen, setIsMarketingSettingsOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
+  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -738,13 +742,28 @@ const Admin = () => {
           </div>
         </div>
 
+        {/* Follow-Up Alerts */}
+        <div className="mb-8">
+          <FollowUpAlerts />
+        </div>
+
         {/* Campaign Analytics Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-4 flex items-center gap-2">
-            <BarChart3 className="h-6 w-6" />
-            Campaign Analytics
-          </h2>
-          <div className="bg-card rounded-lg border border-border p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+              <BarChart3 className="h-6 w-6" />
+              Campaign Analytics
+            </h2>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setIsTemplatesDialogOpen(true)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Templates
+              </Button>
+              <CampaignExport />
+            </div>
+          </div>
+          <div className="bg-card rounded-lg border border-border p-6 space-y-6">
+            <ResponseTimeAnalytics />
             <CampaignAnalytics />
           </div>
         </div>
@@ -1404,6 +1423,11 @@ const Admin = () => {
             setIsCampaignDialogOpen(false);
             setIsMarketingSettingsOpen(true);
           }}
+        />
+        
+        <CampaignTemplatesDialog
+          open={isTemplatesDialogOpen}
+          onOpenChange={setIsTemplatesDialogOpen}
         />
       </main>
       

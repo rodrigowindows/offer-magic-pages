@@ -107,6 +107,7 @@ export type Database = {
           campaign_type: string
           click_count: number | null
           clicked_at: string | null
+          first_response_at: string | null
           id: string
           link_clicked: boolean | null
           metadata: Json | null
@@ -115,6 +116,7 @@ export type Database = {
           recipient_email: string | null
           recipient_name: string | null
           recipient_phone: string | null
+          response_time_seconds: number | null
           sent_at: string
           tracking_id: string
         }
@@ -124,6 +126,7 @@ export type Database = {
           campaign_type?: string
           click_count?: number | null
           clicked_at?: string | null
+          first_response_at?: string | null
           id?: string
           link_clicked?: boolean | null
           metadata?: Json | null
@@ -132,6 +135,7 @@ export type Database = {
           recipient_email?: string | null
           recipient_name?: string | null
           recipient_phone?: string | null
+          response_time_seconds?: number | null
           sent_at?: string
           tracking_id?: string
         }
@@ -141,6 +145,7 @@ export type Database = {
           campaign_type?: string
           click_count?: number | null
           clicked_at?: string | null
+          first_response_at?: string | null
           id?: string
           link_clicked?: boolean | null
           metadata?: Json | null
@@ -149,6 +154,7 @@ export type Database = {
           recipient_email?: string | null
           recipient_name?: string | null
           recipient_phone?: string | null
+          response_time_seconds?: number | null
           sent_at?: string
           tracking_id?: string
         }
@@ -161,6 +167,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      campaign_templates: {
+        Row: {
+          api_endpoint: string | null
+          created_at: string
+          headers: Json | null
+          id: string
+          is_default: boolean | null
+          message_template: string | null
+          name: string
+          seller_name: string | null
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          is_default?: boolean | null
+          message_template?: string | null
+          name: string
+          seller_name?: string | null
+          template_type?: string
+          updated_at?: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          created_at?: string
+          headers?: Json | null
+          id?: string
+          is_default?: boolean | null
+          message_template?: string | null
+          name?: string
+          seller_name?: string | null
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       email_campaigns: {
         Row: {
@@ -287,6 +332,7 @@ export type Database = {
           evaluation: string | null
           focar: string | null
           id: string
+          lead_score: number | null
           lead_status: string
           letter_sent: boolean
           meeting_scheduled: boolean
@@ -320,6 +366,7 @@ export type Database = {
           evaluation?: string | null
           focar?: string | null
           id?: string
+          lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
           meeting_scheduled?: boolean
@@ -353,6 +400,7 @@ export type Database = {
           evaluation?: string | null
           focar?: string | null
           id?: string
+          lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
           meeting_scheduled?: boolean
