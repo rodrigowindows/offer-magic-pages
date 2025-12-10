@@ -49,6 +49,7 @@ import { ResponseTimeAnalytics } from "@/components/ResponseTimeAnalytics";
 import { CampaignTemplatesDialog } from "@/components/CampaignTemplatesDialog";
 import { CampaignPreviewDialog } from "@/components/CampaignPreviewDialog";
 import { PropertyNotesPanel } from "@/components/PropertyNotesPanel";
+import { AdminDashboardOverview } from "@/components/AdminDashboardOverview";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -741,6 +742,9 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Dashboard Overview Section */}
+        <AdminDashboardOverview />
+
         {/* A/B Test Dashboard Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
