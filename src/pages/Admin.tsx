@@ -47,6 +47,8 @@ import { CampaignExport } from "@/components/CampaignExport";
 import { FollowUpAlerts } from "@/components/FollowUpAlerts";
 import { ResponseTimeAnalytics } from "@/components/ResponseTimeAnalytics";
 import { CampaignTemplatesDialog } from "@/components/CampaignTemplatesDialog";
+import { CampaignPreviewDialog } from "@/components/CampaignPreviewDialog";
+import { PropertyNotesPanel } from "@/components/PropertyNotesPanel";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -132,6 +134,7 @@ const Admin = () => {
   const [isMarketingSettingsOpen, setIsMarketingSettingsOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+  const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -693,6 +696,10 @@ const Admin = () => {
   };
 
   const handleStartCampaign = () => {
+    setIsPreviewDialogOpen(true);
+  };
+
+  const handleConfirmCampaign = () => {
     setIsCampaignDialogOpen(true);
   };
 
@@ -1428,6 +1435,13 @@ const Admin = () => {
         <CampaignTemplatesDialog
           open={isTemplatesDialogOpen}
           onOpenChange={setIsTemplatesDialogOpen}
+        />
+
+        <CampaignPreviewDialog
+          open={isPreviewDialogOpen}
+          onOpenChange={setIsPreviewDialogOpen}
+          propertyIds={selectedProperties}
+          onConfirm={handleConfirmCampaign}
         />
       </main>
       
