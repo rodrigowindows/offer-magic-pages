@@ -170,6 +170,37 @@ export const ABTestDashboard = () => {
         </Card>
       )}
 
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-lg">What's Being Tested</CardTitle>
+          <CardDescription>Comparing two property page layouts to optimize conversions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 border rounded-lg bg-muted/30">
+              <h4 className="font-semibold mb-2">Variant A - Original Layout</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Full property hero section with image</li>
+                <li>• Detailed benefits section with icons</li>
+                <li>• Step-by-step process explanation</li>
+                <li>• Extended contact form with all fields</li>
+                <li>• Testimonials section included</li>
+              </ul>
+            </div>
+            <div className="p-4 border rounded-lg bg-muted/30">
+              <h4 className="font-semibold mb-2">Variant B - Simplified Layout</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Compact hero with focus on offer</li>
+                <li>• Streamlined benefits (fewer items)</li>
+                <li>• Simplified process section</li>
+                <li>• Minimal contact form (essential fields only)</li>
+                <li>• No testimonials - faster to conversion</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Tabs defaultValue="A" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="A">
