@@ -742,167 +742,152 @@ const Admin = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {/* Dashboard Overview Section */}
-        <AdminDashboardOverview />
-
-        {/* A/B Test Dashboard Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
-          <div className="bg-card rounded-lg border border-border p-6">
-            <ABTestDashboard />
-          </div>
-        </div>
-
-        {/* Follow-Up Alerts */}
-        <div className="mb-8">
-          <FollowUpAlerts />
-        </div>
-
-        {/* Campaign Analytics Section */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-foreground flex items-center gap-2">
-              <BarChart3 className="h-6 w-6" />
-              Campaign Analytics
-            </h2>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setIsTemplatesDialogOpen(true)}>
-                <FileText className="h-4 w-4 mr-2" />
-                Templates
-              </Button>
-              <CampaignExport />
-            </div>
-          </div>
-          <div className="bg-card rounded-lg border border-border p-6 space-y-6">
-            <ResponseTimeAnalytics />
-            <CampaignAnalytics />
-          </div>
-        </div>
-
-        {/* Email Campaign Stats Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-4">Email Campaigns</h2>
-          <EmailCampaignStats />
-        </div>
-
-        <PropertyFilters 
-          selectedStatus={filterStatus}
-          onStatusChange={setFilterStatus}
-          statusCounts={statusCounts}
-        />
-        
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>
-          <div className="flex gap-2">
-            <AIPropertyImport onImportComplete={fetchProperties} />
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-secondary hover:bg-secondary/90">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Property
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Property</DialogTitle>
-                <DialogDescription>
-                  Enter the property details to create a new landing page
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Street Address *</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      placeholder="123 Main Street"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City *</Label>
-                    <Input
-                      id="city"
-                      value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State *</Label>
-                    <Input
-                      id="state"
-                      value={formData.state}
-                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                      maxLength={2}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode">ZIP Code *</Label>
-                    <Input
-                      id="zipCode"
-                      value={formData.zipCode}
-                      onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
-                      placeholder="33101"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="estimatedValue">Estimated Value *</Label>
-                    <Input
-                      id="estimatedValue"
-                      type="number"
-                      value={formData.estimatedValue}
-                      onChange={(e) => setFormData({ ...formData, estimatedValue: e.target.value })}
-                      placeholder="320000"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cashOfferAmount">Cash Offer Amount *</Label>
-                    <Input
-                      id="cashOfferAmount"
-                      type="number"
-                      value={formData.cashOfferAmount}
-                      onChange={(e) => setFormData({ ...formData, cashOfferAmount: e.target.value })}
-                      placeholder="285000"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="propertyImageUrl">Property Image URL (optional)</Label>
-                  <Input
-                    id="propertyImageUrl"
-                    type="url"
-                    value={formData.propertyImageUrl}
-                    onChange={(e) => setFormData({ ...formData, propertyImageUrl: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-                <Button type="submit" disabled={isLoading} className="w-full">
-                  {isLoading ? "Adding..." : "Add Property"}
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-          </div>
-        </div>
-
-        <Tabs defaultValue="table" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="table" className="flex items-center gap-2">
-              <List className="h-4 w-4" />
-              Table
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="mb-6 flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Dashboard
             </TabsTrigger>
-            <TabsTrigger value="kanban" className="flex items-center gap-2">
-              <LayoutGrid className="h-4 w-4" />
-              Kanban
+            <TabsTrigger value="properties" className="flex items-center gap-2">
+              <List className="h-4 w-4" />
+              Properties
+            </TabsTrigger>
+            <TabsTrigger value="campaigns" className="flex items-center gap-2">
+              <Rocket className="h-4 w-4" />
+              Campaigns
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Analytics
             </TabsTrigger>
           </TabsList>
+
+          {/* Dashboard Tab */}
+          <TabsContent value="dashboard" className="space-y-6">
+            <AdminDashboardOverview />
+            <FollowUpAlerts />
+          </TabsContent>
+
+          {/* Properties Tab */}
+          <TabsContent value="properties" className="space-y-6">
+            <PropertyFilters 
+              selectedStatus={filterStatus}
+              onStatusChange={setFilterStatus}
+              statusCounts={statusCounts}
+            />
+            
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>
+              <div className="flex gap-2">
+                <AIPropertyImport onImportComplete={fetchProperties} />
+                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-secondary hover:bg-secondary/90">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Property
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Add New Property</DialogTitle>
+                      <DialogDescription>
+                        Enter the property details to create a new landing page
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="address">Street Address *</Label>
+                          <Input
+                            id="address"
+                            value={formData.address}
+                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                            placeholder="123 Main Street"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="city">City *</Label>
+                          <Input
+                            id="city"
+                            value={formData.city}
+                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="state">State *</Label>
+                          <Input
+                            id="state"
+                            value={formData.state}
+                            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                            maxLength={2}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="zipCode">ZIP Code *</Label>
+                          <Input
+                            id="zipCode"
+                            value={formData.zipCode}
+                            onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
+                            placeholder="33101"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="estimatedValue">Estimated Value *</Label>
+                          <Input
+                            id="estimatedValue"
+                            type="number"
+                            value={formData.estimatedValue}
+                            onChange={(e) => setFormData({ ...formData, estimatedValue: e.target.value })}
+                            placeholder="320000"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="cashOfferAmount">Cash Offer Amount *</Label>
+                          <Input
+                            id="cashOfferAmount"
+                            type="number"
+                            value={formData.cashOfferAmount}
+                            onChange={(e) => setFormData({ ...formData, cashOfferAmount: e.target.value })}
+                            placeholder="285000"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="propertyImageUrl">Property Image URL (optional)</Label>
+                        <Input
+                          id="propertyImageUrl"
+                          type="url"
+                          value={formData.propertyImageUrl}
+                          onChange={(e) => setFormData({ ...formData, propertyImageUrl: e.target.value })}
+                          placeholder="https://example.com/image.jpg"
+                        />
+                      </div>
+                      <Button type="submit" disabled={isLoading} className="w-full">
+                        {isLoading ? "Adding..." : "Add Property"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <Tabs defaultValue="table" className="w-full">
+              <TabsList className="mb-4">
+                <TabsTrigger value="table" className="flex items-center gap-2">
+                  <List className="h-4 w-4" />
+                  Table
+                </TabsTrigger>
+                <TabsTrigger value="kanban" className="flex items-center gap-2">
+                  <LayoutGrid className="h-4 w-4" />
+                  Kanban
+                </TabsTrigger>
+              </TabsList>
 
           <TabsContent value="kanban">
             {selectedProperties.length > 0 && (
@@ -1121,9 +1106,44 @@ const Admin = () => {
             </TableBody>
           </Table>
         </div>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* Campaigns Tab */}
+          <TabsContent value="campaigns" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-foreground">Campaign Management</h2>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setIsTemplatesDialogOpen(true)}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Templates
+                </Button>
+                <CampaignExport />
+              </div>
+            </div>
+            <div className="bg-card rounded-lg border border-border p-6 space-y-6">
+              <ResponseTimeAnalytics />
+              <CampaignAnalytics />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-foreground mb-4">Email Campaigns</h3>
+              <EmailCampaignStats />
+            </div>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
+              <div className="bg-card rounded-lg border border-border p-6">
+                <ABTestDashboard />
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
 
+        {/* Dialogs - outside tabs */}
         <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
