@@ -50,6 +50,7 @@ import { CampaignTemplatesDialog } from "@/components/CampaignTemplatesDialog";
 import { CampaignPreviewDialog } from "@/components/CampaignPreviewDialog";
 import { PropertyNotesPanel } from "@/components/PropertyNotesPanel";
 import { AdminDashboardOverview } from "@/components/AdminDashboardOverview";
+import { BatchOfferPrintDialog } from "@/components/BatchOfferPrintDialog";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -136,6 +137,7 @@ const Admin = () => {
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
+  const [isBatchPrintDialogOpen, setIsBatchPrintDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -534,162 +536,7 @@ const Admin = () => {
   };
 
   const handleBulkPrintOffers = () => {
-    const selectedProps = properties.filter(p => selectedProperties.includes(p.id));
-    
-    // Generate QR code URLs for each property
-    const qrCodeUrls = selectedProps.map(property => {
-      const url = `${window.location.origin}/property/${property.slug}?src=letter`;
-      return `https://api.qrserver.com/v1/create-qr-code/?size=120&data=${encodeURIComponent(url)}`;
-    });
-
-    // Open a new page with all offer letters
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Cash Offers - ${selectedProps.length} Properties</title>
-            <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body { font-family: system-ui, -apple-system, sans-serif; padding: 0; background: white; }
-              .offer-letter { 
-                max-width: 800px; 
-                margin: 0 auto 40px; 
-                padding: 40px; 
-                background: #fffef9; 
-                border: 2px solid #ddd;
-                page-break-after: always;
-                page-break-inside: avoid;
-                break-inside: avoid;
-                position: relative;
-              }
-              .offer-letter:last-child { page-break-after: auto; }
-              .header { text-align: center; margin-bottom: 25px; }
-              .header h1 { font-size: 32px; font-weight: bold; color: #1a1a1a; margin-bottom: 8px; }
-              .header p { font-size: 16px; color: #666; }
-              .offer-box { 
-                background: rgba(var(--primary-rgb, 59, 130, 246), 0.1); 
-                border: 2px solid rgb(var(--primary-rgb, 59, 130, 246)); 
-                border-radius: 8px; 
-                padding: 25px; 
-                text-align: center; 
-                margin-bottom: 25px; 
-              }
-              .offer-amount { font-size: 52px; font-weight: bold; color: rgb(var(--primary-rgb, 59, 130, 246)); margin-bottom: 8px; }
-              .offer-label { font-size: 16px; color: #666; margin-bottom: 4px; }
-              .offer-subtitle { font-size: 13px; color: #666; }
-              .offer-tagline { font-size: 20px; font-weight: 600; margin-top: 15px; color: #1a1a1a; }
-              .benefits { margin-bottom: 25px; }
-              .benefits h2 { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #1a1a1a; }
-              .benefits-grid { font-size: 12px; line-height: 1.4; }
-              .benefits-grid p { margin-bottom: 0; }
-              .cta { 
-                background: rgba(var(--accent-rgb, 251, 191, 36), 0.2); 
-                border: 2px solid rgb(var(--accent-rgb, 251, 191, 36)); 
-                border-radius: 8px; 
-                padding: 25px; 
-                text-align: center; 
-                margin-bottom: 25px; 
-              }
-              .cta h2 { font-size: 24px; font-weight: bold; margin-bottom: 12px; color: #1a1a1a; }
-              .cta .phone { font-size: 20px; margin-bottom: 8px; }
-              .cta .phone strong { color: rgb(var(--primary-rgb, 59, 130, 246)); }
-              .cta p { font-size: 14px; color: #666; margin-top: 8px; }
-              .qr-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #ddd; }
-              .qr-section p { font-size: 12px; color: #666; margin-bottom: 8px; }
-              .qr-section img { max-width: 100px; height: auto; }
-              .footer { text-align: center; padding-top: 15px; border-top: 2px solid #ddd; }
-              .footer h3 { font-size: 24px; font-weight: bold; margin-bottom: 8px; color: #1a1a1a; }
-              .footer p { font-size: 14px; color: #666; margin-bottom: 4px; }
-              .footer .italic { font-style: italic; font-size: 12px; margin-top: 8px; }
-              .no-print { display: block; text-align: center; margin: 20px; }
-              @media print {
-                @page { 
-                  margin: 0.4in; 
-                  size: letter;
-                }
-                body { 
-                  padding: 0; 
-                  margin: 0;
-                  overflow: hidden;
-                }
-                .offer-letter { 
-                  margin: 0 !important; 
-                  padding: 30px !important;
-                  border: none !important;
-                  box-shadow: none !important;
-                  page-break-after: always !important;
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-                  position: relative;
-                  overflow: hidden;
-                  height: auto;
-                  min-height: 0;
-                }
-                .offer-letter:last-child { page-break-after: auto !important; }
-                .no-print { display: none !important; }
-                .header { margin-bottom: 20px; }
-                .offer-box { padding: 20px; margin-bottom: 20px; }
-                .benefits { margin-bottom: 20px; }
-                .cta { padding: 20px; margin-bottom: 20px; }
-                .footer { padding-top: 15px; }
-              }
-            </style>
-          </head>
-          <body>
-            <button class="no-print" onclick="window.print()" style="margin: 20px auto; display: block; padding: 10px 30px; font-size: 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Print All Offers</button>
-            ${selectedProps.map((property, index) => `
-              <div class="offer-letter">
-                <div class="header">
-                  <h1>CASH OFFER FOR Your Home!</h1>
-                  <p>${property.address}, ${property.city}, ${property.state} ${property.zip_code}</p>
-                </div>
-
-                <div class="offer-box">
-                  <div class="offer-amount">$${property.cash_offer_amount.toLocaleString()}</div>
-                  <div class="offer-label">Cash Offer</div>
-                  <div class="offer-subtitle">(Fair Market Value: $${property.estimated_value.toLocaleString()})</div>
-                  <div class="offer-tagline">No repairs • No fees • Close in 7 days</div>
-                </div>
-
-                <div class="benefits">
-                  <h2>We Help You:</h2>
-                  <div class="benefits-grid">
-                    <p style="white-space: nowrap;"><span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> Stop tax foreclosure <span style="margin: 0 4px;">•</span> <span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> Pay off your tax debt</p>
-                    <p style="white-space: nowrap;"><span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> Sell as-is (any condition) <span style="margin: 0 4px;">•</span> <span style="color: rgb(var(--primary-rgb, 59, 130, 246));">✓</span> You pick the date</p>
-                  </div>
-                </div>
-
-                <div class="cta">
-                  <h2>Just Reply "YES"</h2>
-                  <div class="phone">Call: <strong>786 882 8251</strong></div>
-                  <p>We'll send your official offer in writing — no pressure, no cost.</p>
-                  
-                  <div class="qr-section">
-                    <p>Scan to view your offer online:</p>
-                    <img src="${qrCodeUrls[index]}" alt="QR Code for ${property.address}" />
-                    <p style="font-size: 12px; margin-top: 10px;">${window.location.origin}/property/${property.slug}</p>
-                  </div>
-                </div>
-
-                <div class="footer">
-                  <h3>MyLocalInvest</h3>
-                  <p>Miami locals since 2015</p>
-                  <p>info@mylocalinvest.com</p>
-                  <p class="italic">Zero commissions. Zero closing costs. 100% confidential.</p>
-                </div>
-              </div>
-            `).join('')}
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
-
-    toast({
-      title: "Offers Ready to Print!",
-      description: `Generated ${selectedProps.length} offer letters with QR codes`,
-    });
+    setIsBatchPrintDialogOpen(true);
   };
 
   const handleSendEmails = () => {
@@ -1466,6 +1313,12 @@ const Admin = () => {
           onOpenChange={setIsPreviewDialogOpen}
           propertyIds={selectedProperties}
           onConfirm={handleConfirmCampaign}
+        />
+
+        <BatchOfferPrintDialog
+          properties={properties.filter(p => selectedProperties.includes(p.id))}
+          open={isBatchPrintDialogOpen}
+          onOpenChange={setIsBatchPrintDialogOpen}
         />
       </main>
       
