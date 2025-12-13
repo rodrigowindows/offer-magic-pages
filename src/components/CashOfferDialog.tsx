@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CashOfferLetter } from "./CashOfferLetter";
-import { Copy, Download, MessageSquare } from "lucide-react";
+import { Copy, Download, MessageSquare, Mail, Send, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Property {
   id: string;
@@ -17,6 +19,8 @@ interface Property {
   zip_code: string;
   estimated_value: number;
   cash_offer_amount: number;
+  owner_name?: string | null;
+  owner_phone?: string | null;
 }
 
 interface CashOfferDialogProps {
@@ -29,13 +33,23 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   const { toast } = useToast();
   const [phone, setPhone] = useState("786 882 8251");
   const [email, setEmail] = useState("info@mylocalinvest.com");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [language, setLanguage] = useState<"en" | "es">("en");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   if (!property) return null;
 
   const offerUrl = `${window.location.origin}/property/${property.slug}`;
   
-  const smsText = `Hi! $${property.cash_offer_amount.toLocaleString()} cash for ${property.address}. No repairs, close in 7 days. Reply YES → ${offerUrl}?src=sms`;
+  const smsText = language === "en"
+    ? `Hi${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! $${property.cash_offer_amount.toLocaleString()} cash for ${property.address}. No repairs, close in 7 days. Reply YES → ${offerUrl}?src=sms`
+    : `¡Hola${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! $${property.cash_offer_amount.toLocaleString()} en efectivo por ${property.address}. Sin reparaciones, cierre en 7 días. Responda SÍ → ${offerUrl}?src=sms`;
   
+  const whatsappText = encodeURIComponent(smsText);
+  const whatsappUrl = property.owner_phone 
+    ? `https://wa.me/${property.owner_phone.replace(/\D/g, '')}?text=${whatsappText}`
+    : `https://wa.me/?text=${whatsappText}`;
+
   const handlePrint = () => {
     window.print();
     toast({
@@ -61,20 +75,82 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
     });
   };
 
+  const handleWhatsApp = () => {
+    window.open(whatsappUrl, '_blank');
+    toast({
+      title: "WhatsApp opened",
+      description: "Message ready to send",
+    });
+  };
+
+  const handleSendEmail = async () => {
+    if (!recipientEmail) {
+      toast({
+        title: "Email required",
+        description: "Please enter recipient email",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-property-email', {
+        body: {
+          propertyId: property.id,
+          recipientEmail,
+          recipientName: property.owner_name || "Property Owner",
+          subject: language === "en" 
+            ? `Cash Offer for ${property.address}` 
+            : `Oferta en Efectivo para ${property.address}`,
+          language,
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email sent!",
+        description: `Offer letter sent to ${recipientEmail}`,
+      });
+      setRecipientEmail("");
+    } catch (error: any) {
+      toast({
+        title: "Error sending email",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cash Offer Letter Generator</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Cash Offer Letter Generator</span>
+            <div className="flex items-center gap-2">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">EN</span>
+              <Switch 
+                checked={language === "es"} 
+                onCheckedChange={(checked) => setLanguage(checked ? "es" : "en")} 
+              />
+              <span className="text-sm text-muted-foreground">ES</span>
+            </div>
+          </DialogTitle>
           <DialogDescription>
             Ultra-simple, conversion-focused offer for {property.address}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="preview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="preview">Preview</TabsTrigger>
-            <TabsTrigger value="sms">SMS Version</TabsTrigger>
+            <TabsTrigger value="send">Send</TabsTrigger>
+            <TabsTrigger value="sms">SMS/WhatsApp</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -102,7 +178,41 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 phone={phone}
                 email={email}
                 source="letter"
+                ownerName={property.owner_name || undefined}
+                language={language}
               />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="send" className="space-y-4">
+            <div className="bg-muted p-6 rounded-lg space-y-4">
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-primary mt-1" />
+                <div className="flex-1 space-y-4">
+                  <Label className="text-lg font-semibold block">Send via Email</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="recipientEmail">Recipient Email</Label>
+                    <Input
+                      id="recipientEmail"
+                      type="email"
+                      value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)}
+                      placeholder="owner@email.com"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSendEmail} 
+                    disabled={sendingEmail || !recipientEmail}
+                    className="w-full"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {sendingEmail ? "Sending..." : `Send ${language === "es" ? "Spanish" : "English"} Offer`}
+                  </Button>
+                  <p className="text-sm text-muted-foreground">
+                    Email includes tracking pixel for open detection
+                  </p>
+                </div>
+              </div>
             </div>
           </TabsContent>
 
@@ -111,7 +221,9 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
               <div className="flex items-start gap-3">
                 <MessageSquare className="w-5 h-5 text-primary mt-1" />
                 <div className="flex-1">
-                  <Label className="text-lg font-semibold mb-2 block">SMS Template (80% open rate)</Label>
+                  <Label className="text-lg font-semibold mb-2 block">
+                    SMS/WhatsApp Template ({language === "es" ? "Spanish" : "English"})
+                  </Label>
                   <p className="text-foreground bg-background p-4 rounded-lg border border-border font-mono text-sm whitespace-pre-wrap">
                     {smsText}
                   </p>
@@ -121,11 +233,22 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
               <div className="flex gap-2">
                 <Button onClick={handleCopySMS} className="flex-1">
                   <Copy className="w-4 h-4 mr-2" />
-                  Copy SMS Text
+                  Copy SMS
                 </Button>
+                <Button onClick={handleWhatsApp} variant="secondary" className="flex-1 bg-green-600 hover:bg-green-700 text-white">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Send WhatsApp
+                </Button>
+              </div>
+
+              <div className="flex gap-2">
                 <Button onClick={() => handleCopyUrl("sms")} variant="outline" className="flex-1">
                   <Copy className="w-4 h-4 mr-2" />
                   Copy SMS URL
+                </Button>
+                <Button onClick={() => handleCopyUrl("whatsapp")} variant="outline" className="flex-1">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy WhatsApp URL
                 </Button>
               </div>
 
@@ -134,28 +257,28 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">Letter:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs">{offerUrl}?src=letter</code>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=letter</code>
                     <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("letter")}>
                       <Copy className="w-3 h-3" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">SMS:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs">{offerUrl}?src=sms</code>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=sms</code>
                     <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("sms")}>
                       <Copy className="w-3 h-3" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground">Postcard:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs">{offerUrl}?src=postcard</code>
-                    <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("postcard")}>
+                    <span className="text-muted-foreground">WhatsApp:</span>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=whatsapp</code>
+                    <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("whatsapp")}>
                       <Copy className="w-3 h-3" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">Email:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs">{offerUrl}?src=email</code>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=email</code>
                     <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("email")}>
                       <Copy className="w-3 h-3" />
                     </Button>
@@ -194,6 +317,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                   <li>✓ 7 days + tax relief = emotional urgency</li>
                   <li>✓ Local name + phone + QR = instant trust</li>
                   <li>✓ No form needed - reply direct</li>
+                  <li>✓ Spanish option for Miami market</li>
                 </ul>
               </div>
             </div>
