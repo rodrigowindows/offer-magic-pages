@@ -105,6 +105,7 @@ export type Database = {
           api_response: Json | null
           api_status: number | null
           campaign_type: string
+          channel: string | null
           click_count: number | null
           clicked_at: string | null
           first_response_at: string | null
@@ -124,6 +125,7 @@ export type Database = {
           api_response?: Json | null
           api_status?: number | null
           campaign_type?: string
+          channel?: string | null
           click_count?: number | null
           clicked_at?: string | null
           first_response_at?: string | null
@@ -143,6 +145,7 @@ export type Database = {
           api_response?: Json | null
           api_status?: number | null
           campaign_type?: string
+          channel?: string | null
           click_count?: number | null
           clicked_at?: string | null
           first_response_at?: string | null
@@ -167,6 +170,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      campaign_sequences: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       campaign_templates: {
         Row: {
@@ -277,6 +307,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      follow_up_reminders: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          due_date: string
+          id: string
+          is_completed: boolean | null
+          notes: string | null
+          property_id: string
+          reminder_type: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          due_date: string
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          property_id: string
+          reminder_type: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          due_date?: string
+          id?: string
+          is_completed?: boolean | null
+          notes?: string | null
+          property_id?: string
+          reminder_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_up_reminders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -499,6 +570,101 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_sequences: {
+        Row: {
+          created_at: string
+          current_step: number
+          id: string
+          last_step_at: string | null
+          next_step_due: string | null
+          property_id: string
+          responded_at: string | null
+          sequence_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          id?: string
+          last_step_at?: string | null
+          next_step_due?: string | null
+          property_id: string
+          responded_at?: string | null
+          sequence_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          id?: string
+          last_step_at?: string | null
+          next_step_due?: string | null
+          property_id?: string
+          responded_at?: string | null
+          sequence_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_sequences_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_sequences_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sequences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sequence_steps: {
+        Row: {
+          channel: string
+          created_at: string
+          delay_days: number
+          id: string
+          message_template: string | null
+          sequence_id: string
+          step_order: number
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          message_template?: string | null
+          sequence_id: string
+          step_order: number
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          message_template?: string | null
+          sequence_id?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sequence_steps_sequence_id_fkey"
+            columns: ["sequence_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sequences"
             referencedColumns: ["id"]
           },
         ]

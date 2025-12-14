@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { X, QrCode, Trash2, FileText, Sparkles, Rocket } from "lucide-react";
+import { X, QrCode, Trash2, FileText, Sparkles, Rocket, Play } from "lucide-react";
 import { LeadStatusSelect } from "./LeadStatusSelect";
 import { LeadStatus } from "./LeadStatusBadge";
 import { useState } from "react";
@@ -13,6 +13,7 @@ interface BulkActionsBarProps {
   onPrintOffers: () => void;
   onStartCampaign: () => void;
   onAISuggestions: () => void;
+  onStartSequence?: () => void;
 }
 
 export const BulkActionsBar = ({
@@ -24,6 +25,7 @@ export const BulkActionsBar = ({
   onPrintOffers,
   onStartCampaign,
   onAISuggestions,
+  onStartSequence,
 }: BulkActionsBarProps) => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
 
@@ -95,8 +97,20 @@ export const BulkActionsBar = ({
           className="gap-2"
         >
           <Rocket className="h-4 w-4" />
-          Start Campaign
+          Campaign
         </Button>
+
+        {onStartSequence && (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onStartSequence}
+            className="gap-2 bg-chart-2 hover:bg-chart-2/90"
+          >
+            <Play className="h-4 w-4" />
+            Sequence
+          </Button>
+        )}
 
         <div className="h-6 w-px bg-border" />
 

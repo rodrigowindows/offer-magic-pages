@@ -51,7 +51,10 @@ import { CampaignPreviewDialog } from "@/components/CampaignPreviewDialog";
 import { PropertyNotesPanel } from "@/components/PropertyNotesPanel";
 import { AdminDashboardOverview } from "@/components/AdminDashboardOverview";
 import { BatchOfferPrintDialog } from "@/components/BatchOfferPrintDialog";
-
+import { ChannelAnalytics } from "@/components/ChannelAnalytics";
+import { SequenceManager } from "@/components/SequenceManager";
+import { FollowUpManager } from "@/components/FollowUpManager";
+import { StartSequenceDialog } from "@/components/StartSequenceDialog";
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
   city: z.string().min(1, "City is required").max(100, "City too long"),
@@ -138,7 +141,7 @@ const Admin = () => {
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [isBatchPrintDialogOpen, setIsBatchPrintDialogOpen] = useState(false);
-
+  const [isSequenceDialogOpen, setIsSequenceDialogOpen] = useState(false);
   useEffect(() => {
     checkAuth();
     fetchProperties();
@@ -612,7 +615,7 @@ const Admin = () => {
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
             <AdminDashboardOverview />
-            <FollowUpAlerts />
+            <FollowUpManager />
           </TabsContent>
 
           {/* Properties Tab */}
@@ -969,6 +972,9 @@ const Admin = () => {
                 <CampaignExport />
               </div>
             </div>
+            
+            <SequenceManager />
+            
             <div className="bg-card rounded-lg border border-border p-6 space-y-6">
               <ResponseTimeAnalytics />
               <CampaignAnalytics />
@@ -981,6 +987,7 @@ const Admin = () => {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
+            <ChannelAnalytics />
             <div>
               <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
               <div className="bg-card rounded-lg border border-border p-6">
@@ -1320,6 +1327,11 @@ const Admin = () => {
           open={isBatchPrintDialogOpen}
           onOpenChange={setIsBatchPrintDialogOpen}
         />
+        <StartSequenceDialog
+          open={isSequenceDialogOpen}
+          onOpenChange={setIsSequenceDialogOpen}
+          selectedProperties={properties.filter(p => selectedProperties.includes(p.id)).map(p => ({ id: p.id, address: p.address, city: p.city }))}
+        />
       </main>
       
       <BulkActionsBar
@@ -1331,6 +1343,7 @@ const Admin = () => {
         onPrintOffers={handleBulkPrintOffers}
         onStartCampaign={handleStartCampaign}
         onAISuggestions={handleAISuggestions}
+        onStartSequence={() => setIsSequenceDialogOpen(true)}
       />
       
       <AdminChatBot />
