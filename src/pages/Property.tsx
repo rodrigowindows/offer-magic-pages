@@ -5,6 +5,14 @@ import PropertyHero from "@/components/PropertyHero";
 import PropertyMap from "@/components/PropertyMap";
 import CashOfferSection from "@/components/CashOfferSection";
 import ContactForm from "@/components/ContactForm";
+import OfferCountdown from "@/components/OfferCountdown";
+import SocialProofBanner from "@/components/SocialProofBanner";
+import SavingsCalculator from "@/components/SavingsCalculator";
+import TrustCredentials from "@/components/TrustCredentials";
+import NeighborhoodComparables from "@/components/NeighborhoodComparables";
+import OfferProgressIndicator from "@/components/OfferProgressIndicator";
+import OfferChatBot from "@/components/OfferChatBot";
+import LanguageToggle from "@/components/LanguageToggle";
 
 interface PropertyData {
   id: string;
@@ -17,12 +25,45 @@ interface PropertyData {
   estimated_value: number;
   cash_offer_amount: number;
   status: string;
+  owner_name: string | null;
+  neighborhood: string | null;
 }
+
+const translations = {
+  en: {
+    loading: "Loading property details...",
+    notFound: "Property Not Found",
+    notFoundDesc: "The property you're looking for doesn't exist or is no longer available.",
+    returnHome: "Return to Home",
+    helpingSellers: "Helping Miami homeowners find fair solutions to tax deed challenges since 2015",
+    greeting: "Hi",
+    personalOffer: "We have a personalized cash offer ready for you!",
+    seeWhatYouSave: "See What You Save",
+    nearbyComparables: "Recent Sales Near You",
+    yourProgress: "Your Path to a Quick Sale"
+  },
+  es: {
+    loading: "Cargando detalles de la propiedad...",
+    notFound: "Propiedad No Encontrada",
+    notFoundDesc: "La propiedad que busca no existe o ya no está disponible.",
+    returnHome: "Volver al Inicio",
+    helpingSellers: "Ayudando a propietarios de Miami a encontrar soluciones justas desde 2015",
+    greeting: "Hola",
+    personalOffer: "¡Tenemos una oferta en efectivo personalizada lista para usted!",
+    seeWhatYouSave: "Vea Lo Que Ahorra",
+    nearbyComparables: "Ventas Recientes Cerca de Usted",
+    yourProgress: "Su Camino a una Venta Rápida"
+  }
+};
 
 const Property = () => {
   const { slug } = useParams();
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [language, setLanguage] = useState<'en' | 'es'>('en');
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const t = translations[language];
 
   useEffect(() => {
     if (slug) {
@@ -66,7 +107,6 @@ const Property = () => {
   };
 
   const trackPageView = (propertySlug: string) => {
-    // Track page view with GA4
     if (typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('event', 'offer_viewed', {
         property_slug: propertySlug
@@ -74,12 +114,16 @@ const Property = () => {
     }
   };
 
+  const handleFormSubmit = () => {
+    setCurrentStep(2);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading property details...</p>
+          <p className="text-muted-foreground">{t.loading}</p>
         </div>
       </div>
     );
@@ -89,13 +133,9 @@ const Property = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md">
-          <h1 className="text-4xl font-bold text-foreground mb-4">Property Not Found</h1>
-          <p className="text-muted-foreground mb-6">
-            The property you're looking for doesn't exist or is no longer available.
-          </p>
-          <a href="/" className="text-primary hover:underline">
-            Return to Home
-          </a>
+          <h1 className="text-4xl font-bold text-foreground mb-4">{t.notFound}</h1>
+          <p className="text-muted-foreground mb-6">{t.notFoundDesc}</p>
+          <a href="/" className="text-primary hover:underline">{t.returnHome}</a>
         </div>
       </div>
     );
@@ -108,13 +148,50 @@ const Property = () => {
   const imageUrl = property.property_image_url || 
     "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80";
 
+  const ownerFirstName = property.owner_name?.split(' ')[0] || '';
+
   return (
     <main className="min-h-screen">
+      {/* Language Toggle */}
+      <LanguageToggle language={language} onChange={setLanguage} />
+
+      {/* Personalized Greeting */}
+      {ownerFirstName && (
+        <div className="bg-gradient-to-r from-secondary/20 to-primary/20 py-4">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-lg font-medium text-foreground">
+              {t.greeting} <span className="font-bold text-secondary">{ownerFirstName}</span>! {t.personalOffer}
+            </p>
+          </div>
+        </div>
+      )}
+
       <PropertyHero 
         address={fullAddress}
         imageUrl={imageUrl}
         qrCodeUrl={qrCodeUrl}
       />
+
+      {/* Social Proof Banner */}
+      <section className="py-4 bg-background">
+        <div className="container mx-auto px-4">
+          <SocialProofBanner propertyId={property.id} />
+        </div>
+      </section>
+
+      {/* Progress Indicator */}
+      <section className="py-6 bg-background">
+        <div className="container mx-auto px-4">
+          <OfferProgressIndicator currentStep={currentStep} />
+        </div>
+      </section>
+
+      {/* Countdown Timer */}
+      <section className="py-6 bg-background">
+        <div className="container mx-auto px-4 max-w-md">
+          <OfferCountdown expirationDays={7} />
+        </div>
+      </section>
       
       <section className="py-8 md:py-12 bg-background">
         <div className="container mx-auto px-4">
@@ -131,16 +208,52 @@ const Property = () => {
         offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
         estimatedValue={`$${property.estimated_value.toLocaleString()}`}
       />
+
+      {/* Savings Calculator */}
+      <section className="py-12 bg-background">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <SavingsCalculator 
+            cashOffer={property.cash_offer_amount} 
+            estimatedValue={property.estimated_value} 
+          />
+        </div>
+      </section>
+
+      {/* Neighborhood Comparables */}
+      <section className="py-12 bg-muted/30">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <NeighborhoodComparables 
+            propertyValue={property.estimated_value}
+            neighborhood={property.neighborhood || undefined}
+            city={property.city}
+          />
+        </div>
+      </section>
+
+      {/* Trust Credentials */}
+      <section className="py-12 bg-background">
+        <div className="container mx-auto px-4 max-w-5xl">
+          <TrustCredentials />
+        </div>
+      </section>
       
-      <ContactForm propertyAddress={fullAddress} propertyId={property.id} />
+      <ContactForm 
+        propertyAddress={fullAddress} 
+        propertyId={property.id} 
+        onSubmit={handleFormSubmit}
+      />
+
+      {/* Chatbot */}
+      <OfferChatBot 
+        propertyAddress={fullAddress}
+        cashOffer={property.cash_offer_amount}
+      />
       
       <footer className="bg-foreground text-background py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-4">
             <h3 className="text-2xl font-bold">MyLocalInvest</h3>
-            <p className="text-background/80">
-              Helping Miami homeowners find fair solutions to tax deed challenges since 2015
-            </p>
+            <p className="text-background/80">{t.helpingSellers}</p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-background/70">
               <a href="tel:305-555-0123" className="hover:text-background transition-colors">
                 (305) 555-0123
