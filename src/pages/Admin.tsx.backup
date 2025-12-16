@@ -55,17 +55,6 @@ import { ChannelAnalytics } from "@/components/ChannelAnalytics";
 import { SequenceManager } from "@/components/SequenceManager";
 import { FollowUpManager } from "@/components/FollowUpManager";
 import { StartSequenceDialog } from "@/components/StartSequenceDialog";
-// NEW COMPONENTS - Orlando Integration
-import { PropertyImageUpload } from "@/components/PropertyImageUpload";
-import { PropertyTagsManager } from "@/components/PropertyTagsManager";
-import { PropertyTagsFilter } from "@/components/PropertyTagsFilter";
-import { PropertyApprovalDialog } from "@/components/PropertyApprovalDialog";
-import { PropertyApprovalFilter } from "@/components/PropertyApprovalFilter";
-import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "@/components/AdvancedPropertyFilters";
-import { PropertyImageDisplay } from "@/components/PropertyImageDisplay";
-import { AirbnbEligibilityChecker } from "@/components/AirbnbEligibilityChecker";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
   city: z.string().min(1, "City is required").max(100, "City too long"),
