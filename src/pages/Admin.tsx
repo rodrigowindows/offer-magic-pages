@@ -703,7 +703,7 @@ const Admin = () => {
     ? properties 
     : properties.filter(p => p.lead_status === filterStatus);
 
-  const statusCounts = properties.reduce((acc, property) => {
+  const leadStatusCounts = properties.reduce((acc, property) => {
     acc[property.lead_status] = (acc[property.lead_status] || 0) + 1;
     acc.all = (acc.all || 0) + 1;
     return acc;
@@ -780,7 +780,7 @@ const Admin = () => {
             <PropertyFilters
               selectedStatus={filterStatus}
               onStatusChange={setFilterStatus}
-              statusCounts={statusCounts}
+              statusCounts={leadStatusCounts}
             />
 
             {/* NEW - Orlando Integration Filters */}
@@ -788,7 +788,7 @@ const Admin = () => {
               <PropertyApprovalFilter
                 selectedStatus={approvalStatus}
                 onStatusChange={setApprovalStatus}
-                statusCounts={statusCounts}
+                counts={statusCounts}
               />
               <PropertyTagsFilter
                 selectedTags={selectedTags}
@@ -796,7 +796,7 @@ const Admin = () => {
               />
               <AdvancedPropertyFilters
                 filters={advancedFilters}
-                onFilterChange={setAdvancedFilters}
+                onFiltersChange={setAdvancedFilters}
               />
             </div>
 
@@ -1036,7 +1036,7 @@ const Admin = () => {
                           onCheckAirbnb={() => {
                             setSelectedPropertyForAirbnb(property.id);
                           }}
-                          onViewOffer={() => openOfferDialog(property)}
+                          onGenerateOffer={() => openOfferDialog(property)}
                           onEdit={() => openEditDialog(property)}
                           onViewPage={() => window.open(`/property/${property.slug}`, '_blank')}
                           onCopyLink={() => copyPropertyLink(property.slug)}
@@ -1671,52 +1671,85 @@ const Admin = () => {
         />
 
         {/* NEW - Orlando Integration Dialogs */}
-        {selectedPropertyForImage && (
-          <PropertyImageUpload
-            propertyId={selectedPropertyForImage}
-            currentImageUrl={properties.find(p => p.id === selectedPropertyForImage)?.property_image_url || ""}
-            onClose={() => setSelectedPropertyForImage(null)}
-            onSuccess={() => {
-              fetchProperties();
-              setSelectedPropertyForImage(null);
-            }}
-          />
-        )}
+        {selectedPropertyForImage && (() => {
+          const prop = properties.find(p => p.id === selectedPropertyForImage);
+          return prop ? (
+            <Dialog open={!!selectedPropertyForImage} onOpenChange={(open) => !open && setSelectedPropertyForImage(null)}>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Upload Property Image</DialogTitle>
+                  <DialogDescription>Upload a photo for {prop.address}</DialogDescription>
+                </DialogHeader>
+                <PropertyImageUpload
+                  propertyId={selectedPropertyForImage}
+                  propertySlug={prop.slug}
+                  currentImageUrl={prop.property_image_url}
+                  onImageUploaded={() => {
+                    fetchProperties();
+                    setSelectedPropertyForImage(null);
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          ) : null;
+        })()}
 
-        {selectedPropertyForTags && (
-          <PropertyTagsManager
-            propertyId={selectedPropertyForTags}
-            currentTags={[]}
-            onClose={() => setSelectedPropertyForTags(null)}
-            onSuccess={() => {
-              fetchProperties();
-              setSelectedPropertyForTags(null);
-            }}
-          />
-        )}
+        {selectedPropertyForTags && (() => {
+          const prop = properties.find(p => p.id === selectedPropertyForTags);
+          return prop ? (
+            <Dialog open={!!selectedPropertyForTags} onOpenChange={(open) => !open && setSelectedPropertyForTags(null)}>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Manage Property Tags</DialogTitle>
+                  <DialogDescription>Add tags to categorize {prop.address}</DialogDescription>
+                </DialogHeader>
+                <PropertyTagsManager
+                  propertyId={selectedPropertyForTags}
+                  currentTags={(prop as any).tags || []}
+                  onTagsUpdated={() => {
+                    fetchProperties();
+                    setSelectedPropertyForTags(null);
+                  }}
+                />
+              </DialogContent>
+            </Dialog>
+          ) : null;
+        })()}
 
-        {selectedPropertyForApproval && (
-          <PropertyApprovalDialog
-            propertyId={selectedPropertyForApproval}
-            propertyAddress={properties.find(p => p.id === selectedPropertyForApproval)?.address || ""}
-            currentStatus="pending"
-            onClose={() => setSelectedPropertyForApproval(null)}
-            onSuccess={() => {
-              fetchProperties();
-              setSelectedPropertyForApproval(null);
-            }}
-          />
-        )}
+        {selectedPropertyForApproval && (() => {
+          const prop = properties.find(p => p.id === selectedPropertyForApproval);
+          return prop ? (
+            <PropertyApprovalDialog
+              propertyId={selectedPropertyForApproval}
+              propertyAddress={prop.address}
+              currentStatus={(prop as any).approval_status || "pending"}
+              onStatusChange={() => {
+                fetchProperties();
+                setSelectedPropertyForApproval(null);
+              }}
+            />
+          ) : null;
+        })()}
 
-        {selectedPropertyForAirbnb && (
-          <AirbnbEligibilityChecker
-            propertyId={selectedPropertyForAirbnb}
-            address={properties.find(p => p.id === selectedPropertyForAirbnb)?.address || ""}
-            city={properties.find(p => p.id === selectedPropertyForAirbnb)?.city || ""}
-            state={properties.find(p => p.id === selectedPropertyForAirbnb)?.state || ""}
-            onClose={() => setSelectedPropertyForAirbnb(null)}
-          />
-        )}
+        {selectedPropertyForAirbnb && (() => {
+          const prop = properties.find(p => p.id === selectedPropertyForAirbnb);
+          return prop ? (
+            <AirbnbEligibilityChecker
+              propertyId={selectedPropertyForAirbnb}
+              propertyAddress={prop.address}
+              city={prop.city}
+              state={prop.state}
+              currentEligible={(prop as any).airbnb_eligible}
+              currentRegulations={(prop as any).airbnb_regulations}
+              currentNotes={(prop as any).airbnb_notes}
+              lastCheckDate={(prop as any).airbnb_check_date}
+              onCheckComplete={() => {
+                fetchProperties();
+                setSelectedPropertyForAirbnb(null);
+              }}
+            />
+          ) : null;
+        })()}
 
         {selectedPropertyForComparison && (() => {
           const property = properties.find(p => p.id === selectedPropertyForComparison);

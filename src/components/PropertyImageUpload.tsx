@@ -5,14 +5,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Image as ImageIcon, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 interface PropertyImageUploadProps {
   propertyId: string;
@@ -129,87 +121,70 @@ export const PropertyImageUpload = ({
   };
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Upload className="h-4 w-4 mr-2" />
-          {currentImageUrl ? "Change Image" : "Upload Image"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Upload Property Image</DialogTitle>
-          <DialogDescription>
-            Upload a photo of the property. JPG, PNG up to 5MB.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {/* Current Image */}
-          {currentImageUrl && !previewUrl && (
-            <div>
-              <Label>Current Image:</Label>
-              <div className="mt-2 border rounded-lg overflow-hidden">
-                <img
-                  src={currentImageUrl}
-                  alt="Current property"
-                  className="w-full h-48 object-cover"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Preview */}
-          {previewUrl && (
-            <div>
-              <Label>Preview:</Label>
-              <div className="mt-2 border rounded-lg overflow-hidden relative">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-48 object-cover"
-                />
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="absolute top-2 right-2"
-                  onClick={clearSelection}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* File Input */}
-          <div>
-            <Label htmlFor="image-upload">Select Image:</Label>
-            <Input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="mt-2"
+    <div className="space-y-4">
+      {/* Current Image */}
+      {currentImageUrl && !previewUrl && (
+        <div>
+          <Label>Current Image:</Label>
+          <div className="mt-2 border rounded-lg overflow-hidden">
+            <img
+              src={currentImageUrl}
+              alt="Current property"
+              className="w-full h-48 object-cover"
             />
           </div>
-
-          {/* Upload Button */}
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-            className="w-full"
-          >
-            {isUploading ? (
-              <>Uploading...</>
-            ) : (
-              <>
-                <ImageIcon className="h-4 w-4 mr-2" />
-                Upload Image
-              </>
-            )}
-          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+
+      {/* Preview */}
+      {previewUrl && (
+        <div>
+          <Label>Preview:</Label>
+          <div className="mt-2 border rounded-lg overflow-hidden relative">
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="w-full h-48 object-cover"
+            />
+            <Button
+              variant="destructive"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={clearSelection}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* File Input */}
+      <div>
+        <Label htmlFor="image-upload">Select Image:</Label>
+        <Input
+          id="image-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="mt-2"
+        />
+      </div>
+
+      {/* Upload Button */}
+      <Button
+        onClick={handleUpload}
+        disabled={!selectedFile || isUploading}
+        className="w-full"
+      >
+        {isUploading ? (
+          <>Uploading...</>
+        ) : (
+          <>
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Upload Image
+          </>
+        )}
+      </Button>
+    </div>
   );
 };
