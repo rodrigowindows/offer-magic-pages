@@ -418,6 +418,7 @@ export type Database = {
           sms_sent: boolean
           state: string
           status: string
+          tags: string[] | null
           updated_at: string
           zillow_url: string | null
           zip_code: string
@@ -452,6 +453,7 @@ export type Database = {
           sms_sent?: boolean
           state?: string
           status?: string
+          tags?: string[] | null
           updated_at?: string
           zillow_url?: string | null
           zip_code: string
@@ -486,6 +488,7 @@ export type Database = {
           sms_sent?: boolean
           state?: string
           status?: string
+          tags?: string[] | null
           updated_at?: string
           zillow_url?: string | null
           zip_code?: string
