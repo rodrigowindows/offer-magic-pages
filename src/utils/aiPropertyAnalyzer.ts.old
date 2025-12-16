@@ -1,0 +1,305 @@
+import { supabase } from "@/integrations/supabase/client";
+
+export interface PropertyAnalysisResult {
+  estimatedValueRange: {
+    low: number;
+    mid: number;
+    high: number;
+  };
+  offerPercentage: number;
+  marketCondition: "hot" | "normal" | "cold";
+  recommendation: string;
+  comparableInsights: string;
+  zillowSearchUrl: string;
+  confidence: "high" | "medium" | "low";
+  aiAnalysis: string;
+}
+
+/**
+ * Uses AI (via Supabase Edge Function or OpenAI-compatible API) to analyze property
+ * and generate comparative price analysis without paid property APIs
+ */
+export const analyzePropertyWithAI = async (
+  address: string,
+  city: string,
+  state: string,
+  zipCode: string,
+  estimatedValue: number,
+  cashOfferAmount: number,
+  propertyType?: string,
+  bedrooms?: number,
+  bathrooms?: number,
+  squareFeet?: number,
+  yearBuilt?: number
+): Promise<PropertyAnalysisResult> => {
+  try {
+    // Construct property context for AI
+    const propertyContext = `
+Property Details:
+- Address: ${address}, ${city}, ${state} ${zipCode}
+- Property Type: ${propertyType || "Single Family"}
+- Bedrooms: ${bedrooms || "Unknown"}
+- Bathrooms: ${bathrooms || "Unknown"}
+- Square Feet: ${squareFeet || "Unknown"}
+- Year Built: ${yearBuilt || "Unknown"}
+- Current Estimated Value: $${estimatedValue.toLocaleString()}
+- Cash Offer Amount: $${cashOfferAmount.toLocaleString()}
+- Offer Percentage: ${((cashOfferAmount / estimatedValue) * 100).toFixed(1)}%
+
+Market Context:
+- City: ${city}, ${state}
+- Target: Distressed properties for cash offers
+- Strategy: Wholesale/Fix & Flip investment
+`;
+
+    // Call Supabase Edge Function (you'll need to create this)
+    // OR use OpenAI API directly with user's API key
+    const { data, error } = await supabase.functions.invoke('analyze-property', {
+      body: {
+        propertyContext,
+        address,
+        city,
+        state,
+        zipCode,
+        estimatedValue,
+        cashOfferAmount,
+      },
+    });
+
+    if (error) {
+      console.error("AI analysis error:", error);
+      // Fallback to rule-based analysis
+      return generateRuleBasedAnalysis(
+        address,
+        city,
+        state,
+        zipCode,
+        estimatedValue,
+        cashOfferAmount
+      );
+    }
+
+    return data as PropertyAnalysisResult;
+  } catch (error) {
+    console.error("Failed to analyze property:", error);
+    // Fallback to rule-based analysis
+    return generateRuleBasedAnalysis(
+      address,
+      city,
+      state,
+      zipCode,
+      estimatedValue,
+      cashOfferAmount
+    );
+  }
+};
+
+/**
+ * Fallback rule-based analysis when AI is not available
+ */
+export const generateRuleBasedAnalysis = (
+  address: string,
+  city: string,
+  state: string,
+  zipCode: string,
+  estimatedValue: number,
+  cashOfferAmount: number
+): PropertyAnalysisResult => {
+  const offerPercentage = (cashOfferAmount / estimatedValue) * 100;
+
+  // Calculate value range based on typical market variance
+  const variance = estimatedValue * 0.1; // ±10% variance
+  const estimatedValueRange = {
+    low: Math.round(estimatedValue - variance),
+    mid: Math.round(estimatedValue),
+    high: Math.round(estimatedValue + variance),
+  };
+
+  // Determine market condition based on offer percentage
+  let marketCondition: "hot" | "normal" | "cold";
+  if (offerPercentage < 70) {
+    marketCondition = "hot"; // High demand, low offers accepted
+  } else if (offerPercentage < 85) {
+    marketCondition = "normal";
+  } else {
+    marketCondition = "cold"; // Low demand, higher offers needed
+  }
+
+  // Generate recommendation
+  let recommendation: string;
+  if (offerPercentage < 65) {
+    recommendation = "🔴 OFFER TOO LOW - Consider increasing to 65-75% of estimated value for distressed properties.";
+  } else if (offerPercentage < 75) {
+    recommendation = "🟢 GOOD OFFER - This is a competitive wholesale offer (65-75% range). Proceed if property needs significant repairs.";
+  } else if (offerPercentage < 85) {
+    recommendation = "🟡 MODERATE OFFER - At 75-85%, ensure property has minimal repairs needed for profitability.";
+  } else {
+    recommendation = "⚠️ HIGH OFFER - Above 85% may reduce profit margin. Verify property condition justifies this price.";
+  }
+
+  // Generate comparable insights
+  const comparableInsights = `
+Based on ${city}, ${state} market analysis:
+• Estimated value range: $${estimatedValueRange.low.toLocaleString()} - $${estimatedValueRange.high.toLocaleString()}
+• Your offer is at ${offerPercentage.toFixed(1)}% of estimated value
+• Typical wholesale offers: 60-75% of ARV (After Repair Value)
+• Consider repair costs, holding costs, and target profit margin
+`;
+
+  // Generate Zillow search URL
+  const zillowSearchUrl = generateZillowSearchUrl(address, city, state, zipCode);
+
+  // AI-style analysis summary
+  const aiAnalysis = `
+Property Analysis for ${address}:
+
+VALUATION ASSESSMENT:
+The estimated value of $${estimatedValue.toLocaleString()} appears ${
+    estimatedValueRange.mid > 250000 ? "above average" : "reasonable"
+  } for ${city}, ${state}. Based on typical market conditions, this property's value likely ranges from $${estimatedValueRange.low.toLocaleString()} to $${estimatedValueRange.high.toLocaleString()}.
+
+OFFER ANALYSIS:
+Your cash offer of $${cashOfferAmount.toLocaleString()} represents ${offerPercentage.toFixed(1)}% of the estimated value. ${
+    offerPercentage < 70
+      ? "This is a conservative offer suitable for properties requiring extensive repairs or in distressed condition."
+      : offerPercentage < 80
+      ? "This is a moderate offer appropriate for properties in fair condition with some repair needs."
+      : "This is a strong offer that suggests minimal repairs or high market competition."
+  }
+
+MARKET CONTEXT:
+${city}, ${state} is ${
+    ["Orlando", "Miami", "Tampa", "Jacksonville"].includes(city)
+      ? "a major Florida market with strong investor activity"
+      : "a Florida market with varying levels of investor activity"
+  }. ${
+    marketCondition === "hot"
+      ? "Current conditions suggest strong seller leverage."
+      : marketCondition === "normal"
+      ? "Market conditions appear balanced between buyers and sellers."
+      : "Current conditions may favor buyer negotiations."
+  }
+
+RECOMMENDATION:
+${recommendation}
+
+Next steps: Verify property condition, research recent sales in the neighborhood, and adjust offer based on repair estimates.
+`;
+
+  return {
+    estimatedValueRange,
+    offerPercentage: Math.round(offerPercentage * 10) / 10,
+    marketCondition,
+    recommendation,
+    comparableInsights: comparableInsights.trim(),
+    zillowSearchUrl,
+    confidence: "medium",
+    aiAnalysis: aiAnalysis.trim(),
+  };
+};
+
+/**
+ * Generate Zillow search URL for property
+ */
+export const generateZillowSearchUrl = (
+  address: string,
+  city: string,
+  state: string,
+  zipCode: string
+): string => {
+  const searchQuery = encodeURIComponent(`${address} ${city} ${state} ${zipCode}`);
+  return `https://www.zillow.com/homes/${searchQuery}_rb/`;
+};
+
+/**
+ * Generate multiple Zillow URLs for finding exact property
+ */
+export const generateZillowUrls = (
+  address: string,
+  city: string,
+  state: string,
+  zipCode: string
+): { searchUrl: string; directUrl: string; mapUrl: string } => {
+  const searchQuery = encodeURIComponent(`${address} ${city} ${state} ${zipCode}`);
+  const addressSlug = address
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  return {
+    searchUrl: `https://www.zillow.com/homes/${searchQuery}_rb/`,
+    directUrl: `https://www.zillow.com/homedetails/${addressSlug}-${city.toLowerCase()}-${state.toLowerCase()}-${zipCode}/`,
+    mapUrl: `https://www.zillow.com/homes/${city}-${state}-${zipCode}_rb/?searchQueryState=%7B%22mapBounds%22%3A%7B%7D%7D`,
+  };
+};
+
+/**
+ * Save AI analysis to database
+ */
+export const savePropertyAnalysis = async (
+  propertyId: string,
+  analysis: PropertyAnalysisResult
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("properties")
+      .update({
+        comparative_price: analysis.estimatedValueRange.mid,
+        zillow_url: analysis.zillowSearchUrl,
+        evaluation: `${analysis.recommendation}\n\nConfidence: ${analysis.confidence}`,
+      })
+      .eq("id", propertyId);
+
+    if (error) {
+      console.error("Failed to save analysis:", error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error saving analysis:", error);
+    return false;
+  }
+};
+
+/**
+ * Batch analyze multiple properties
+ */
+export const batchAnalyzeProperties = async (
+  properties: Array<{
+    id: string;
+    address: string;
+    city: string;
+    state: string;
+    zip_code: string;
+    estimated_value: number;
+    cash_offer_amount: number;
+  }>
+): Promise<Map<string, PropertyAnalysisResult>> => {
+  const results = new Map<string, PropertyAnalysisResult>();
+
+  for (const property of properties) {
+    try {
+      const analysis = await analyzePropertyWithAI(
+        property.address,
+        property.city,
+        property.state,
+        property.zip_code,
+        property.estimated_value,
+        property.cash_offer_amount
+      );
+
+      results.set(property.id, analysis);
+
+      // Save to database
+      await savePropertyAnalysis(property.id, analysis);
+
+      // Add delay to avoid rate limiting
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    } catch (error) {
+      console.error(`Failed to analyze property ${property.id}:`, error);
+    }
+  }
+
+  return results;
+};

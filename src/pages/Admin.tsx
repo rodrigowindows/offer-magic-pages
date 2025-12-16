@@ -64,7 +64,15 @@ import { PropertyApprovalFilter } from "@/components/PropertyApprovalFilter";
 import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "@/components/AdvancedPropertyFilters";
 import { PropertyImageDisplay } from "@/components/PropertyImageDisplay";
 import { AirbnbEligibilityChecker } from "@/components/AirbnbEligibilityChecker";
+import { PropertyComparison } from "@/components/PropertyComparison";
+import { BulkImportDialog } from "@/components/BulkImportDialog";
+import { GeminiAPIKeyDialog } from "@/components/GeminiAPIKeyDialog";
+import { PropertyCardView } from "@/components/PropertyCardView";
+import { BatchReviewMode } from "@/components/BatchReviewMode";
+import { QuickFiltersSidebar } from "@/components/QuickFiltersSidebar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
+import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -153,10 +161,40 @@ const Admin = () => {
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [isBatchPrintDialogOpen, setIsBatchPrintDialogOpen] = useState(false);
   const [isSequenceDialogOpen, setIsSequenceDialogOpen] = useState(false);
+
+  // NEW - Orlando Integration Dialog States
+  const [selectedPropertyForImage, setSelectedPropertyForImage] = useState<string | null>(null);
+  const [selectedPropertyForTags, setSelectedPropertyForTags] = useState<string | null>(null);
+  const [selectedPropertyForApproval, setSelectedPropertyForApproval] = useState<string | null>(null);
+  const [selectedPropertyForAirbnb, setSelectedPropertyForAirbnb] = useState<string | null>(null);
+  const [selectedPropertyForComparison, setSelectedPropertyForComparison] = useState<string | null>(null);
+  const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
+  const [isGeminiAPIKeyDialogOpen, setIsGeminiAPIKeyDialogOpen] = useState(false);
+
+  // NEW - Orlando Integration States
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({});
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [approvalStatus, setApprovalStatus] = useState<string>("all");
+  const [statusCounts, setStatusCounts] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const { userId, userName } = useCurrentUser();
+
+  // NEW - UI Enhancement States
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
+  const [isBatchReviewOpen, setIsBatchReviewOpen] = useState(false);
+  const [showFiltersSidebar, setShowFiltersSidebar] = useState(true);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState('all');
+
   useEffect(() => {
     checkAuth();
     fetchProperties();
   }, []);
+
+  // Refetch when filters change
+  useEffect(() => {
+    fetchProperties();
+  }, [advancedFilters, selectedTags, approvalStatus, priceRange, selectedCities, dateFilter]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -166,10 +204,92 @@ const Admin = () => {
   };
 
   const fetchProperties = async () => {
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .order("created_at", { ascending: false });
+    let query = supabase.from("properties").select("*");
+
+    // Apply advanced filters
+    if (advancedFilters.city?.length) {
+      query = query.in("city", advancedFilters.city);
+    }
+    if (advancedFilters.county?.length) {
+      query = query.in("county", advancedFilters.county);
+    }
+    if (advancedFilters.propertyType?.length) {
+      query = query.in("property_type", advancedFilters.propertyType);
+    }
+    if (advancedFilters.importBatch?.length) {
+      query = query.in("import_batch", advancedFilters.importBatch);
+    }
+    if (advancedFilters.importDateFrom) {
+      query = query.gte("import_date", advancedFilters.importDateFrom.toISOString().split('T')[0]);
+    }
+    if (advancedFilters.importDateTo) {
+      query = query.lte("import_date", advancedFilters.importDateTo.toISOString().split('T')[0]);
+    }
+    if (advancedFilters.priceMin) {
+      query = query.gte("estimated_value", advancedFilters.priceMin);
+    }
+    if (advancedFilters.priceMax) {
+      query = query.lte("estimated_value", advancedFilters.priceMax);
+    }
+    if (advancedFilters.bedrooms) {
+      query = query.gte("bedrooms", advancedFilters.bedrooms);
+    }
+    if (advancedFilters.bathrooms) {
+      query = query.gte("bathrooms", advancedFilters.bathrooms);
+    }
+    if (advancedFilters.airbnbEligible !== undefined) {
+      query = query.eq("airbnb_eligible", advancedFilters.airbnbEligible);
+    }
+    if (advancedFilters.hasImage !== undefined) {
+      if (advancedFilters.hasImage) {
+        query = query.not("property_image_url", "is", null);
+      } else {
+        query = query.is("property_image_url", null);
+      }
+    }
+
+    // Apply tag filter
+    if (selectedTags.length > 0) {
+      query = query.contains("tags", selectedTags);
+    }
+
+    // Apply approval filter
+    if (approvalStatus !== "all") {
+      query = query.eq("approval_status", approvalStatus);
+    }
+
+    // Apply price range filter (from QuickFiltersSidebar)
+    if (priceRange[0] > 0) {
+      query = query.gte("estimated_value", priceRange[0]);
+    }
+    if (priceRange[1] < 1000000) {
+      query = query.lte("estimated_value", priceRange[1]);
+    }
+
+    // Apply cities filter (from QuickFiltersSidebar)
+    if (selectedCities.length > 0) {
+      query = query.in("city", selectedCities);
+    }
+
+    // Apply date filter (from QuickFiltersSidebar)
+    if (dateFilter !== 'all') {
+      const today = new Date();
+      if (dateFilter === '7days') {
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        query = query.gte("created_at", sevenDaysAgo.toISOString());
+      } else if (dateFilter === '30days') {
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        query = query.gte("created_at", thirtyDaysAgo.toISOString());
+      } else if (dateFilter === '90days') {
+        const ninetyDaysAgo = new Date(today);
+        ninetyDaysAgo.setDate(today.getDate() - 90);
+        query = query.gte("created_at", ninetyDaysAgo.toISOString());
+      }
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error) {
       toast({
@@ -179,6 +299,16 @@ const Admin = () => {
       });
     } else {
       setProperties((data || []) as Property[]);
+
+      // Update status counts
+      if (data) {
+        const counts = {
+          pending: data.filter((p: any) => p.approval_status === 'pending' || !p.approval_status).length,
+          approved: data.filter((p: any) => p.approval_status === 'approved').length,
+          rejected: data.filter((p: any) => p.approval_status === 'rejected').length,
+        };
+        setStatusCounts(counts);
+      }
     }
   };
 
@@ -585,9 +715,25 @@ const Admin = () => {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-foreground">Property Management</h1>
           <div className="flex gap-2">
-            <Button 
-              onClick={() => setIsMarketingSettingsOpen(true)} 
-              variant="outline" 
+            <Button
+              onClick={() => setIsBulkImportDialogOpen(true)}
+              variant="default"
+              size="sm"
+            >
+              <FileDown className="w-4 h-4 mr-2" />
+              Importação em Massa
+            </Button>
+            <Button
+              onClick={() => setIsGeminiAPIKeyDialogOpen(true)}
+              variant="outline"
+              size="sm"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Gemini AI
+            </Button>
+            <Button
+              onClick={() => setIsMarketingSettingsOpen(true)}
+              variant="outline"
               size="sm"
             >
               <Rocket className="w-4 h-4 mr-2" />
@@ -631,15 +777,76 @@ const Admin = () => {
 
           {/* Properties Tab */}
           <TabsContent value="properties" className="space-y-6">
-            <PropertyFilters 
+            <PropertyFilters
               selectedStatus={filterStatus}
               onStatusChange={setFilterStatus}
               statusCounts={statusCounts}
             />
-            
+
+            {/* NEW - Orlando Integration Filters */}
+            <div className="flex flex-wrap gap-2">
+              <PropertyApprovalFilter
+                selectedStatus={approvalStatus}
+                onStatusChange={setApprovalStatus}
+                statusCounts={statusCounts}
+              />
+              <PropertyTagsFilter
+                selectedTags={selectedTags}
+                onFilterChange={setSelectedTags}
+              />
+              <AdvancedPropertyFilters
+                filters={advancedFilters}
+                onFilterChange={setAdvancedFilters}
+              />
+            </div>
+
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>
               <div className="flex gap-2">
+                {/* View Mode Toggle */}
+                <div className="flex gap-1 border rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="h-8"
+                  >
+                    <LayoutGrid className="w-4 h-4 mr-1" />
+                    Cards
+                  </Button>
+                  <Button
+                    variant={viewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-8"
+                  >
+                    <List className="w-4 h-4 mr-1" />
+                    Table
+                  </Button>
+                </div>
+
+                {/* Batch Review Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsBatchReviewOpen(true)}
+                  disabled={filteredProperties.length === 0}
+                  className="h-8"
+                >
+                  <Rocket className="w-4 h-4 mr-1" />
+                  Batch Review
+                </Button>
+
+                {/* Filters Sidebar Toggle */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFiltersSidebar(!showFiltersSidebar)}
+                  className="h-8"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+
                 <AIPropertyImport onImportComplete={fetchProperties} />
                 <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                   <DialogTrigger asChild>
@@ -773,8 +980,76 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="table">
-        <div className="bg-card rounded-lg border border-border overflow-hidden">
-          <Table>
+            {/* Properties Display with Sidebar */}
+            <div className="flex gap-4">
+              {/* Quick Filters Sidebar */}
+              {showFiltersSidebar && (
+                <QuickFiltersSidebar
+                  approvalStatus={approvalStatus}
+                  onApprovalStatusChange={setApprovalStatus}
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  priceRange={priceRange}
+                  onPriceRangeChange={setPriceRange}
+                  selectedCities={selectedCities}
+                  onCitiesChange={setSelectedCities}
+                  dateFilter={dateFilter}
+                  onDateFilterChange={setDateFilter}
+                  statusCounts={statusCounts}
+                />
+              )}
+
+              {/* Main Content Area */}
+              <div className="flex-1">
+                {viewMode === 'cards' ? (
+                  /* Card View */
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredProperties.length === 0 ? (
+                      <div className="col-span-full text-center text-muted-foreground py-8">
+                        {filterStatus === 'all'
+                          ? 'No properties yet. Add your first property to get started!'
+                          : `No properties with status "${filterStatus.replace('_', ' ')}"`
+                        }
+                      </div>
+                    ) : (
+                      filteredProperties.map((property) => (
+                        <PropertyCardView
+                          key={property.id}
+                          property={property}
+                          isSelected={selectedProperties.includes(property.id)}
+                          onToggleSelect={() => togglePropertySelection(property.id)}
+                          onAnalyze={() => {
+                            setSelectedPropertyForComparison(property.id);
+                          }}
+                          onApprove={() => {
+                            setSelectedPropertyForApproval(property.id);
+                          }}
+                          onReject={() => {
+                            setSelectedPropertyForApproval(property.id);
+                          }}
+                          onUploadImage={() => {
+                            setSelectedPropertyForImage(property.id);
+                          }}
+                          onManageTags={() => {
+                            setSelectedPropertyForTags(property.id);
+                          }}
+                          onCheckAirbnb={() => {
+                            setSelectedPropertyForAirbnb(property.id);
+                          }}
+                          onViewOffer={() => openOfferDialog(property)}
+                          onEdit={() => openEditDialog(property)}
+                          onViewPage={() => window.open(`/property/${property.slug}`, '_blank')}
+                          onCopyLink={() => copyPropertyLink(property.slug)}
+                          onGenerateQR={() => openQRGenerator(property.slug)}
+                          onAddNotes={() => openNotesDialog(property.id)}
+                        />
+                      ))
+                    )}
+                  </div>
+                ) : (
+                  /* Table View */
+                  <div className="bg-card rounded-lg border border-border overflow-hidden">
+                    <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
@@ -784,6 +1059,7 @@ const Admin = () => {
                     aria-label="Select all properties"
                   />
                 </TableHead>
+                <TableHead>Image</TableHead>
                 <TableHead>Address</TableHead>
                 <TableHead>Owner Name</TableHead>
                 <TableHead>Phone</TableHead>
@@ -798,7 +1074,7 @@ const Admin = () => {
             <TableBody>
               {filteredProperties.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={11} className="text-center text-muted-foreground py-8">
                     {filterStatus === 'all' 
                       ? 'No properties yet. Add your first property to get started!'
                       : `No properties with status "${filterStatus.replace('_', ' ')}"`
@@ -813,6 +1089,13 @@ const Admin = () => {
                         checked={selectedProperties.includes(property.id)}
                         onCheckedChange={() => togglePropertySelection(property.id)}
                         aria-label={`Select ${property.address}`}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <PropertyImageDisplay
+                        imageUrl={property.property_image_url || ""}
+                        address={property.address}
+                        className="w-20 h-20"
                       />
                     </TableCell>
                     <TableCell className="font-medium">
@@ -959,15 +1242,58 @@ const Admin = () => {
                         >
                           <FileText className="w-4 h-4" />
                         </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPropertyForImage(property.id)}
+                          title="Upload Image"
+                        >
+                          📷
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPropertyForTags(property.id)}
+                          title="Manage Tags"
+                        >
+                          🏷️
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPropertyForApproval(property.id)}
+                          title="Approve/Reject"
+                        >
+                          ✓
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPropertyForAirbnb(property.id)}
+                          title="Check Airbnb"
+                        >
+                          🏠
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedPropertyForComparison(property.id)}
+                          title="AI Price Comparison"
+                        >
+                          📊
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               )}
-            </TableBody>
-          </Table>
-        </div>
-              </TabsContent>
+                    </TableBody>
+                  </Table>
+                </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
             </Tabs>
           </TabsContent>
 
@@ -1342,6 +1668,146 @@ const Admin = () => {
           open={isSequenceDialogOpen}
           onOpenChange={setIsSequenceDialogOpen}
           selectedProperties={properties.filter(p => selectedProperties.includes(p.id)).map(p => ({ id: p.id, address: p.address, city: p.city }))}
+        />
+
+        {/* NEW - Orlando Integration Dialogs */}
+        {selectedPropertyForImage && (
+          <PropertyImageUpload
+            propertyId={selectedPropertyForImage}
+            currentImageUrl={properties.find(p => p.id === selectedPropertyForImage)?.property_image_url || ""}
+            onClose={() => setSelectedPropertyForImage(null)}
+            onSuccess={() => {
+              fetchProperties();
+              setSelectedPropertyForImage(null);
+            }}
+          />
+        )}
+
+        {selectedPropertyForTags && (
+          <PropertyTagsManager
+            propertyId={selectedPropertyForTags}
+            currentTags={[]}
+            onClose={() => setSelectedPropertyForTags(null)}
+            onSuccess={() => {
+              fetchProperties();
+              setSelectedPropertyForTags(null);
+            }}
+          />
+        )}
+
+        {selectedPropertyForApproval && (
+          <PropertyApprovalDialog
+            propertyId={selectedPropertyForApproval}
+            propertyAddress={properties.find(p => p.id === selectedPropertyForApproval)?.address || ""}
+            currentStatus="pending"
+            onClose={() => setSelectedPropertyForApproval(null)}
+            onSuccess={() => {
+              fetchProperties();
+              setSelectedPropertyForApproval(null);
+            }}
+          />
+        )}
+
+        {selectedPropertyForAirbnb && (
+          <AirbnbEligibilityChecker
+            propertyId={selectedPropertyForAirbnb}
+            address={properties.find(p => p.id === selectedPropertyForAirbnb)?.address || ""}
+            city={properties.find(p => p.id === selectedPropertyForAirbnb)?.city || ""}
+            state={properties.find(p => p.id === selectedPropertyForAirbnb)?.state || ""}
+            onClose={() => setSelectedPropertyForAirbnb(null)}
+          />
+        )}
+
+        {selectedPropertyForComparison && (() => {
+          const property = properties.find(p => p.id === selectedPropertyForComparison);
+          return property ? (
+            <PropertyComparison
+              propertyId={selectedPropertyForComparison}
+              address={property.address}
+              city={property.city}
+              state={property.state}
+              zipCode={property.zip_code}
+              estimatedValue={property.estimated_value}
+              cashOfferAmount={property.cash_offer_amount}
+              onClose={() => setSelectedPropertyForComparison(null)}
+            />
+          ) : null;
+        })()}
+
+        {/* NEW - Bulk Import Dialog */}
+        <BulkImportDialog
+          open={isBulkImportDialogOpen}
+          onOpenChange={setIsBulkImportDialogOpen}
+          onImportComplete={fetchProperties}
+        />
+
+        {/* NEW - Gemini API Key Dialog */}
+        <GeminiAPIKeyDialog
+          open={isGeminiAPIKeyDialogOpen}
+          onOpenChange={setIsGeminiAPIKeyDialogOpen}
+        />
+
+        {/* Batch Review Mode Dialog */}
+        <BatchReviewMode
+          open={isBatchReviewOpen}
+          onOpenChange={setIsBatchReviewOpen}
+          properties={filteredProperties}
+          onApprove={async (propertyId: string) => {
+            // Update approval status to approved
+            const { error } = await supabase
+              .from('properties')
+              .update({
+                approval_status: 'approved',
+                approval_by: userId,
+                approval_by_name: userName,
+                approval_date: new Date().toISOString()
+              })
+              .eq('id', propertyId);
+
+            if (error) {
+              toast({
+                title: "Error",
+                description: "Failed to approve property",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Success",
+                description: "Property approved",
+              });
+              fetchProperties();
+            }
+          }}
+          onReject={async (propertyId: string, reason?: string) => {
+            // Update approval status to rejected
+            const { error } = await supabase
+              .from('properties')
+              .update({
+                approval_status: 'rejected',
+                rejection_reason: reason || null,
+                approval_by: userId,
+                approval_by_name: userName,
+                approval_date: new Date().toISOString()
+              })
+              .eq('id', propertyId);
+
+            if (error) {
+              toast({
+                title: "Error",
+                description: "Failed to reject property",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Success",
+                description: "Property rejected",
+              });
+              fetchProperties();
+            }
+          }}
+          onViewAnalysis={(propertyId: string) => {
+            setSelectedPropertyForComparison(propertyId);
+          }}
         />
       </main>
       
