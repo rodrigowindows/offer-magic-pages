@@ -163,7 +163,7 @@ export const checkAndSaveAirbnbEligibility = async (propertyId: string) => {
         airbnb_check_date: new Date().toISOString(),
         airbnb_regulations: result.regulations,
         airbnb_notes: result.regulations.notes,
-      })
+      } as any)
       .eq("id", propertyId);
 
     if (updateError) throw updateError;

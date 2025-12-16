@@ -390,12 +390,23 @@ export type Database = {
       properties: {
         Row: {
           address: string
+          airbnb_check_date: string | null
+          airbnb_eligible: boolean | null
+          airbnb_notes: string | null
+          airbnb_regulations: Json | null
           answer_flag: boolean | null
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          approved_by_name: string | null
+          bathrooms: number | null
+          bedrooms: number | null
           card_sent: boolean
           carta: string | null
           cash_offer_amount: number
           city: string
           comparative_price: number | null
+          county: string | null
           created_at: string
           dnc_flag: boolean | null
           email_sent: boolean
@@ -403,34 +414,57 @@ export type Database = {
           evaluation: string | null
           focar: string | null
           id: string
+          import_batch: string | null
+          import_date: string | null
+          last_contact_date: string | null
           lead_score: number | null
           lead_status: string
           letter_sent: boolean
+          lot_size: number | null
           meeting_scheduled: boolean
           neighborhood: string | null
+          next_followup_date: string | null
           origem: string | null
           owner_address: string | null
           owner_name: string | null
           owner_phone: string | null
           phone_call_made: boolean
           property_image_url: string | null
+          property_type: string | null
+          rejection_notes: string | null
+          rejection_reason: string | null
           slug: string
           sms_sent: boolean
+          square_feet: number | null
           state: string
           status: string
           tags: string[] | null
           updated_at: string
+          updated_by: string | null
+          updated_by_name: string | null
+          year_built: number | null
           zillow_url: string | null
           zip_code: string
         }
         Insert: {
           address: string
+          airbnb_check_date?: string | null
+          airbnb_eligible?: boolean | null
+          airbnb_notes?: string | null
+          airbnb_regulations?: Json | null
           answer_flag?: boolean | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           card_sent?: boolean
           carta?: string | null
           cash_offer_amount: number
           city?: string
           comparative_price?: number | null
+          county?: string | null
           created_at?: string
           dnc_flag?: boolean | null
           email_sent?: boolean
@@ -438,34 +472,57 @@ export type Database = {
           evaluation?: string | null
           focar?: string | null
           id?: string
+          import_batch?: string | null
+          import_date?: string | null
+          last_contact_date?: string | null
           lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
+          lot_size?: number | null
           meeting_scheduled?: boolean
           neighborhood?: string | null
+          next_followup_date?: string | null
           origem?: string | null
           owner_address?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           phone_call_made?: boolean
           property_image_url?: string | null
+          property_type?: string | null
+          rejection_notes?: string | null
+          rejection_reason?: string | null
           slug: string
           sms_sent?: boolean
+          square_feet?: number | null
           state?: string
           status?: string
           tags?: string[] | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+          year_built?: number | null
           zillow_url?: string | null
           zip_code: string
         }
         Update: {
           address?: string
+          airbnb_check_date?: string | null
+          airbnb_eligible?: boolean | null
+          airbnb_notes?: string | null
+          airbnb_regulations?: Json | null
           answer_flag?: boolean | null
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_by_name?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
           card_sent?: boolean
           carta?: string | null
           cash_offer_amount?: number
           city?: string
           comparative_price?: number | null
+          county?: string | null
           created_at?: string
           dnc_flag?: boolean | null
           email_sent?: boolean
@@ -473,23 +530,35 @@ export type Database = {
           evaluation?: string | null
           focar?: string | null
           id?: string
+          import_batch?: string | null
+          import_date?: string | null
+          last_contact_date?: string | null
           lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
+          lot_size?: number | null
           meeting_scheduled?: boolean
           neighborhood?: string | null
+          next_followup_date?: string | null
           origem?: string | null
           owner_address?: string | null
           owner_name?: string | null
           owner_phone?: string | null
           phone_call_made?: boolean
           property_image_url?: string | null
+          property_type?: string | null
+          rejection_notes?: string | null
+          rejection_reason?: string | null
           slug?: string
           sms_sent?: boolean
+          square_feet?: number | null
           state?: string
           status?: string
           tags?: string[] | null
           updated_at?: string
+          updated_by?: string | null
+          updated_by_name?: string | null
+          year_built?: number | null
           zillow_url?: string | null
           zip_code?: string
         }
