@@ -75,7 +75,7 @@ export const PropertyTagsManager = ({
     try {
       const { error } = await supabase
         .from("properties")
-        .update({ tags: tags })
+        .update({ tags: tags } as any)
         .eq("id", propertyId);
 
       if (error) throw error;
