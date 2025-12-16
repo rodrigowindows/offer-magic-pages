@@ -89,7 +89,7 @@ export const PropertyApprovalDialog = ({
           rejection_notes: null,
           updated_by: userId,
           updated_by_name: userName,
-        })
+        } as any)
         .eq("id", propertyId);
 
       if (error) throw error;
@@ -146,7 +146,7 @@ export const PropertyApprovalDialog = ({
           rejection_notes: notes.trim() || null,
           updated_by: userId,
           updated_by_name: userName,
-        })
+        } as any)
         .eq("id", propertyId);
 
       if (error) throw error;
