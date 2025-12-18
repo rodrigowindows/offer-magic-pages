@@ -31,6 +31,8 @@ interface PropertyApprovalDialogProps {
   rejectionReason?: string | null;
   rejectionNotes?: string | null;
   onStatusChange?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 // Razões predefinidas para rejeição
@@ -56,8 +58,20 @@ export const PropertyApprovalDialog = ({
   rejectionReason,
   rejectionNotes,
   onStatusChange,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: PropertyApprovalDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = (value: boolean) => {
+    if (isControlled && controlledOnOpenChange) {
+      controlledOnOpenChange(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+  
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const [selectedReason, setSelectedReason] = useState(rejectionReason || "");
   const [notes, setNotes] = useState(rejectionNotes || "");
@@ -200,11 +214,13 @@ export const PropertyApprovalDialog = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          {getStatusBadge()}
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            {getStatusBadge()}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Aprovar/Rejeitar Propriedade</DialogTitle>

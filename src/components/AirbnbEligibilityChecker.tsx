@@ -23,6 +23,8 @@ interface AirbnbEligibilityCheckerProps {
   currentNotes?: string | null;
   lastCheckDate?: string | null;
   onCheckComplete?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const AirbnbEligibilityChecker = ({
@@ -35,9 +37,20 @@ export const AirbnbEligibilityChecker = ({
   currentNotes,
   lastCheckDate,
   onCheckComplete,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: AirbnbEligibilityCheckerProps) => {
   const [isChecking, setIsChecking] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+  const setIsOpen = (value: boolean) => {
+    if (isControlled && controlledOnOpenChange) {
+      controlledOnOpenChange(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
   const { toast } = useToast();
 
   const handleCheck = async () => {
@@ -91,12 +104,14 @@ export const AirbnbEligibilityChecker = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Home className="h-4 w-4 mr-2" />
-          {getStatusBadge()}
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Home className="h-4 w-4 mr-2" />
+            {getStatusBadge()}
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Elegibilidade Airbnb</DialogTitle>
