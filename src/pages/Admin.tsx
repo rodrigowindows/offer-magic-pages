@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -61,6 +61,7 @@ import { PropertyTagsManager } from "@/components/PropertyTagsManager";
 import { PropertyTagsFilter } from "@/components/PropertyTagsFilter";
 import { PropertyApprovalDialog } from "@/components/PropertyApprovalDialog";
 import { PropertyApprovalFilter } from "@/components/PropertyApprovalFilter";
+import { PropertyUserFilter } from "@/components/PropertyUserFilter";
 import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "@/components/AdvancedPropertyFilters";
 import { PropertyImageDisplay } from "@/components/PropertyImageDisplay";
 import { AirbnbEligibilityChecker } from "@/components/AirbnbEligibilityChecker";
@@ -176,6 +177,8 @@ const Admin = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [approvalStatus, setApprovalStatus] = useState<string>("all");
   const [statusCounts, setStatusCounts] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const [filterUserId, setFilterUserId] = useState<string | null>(null);
+  const [filterUserName, setFilterUserName] = useState<string | null>(null);
   const { userId, userName } = useCurrentUser();
 
   // NEW - UI Enhancement States
@@ -342,6 +345,8 @@ const Admin = () => {
           zip_code: editFormData.zip_code,
           estimated_value: editFormData.estimated_value,
           cash_offer_amount: editFormData.cash_offer_amount,
+          min_offer_amount: (editFormData as any).min_offer_amount || null,
+          max_offer_amount: (editFormData as any).max_offer_amount || null,
           property_image_url: editFormData.property_image_url,
           owner_address: editFormData.owner_address,
           owner_name: editFormData.owner_name,
@@ -355,7 +360,7 @@ const Admin = () => {
           evaluation: editFormData.evaluation,
           focar: editFormData.focar,
           comparative_price: editFormData.comparative_price,
-        })
+        } as any)
         .eq("id", selectedPropertyId);
 
       if (error) throw error;
@@ -699,9 +704,25 @@ const Admin = () => {
     setIsSuggestionsDialogOpen(true);
   };
 
-  const filteredProperties = filterStatus === 'all' 
-    ? properties 
-    : properties.filter(p => p.lead_status === filterStatus);
+  const filteredProperties = properties
+    .filter(p => {
+      // Filter by lead status
+      if (filterStatus !== 'all' && p.lead_status !== filterStatus) {
+        return false;
+      }
+
+      // Filter by approval status
+      if (approvalStatus !== 'all' && p.approval_status !== approvalStatus) {
+        return false;
+      }
+
+      // Filter by user who approved/rejected
+      if (filterUserId && (p as any).approved_by !== filterUserId) {
+        return false;
+      }
+
+      return true;
+    });
 
   const leadStatusCounts = properties.reduce((acc, property) => {
     acc[property.lead_status] = (acc[property.lead_status] || 0) + 1;
@@ -789,6 +810,12 @@ const Admin = () => {
                 selectedStatus={approvalStatus}
                 onStatusChange={setApprovalStatus}
                 counts={statusCounts}
+              />
+              <PropertyUserFilter
+                onUserFilter={(userId, userName) => {
+                  setFilterUserId(userId);
+                  setFilterUserName(userName);
+                }}
               />
               <PropertyTagsFilter
                 selectedTags={selectedTags}
@@ -1452,12 +1479,35 @@ const Admin = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="edit-cash">Cash Offer Amount</Label>
+                    <Label htmlFor="edit-cash" className="text-sm font-semibold text-green-700">💰 Cash Offer (Main Amount)</Label>
                     <Input
                       id="edit-cash"
                       type="number"
                       value={editFormData.cash_offer_amount || ""}
                       onChange={(e) => setEditFormData({...editFormData, cash_offer_amount: parseFloat(e.target.value)})}
+                      className="border-green-300 focus:border-green-500"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-min-offer" className="text-sm">Min Offer (Optional)</Label>
+                    <Input
+                      id="edit-min-offer"
+                      type="number"
+                      value={(editFormData as any).min_offer_amount || ""}
+                      onChange={(e) => setEditFormData({...editFormData, min_offer_amount: parseFloat(e.target.value)} as any)}
+                      placeholder="Lower range"
+                      className="border-blue-200"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-max-offer" className="text-sm">Max Offer (Optional)</Label>
+                    <Input
+                      id="edit-max-offer"
+                      type="number"
+                      value={(editFormData as any).max_offer_amount || ""}
+                      onChange={(e) => setEditFormData({...editFormData, max_offer_amount: parseFloat(e.target.value)} as any)}
+                      placeholder="Upper range"
+                      className="border-blue-200"
                     />
                   </div>
                   <div className="col-span-2">
@@ -1556,12 +1606,25 @@ const Admin = () => {
                   </div>
                   <div className="col-span-2">
                     <Label htmlFor="edit-zillow">Zillow URL</Label>
-                    <Input
-                      id="edit-zillow"
-                      value={editFormData.zillow_url || ""}
-                      onChange={(e) => setEditFormData({...editFormData, zillow_url: e.target.value})}
-                      placeholder="https://zillow.com/..."
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="edit-zillow"
+                        value={editFormData.zillow_url || ""}
+                        onChange={(e) => setEditFormData({...editFormData, zillow_url: e.target.value})}
+                        placeholder="https://zillow.com/..."
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => editFormData.zillow_url && window.open(editFormData.zillow_url, '_blank')}
+                        disabled={!editFormData.zillow_url}
+                        className="whitespace-nowrap bg-blue-50 hover:bg-blue-100 border-blue-300"
+                      >
+                        <Globe className="h-4 w-4 mr-1" />
+                        Open Zillow
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
