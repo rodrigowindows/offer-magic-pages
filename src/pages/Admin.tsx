@@ -116,6 +116,34 @@ interface Property {
   evaluation?: string;
   focar?: string;
   comparative_price?: number;
+  // Approval system fields
+  approval_status?: string;
+  approved_by?: string;
+  approved_by_name?: string;
+  approved_at?: string;
+  rejection_reason?: string;
+  rejection_notes?: string;
+  updated_by?: string;
+  updated_by_name?: string;
+  // Airbnb fields
+  airbnb_eligible?: boolean;
+  airbnb_regulations?: any;
+  airbnb_notes?: string;
+  airbnb_check_date?: string;
+  // Advanced filter fields
+  tags?: string[];
+  bedrooms?: number;
+  bathrooms?: number;
+  square_feet?: number;
+  lot_size?: number;
+  year_built?: number;
+  county?: string;
+  property_type?: string;
+  import_batch?: string;
+  import_date?: string;
+  last_contact_date?: string;
+  next_followup_date?: string;
+  lead_score?: number;
 }
 
 interface PropertyNote {
