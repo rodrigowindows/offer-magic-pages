@@ -22,6 +22,9 @@ interface Property {
   estimated_value: number;
   cash_offer_amount: number;
   approval_status?: string;
+  rejection_reason?: string;
+  rejection_notes?: string;
+  approved_by_name?: string;
   tags?: string[];
   comparative_price?: number;
   airbnb_eligible?: boolean;
@@ -77,15 +80,36 @@ export const PropertyCardView = ({
       rejected: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
     };
     const labels = {
-      pending: "Pending",
-      approved: "Approved",
-      rejected: "Rejected",
+      pending: "Pendente",
+      approved: "Aprovado",
+      rejected: "Rejeitado",
     };
     return (
       <Badge className={colors[status as keyof typeof colors] || colors.pending}>
         {labels[status as keyof typeof labels] || status}
       </Badge>
     );
+  };
+
+  // Get rejection reason label
+  const REJECTION_REASONS: Record<string, string> = {
+    "too-good-condition": "Casa muito boa",
+    "llc-owned": "LLC",
+    "commercial": "Comercial",
+    "duplicate": "Duplicado",
+    "wrong-location": "Localização errada",
+    "no-equity": "Sem equity",
+    "already-contacted": "Já contatado",
+    "occupied-rented": "Ocupado/Alugado",
+    "recent-sale": "Venda recente",
+    "hoa-restrictions": "Restrições HOA",
+    "title-issues": "Problemas título",
+    "other": "Outro",
+  };
+
+  const getRejectionLabel = () => {
+    if (!property.rejection_reason) return null;
+    return REJECTION_REASONS[property.rejection_reason] || property.rejection_reason;
   };
 
   // Determine score color and label
@@ -120,8 +144,18 @@ export const PropertyCardView = ({
           />
 
           {/* Status Badge Overlay */}
-          <div className="absolute top-2 right-2">
+          <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
             {getStatusBadge()}
+            {property.approval_status === "rejected" && getRejectionLabel() && (
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs">
+                {getRejectionLabel()}
+              </Badge>
+            )}
+            {property.approved_by_name && (
+              <span className="text-xs text-white bg-black/50 px-1 rounded">
+                por {property.approved_by_name}
+              </span>
+            )}
           </div>
 
           {/* Score Badge */}
@@ -142,7 +176,7 @@ export const PropertyCardView = ({
             </p>
             {property.owner_name && (
               <p className="text-xs text-muted-foreground mt-1">
-                Owner: {property.owner_name}
+                Proprietário: {property.owner_name}
               </p>
             )}
           </div>
@@ -152,14 +186,14 @@ export const PropertyCardView = ({
             <div className="flex items-center gap-2 p-2 bg-muted rounded">
               <TrendingUp className="h-4 w-4 text-blue-600" />
               <div>
-                <p className="text-xs text-muted-foreground">Value</p>
+                <p className="text-xs text-muted-foreground">Valor</p>
                 <p className="font-semibold">${property.estimated_value.toLocaleString()}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950 rounded">
               <DollarSign className="h-4 w-4 text-green-600" />
               <div>
-                <p className="text-xs text-muted-foreground">Offer</p>
+                <p className="text-xs text-muted-foreground">Oferta</p>
                 <p className="font-semibold text-green-600">
                   ${property.cash_offer_amount.toLocaleString()}
                 </p>
@@ -170,7 +204,7 @@ export const PropertyCardView = ({
           {/* Offer Percentage Bar */}
           <div>
             <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>Offer Percentage</span>
+              <span>% da Oferta</span>
               <span className="font-semibold">{offerPercentage}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -225,7 +259,7 @@ export const PropertyCardView = ({
             )}
             {property.owner_phone && (
               <Badge variant="outline" className="gap-1">
-                📞 Has Phone
+                📞 Tem Telefone
               </Badge>
             )}
           </div>
@@ -238,7 +272,7 @@ export const PropertyCardView = ({
               size="sm"
               className="w-full"
             >
-              📊 Analyze
+              📊 Analisar
             </Button>
             <Button
               onClick={() => onApprove(property.id)}
@@ -246,7 +280,7 @@ export const PropertyCardView = ({
               size="sm"
               className="w-full bg-green-600 hover:bg-green-700"
             >
-              ✓ Approve
+              ✓ Aprovar
             </Button>
             <Button
               onClick={() => onReject(property.id)}
@@ -254,7 +288,7 @@ export const PropertyCardView = ({
               size="sm"
               className="w-full"
             >
-              ✗ Reject
+              ✗ Rejeitar
             </Button>
           </div>
 
@@ -263,36 +297,36 @@ export const PropertyCardView = ({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="w-full">
                 <MoreVertical className="h-4 w-4 mr-2" />
-                More Actions
+                Mais Ações
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="center" className="w-56">
               <DropdownMenuItem onClick={() => onUploadImage(property.id)}>
-                📷 Upload Image
+                📷 Upload Imagem
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onManageTags(property.id)}>
-                🏷️ Manage Tags
+                🏷️ Gerenciar Tags
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onCheckAirbnb(property.id)}>
-                🏠 Check Airbnb
+                🏠 Verificar Airbnb
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onEdit(property.id)}>
-                ✏️ Edit Property
+                ✏️ Editar Propriedade
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onAddNotes(property.id)}>
-                📝 Add Notes
+                📝 Adicionar Notas
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onGenerateOffer(property.id)}>
-                💰 Generate Offer Letter
+                💰 Gerar Carta de Oferta
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onViewPage(property.slug)}>
-                🌐 View Landing Page
+                🌐 Ver Landing Page
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onCopyLink(property.slug)}>
-                📋 Copy Link
+                📋 Copiar Link
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onGenerateQR(property.slug)}>
-                📱 Generate QR Code
+                📱 Gerar QR Code
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -329,8 +363,8 @@ export const PropertyCardsGrid = ({
   if (properties.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p className="text-lg">No properties found</p>
-        <p className="text-sm">Try adjusting your filters or import new properties</p>
+        <p className="text-lg">Nenhuma propriedade encontrada</p>
+        <p className="text-sm">Ajuste os filtros ou importe novas propriedades</p>
       </div>
     );
   }
