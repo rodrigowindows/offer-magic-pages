@@ -1807,39 +1807,47 @@ const Admin = () => {
           ) : null;
         })()}
 
-        {selectedPropertyForApproval && (() => {
-          const prop = properties.find(p => p.id === selectedPropertyForApproval);
-          return prop ? (
+        {(() => {
+          const prop = selectedPropertyForApproval ? properties.find(p => p.id === selectedPropertyForApproval) : null;
+          return (
             <PropertyApprovalDialog
-              propertyId={selectedPropertyForApproval}
-              propertyAddress={prop.address}
-              currentStatus={(prop as any).approval_status || "pending"}
+              propertyId={selectedPropertyForApproval || ""}
+              propertyAddress={prop?.address || ""}
+              currentStatus={prop?.approval_status || "pending"}
+              open={!!selectedPropertyForApproval}
+              onOpenChange={(open) => {
+                if (!open) setSelectedPropertyForApproval(null);
+              }}
               onStatusChange={() => {
                 fetchProperties();
                 setSelectedPropertyForApproval(null);
               }}
             />
-          ) : null;
+          );
         })()}
 
-        {selectedPropertyForAirbnb && (() => {
-          const prop = properties.find(p => p.id === selectedPropertyForAirbnb);
-          return prop ? (
+        {(() => {
+          const prop = selectedPropertyForAirbnb ? properties.find(p => p.id === selectedPropertyForAirbnb) : null;
+          return (
             <AirbnbEligibilityChecker
-              propertyId={selectedPropertyForAirbnb}
-              propertyAddress={prop.address}
-              city={prop.city}
-              state={prop.state}
-              currentEligible={(prop as any).airbnb_eligible}
-              currentRegulations={(prop as any).airbnb_regulations}
-              currentNotes={(prop as any).airbnb_notes}
-              lastCheckDate={(prop as any).airbnb_check_date}
+              propertyId={selectedPropertyForAirbnb || ""}
+              propertyAddress={prop?.address || ""}
+              city={prop?.city || ""}
+              state={prop?.state || ""}
+              currentEligible={prop?.airbnb_eligible}
+              currentRegulations={prop?.airbnb_regulations}
+              currentNotes={prop?.airbnb_notes}
+              lastCheckDate={prop?.airbnb_check_date}
+              open={!!selectedPropertyForAirbnb}
+              onOpenChange={(open) => {
+                if (!open) setSelectedPropertyForAirbnb(null);
+              }}
               onCheckComplete={() => {
                 fetchProperties();
                 setSelectedPropertyForAirbnb(null);
               }}
             />
-          ) : null;
+          );
         })()}
 
         {selectedPropertyForComparison && (() => {
@@ -1882,10 +1890,10 @@ const Admin = () => {
               .from('properties')
               .update({
                 approval_status: 'approved',
-                approval_by: userId,
-                approval_by_name: userName,
-                approval_date: new Date().toISOString()
-              })
+                approved_by: userId,
+                approved_by_name: userName,
+                approved_at: new Date().toISOString()
+              } as any)
               .eq('id', propertyId);
 
             if (error) {
@@ -1909,10 +1917,10 @@ const Admin = () => {
               .update({
                 approval_status: 'rejected',
                 rejection_reason: reason || null,
-                approval_by: userId,
-                approval_by_name: userName,
-                approval_date: new Date().toISOString()
-              })
+                approved_by: userId,
+                approved_by_name: userName,
+                approved_at: new Date().toISOString()
+              } as any)
               .eq('id', propertyId);
 
             if (error) {
