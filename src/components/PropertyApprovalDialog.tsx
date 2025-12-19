@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Keyboard } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +78,84 @@ export const PropertyApprovalDialog = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { userId, userName } = useCurrentUser();
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in textarea
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) {
+        return;
+      }
+
+      // Prevent default for our shortcuts
+      const shortcuts = ['a', 'r', 'Escape', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      if (shortcuts.includes(e.key.toLowerCase()) || shortcuts.includes(e.key)) {
+        e.preventDefault();
+      }
+
+      // A = Approve
+      if (e.key.toLowerCase() === 'a' && !actionType && !isProcessing) {
+        setActionType("approve");
+        toast({
+          title: "⌨️ Atalho: Aprovar",
+          description: "Pressione Enter para confirmar",
+        });
+      }
+
+      // R = Reject
+      if (e.key.toLowerCase() === 'r' && !actionType && !isProcessing) {
+        setActionType("reject");
+        toast({
+          title: "⌨️ Atalho: Rejeitar",
+          description: "Selecione um motivo e pressione Enter",
+        });
+      }
+
+      // Escape = Close or go back
+      if (e.key === 'Escape') {
+        if (actionType) {
+          setActionType(null);
+          setSelectedReason("");
+          setNotes("");
+        } else {
+          setIsOpen(false);
+        }
+      }
+
+      // Enter = Confirm action
+      if (e.key === 'Enter' && actionType && !isProcessing) {
+        if (actionType === 'approve') {
+          handleApprove();
+        } else if (actionType === 'reject' && selectedReason) {
+          handleReject();
+        }
+      }
+
+      // Number keys 1-9 for quick rejection reason selection
+      if (actionType === 'reject' && e.key >= '1' && e.key <= '9') {
+        const index = parseInt(e.key) - 1;
+        if (index < REJECTION_REASONS.length) {
+          setSelectedReason(REJECTION_REASONS[index].value);
+          toast({
+            title: `⌨️ Motivo ${e.key}`,
+            description: REJECTION_REASONS[index].label,
+          });
+        }
+      }
+
+      // B = Back (voltar)
+      if (e.key.toLowerCase() === 'b' && actionType && !isProcessing) {
+        setActionType(null);
+        setSelectedReason("");
+        setNotes("");
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isOpen, actionType, selectedReason, isProcessing]);
 
   const handleApprove = async () => {
     if (!userId || !userName) {
@@ -291,9 +369,14 @@ export const PropertyApprovalDialog = ({
                     <SelectValue placeholder="Selecione uma razão..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {REJECTION_REASONS.map((reason) => (
+                    {REJECTION_REASONS.map((reason, index) => (
                       <SelectItem key={reason.value} value={reason.value}>
-                        {reason.label}
+                        <div className="flex items-center gap-2">
+                          <kbd className="px-1 py-0.5 text-xs bg-gray-100 border rounded">
+                            {index + 1}
+                          </kbd>
+                          {reason.label}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -315,6 +398,45 @@ export const PropertyApprovalDialog = ({
           )}
         </div>
 
+        {/* Keyboard Shortcuts Legend */}
+        <div className="bg-gray-50 border-t border-gray-200 px-6 py-3">
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <Keyboard className="h-3 w-3" />
+            <span className="font-medium">Atalhos:</span>
+            {!actionType ? (
+              <>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">A</kbd>
+                <span>Aprovar</span>
+                <span className="text-gray-300">|</span>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">R</kbd>
+                <span>Rejeitar</span>
+                <span className="text-gray-300">|</span>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">Esc</kbd>
+                <span>Fechar</span>
+              </>
+            ) : actionType === "reject" ? (
+              <>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">1-9</kbd>
+                <span>Selecionar motivo</span>
+                <span className="text-gray-300">|</span>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">Enter</kbd>
+                <span>Confirmar</span>
+                <span className="text-gray-300">|</span>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">B</kbd>
+                <span>Voltar</span>
+              </>
+            ) : (
+              <>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">Enter</kbd>
+                <span>Confirmar aprovação</span>
+                <span className="text-gray-300">|</span>
+                <kbd className="px-1.5 py-0.5 bg-white border rounded">B</kbd>
+                <span>Voltar</span>
+              </>
+            )}
+          </div>
+        </div>
+
         <DialogFooter>
           {actionType && (
             <>
@@ -327,7 +449,7 @@ export const PropertyApprovalDialog = ({
                 }}
                 disabled={isProcessing}
               >
-                Voltar
+                Voltar <span className="ml-1 text-xs opacity-50">(B)</span>
               </Button>
               {actionType === "approve" ? (
                 <Button
@@ -336,6 +458,7 @@ export const PropertyApprovalDialog = ({
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {isProcessing ? "Aprovando..." : "Confirmar Aprovação"}
+                  <span className="ml-1 text-xs opacity-75">(Enter)</span>
                 </Button>
               ) : (
                 <Button
@@ -344,6 +467,7 @@ export const PropertyApprovalDialog = ({
                   className="bg-red-600 hover:bg-red-700"
                 >
                   {isProcessing ? "Rejeitando..." : "Confirmar Rejeição"}
+                  <span className="ml-1 text-xs opacity-75">(Enter)</span>
                 </Button>
               )}
             </>

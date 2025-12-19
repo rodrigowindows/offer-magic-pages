@@ -71,6 +71,8 @@ import { GeminiAPIKeyDialog } from "@/components/GeminiAPIKeyDialog";
 import { PropertyCardView } from "@/components/PropertyCardView";
 import { BatchReviewMode } from "@/components/BatchReviewMode";
 import { QuickFiltersSidebar } from "@/components/QuickFiltersSidebar";
+import { TeamActivityDashboard } from "@/components/TeamActivityDashboard";
+import { TeamReportExporter } from "@/components/TeamReportExporter";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
 import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
@@ -821,6 +823,15 @@ const Admin = () => {
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
             <AdminDashboardOverview />
+
+            {/* NEW - Team Activity Dashboard */}
+            <TeamActivityDashboard />
+
+            {/* NEW - Report Exporter */}
+            <div className="max-w-md">
+              <TeamReportExporter />
+            </div>
+
             <FollowUpManager />
           </TabsContent>
 
