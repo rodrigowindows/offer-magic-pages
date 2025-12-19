@@ -864,7 +864,7 @@ const Admin = () => {
             {/* Unified Filters */}
             <UnifiedPropertyFilters
               selectedStatus={filterStatus}
-              onStatusChange={setFilterStatus}
+              onStatusChange={(status) => setFilterStatus(status as LeadStatus | 'all')}
               statusCounts={leadStatusCounts}
               approvalStatus={approvalStatus}
               onApprovalStatusChange={setApprovalStatus}
