@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import ColumnMappingDialog, { ColumnMapping, DatabaseFieldKey } from "@/components/ColumnMappingDialog";
 import {
   Upload,
   Image,
@@ -21,6 +22,7 @@ import {
   Eye,
   Database,
   Trash2,
+  Settings2,
 } from "lucide-react";
 import {
   Table,
@@ -59,6 +61,8 @@ const ImportProperties = () => {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [totalRows, setTotalRows] = useState(0);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
+  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
+  const [showMappingDialog, setShowMappingDialog] = useState(false);
 
   // Import state
   const [isImporting, setIsImporting] = useState(false);
@@ -229,14 +233,20 @@ const ImportProperties = () => {
       }
 
       setCsvErrors(errors);
+      setShowMappingDialog(true);
 
       toast({
         title: "CSV Carregado",
-        description: `${lines.length - 1} propriedades encontradas`,
+        description: `${lines.length - 1} propriedades encontradas. Configure o mapeamento de colunas.`,
       });
     };
 
     reader.readAsText(file);
+  };
+
+  // Handle column mapping changes
+  const handleMappingChange = (mappings: ColumnMapping[]) => {
+    setColumnMappings(mappings);
   };
 
   // Generate slug from address
@@ -268,6 +278,19 @@ const ImportProperties = () => {
       return;
     }
 
+    // Check if at least address is mapped
+    const addressMapping = columnMappings.find(m => m.dbField === 'address');
+    const origemMapping = columnMappings.find(m => m.dbField === 'origem');
+    
+    if (!addressMapping && !origemMapping) {
+      toast({
+        title: "Erro",
+        description: "Mapeie pelo menos a coluna 'Endereço' ou 'ID Único'",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsImporting(true);
     setImportProgress(0);
     setImportStatus("Lendo arquivo CSV...");
@@ -277,7 +300,7 @@ const ImportProperties = () => {
     reader.onload = async (event) => {
       const content = event.target?.result as string;
       const lines = content.trim().split('\n');
-      const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').toLowerCase());
+      const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, ''));
 
       let imported = 0;
       let updated = 0;
@@ -286,9 +309,16 @@ const ImportProperties = () => {
       // Create image URL map from uploaded images
       const imageMap = new Map<string, string>();
       uploadedImages.forEach(img => {
-        // Extract account number from filename (e.g., "28-22-29-1234.jpg" -> "28-22-29-1234")
         const accountNum = img.name.replace(/\.[^.]+$/, '');
         imageMap.set(accountNum, img.url);
+      });
+
+      // Create mapping lookup: csvColumn -> dbField
+      const mappingLookup = new Map<string, DatabaseFieldKey>();
+      columnMappings.forEach(m => {
+        if (m.dbField && m.dbField !== 'skip') {
+          mappingLookup.set(m.csvColumn, m.dbField as DatabaseFieldKey);
+        }
       });
 
       for (let i = 1; i < lines.length; i++) {
@@ -299,41 +329,8 @@ const ImportProperties = () => {
             row[h] = values[idx]?.replace(/"/g, '') || '';
           });
 
-          // Map CSV columns to database columns
-          const accountNumber = row['account_number'] || row['accountnumber'] || row['pid'] || '';
-          const propertyAddress = row['property_address'] || row['address'] || row['situs_address'] || '';
-
-          if (!accountNumber && !propertyAddress) {
-            errors++;
-            continue;
-          }
-
-          // Find matching image
-          const imageUrl = imageMap.get(accountNumber) || 
-                          row['image_url'] || 
-                          row['photo_url'] || 
-                          '';
-
-          // Prepare property data
+          // Build property data from mappings
           const propertyData: Record<string, any> = {
-            slug: generateSlug(propertyAddress || accountNumber),
-            address: propertyAddress,
-            city: row['city'] || row['mailing_city'] || 'Orlando',
-            state: row['state'] || row['mailing_state'] || 'FL',
-            zip_code: row['zip_code'] || row['zipcode'] || row['mailing_zip'] || '',
-            estimated_value: parseFloat(row['just_value'] || row['estimated_value'] || row['market_value'] || '0') || 0,
-            cash_offer_amount: parseFloat(row['cash_offer'] || row['offer_amount'] || '0') || 
-                              Math.round((parseFloat(row['just_value'] || row['estimated_value'] || '0') || 0) * 0.7),
-            owner_name: row['owner_name'] || '',
-            owner_address: row['mailing_address'] || row['owner_address'] || '',
-            property_image_url: imageUrl,
-            property_type: row['property_type'] || '',
-            bedrooms: parseInt(row['beds'] || row['bedrooms'] || '0') || null,
-            bathrooms: parseFloat(row['baths'] || row['bathrooms'] || '0') || null,
-            square_feet: parseInt(row['sqft'] || row['square_feet'] || row['living_area'] || '0') || null,
-            year_built: parseInt(row['year_built'] || '0') || null,
-            lot_size: parseInt(row['lot_size'] || '0') || null,
-            origem: accountNumber, // Store account_number in origem field
             lead_status: 'new',
             approval_status: 'pending',
             status: 'active',
@@ -341,7 +338,63 @@ const ImportProperties = () => {
             import_date: new Date().toISOString().split('T')[0],
           };
 
-          // Remove null/undefined values
+          // Apply mappings
+          headers.forEach(csvCol => {
+            const dbField = mappingLookup.get(csvCol);
+            if (!dbField) return;
+
+            const value = row[csvCol];
+            if (!value) return;
+
+            // Parse values based on field type
+            switch (dbField) {
+              case 'bedrooms':
+              case 'square_feet':
+              case 'lot_size':
+              case 'year_built':
+              case 'lead_score':
+                propertyData[dbField] = parseInt(value) || null;
+                break;
+              case 'bathrooms':
+              case 'estimated_value':
+              case 'cash_offer_amount':
+              case 'comparative_price':
+                propertyData[dbField] = parseFloat(value) || null;
+                break;
+              case 'tags':
+                propertyData[dbField] = value.split(',').map(t => t.trim()).filter(Boolean);
+                break;
+              default:
+                propertyData[dbField] = value;
+            }
+          });
+
+          // Get unique identifier
+          const accountNumber = propertyData['origem'] || '';
+          const propertyAddress = propertyData['address'] || '';
+
+          if (!accountNumber && !propertyAddress) {
+            errors++;
+            continue;
+          }
+
+          // Generate slug
+          propertyData.slug = generateSlug(propertyAddress || accountNumber);
+
+          // Set defaults
+          if (!propertyData.city) propertyData.city = 'Orlando';
+          if (!propertyData.state) propertyData.state = 'FL';
+          if (!propertyData.estimated_value) propertyData.estimated_value = 0;
+          if (!propertyData.cash_offer_amount && propertyData.estimated_value) {
+            propertyData.cash_offer_amount = Math.round(propertyData.estimated_value * 0.7);
+          }
+
+          // Find matching image
+          if (!propertyData.property_image_url && accountNumber) {
+            propertyData.property_image_url = imageMap.get(accountNumber) || '';
+          }
+
+          // Clean up empty values
           Object.keys(propertyData).forEach(key => {
             if (propertyData[key] === null || propertyData[key] === undefined || propertyData[key] === '') {
               if (!['bedrooms', 'bathrooms', 'square_feet', 'year_built', 'lot_size'].includes(key)) {
@@ -350,15 +403,18 @@ const ImportProperties = () => {
             }
           });
 
-          // Check if property exists (by account_number in origem field)
-          const { data: existing } = await supabase
-            .from('properties')
-            .select('id')
-            .eq('origem', accountNumber)
-            .maybeSingle();
+          // Check if property exists (by origem field)
+          let existing = null;
+          if (accountNumber) {
+            const { data } = await supabase
+              .from('properties')
+              .select('id')
+              .eq('origem', accountNumber)
+              .maybeSingle();
+            existing = data;
+          }
 
           if (existing && updateExisting) {
-            // Update existing property
             const { error: updateError } = await supabase
               .from('properties')
               .update(propertyData as any)
@@ -370,7 +426,6 @@ const ImportProperties = () => {
               updated++;
             }
           } else if (!existing) {
-            // Insert new property
             const { error: insertError } = await supabase
               .from('properties')
               .insert(propertyData as any);
@@ -589,6 +644,15 @@ const ImportProperties = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Column Mapping Section */}
+        {showMappingDialog && csvHeaders.length > 0 && (
+          <ColumnMappingDialog
+            csvHeaders={csvHeaders}
+            onMappingChange={handleMappingChange}
+            initialMappings={columnMappings}
+          />
+        )}
 
         {/* CSV Preview */}
         {csvPreview.length > 0 && (
