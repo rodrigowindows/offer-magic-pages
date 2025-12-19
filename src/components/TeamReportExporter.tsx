@@ -151,7 +151,7 @@ export const TeamReportExporter = () => {
 
       const { data, error } = await supabase
         .from("properties")
-        .select("rejection_reason, rejection_notes, approved_by_name, approved_at, property_address")
+        .select("rejection_reason, rejection_notes, approved_by_name, approved_at, address")
         .eq("approval_status", "rejected")
         .not("rejection_reason", "is", null);
 
@@ -176,7 +176,7 @@ export const TeamReportExporter = () => {
         reasonData["Quantidade"]++;
 
         if (reasonData["Exemplos de Propriedades"].length < 3) {
-          reasonData["Exemplos de Propriedades"].push(prop.property_address);
+          reasonData["Exemplos de Propriedades"].push(prop.address);
         }
 
         if (prop.approved_by_name) {
@@ -283,14 +283,14 @@ export const TeamReportExporter = () => {
 
       const { data, error } = await supabase
         .from("properties")
-        .select("property_address, owner_name, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes")
+        .select("address, owner_name, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes")
         .not("approved_at", "is", null)
         .order("approved_at", { ascending: false });
 
       if (error) throw error;
 
       const reportData = data?.map((prop) => ({
-        "Endereço da Propriedade": prop.property_address || "N/A",
+        "Endereço da Propriedade": prop.address || "N/A",
         "Nome do Owner": prop.owner_name || "N/A",
         "Status": prop.approval_status === "approved" ? "Aprovado" : "Rejeitado",
         "Aprovado/Rejeitado por": prop.approved_by_name || "N/A",

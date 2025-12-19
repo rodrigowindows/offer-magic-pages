@@ -40,34 +40,37 @@ const Index = () => {
       // Validate form data
       const validated = leadFormSchema.parse(formData);
 
-      // Check for duplicates (same email or address)
+      // Check for duplicates (same address)
       const { data: existing } = await supabase
         .from("properties")
-        .select("id, property_address, owner_email")
-        .or(`owner_email.eq.${validated.email},property_address.ilike.%${validated.address}%`)
+        .select("id, address")
+        .ilike("address", `%${validated.address}%`)
         .limit(1);
 
       if (existing && existing.length > 0) {
         toast({
           title: "⚠️ Já Recebemos Seu Pedido",
-          description: "Encontramos um pedido anterior com este email ou endereço. Entraremos em contato em breve!",
+          description: "Encontramos um pedido anterior com este endereço. Entraremos em contato em breve!",
           variant: "destructive",
         });
         setIsSubmitting(false);
         return;
       }
       // Create a new property lead
+      const slug = validated.address.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const { error } = await supabase
         .from("properties")
         .insert([
           {
             owner_name: formData.name,
-            owner_email: formData.email,
             owner_phone: formData.phone,
-            property_address: formData.address,
-            notes: formData.message,
-            status: "new",
-            lead_source: "website_form",
+            address: formData.address,
+            slug: slug,
+            zip_code: "00000",
+            estimated_value: 0,
+            cash_offer_amount: 0,
+            status: "active",
+            lead_status: "new",
           },
         ]);
 
