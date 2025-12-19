@@ -21,16 +21,7 @@ interface UnifiedPropertyFiltersProps {
   // Status filters
   selectedStatus?: string;
   onStatusChange?: (status: string) => void;
-  statusCounts?: {
-    all: number;
-    new: number;
-    contacted: number;
-    interested: number;
-    not_interested: number;
-    appointment_set: number;
-    offer_made: number;
-    sold: number;
-  };
+  statusCounts?: Record<string, number>;
 
   // Approval filters
   approvalStatus?: string;
@@ -90,15 +81,7 @@ export const UnifiedPropertyFilters = ({
     onApprovalStatusChange?.("all");
     onUserFilter?.(null, null);
     onTagsChange?.([]);
-    onAdvancedFiltersChange?.({
-      minValue: null,
-      maxValue: null,
-      minTax: null,
-      maxTax: null,
-      hasImage: null,
-      city: null,
-      zipCode: null,
-    });
+    onAdvancedFiltersChange?.({});
     onClearAll?.();
   };
 
@@ -115,28 +98,28 @@ export const UnifiedPropertyFilters = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
-              All Leads {statusCounts?.all ? `(${statusCounts.all})` : ""}
+              Todos {statusCounts?.all ? `(${statusCounts.all})` : ""}
             </SelectItem>
             <SelectItem value="new">
-              New {statusCounts?.new ? `(${statusCounts.new})` : ""}
+              Novo {statusCounts?.new ? `(${statusCounts.new})` : ""}
             </SelectItem>
             <SelectItem value="contacted">
-              Contacted {statusCounts?.contacted ? `(${statusCounts.contacted})` : ""}
+              Contatado {statusCounts?.contacted ? `(${statusCounts.contacted})` : ""}
             </SelectItem>
-            <SelectItem value="interested">
-              Interested {statusCounts?.interested ? `(${statusCounts.interested})` : ""}
+            <SelectItem value="following_up">
+              Acompanhando {statusCounts?.following_up ? `(${statusCounts.following_up})` : ""}
+            </SelectItem>
+            <SelectItem value="meeting_scheduled">
+              Reunião Agendada {statusCounts?.meeting_scheduled ? `(${statusCounts.meeting_scheduled})` : ""}
             </SelectItem>
             <SelectItem value="not_interested">
-              Not Interested {statusCounts?.not_interested ? `(${statusCounts.not_interested})` : ""}
-            </SelectItem>
-            <SelectItem value="appointment_set">
-              Appointment Set {statusCounts?.appointment_set ? `(${statusCounts.appointment_set})` : ""}
+              Sem Interesse {statusCounts?.not_interested ? `(${statusCounts.not_interested})` : ""}
             </SelectItem>
             <SelectItem value="offer_made">
-              Offer Made {statusCounts?.offer_made ? `(${statusCounts.offer_made})` : ""}
+              Oferta Feita {statusCounts?.offer_made ? `(${statusCounts.offer_made})` : ""}
             </SelectItem>
-            <SelectItem value="sold">
-              Sold {statusCounts?.sold ? `(${statusCounts.sold})` : ""}
+            <SelectItem value="closed">
+              Fechado {statusCounts?.closed ? `(${statusCounts.closed})` : ""}
             </SelectItem>
           </SelectContent>
         </Select>

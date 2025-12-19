@@ -22,12 +22,11 @@ import { EmptyState } from "./EmptyState";
 
 interface QueueProperty {
   id: string;
-  property_address: string;
+  address: string;
   owner_name: string;
   property_image_url: string | null;
   estimated_value: number;
-  tax_amount: number;
-  account_number: string;
+  cash_offer_amount: number;
   approval_status: string | null;
 }
 
@@ -65,7 +64,7 @@ export const ReviewQueue = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from("properties")
-        .select("id, property_address, owner_name, property_image_url, estimated_value, tax_amount, account_number, approval_status")
+        .select("id, address, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status")
         .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(100);
@@ -281,31 +280,29 @@ export const ReviewQueue = () => {
             {/* Image */}
             <div className="space-y-4">
               <PropertyImageDisplay
-                propertyId={currentProperty.id}
-                propertyImageUrl={currentProperty.property_image_url}
-                accountNumber={currentProperty.account_number}
+                imageUrl={currentProperty.property_image_url}
+                address={currentProperty.address}
               />
             </div>
 
             {/* Details */}
             <div className="space-y-4">
               <div>
-                <h3 className="text-2xl font-bold mb-2">{currentProperty.property_address}</h3>
+                <h3 className="text-2xl font-bold mb-2">{currentProperty.address}</h3>
                 <p className="text-muted-foreground">Owner: {currentProperty.owner_name}</p>
-                <p className="text-sm text-muted-foreground">Account: {currentProperty.account_number}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Estimated Value</p>
+                  <p className="text-xs text-muted-foreground mb-1">Valor Estimado</p>
                   <p className="text-xl font-bold">
                     ${currentProperty.estimated_value?.toLocaleString() || "N/A"}
                   </p>
                 </div>
                 <div className="bg-muted rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Tax Amount</p>
+                  <p className="text-xs text-muted-foreground mb-1">Oferta</p>
                   <p className="text-xl font-bold">
-                    ${currentProperty.tax_amount?.toLocaleString() || "N/A"}
+                    ${currentProperty.cash_offer_amount?.toLocaleString() || "N/A"}
                   </p>
                 </div>
               </div>
@@ -373,7 +370,7 @@ export const ReviewQueue = () => {
       {currentProperty && (
         <PropertyApprovalDialog
           propertyId={currentProperty.id}
-          propertyAddress={currentProperty.property_address}
+          propertyAddress={currentProperty.address}
           currentStatus={currentProperty.approval_status || undefined}
           onStatusChange={handleStatusChange}
           open={isDialogOpen}
