@@ -387,6 +387,132 @@ export type Database = {
           },
         ]
       }
+      priority_leads: {
+        Row: {
+          account_number: string
+          appears_vacant: boolean | null
+          baths: number | null
+          beds: number | null
+          condition_category: string | null
+          condition_score: number | null
+          created_at: string | null
+          distress_indicators: string | null
+          equity_estimate: number | null
+          estimated_repair_cost_high: number | null
+          estimated_repair_cost_low: number | null
+          exemptions: string | null
+          exterior_condition: string | null
+          id: number
+          image_url: string | null
+          is_estate: boolean | null
+          is_out_of_state: boolean | null
+          is_vacant_land: boolean | null
+          just_value: number | null
+          lawn_condition: string | null
+          lead_score: number | null
+          lot_size: number | null
+          mailing_address: string | null
+          mailing_city: string | null
+          mailing_state: string | null
+          mailing_zip: string | null
+          owner_name: string | null
+          priority_tier: string | null
+          property_address: string | null
+          property_type: string | null
+          roof_condition: string | null
+          sqft: number | null
+          taxable_value: number | null
+          total_tax_due: number | null
+          updated_at: string | null
+          visible_issues: string | null
+          visual_summary: string | null
+          year_built: number | null
+          years_delinquent: number | null
+        }
+        Insert: {
+          account_number: string
+          appears_vacant?: boolean | null
+          baths?: number | null
+          beds?: number | null
+          condition_category?: string | null
+          condition_score?: number | null
+          created_at?: string | null
+          distress_indicators?: string | null
+          equity_estimate?: number | null
+          estimated_repair_cost_high?: number | null
+          estimated_repair_cost_low?: number | null
+          exemptions?: string | null
+          exterior_condition?: string | null
+          id?: number
+          image_url?: string | null
+          is_estate?: boolean | null
+          is_out_of_state?: boolean | null
+          is_vacant_land?: boolean | null
+          just_value?: number | null
+          lawn_condition?: string | null
+          lead_score?: number | null
+          lot_size?: number | null
+          mailing_address?: string | null
+          mailing_city?: string | null
+          mailing_state?: string | null
+          mailing_zip?: string | null
+          owner_name?: string | null
+          priority_tier?: string | null
+          property_address?: string | null
+          property_type?: string | null
+          roof_condition?: string | null
+          sqft?: number | null
+          taxable_value?: number | null
+          total_tax_due?: number | null
+          updated_at?: string | null
+          visible_issues?: string | null
+          visual_summary?: string | null
+          year_built?: number | null
+          years_delinquent?: number | null
+        }
+        Update: {
+          account_number?: string
+          appears_vacant?: boolean | null
+          baths?: number | null
+          beds?: number | null
+          condition_category?: string | null
+          condition_score?: number | null
+          created_at?: string | null
+          distress_indicators?: string | null
+          equity_estimate?: number | null
+          estimated_repair_cost_high?: number | null
+          estimated_repair_cost_low?: number | null
+          exemptions?: string | null
+          exterior_condition?: string | null
+          id?: number
+          image_url?: string | null
+          is_estate?: boolean | null
+          is_out_of_state?: boolean | null
+          is_vacant_land?: boolean | null
+          just_value?: number | null
+          lawn_condition?: string | null
+          lead_score?: number | null
+          lot_size?: number | null
+          mailing_address?: string | null
+          mailing_city?: string | null
+          mailing_state?: string | null
+          mailing_zip?: string | null
+          owner_name?: string | null
+          priority_tier?: string | null
+          property_address?: string | null
+          property_type?: string | null
+          roof_condition?: string | null
+          sqft?: number | null
+          taxable_value?: number | null
+          total_tax_due?: number | null
+          updated_at?: string | null
+          visible_issues?: string | null
+          visual_summary?: string | null
+          year_built?: number | null
+          years_delinquent?: number | null
+        }
+        Relationships: []
+      }
       properties: {
         Row: {
           address: string
