@@ -35,6 +35,7 @@ export const PropertyImageDisplay = ({
         <img
           src={imageUrl}
           alt={address}
+          loading="lazy"
           className="w-full h-full object-cover rounded-lg"
           onError={(e) => {
             // If image fails to load, show placeholder
@@ -74,6 +75,7 @@ export const PropertyImageDisplay = ({
               <img
                 src={imageUrl}
                 alt={address}
+                loading="lazy"
                 className="w-full h-auto rounded-lg"
               />
             </div>

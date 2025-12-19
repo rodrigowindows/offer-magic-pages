@@ -46,7 +46,7 @@ export const TeamReportExporter = () => {
     ];
 
     const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
 
@@ -387,23 +387,48 @@ export const TeamReportExporter = () => {
           </p>
         </div>
 
-        <Button
-          onClick={handleExport}
-          disabled={isExporting}
-          className="w-full"
-        >
-          {isExporting ? (
-            <>
-              <Download className="h-4 w-4 mr-2 animate-bounce" />
-              Exportando...
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="flex-1"
+          >
+            {isExporting ? (
+              <>
+                <Download className="h-4 w-4 mr-2 animate-bounce" />
+                Exportando...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Exportar CSV
+              </>
+            )}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.csv';
+              input.onchange = (e: any) => {
+                const file = e.target.files[0];
+                if (file) {
+                  toast({
+                    title: "📁 Arquivo selecionado",
+                    description: `Use o prompt do Claude Code com:\n\nAnalise o arquivo: ${file.name}`,
+                  });
+                }
+              };
+              input.click();
+            }}
+            className="flex-shrink-0"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Upload
+          </Button>
+        </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
           <p className="font-medium text-blue-900 mb-1">💡 Dica:</p>

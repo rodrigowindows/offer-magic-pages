@@ -1,0 +1,68 @@
+================================================================================
+ARQUIVOS PARA FAZER COMMIT NO GIT E USAR NO LOVABLE
+================================================================================
+
+Estes são os arquivos que você deve commitar no repositório do Lovable
+para que o Claude no ambiente web tenha acesso:
+
+1. setup_supabase_tables.sql
+   - SQL para criar a tabela priority_leads no Supabase
+   - Contém todas as definições de colunas, índices e políticas RLS
+
+2. SUPABASE_UPLOAD_242_LEADS.csv
+   - 242 leads prontas para importação
+   - Formato otimizado para Supabase (snake_case columns)
+
+3. simple_upload.py
+   - Script Python para upload automático após criar a tabela
+   - Faz upload em batches de 10 registros
+
+4. .env (se ainda não estiver no git)
+   - Contém as credenciais do Supabase
+   - VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY
+
+5. PROMPT_PARA_LOVABLE.md
+   - Prompt completo para dar ao Lovable
+   - Instruções passo a passo
+
+================================================================================
+COMANDOS GIT
+================================================================================
+
+# Navegue até a pasta do projeto Lovable
+cd /caminho/para/seu/projeto/lovable
+
+# Copie os arquivos desta pasta para lá (ou faça manualmente)
+# Depois:
+
+git add setup_supabase_tables.sql
+git add SUPABASE_UPLOAD_242_LEADS.csv
+git add simple_upload.py
+git add PROMPT_PARA_LOVABLE.md
+git add .env
+
+git commit -m "Add Supabase setup files and 242 priority leads data
+
+- SQL schema for priority_leads table
+- 242 leads CSV ready for import (238 properties + 4 land)
+- Python script for automated upload
+- Instructions for Lovable to execute setup"
+
+git push origin main
+
+================================================================================
+DEPOIS DO PUSH
+================================================================================
+
+1. Abra o Lovable no navegador
+2. Abra o chat do Claude
+3. Copie o conteúdo de PROMPT_PARA_LOVABLE.md
+4. Cole no chat do Lovable
+5. O Claude vai executar o SQL no Supabase dashboard
+6. Aguarde confirmação
+
+Depois que a tabela for criada, você pode:
+- Rodar: python simple_upload.py (aqui mesmo no terminal)
+- OU pedir ao Lovable para fazer o upload também
+
+================================================================================

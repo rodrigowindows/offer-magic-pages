@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -73,6 +73,9 @@ import { BatchReviewMode } from "@/components/BatchReviewMode";
 import { QuickFiltersSidebar } from "@/components/QuickFiltersSidebar";
 import { TeamActivityDashboard } from "@/components/TeamActivityDashboard";
 import { TeamReportExporter } from "@/components/TeamReportExporter";
+import { ReviewQueue } from "@/components/ReviewQueue";
+import { UnifiedPropertyFilters } from "@/components/UnifiedPropertyFilters";
+import { DashboardQuickActions } from "@/components/DashboardQuickActions";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
 import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
@@ -806,6 +809,10 @@ const Admin = () => {
               <BarChart3 className="h-4 w-4" />
               Dashboard
             </TabsTrigger>
+            <TabsTrigger value="review" className="flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Review Queue
+            </TabsTrigger>
             <TabsTrigger value="properties" className="flex items-center gap-2">
               <List className="h-4 w-4" />
               Properties
@@ -822,6 +829,18 @@ const Admin = () => {
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Quick Actions */}
+            <DashboardQuickActions
+              onStartReview={() => {
+                const tabs = document.querySelector('[value="review"]') as HTMLElement;
+                tabs?.click();
+              }}
+              onAddProperty={() => setIsAddDialogOpen(true)}
+              onExportData={() => {/* Export logic */}}
+              onStartCampaign={() => setIsCampaignDialogOpen(true)}
+              pendingCount={statusCounts.pending}
+            />
+
             <AdminDashboardOverview />
 
             {/* NEW - Team Activity Dashboard */}
@@ -835,36 +854,40 @@ const Admin = () => {
             <FollowUpManager />
           </TabsContent>
 
+          {/* Review Queue Tab */}
+          <TabsContent value="review" className="space-y-6">
+            <ReviewQueue />
+          </TabsContent>
+
           {/* Properties Tab */}
           <TabsContent value="properties" className="space-y-6">
-            <PropertyFilters
+            {/* Unified Filters */}
+            <UnifiedPropertyFilters
               selectedStatus={filterStatus}
               onStatusChange={setFilterStatus}
               statusCounts={leadStatusCounts}
+              approvalStatus={approvalStatus}
+              onApprovalStatusChange={setApprovalStatus}
+              approvalCounts={statusCounts}
+              onUserFilter={(userId, userName) => {
+                setFilterUserId(userId);
+                setFilterUserName(userName);
+              }}
+              currentUserId={filterUserId}
+              currentUserName={filterUserName}
+              selectedTags={selectedTags}
+              onTagsChange={setSelectedTags}
+              advancedFilters={advancedFilters}
+              onAdvancedFiltersChange={setAdvancedFilters}
+              onClearAll={() => {
+                setFilterStatus("all");
+                setApprovalStatus("all");
+                setFilterUserId(null);
+                setFilterUserName(null);
+                setSelectedTags([]);
+                setAdvancedFilters({});
+              }}
             />
-
-            {/* NEW - Orlando Integration Filters */}
-            <div className="flex flex-wrap gap-2">
-              <PropertyApprovalFilter
-                selectedStatus={approvalStatus}
-                onStatusChange={setApprovalStatus}
-                counts={statusCounts}
-              />
-              <PropertyUserFilter
-                onUserFilter={(userId, userName) => {
-                  setFilterUserId(userId);
-                  setFilterUserName(userName);
-                }}
-              />
-              <PropertyTagsFilter
-                selectedTags={selectedTags}
-                onFilterChange={setSelectedTags}
-              />
-              <AdvancedPropertyFilters
-                filters={advancedFilters}
-                onFiltersChange={setAdvancedFilters}
-              />
-            </div>
 
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>

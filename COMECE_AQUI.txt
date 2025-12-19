@@ -1,0 +1,96 @@
+================================================================================
+  UPLOAD DE 242 LEADS PARA SUPABASE - COMECE AQUI
+================================================================================
+
+TUDO JA ESTA PRONTO! Siga estas instrucoes simples:
+
+================================================================================
+OPCAO MAIS FACIL: Usar o Lovable (2 minutos)
+================================================================================
+
+1. Abra o arquivo: PROMPT_PARA_LOVABLE.md
+
+2. Copie TODO o conteudo (Ctrl+A, Ctrl+C)
+
+3. Abra o Lovable no navegador: https://lovable.dev
+
+4. Cole o prompt no chat
+
+5. O Lovable vai criar a tabela no Supabase para voce
+
+6. Quando terminar, volte aqui e rode:
+   cd "Step 5 - Outreach & Campaigns"
+   python simple_upload.py
+
+PRONTO! 242 leads no Supabase!
+
+================================================================================
+OPCAO MANUAL: Fazer voce mesmo (3 minutos)
+================================================================================
+
+1. Abra: https://atwdkhlyrffbaugkaker.supabase.co/project/atwdkhlyrffbaugkaker/sql
+
+2. Clique em "+ New query"
+
+3. Abra o arquivo: setup_supabase_tables.sql
+
+4. Copie TODO o conteudo e cole no SQL Editor
+
+5. Clique em "RUN" (botao verde)
+
+6. Aguarde mensagem de sucesso
+
+7. Volte aqui e rode:
+   cd "Step 5 - Outreach & Campaigns"
+   python simple_upload.py
+
+PRONTO! 242 leads no Supabase!
+
+================================================================================
+ARQUIVOS IMPORTANTES
+================================================================================
+
+Para LOVABLE usar:
+  - PROMPT_PARA_LOVABLE.md  <-- Copie este para o Lovable
+
+Para fazer MANUALMENTE:
+  - setup_supabase_tables.sql  <-- SQL para criar tabela
+  - SUPABASE_UPLOAD_242_LEADS.csv  <-- 242 leads prontas
+
+Para fazer UPLOAD automatico:
+  - simple_upload.py  <-- Rode depois de criar a tabela
+
+Para mais DETALHES:
+  - RESUMO_FINAL.md  <-- Tudo explicado
+  - README_UPLOAD.txt  <-- Instrucoes completas
+  - GUIA_RAPIDO_UPLOAD.md  <-- Guia visual
+
+================================================================================
+DADOS QUE SERAO IMPORTADOS
+================================================================================
+
+Total: 242 leads prioritarias
+  - 3 P1-CRITICAL (mais quentes)
+  - 35 P2-HIGH (alta prioridade)
+  - 200+ outras leads qualificadas
+  - 4 vacant land parcels
+
+Todas com:
+  - Analise visual completa
+  - Score de 0-300+
+  - Condicao de 0-10
+  - Imagens Google Street View
+
+================================================================================
+PRECISA DE AJUDA?
+================================================================================
+
+Leia o arquivo: RESUMO_FINAL.md
+
+Ou simplesmente:
+1. Abra PROMPT_PARA_LOVABLE.md
+2. Copie tudo
+3. Cole no Lovable
+4. Deixe ele fazer o trabalho!
+
+================================================================================
