@@ -230,7 +230,7 @@ const Admin = () => {
   // Refetch when filters change
   useEffect(() => {
     fetchProperties();
-  }, [advancedFilters, selectedTags, approvalStatus, priceRange, selectedCities, dateFilter]);
+  }, [advancedFilters, selectedTags, approvalStatus, priceRange, selectedCities, dateFilter, filterUserId]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -292,6 +292,11 @@ const Admin = () => {
     // Apply approval filter
     if (approvalStatus !== "all") {
       query = query.eq("approval_status", approvalStatus);
+    }
+
+    // Apply user filter (filter by who approved)
+    if (filterUserId) {
+      query = query.eq("approved_by", filterUserId);
     }
 
     // Apply price range filter (from QuickFiltersSidebar)

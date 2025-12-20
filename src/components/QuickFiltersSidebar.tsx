@@ -7,6 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { PropertyUserFilter } from "./PropertyUserFilter";
 
 interface QuickFiltersSidebarProps {
   approvalStatus: string;
@@ -20,6 +21,9 @@ interface QuickFiltersSidebarProps {
   dateFilter: string;
   onDateFilterChange: (filter: string) => void;
   statusCounts: { pending: number; approved: number; rejected: number };
+  onUserFilter: (userId: string | null, userName: string | null) => void;
+  currentUserId?: string | null;
+  currentUserName?: string | null;
 }
 
 export const QuickFiltersSidebar = ({
@@ -34,6 +38,9 @@ export const QuickFiltersSidebar = ({
   dateFilter,
   onDateFilterChange,
   statusCounts,
+  onUserFilter,
+  currentUserId,
+  currentUserName,
 }: QuickFiltersSidebarProps) => {
   const [availableTags, setAvailableTags] = useState<{ tag: string; count: number }[]>([]);
   const [availableCities, setAvailableCities] = useState<{ city: string; count: number }[]>([]);
@@ -211,6 +218,12 @@ export const QuickFiltersSidebar = ({
             </button>
           </div>
         )}
+      </div>
+
+      {/* User Filter */}
+      <div className="space-y-2">
+        <div className="text-sm font-semibold mb-2">👤 Aprovado por</div>
+        <PropertyUserFilter onUserFilter={onUserFilter} />
       </div>
 
       {/* Tags */}
