@@ -335,8 +335,8 @@ const ColumnMappingDialog = ({
                       <SelectItem value="skip">
                         <span className="text-muted-foreground">⏭️ Ignorar esta coluna</span>
                       </SelectItem>
-                      
-                      <SelectItem value="" disabled className="font-semibold">
+
+                      <SelectItem value="__header_basic" disabled className="font-semibold">
                         📍 Localização
                       </SelectItem>
                       {groupedDbFields.basic.map(field => (
@@ -344,8 +344,8 @@ const ColumnMappingDialog = ({
                           {field.label} {field.required && <span className="text-red-500">*</span>}
                         </SelectItem>
                       ))}
-                      
-                      <SelectItem value="" disabled className="font-semibold">
+
+                      <SelectItem value="__header_owner" disabled className="font-semibold">
                         👤 Proprietário
                       </SelectItem>
                       {groupedDbFields.owner.map(field => (
@@ -353,8 +353,8 @@ const ColumnMappingDialog = ({
                           {field.label}
                         </SelectItem>
                       ))}
-                      
-                      <SelectItem value="" disabled className="font-semibold">
+
+                      <SelectItem value="__header_property" disabled className="font-semibold">
                         🏠 Detalhes do Imóvel
                       </SelectItem>
                       {groupedDbFields.property.map(field => (
@@ -362,8 +362,8 @@ const ColumnMappingDialog = ({
                           {field.label}
                         </SelectItem>
                       ))}
-                      
-                      <SelectItem value="" disabled className="font-semibold">
+
+                      <SelectItem value="__header_financial" disabled className="font-semibold">
                         💰 Financeiro
                       </SelectItem>
                       {groupedDbFields.financial.map(field => (
@@ -371,8 +371,8 @@ const ColumnMappingDialog = ({
                           {field.label} {field.required && <span className="text-red-500">*</span>}
                         </SelectItem>
                       ))}
-                      
-                      <SelectItem value="" disabled className="font-semibold">
+
+                      <SelectItem value="__header_system" disabled className="font-semibold">
                         ⚙️ Sistema
                       </SelectItem>
                       {groupedDbFields.system.map(field => (
