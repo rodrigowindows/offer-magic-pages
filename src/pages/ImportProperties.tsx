@@ -331,6 +331,7 @@ const ImportProperties = () => {
       let imported = 0;
       let updated = 0;
       let errors = 0;
+      let skipped = 0;
 
       // Create image URL map from uploaded images
       const imageMap = new Map<string, string>();
@@ -346,6 +347,22 @@ const ImportProperties = () => {
           mappingLookup.set(m.csvColumn, m.dbField as DatabaseFieldKey);
         }
       });
+
+      const failedRows: Array<{line: number, account: string, address: string, error: string}> = [];
+      const skippedRows: Array<{line: number, account: string, address: string, reason: string}> = [];
+
+      // Fetch ALL existing account numbers to check in batch (much faster than checking one by one)
+      setImportStatus("Verificando properties existentes...");
+      const { data: existingProperties } = await supabase
+        .from('properties')
+        .select('origem, id')
+        .not('origem', 'is', null);
+
+      const existingAccountNumbers = new Set<string>(
+        existingProperties?.map(p => p.origem) || []
+      );
+
+      console.log(`Found ${existingAccountNumbers.size} existing properties in database`);
 
       for (let i = 1; i < lines.length; i++) {
         try {
@@ -400,8 +417,29 @@ const ImportProperties = () => {
           const propertyAddress = propertyData['address'] || '';
 
           if (!accountNumber && !propertyAddress) {
+            failedRows.push({
+              line: i,
+              account: 'N/A',
+              address: 'N/A',
+              error: 'Missing account_number and property_address'
+            });
             errors++;
             continue;
+          }
+
+          // Check if already imported (SKIP if exists and updateExisting is false)
+          if (accountNumber && existingAccountNumbers.has(accountNumber)) {
+            if (!updateExisting) {
+              skippedRows.push({
+                line: i,
+                account: accountNumber,
+                address: propertyAddress,
+                reason: 'Already exists in database'
+              });
+              skipped++;
+              continue;
+            }
+            // If updateExisting is true, we'll update it below
           }
 
           // Generate slug
@@ -423,10 +461,23 @@ const ImportProperties = () => {
             propertyData.zip_code = '32801'; // Default Orlando ZIP
             console.log('Using default ZIP code 32801');
           }
-          if (!propertyData.estimated_value) propertyData.estimated_value = 0;
-          if (!propertyData.cash_offer_amount && propertyData.estimated_value) {
-            propertyData.cash_offer_amount = Math.round(propertyData.estimated_value * 0.7);
+
+          // Handle estimated_value
+          if (!propertyData.estimated_value || propertyData.estimated_value === 0) {
+            // Try to get from just_value or taxable_value
+            propertyData.estimated_value = propertyData.just_value || propertyData.taxable_value || 100000;
           }
+
+          // Handle cash_offer_amount - REQUIRED field
+          if (!propertyData.cash_offer_amount || propertyData.cash_offer_amount === 0) {
+            if (propertyData.estimated_value && propertyData.estimated_value > 0) {
+              propertyData.cash_offer_amount = Math.round(propertyData.estimated_value * 0.7);
+            } else {
+              propertyData.cash_offer_amount = 70000; // Default reasonable cash offer
+            }
+          }
+
+          console.log(`Property: ${propertyAddress} - estimated_value: ${propertyData.estimated_value}, cash_offer: ${propertyData.cash_offer_amount}`);
 
           // Find matching image
           if (!propertyData.property_image_url && accountNumber) {
@@ -442,35 +493,48 @@ const ImportProperties = () => {
             }
           });
 
-          // Check if property exists (by origem field)
-          let existing = null;
-          if (accountNumber) {
-            const { data } = await supabase
-              .from('properties')
-              .select('id')
-              .eq('origem', accountNumber)
-              .maybeSingle();
-            existing = data;
-          }
+          // Check if property exists (using pre-fetched list)
+          const alreadyExists = accountNumber && existingAccountNumbers.has(accountNumber);
 
-          if (existing && updateExisting) {
+          if (alreadyExists && updateExisting) {
+            // Get the ID for update
+            const existingProp = existingProperties?.find(p => p.origem === accountNumber);
+            if (!existingProp) {
+              console.warn(`Property ${accountNumber} in set but not found`);
+              errors++;
+              continue;
+            }
+
             const { error: updateError } = await supabase
               .from('properties')
               .update(propertyData as any)
-              .eq('id', existing.id);
+              .eq('id', existingProp.id);
 
             if (updateError) {
+              console.error(`Update error (line ${i}):`, updateError);
+              failedRows.push({
+                line: i,
+                account: accountNumber,
+                address: propertyAddress,
+                error: updateError.message
+              });
               errors++;
             } else {
               updated++;
             }
-          } else if (!existing) {
+          } else if (!alreadyExists) {
             const { error: insertError } = await supabase
               .from('properties')
               .insert(propertyData as any);
 
             if (insertError) {
-              console.error('Insert error:', insertError);
+              console.error(`Insert error (line ${i}):`, insertError);
+              failedRows.push({
+                line: i,
+                account: accountNumber,
+                address: propertyAddress,
+                error: insertError.message
+              });
               errors++;
             } else {
               imported++;
@@ -480,11 +544,62 @@ const ImportProperties = () => {
           setImportProgress(Math.round((i / (lines.length - 1)) * 100));
           setImportStatus(`Importando ${i}/${lines.length - 1}...`);
 
-        } catch (error) {
-          console.error('Row error:', error);
+        } catch (error: any) {
+          console.error(`Row error (line ${i}):`, error);
+          failedRows.push({
+            line: i,
+            account: accountNumber || 'unknown',
+            address: propertyAddress || 'unknown',
+            error: error.message || 'Unknown error'
+          });
           errors++;
         }
       }
+
+      // Log skipped rows
+      if (skippedRows.length > 0) {
+        console.log('\n=== SKIPPED ROWS (Already Imported) ===');
+        console.log(`Total skipped: ${skippedRows.length}`);
+        console.table(skippedRows);
+      }
+
+      // Log all failed rows
+      if (failedRows.length > 0) {
+        console.log('\n=== FAILED ROWS ===');
+        console.log(`Total failed: ${failedRows.length}`);
+        console.table(failedRows);
+
+        // Create CSV content for failed rows
+        const failedCsvHeaders = headers.join(',');
+        const failedCsvRows = failedRows.map(f => {
+          const lineContent = lines[f.line];
+          return lineContent;
+        }).join('\n');
+
+        const failedCsv = failedCsvHeaders + '\n' + failedCsvRows;
+        console.log('\n=== FAILED ROWS CSV ===');
+        console.log('Copy the content below and save as CSV:');
+        console.log(failedCsv);
+
+        // Download failed rows as CSV
+        const blob = new Blob([failedCsv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `failed_imports_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        console.log('✓ Failed rows CSV downloaded automatically');
+      }
+
+      // Final summary
+      console.log('\n=== IMPORT SUMMARY ===');
+      console.log(`Total processed: ${lines.length - 1}`);
+      console.log(`✓ Imported (new): ${imported}`);
+      console.log(`✓ Updated (existing): ${updated}`);
+      console.log(`⏭ Skipped (already exists): ${skipped}`);
+      console.log(`✗ Failed (errors): ${errors}`);
 
       setImportResult({ imported, updated, errors });
       setIsImporting(false);
@@ -492,7 +607,7 @@ const ImportProperties = () => {
 
       toast({
         title: "Importação Completa! 🎉",
-        description: `${imported} novas, ${updated} atualizadas, ${errors} erros`,
+        description: `${imported} novas, ${updated} atualizadas, ${skipped} puladas, ${errors} erros`,
       });
     };
 
