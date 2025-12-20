@@ -3,6 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ExternalLink, MapPin } from 'lucide-react';
 
 interface PropertyMapProps {
   address: string;
@@ -140,12 +141,40 @@ const PropertyMap = ({ address, city, state, zipCode }: PropertyMapProps) => {
     );
   }
 
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+  const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${encodeURIComponent(fullAddress)}`;
+
   return (
     <div className="relative w-full h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-strong border border-border">
       <div ref={mapContainer} className="absolute inset-0" />
+
+      {/* Address Info */}
       <div className="absolute top-4 left-4 bg-card/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-md border border-border">
         <p className="text-sm font-semibold text-foreground">{address}</p>
         <p className="text-xs text-muted-foreground">{city}, {state} {zipCode}</p>
+      </div>
+
+      {/* Quick Links to Google Maps */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <Button
+          size="sm"
+          variant="secondary"
+          className="bg-card/95 backdrop-blur-sm hover:bg-card shadow-md"
+          onClick={() => window.open(googleMapsUrl, '_blank')}
+        >
+          <MapPin className="h-4 w-4 mr-1" />
+          Google Maps
+          <ExternalLink className="h-3 w-3 ml-1" />
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="bg-card/95 backdrop-blur-sm hover:bg-card shadow-md"
+          onClick={() => window.open(streetViewUrl, '_blank')}
+        >
+          <ExternalLink className="h-4 w-4 mr-1" />
+          Street View
+        </Button>
       </div>
     </div>
   );

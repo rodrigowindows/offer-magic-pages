@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
-import { MoreVertical, TrendingUp, DollarSign } from "lucide-react";
+import { MoreVertical, TrendingUp, DollarSign, MapPin, ExternalLink } from "lucide-react";
 
 interface Property {
   id: string;
@@ -122,6 +122,9 @@ export const PropertyCardView = ({
 
   const scoreInfo = getScoreInfo();
 
+  const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+
   return (
     <Card className="hover:shadow-lg transition-all duration-200 relative">
       {/* Selection Checkbox */}
@@ -170,10 +173,26 @@ export const PropertyCardView = ({
         <div className="p-4 space-y-3">
           {/* Address */}
           <div>
-            <h3 className="font-bold text-lg line-clamp-1">{property.address}</h3>
-            <p className="text-sm text-muted-foreground">
-              {property.city}, {property.state} {property.zip_code}
-            </p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1">
+                <h3 className="font-bold text-lg line-clamp-1">{property.address}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {property.city}, {property.state} {property.zip_code}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(googleMapsUrl, '_blank');
+                }}
+                title="Ver no Google Maps"
+              >
+                <MapPin className="h-4 w-4" />
+              </Button>
+            </div>
             {property.owner_name && (
               <p className="text-xs text-muted-foreground mt-1">
                 Proprietário: {property.owner_name}
