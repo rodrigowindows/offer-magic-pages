@@ -205,7 +205,15 @@ const ImportProperties = () => {
       }
 
       // Parse headers
-      const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, ''));
+      const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
+
+      console.log('=== CSV DEBUG ===');
+      console.log('Total lines:', lines.length);
+      console.log('Headers found:', headers.length);
+      console.log('First 10 headers:', headers.slice(0, 10));
+      console.log('Has account_number?', headers.includes('account_number'));
+      console.log('Has property_address?', headers.includes('property_address'));
+
       setCsvHeaders(headers);
       setTotalRows(lines.length - 1);
 
@@ -215,21 +223,39 @@ const ImportProperties = () => {
         const values = parseCSVLine(lines[i]);
         const row: CSVPreviewRow = {};
         headers.forEach((h, idx) => {
-          row[h] = values[idx]?.replace(/"/g, '') || '';
+          row[h] = values[idx]?.replace(/"/g, '').trim() || '';
         });
         preview.push(row);
       }
       setCsvPreview(preview);
 
+      console.log('Preview first row:', preview[0]);
+
       // Validate required columns
       const errors: string[] = [];
       const requiredColumns = ['account_number', 'property_address'];
-      const hasRequired = requiredColumns.filter(col => 
+
+      // Check exact match first
+      const hasAccountNumber = headers.includes('account_number');
+      const hasPropertyAddress = headers.includes('property_address');
+
+      console.log('Exact match - account_number:', hasAccountNumber);
+      console.log('Exact match - property_address:', hasPropertyAddress);
+
+      // Check fuzzy match
+      const hasRequired = requiredColumns.filter(col =>
         headers.some(h => h.toLowerCase().includes(col.toLowerCase().replace('_', '')))
       );
 
-      if (hasRequired.length < 1) {
-        errors.push("CSV deve ter pelo menos 'account_number' ou 'property_address'");
+      console.log('Fuzzy match found:', hasRequired);
+
+      if (!hasAccountNumber && !hasPropertyAddress) {
+        const errorMsg = "CSV deve ter pelo menos 'account_number' ou 'property_address'";
+        console.error('VALIDATION ERROR:', errorMsg);
+        console.error('Available headers:', headers);
+        errors.push(errorMsg);
+      } else {
+        console.log('✓ Validation passed!');
       }
 
       setCsvErrors(errors);
