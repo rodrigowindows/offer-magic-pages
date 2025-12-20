@@ -17,13 +17,14 @@ export const PropertyImageDisplay = ({
   showZoom = true,
 }: PropertyImageDisplayProps) => {
   const [isZoomed, setIsZoomed] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
-  if (!imageUrl) {
+  if (!imageUrl || hasError) {
     return (
       <div className={`bg-muted rounded-lg flex items-center justify-center ${className}`}>
         <div className="text-center text-muted-foreground p-4">
           <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Sem foto</p>
+          <p className="text-sm">{hasError ? "Erro ao carregar" : "Sem foto"}</p>
         </div>
       </div>
     );
@@ -37,28 +38,15 @@ export const PropertyImageDisplay = ({
           alt={address}
           loading="lazy"
           className="w-full h-full object-cover rounded-lg"
-          onError={(e) => {
-            // If image fails to load, show placeholder
-            e.currentTarget.style.display = "none";
-            e.currentTarget.parentElement!.innerHTML = `
-              <div class="bg-muted rounded-lg flex items-center justify-center h-full">
-                <div class="text-center text-muted-foreground p-4">
-                  <svg class="h-8 w-8 mx-auto mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <p class="text-sm">Erro ao carregar</p>
-                </div>
-              </div>
-            `;
-          }}
+          onError={() => setHasError(true)}
         />
 
         {showZoom && (
           <div
-            className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all rounded-lg flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100"
+            className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100"
             onClick={() => setIsZoomed(true)}
           >
-            <Badge className="bg-white text-black">
+            <Badge className="bg-background text-foreground">
               <ZoomIn className="h-4 w-4 mr-1" />
               Ver Ampliado
             </Badge>
@@ -77,6 +65,7 @@ export const PropertyImageDisplay = ({
                 alt={address}
                 loading="lazy"
                 className="w-full h-auto rounded-lg"
+                onError={() => setHasError(true)}
               />
             </div>
           </DialogContent>
