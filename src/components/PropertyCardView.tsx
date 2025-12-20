@@ -180,18 +180,46 @@ export const PropertyCardView = ({
                   {property.city}, {property.state} {property.zip_code}
                 </p>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(googleMapsUrl, '_blank');
-                }}
-                title="Ver no Google Maps"
-              >
-                <MapPin className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(googleMapsUrl, '_blank');
+                  }}
+                  title="Ver no Google Maps"
+                >
+                  <MapPin className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const zillowUrl = `https://www.zillow.com/homes/${encodeURIComponent(fullAddress)}_rb/`;
+                    window.open(zillowUrl, '_blank');
+                  }}
+                  title="Ver no Zillow"
+                >
+                  <span className="text-xs font-bold">Z</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const truliaUrl = `https://www.trulia.com/homes/${encodeURIComponent(fullAddress)}`;
+                    window.open(truliaUrl, '_blank');
+                  }}
+                  title="Ver no Trulia"
+                >
+                  <span className="text-xs font-bold">T</span>
+                </Button>
+              </div>
             </div>
             {property.owner_name && (
               <p className="text-xs text-muted-foreground mt-1">
