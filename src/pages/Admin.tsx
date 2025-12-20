@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target, Search, X } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -69,6 +69,7 @@ import { PropertyComparison } from "@/components/PropertyComparison";
 import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { GeminiAPIKeyDialog } from "@/components/GeminiAPIKeyDialog";
 import { PropertyCardView } from "@/components/PropertyCardView";
+import { PropertyCardSkeleton } from "@/components/PropertyCardSkeleton";
 import { BatchReviewMode } from "@/components/BatchReviewMode";
 import { QuickFiltersSidebar } from "@/components/QuickFiltersSidebar";
 import { TeamActivityDashboard } from "@/components/TeamActivityDashboard";
@@ -163,6 +164,7 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true);
   const [properties, setProperties] = useState<Property[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -185,6 +187,7 @@ const Admin = () => {
   });
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState<LeadStatus | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
   const [selectedPropertyForOffer, setSelectedPropertyForOffer] = useState<Property | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
@@ -240,6 +243,7 @@ const Admin = () => {
   };
 
   const fetchProperties = async () => {
+    setIsLoadingProperties(true);
     let query = supabase.from("properties").select("*");
 
     // Apply advanced filters
@@ -351,6 +355,7 @@ const Admin = () => {
         setStatusCounts(counts);
       }
     }
+    setIsLoadingProperties(false);
   };
 
   const handleLogout = async () => {
@@ -744,6 +749,18 @@ const Admin = () => {
 
   const filteredProperties = properties
     .filter(p => {
+      // Filter by search query
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchAddress = p.address?.toLowerCase().includes(query);
+        const matchCity = p.city?.toLowerCase().includes(query);
+        const matchOwner = p.owner_name?.toLowerCase().includes(query);
+        const matchZip = p.zip_code?.toLowerCase().includes(query);
+        if (!matchAddress && !matchCity && !matchOwner && !matchZip) {
+          return false;
+        }
+      }
+
       // Filter by lead status
       if (filterStatus !== 'all' && p.lead_status !== filterStatus) {
         return false;
@@ -893,6 +910,25 @@ const Admin = () => {
                 setAdvancedFilters({});
               }}
             />
+
+            {/* Search Bar */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por endereço, cidade, dono ou CEP..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
 
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -1122,7 +1158,12 @@ const Admin = () => {
                 {viewMode === 'cards' ? (
                   /* Card View */
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredProperties.length === 0 ? (
+                    {isLoadingProperties ? (
+                      /* Loading Skeletons */
+                      Array.from({ length: 6 }).map((_, index) => (
+                        <PropertyCardSkeleton key={index} />
+                      ))
+                    ) : filteredProperties.length === 0 ? (
                       <div className="col-span-full text-center text-muted-foreground py-8">
                         {filterStatus === 'all'
                           ? 'No properties yet. Add your first property to get started!'
