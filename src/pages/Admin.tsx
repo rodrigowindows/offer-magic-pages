@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
 import { ABTestDashboard } from "@/components/ABTestDashboard";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
