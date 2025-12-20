@@ -407,9 +407,22 @@ const ImportProperties = () => {
           // Generate slug
           propertyData.slug = generateSlug(propertyAddress || accountNumber);
 
+          // Extract ZIP from property_address if not mapped
+          if (!propertyData.zip_code && propertyAddress) {
+            const zipMatch = propertyAddress.match(/\b(\d{5})(?:-\d{4})?\b/);
+            if (zipMatch) {
+              propertyData.zip_code = zipMatch[1];
+              console.log(`Extracted ZIP ${zipMatch[1]} from address: ${propertyAddress}`);
+            }
+          }
+
           // Set defaults
           if (!propertyData.city) propertyData.city = 'Orlando';
           if (!propertyData.state) propertyData.state = 'FL';
+          if (!propertyData.zip_code) {
+            propertyData.zip_code = '32801'; // Default Orlando ZIP
+            console.log('Using default ZIP code 32801');
+          }
           if (!propertyData.estimated_value) propertyData.estimated_value = 0;
           if (!propertyData.cash_offer_amount && propertyData.estimated_value) {
             propertyData.cash_offer_amount = Math.round(propertyData.estimated_value * 0.7);
