@@ -1078,19 +1078,20 @@ const Admin = () => {
             <div className="flex gap-4">
               {/* Quick Filters Sidebar */}
               {showFiltersSidebar && (
-                <QuickFiltersSidebar
-                  approvalStatus={approvalStatus}
-                  onApprovalStatusChange={setApprovalStatus}
-                  selectedTags={selectedTags}
-                  onTagsChange={setSelectedTags}
-                  priceRange={priceRange}
-                  onPriceRangeChange={setPriceRange}
-                  selectedCities={selectedCities}
-                  onCitiesChange={setSelectedCities}
-                  dateFilter={dateFilter}
-                  onDateFilterChange={setDateFilter}
-                  statusCounts={statusCounts}
-                />
+              <QuickFiltersSidebar
+                approvalStatus={approvalStatus}
+                onApprovalStatusChange={setApprovalStatus}
+                selectedTags={selectedTags}
+                onTagsChange={setSelectedTags}
+                priceRange={priceRange}
+                onPriceRangeChange={setPriceRange}
+                selectedCities={selectedCities}
+                onCitiesChange={setSelectedCities}
+                dateFilter={dateFilter}
+                onDateFilterChange={setDateFilter}
+                statusCounts={statusCounts}
+                onUserFilter={() => {}}
+              />
               )}
 
               {/* Main Content Area */}

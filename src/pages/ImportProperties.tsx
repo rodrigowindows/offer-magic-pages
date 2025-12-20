@@ -548,8 +548,8 @@ const ImportProperties = () => {
           console.error(`Row error (line ${i}):`, error);
           failedRows.push({
             line: i,
-            account: accountNumber || 'unknown',
-            address: propertyAddress || 'unknown',
+            account: 'unknown',
+            address: 'unknown',
             error: error.message || 'Unknown error'
           });
           errors++;
