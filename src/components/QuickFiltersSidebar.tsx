@@ -6,8 +6,16 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
-import { X, ChevronDown, ChevronUp } from "lucide-react";
+import { X, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import { PropertyUserFilter } from "./PropertyUserFilter";
+import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "./AdvancedPropertyFilters";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface QuickFiltersSidebarProps {
   approvalStatus: string;
@@ -24,6 +32,9 @@ interface QuickFiltersSidebarProps {
   onUserFilter: (userId: string | null, userName: string | null) => void;
   currentUserId?: string | null;
   currentUserName?: string | null;
+  advancedFilters: AdvancedFilters;
+  onAdvancedFiltersChange: (filters: AdvancedFilters) => void;
+  onClearAll: () => void;
 }
 
 export const QuickFiltersSidebar = ({
@@ -41,9 +52,13 @@ export const QuickFiltersSidebar = ({
   onUserFilter,
   currentUserId,
   currentUserName,
+  advancedFilters,
+  onAdvancedFiltersChange,
+  onClearAll,
 }: QuickFiltersSidebarProps) => {
   const [availableTags, setAvailableTags] = useState<{ tag: string; count: number }[]>([]);
   const [availableCities, setAvailableCities] = useState<{ city: string; count: number }[]>([]);
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     status: true,
     tags: true,
@@ -127,19 +142,26 @@ export const QuickFiltersSidebar = ({
   };
 
   const clearAllFilters = () => {
-    onApprovalStatusChange("all");
-    onTagsChange([]);
-    onCitiesChange([]);
-    onPriceRangeChange([0, 1000000]);
-    onDateFilterChange("all");
+    onClearAll();
   };
+
+  // Count advanced filters
+  const advancedFiltersCount = Object.keys(advancedFilters).filter(key => {
+    const value = advancedFilters[key as keyof AdvancedFilters];
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'boolean') return true;
+    if (value instanceof Date) return true;
+    if (typeof value === 'number') return true;
+    return false;
+  }).length;
 
   const activeFiltersCount =
     (approvalStatus !== "all" ? 1 : 0) +
     selectedTags.length +
     selectedCities.length +
     (priceRange[0] !== 0 || priceRange[1] !== 1000000 ? 1 : 0) +
-    (dateFilter !== "all" ? 1 : 0);
+    (dateFilter !== "all" ? 1 : 0) +
+    advancedFiltersCount;
 
   return (
     <div className="w-64 border-r bg-card p-4 space-y-4 overflow-y-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
@@ -164,6 +186,22 @@ export const QuickFiltersSidebar = ({
           {activeFiltersCount} active filter{activeFiltersCount !== 1 ? "s" : ""}
         </Badge>
       )}
+
+      {/* Advanced Filters Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={() => setIsAdvancedFiltersOpen(true)}
+      >
+        <SlidersHorizontal className="h-4 w-4 mr-2" />
+        Advanced Filters
+        {advancedFiltersCount > 0 && (
+          <Badge variant="secondary" className="ml-2">
+            {advancedFiltersCount}
+          </Badge>
+        )}
+      </Button>
 
       {/* Approval Status */}
       <div className="space-y-2">
@@ -402,6 +440,22 @@ export const QuickFiltersSidebar = ({
           </div>
         </div>
       )}
+
+      {/* Advanced Filters Dialog */}
+      <Dialog open={isAdvancedFiltersOpen} onOpenChange={setIsAdvancedFiltersOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Advanced Filters</DialogTitle>
+            <DialogDescription>
+              Configure advanced property filters for more precise results
+            </DialogDescription>
+          </DialogHeader>
+          <AdvancedPropertyFilters
+            filters={advancedFilters}
+            onFiltersChange={onAdvancedFiltersChange}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

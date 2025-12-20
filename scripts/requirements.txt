@@ -1,6 +1,17 @@
-# Step 5 - Python Dependencies
+# Python Dependencies for Step 5 - Orlando Real Estate Project
+# Install with: pip install -r requirements.txt
+
+# Data processing
 pandas>=2.1.0
+
+# Environment variables
 python-dotenv>=1.0.0
+
+# Supabase client
 supabase>=2.0.0
+
+# HTTP requests
 requests>=2.31.0
+
+# Image processing
 Pillow>=10.0.0

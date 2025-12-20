@@ -895,7 +895,12 @@ const Admin = () => {
             />
 
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-foreground">Your Properties</h2>
+                <Badge variant="secondary" className="text-sm">
+                  Exibindo {filteredProperties.length} de {properties.length}
+                </Badge>
+              </div>
               <div className="flex gap-2">
                 {/* View Mode Toggle */}
                 <div className="flex gap-1 border rounded-lg p-1">
@@ -1078,20 +1083,38 @@ const Admin = () => {
             <div className="flex gap-4">
               {/* Quick Filters Sidebar */}
               {showFiltersSidebar && (
-              <QuickFiltersSidebar
-                approvalStatus={approvalStatus}
-                onApprovalStatusChange={setApprovalStatus}
-                selectedTags={selectedTags}
-                onTagsChange={setSelectedTags}
-                priceRange={priceRange}
-                onPriceRangeChange={setPriceRange}
-                selectedCities={selectedCities}
-                onCitiesChange={setSelectedCities}
-                dateFilter={dateFilter}
-                onDateFilterChange={setDateFilter}
-                statusCounts={statusCounts}
-                onUserFilter={() => {}}
-              />
+                <QuickFiltersSidebar
+                  approvalStatus={approvalStatus}
+                  onApprovalStatusChange={setApprovalStatus}
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                  priceRange={priceRange}
+                  onPriceRangeChange={setPriceRange}
+                  selectedCities={selectedCities}
+                  onCitiesChange={setSelectedCities}
+                  dateFilter={dateFilter}
+                  onDateFilterChange={setDateFilter}
+                  statusCounts={statusCounts}
+                  onUserFilter={(userId, userName) => {
+                    setFilterUserId(userId);
+                    setFilterUserName(userName);
+                  }}
+                  currentUserId={filterUserId}
+                  currentUserName={filterUserName}
+                  advancedFilters={advancedFilters}
+                  onAdvancedFiltersChange={setAdvancedFilters}
+                  onClearAll={() => {
+                    setFilterStatus("all");
+                    setApprovalStatus("all");
+                    setFilterUserId(null);
+                    setFilterUserName(null);
+                    setSelectedTags([]);
+                    setAdvancedFilters({});
+                    setPriceRange([0, 1000000]);
+                    setSelectedCities([]);
+                    setDateFilter("all");
+                  }}
+                />
               )}
 
               {/* Main Content Area */}
