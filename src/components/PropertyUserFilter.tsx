@@ -36,6 +36,15 @@ export const PropertyUserFilter = ({ onUserFilter }: PropertyUserFilterProps) =>
     try {
       setIsLoading(true);
 
+      // Fetch all profiles first
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, email, full_name");
+
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
+      }
+
       // Get all properties with approval data
       const { data, error } = await supabase
         .from("properties")
@@ -44,9 +53,21 @@ export const PropertyUserFilter = ({ onUserFilter }: PropertyUserFilterProps) =>
 
       if (error) throw error;
 
-      // Aggregate by user
+      // Create user map from profiles first
       const userMap = new Map<string, UserActivity>();
 
+      // Add all profiles to the map
+      profiles?.forEach((profile) => {
+        userMap.set(profile.id, {
+          user_id: profile.id,
+          user_name: profile.full_name || profile.email || "Unknown User",
+          approved_count: 0,
+          rejected_count: 0,
+          total_count: 0,
+        });
+      });
+
+      // Aggregate approval data
       data?.forEach((prop) => {
         const userId = prop.approved_by;
         const userName = prop.approved_by_name || "Unknown User";
@@ -103,7 +124,7 @@ export const PropertyUserFilter = ({ onUserFilter }: PropertyUserFilterProps) =>
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <User className="h-4 w-4 animate-pulse" />
         Carregando usuários...
       </div>
@@ -116,7 +137,7 @@ export const PropertyUserFilter = ({ onUserFilter }: PropertyUserFilterProps) =>
 
   return (
     <div className="flex items-center gap-2">
-      <User className="h-4 w-4 text-gray-500" />
+      <User className="h-4 w-4 text-muted-foreground" />
 
       <Select value={selectedUser?.user_id || "all"} onValueChange={handleSelectUser}>
         <SelectTrigger className="w-[280px]">
@@ -130,14 +151,16 @@ export const PropertyUserFilter = ({ onUserFilter }: PropertyUserFilterProps) =>
             <SelectItem key={user.user_id} value={user.user_id}>
               <div className="flex items-center gap-2 w-full">
                 <span className="font-medium">{user.user_name}</span>
-                <div className="flex gap-1 ml-auto">
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
-                    ✓ {user.approved_count}
-                  </Badge>
-                  <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
-                    ✗ {user.rejected_count}
-                  </Badge>
-                </div>
+                {user.total_count > 0 && (
+                  <div className="flex gap-1 ml-auto">
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                      ✓ {user.approved_count}
+                    </Badge>
+                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300">
+                      ✗ {user.rejected_count}
+                    </Badge>
+                  </div>
+                )}
               </div>
             </SelectItem>
           ))}
@@ -158,14 +181,16 @@ export const PropertyUserFilter = ({ onUserFilter }: PropertyUserFilterProps) =>
               <X className="h-3 w-3" />
             </Button>
           </Badge>
-          <div className="flex gap-1">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
-              Aprovados: {selectedUser.approved_count}
-            </Badge>
-            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs">
-              Rejeitados: {selectedUser.rejected_count}
-            </Badge>
-          </div>
+          {selectedUser.total_count > 0 && (
+            <div className="flex gap-1">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 text-xs">
+                Aprovados: {selectedUser.approved_count}
+              </Badge>
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 text-xs">
+                Rejeitados: {selectedUser.rejected_count}
+              </Badge>
+            </div>
+          )}
         </div>
       )}
     </div>
