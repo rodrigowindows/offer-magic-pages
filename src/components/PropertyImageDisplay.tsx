@@ -32,21 +32,25 @@ export const PropertyImageDisplay = ({
 
   return (
     <>
-      <div className={`relative group ${className}`}>
+      <div className={`relative overflow-hidden group ${className}`}>
+        {/* Image with scale animation on hover */}
         <img
           src={imageUrl}
           alt={address}
           loading="lazy"
-          className="w-full h-full object-cover rounded-lg"
+          className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
           onError={() => setHasError(true)}
         />
 
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+
         {showZoom && (
           <div
-            className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all rounded-lg flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100"
+            className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 rounded-lg flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100"
             onClick={() => setIsZoomed(true)}
           >
-            <Badge className="bg-background text-foreground">
+            <Badge className="bg-white text-gray-900 shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200">
               <ZoomIn className="h-4 w-4 mr-1" />
               Ver Ampliado
             </Badge>

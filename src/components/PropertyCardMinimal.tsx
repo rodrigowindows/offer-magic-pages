@@ -37,10 +37,10 @@ interface Property {
 interface PropertyCardMinimalProps {
   property: Property;
   isSelected: boolean;
-  onToggleSelect: (id: string) => void;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
-  onViewDetails: (slug: string) => void;
+  onToggleSelect: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onViewDetails: () => void;
   onCall?: (phone: string) => void;
   onEmail?: (id: string) => void;
 }
@@ -65,7 +65,7 @@ export const PropertyCardMinimal = ({
       <div className="absolute top-3 left-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
         <Checkbox
           checked={isSelected}
-          onCheckedChange={() => onToggleSelect(property.id)}
+          onCheckedChange={onToggleSelect}
           className="bg-white shadow-lg"
         />
       </div>
@@ -104,7 +104,7 @@ export const PropertyCardMinimal = ({
               size="sm"
               variant="secondary"
               className="flex-1 bg-white/90 hover:bg-white text-gray-900"
-              onClick={() => onViewDetails(property.slug)}
+              onClick={onViewDetails}
             >
               <Eye className="h-4 w-4 mr-1" />
               Ver Detalhes
@@ -168,7 +168,7 @@ export const PropertyCardMinimal = ({
             <Button
               size="sm"
               className="flex-1 bg-green-600 hover:bg-green-700 text-white border-0"
-              onClick={() => onApprove(property.id)}
+              onClick={onApprove}
             >
               <CheckCircle2 className="h-4 w-4 mr-1" />
               Aprovar
@@ -177,7 +177,7 @@ export const PropertyCardMinimal = ({
               size="sm"
               variant="outline"
               className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-              onClick={() => onReject(property.id)}
+              onClick={onReject}
             >
               <XCircle className="h-4 w-4 mr-1" />
               Rejeitar

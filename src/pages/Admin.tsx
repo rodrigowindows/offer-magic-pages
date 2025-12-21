@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useDesignMode } from "@/hooks/useDesignMode";
 import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target, Search, X } from "lucide-react";
 import {
   Table,
@@ -71,6 +72,12 @@ import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { GeminiAPIKeyDialog } from "@/components/GeminiAPIKeyDialog";
 import { PropertyCardView } from "@/components/PropertyCardView";
 import { PropertyCardSkeleton } from "@/components/PropertyCardSkeleton";
+import { AdaptivePropertyCard } from "@/components/AdaptivePropertyCard";
+import { DesignModeToggle } from "@/components/DesignModeToggle";
+import { HeaderActionsMenu } from "@/components/HeaderActionsMenu";
+import { ActiveFilterChips } from "@/components/ActiveFilterChips";
+import { SmartPropertySearch } from "@/components/SmartPropertySearch";
+import { MetricsDashboard } from "@/components/MetricsDashboard";
 import { BatchReviewMode } from "@/components/BatchReviewMode";
 import { QuickFiltersSidebar } from "@/components/QuickFiltersSidebar";
 import { TeamActivityDashboard } from "@/components/TeamActivityDashboard";
@@ -164,6 +171,7 @@ interface PropertyNote {
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isMinimal, toggleDesignMode } = useDesignMode();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProperties, setIsLoadingProperties] = useState(true);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -786,41 +794,139 @@ const Admin = () => {
     return acc;
   }, {} as Record<LeadStatus | 'all', number>);
 
+  // Generate active filters for chips
+  const activeFilters = [];
+
+  if (searchQuery.trim()) {
+    activeFilters.push({
+      id: 'search',
+      label: 'Search',
+      value: searchQuery,
+      onRemove: () => setSearchQuery(''),
+    });
+  }
+
+  if (approvalStatus !== 'all') {
+    activeFilters.push({
+      id: 'approval',
+      label: 'Approval',
+      value: approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1),
+      onRemove: () => setApprovalStatus('all'),
+    });
+  }
+
+  if (filterStatus !== 'all') {
+    activeFilters.push({
+      id: 'status',
+      label: 'Lead Status',
+      value: filterStatus.replace('_', ' ').charAt(0).toUpperCase() + filterStatus.replace('_', ' ').slice(1),
+      onRemove: () => setFilterStatus('all'),
+    });
+  }
+
+  if (filterUserName) {
+    activeFilters.push({
+      id: 'user',
+      label: 'Approved by',
+      value: filterUserName,
+      onRemove: () => {
+        setFilterUserId(null);
+        setFilterUserName(null);
+      },
+    });
+  }
+
+  selectedTags.forEach((tag, index) => {
+    activeFilters.push({
+      id: `tag-${index}`,
+      label: 'Tag',
+      value: tag,
+      onRemove: () => setSelectedTags(selectedTags.filter(t => t !== tag)),
+    });
+  });
+
+  selectedCities.forEach((city, index) => {
+    activeFilters.push({
+      id: `city-${index}`,
+      label: 'City',
+      value: city,
+      onRemove: () => setSelectedCities(selectedCities.filter(c => c !== city)),
+    });
+  });
+
+  if (priceRange[0] > 0 || priceRange[1] < 1000000) {
+    activeFilters.push({
+      id: 'price',
+      label: 'Price',
+      value: `$${(priceRange[0] / 1000).toFixed(0)}k - $${(priceRange[1] / 1000).toFixed(0)}k`,
+      onRemove: () => setPriceRange([0, 1000000]),
+    });
+  }
+
+  if (dateFilter !== 'all') {
+    const dateLabels = {
+      '7days': 'Last 7 days',
+      '30days': 'Last 30 days',
+      '90days': 'Last 90 days',
+    };
+    activeFilters.push({
+      id: 'date',
+      label: 'Date',
+      value: dateLabels[dateFilter as keyof typeof dateLabels] || dateFilter,
+      onRemove: () => setDateFilter('all'),
+    });
+  }
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setFilterStatus('all');
+    setApprovalStatus('all');
+    setFilterUserId(null);
+    setFilterUserName(null);
+    setSelectedTags([]);
+    setSelectedCities([]);
+    setPriceRange([0, 1000000]);
+    setDateFilter('all');
+    setAdvancedFilters({});
+  };
+
+  // Generate search suggestions from properties
+  const searchSuggestions = Array.from(new Set([
+    ...properties.map(p => ({ type: 'address' as const, value: p.address })),
+    ...properties.map(p => ({ type: 'city' as const, value: p.city })),
+    ...properties.filter(p => p.owner_name).map(p => ({ type: 'owner' as const, value: p.owner_name! })),
+    ...properties.map(p => ({ type: 'zip' as const, value: p.zip_code })),
+  ].filter(s => s.value))).map((s, i) => ({ ...s, icon: Search }));
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-foreground">Property Management</h1>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setIsBulkImportDialogOpen(true)}
-              variant="default"
-              size="sm"
-            >
-              <FileDown className="w-4 h-4 mr-2" />
-              Importação em Massa
-            </Button>
-            <Button
-              onClick={() => setIsGeminiAPIKeyDialogOpen(true)}
-              variant="outline"
-              size="sm"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Gemini AI
-            </Button>
-            <Button
-              onClick={() => setIsMarketingSettingsOpen(true)}
-              variant="outline"
-              size="sm"
-            >
-              <Rocket className="w-4 h-4 mr-2" />
-              Marketing API
-            </Button>
-            <NotificationsPanel />
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
+    <div className="min-h-screen bg-gray-50">
+      <header className="border-b bg-white shadow-sm sticky top-0 z-40">
+        <div className="container mx-auto px-6 py-4">
+          {/* Top row: Title + Badge + Actions */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+                Orlando Properties
+              </h1>
+              <Badge variant="secondary" className="text-xs font-medium">
+                {properties.length} total
+              </Badge>
+            </div>
+
+            {/* Compact action menu */}
+            <div className="flex items-center gap-2">
+              <DesignModeToggle isMinimal={isMinimal} onToggle={toggleDesignMode} />
+              <HeaderActionsMenu
+                onBulkImport={() => setIsBulkImportDialogOpen(true)}
+                onGeminiSettings={() => setIsGeminiAPIKeyDialogOpen(true)}
+                onMarketingSettings={() => setIsMarketingSettingsOpen(true)}
+              />
+              <NotificationsPanel />
+              <Button onClick={handleLogout} variant="outline" size="sm" className="gap-2">
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -852,6 +958,9 @@ const Admin = () => {
 
           {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Metrics Dashboard - New Modern KPI Cards */}
+            <MetricsDashboard properties={properties} />
+
             {/* Quick Actions */}
             <DashboardQuickActions
               onStartReview={() => {
@@ -912,23 +1021,15 @@ const Admin = () => {
               }}
             />
 
-            {/* Search Bar */}
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por endereço, cidade, dono ou CEP..."
+            {/* Smart Search Bar */}
+            <div className="max-w-2xl">
+              <SmartPropertySearch
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-10"
+                onChange={setSearchQuery}
+                onSearch={() => {}}
+                suggestions={searchSuggestions}
+                placeholder="Buscar por endereço, cidade, dono ou CEP..."
               />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
             </div>
 
             <div className="flex justify-between items-center">
@@ -1156,6 +1257,12 @@ const Admin = () => {
 
               {/* Main Content Area */}
               <div className="flex-1">
+                {/* Active Filter Chips */}
+                <ActiveFilterChips
+                  filters={activeFilters}
+                  onClearAll={clearAllFilters}
+                />
+
                 {viewMode === 'cards' ? (
                   /* Card View */
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1173,11 +1280,12 @@ const Admin = () => {
                       </div>
                     ) : (
                       filteredProperties.map((property) => (
-                        <PropertyCardView
+                        <AdaptivePropertyCard
                           key={property.id}
                           property={property}
                           isSelected={selectedProperties.includes(property.id)}
                           onToggleSelect={() => togglePropertySelection(property.id)}
+                          isMinimalDesign={isMinimal}
                           onAnalyze={() => {
                             setSelectedPropertyForComparison(property.id);
                           }}
