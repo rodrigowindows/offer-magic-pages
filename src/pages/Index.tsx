@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Phone, Mail, MapPin, DollarSign, CheckCircle } from "lucide-react";
 import { z } from "zod";
-import { MainNavigation } from "@/components/MainNavigation";
 
 // Form validation schema
 const leadFormSchema = z.object({
@@ -117,9 +116,7 @@ const Index = () => {
   };
 
   return (
-    <>
-      <MainNavigation />
-      <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
         {/* Hero Section */}
         <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
@@ -348,8 +345,7 @@ const Index = () => {
           </div>
         </div>
       </div>
-      </div>
-    </>
+    </div>
   );
 };
 

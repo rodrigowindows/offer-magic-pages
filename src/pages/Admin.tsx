@@ -78,6 +78,7 @@ import { HeaderActionsMenu } from "@/components/HeaderActionsMenu";
 import { ActiveFilterChips } from "@/components/ActiveFilterChips";
 import { SmartPropertySearch } from "@/components/SmartPropertySearch";
 import { MetricsDashboard } from "@/components/MetricsDashboard";
+import { MainNavigation } from "@/components/MainNavigation";
 import { BatchReviewMode } from "@/components/BatchReviewMode";
 import { QuickFiltersSidebar } from "@/components/QuickFiltersSidebar";
 import { TeamActivityDashboard } from "@/components/TeamActivityDashboard";
@@ -86,6 +87,7 @@ import { ReviewQueue } from "@/components/ReviewQueue";
 import { UnifiedPropertyFilters } from "@/components/UnifiedPropertyFilters";
 import { DashboardQuickActions } from "@/components/DashboardQuickActions";
 import { PropertyMapView } from "@/components/PropertyMapView";
+import { InteractivePropertyMap } from "@/components/InteractivePropertyMap";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
 import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
@@ -900,8 +902,10 @@ const Admin = () => {
   ].filter(s => s.value))).map((s, i) => ({ ...s, icon: Search }));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white shadow-sm sticky top-0 z-40">
+    <>
+      <MainNavigation />
+      <div className="min-h-screen bg-gray-50">
+        <header className="border-b bg-white shadow-sm sticky top-0 z-40">
         <div className="container mx-auto px-6 py-4">
           {/* Top row: Title + Badge + Actions */}
           <div className="flex items-center justify-between">
@@ -1222,7 +1226,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="map">
-            <PropertyMapView
+            <InteractivePropertyMap
               properties={filteredProperties}
               onPropertyClick={(property) => openEditDialog(property as Property)}
             />
@@ -2181,7 +2185,8 @@ const Admin = () => {
       />
       
       <AdminChatBot />
-    </div>
+      </div>
+    </>
   );
 };
 

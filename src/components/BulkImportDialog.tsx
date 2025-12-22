@@ -190,7 +190,7 @@ export const BulkImportDialog = ({
           </div>
 
           {/* Options */}
-          <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+          <div className="space-y-3 border rounded-lg p-4 bg-slate-50 dark:bg-slate-800">
             <h3 className="font-semibold text-sm">Opções de Processamento</h3>
 
             <div className="flex items-center space-x-2">
