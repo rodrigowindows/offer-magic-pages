@@ -4,10 +4,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Navigation, Maximize2, Minimize2, Loader2 } from "lucide-react";
-
-// IMPORTANTE: Adicione sua chave Mapbox aqui ou use variável de ambiente
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJjbGV4YW1wbGUifQ.example'; // Substitua com sua chave real
+import { Input } from "@/components/ui/input";
+import { MapPin, Navigation, Maximize2, Minimize2, Loader2, ExternalLink } from "lucide-react";
 
 interface Property {
   id: string;
@@ -36,6 +34,17 @@ export const InteractivePropertyMap = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [geocodingProgress, setGeocodingProgress] = useState({ current: 0, total: 0 });
+  const [mapboxToken, setMapboxToken] = useState<string>(
+    localStorage.getItem('mapbox_token') || ''
+  );
+  const [showTokenInput, setShowTokenInput] = useState(!mapboxToken);
+
+  const handleTokenSubmit = () => {
+    if (mapboxToken.trim()) {
+      localStorage.setItem('mapbox_token', mapboxToken.trim());
+      setShowTokenInput(false);
+    }
+  };
 
   // Geocodificar endereço usando Mapbox Geocoding API
   const geocodeAddress = async (property: Property): Promise<[number, number] | null> => {
@@ -45,7 +54,7 @@ export const InteractivePropertyMap = ({
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           fullAddress
-        )}.json?access_token=${MAPBOX_TOKEN}&limit=1`
+        )}.json?access_token=${mapboxToken}&limit=1`
       );
 
       const data = await response.json();
@@ -59,7 +68,7 @@ export const InteractivePropertyMap = ({
       const cityStateResponse = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           `${property.city}, ${property.state}`
-        )}.json?access_token=${MAPBOX_TOKEN}&limit=1`
+        )}.json?access_token=${mapboxToken}&limit=1`
       );
 
       const cityStateData = await cityStateResponse.json();
@@ -81,9 +90,9 @@ export const InteractivePropertyMap = ({
 
   // Inicializar mapa
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !mapboxToken || showTokenInput) return;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    mapboxgl.accessToken = mapboxToken;
 
     // Criar mapa centrado em Orlando, FL
     map.current = new mapboxgl.Map({
@@ -108,7 +117,7 @@ export const InteractivePropertyMap = ({
       map.current?.remove();
       map.current = null;
     };
-  }, []);
+  }, [mapboxToken, showTokenInput]);
 
   // Adicionar marcadores para propriedades
   useEffect(() => {
@@ -300,8 +309,39 @@ export const InteractivePropertyMap = ({
         </div>
       </CardHeader>
       <CardContent>
+        {/* Token Input */}
+        {showTokenInput && (
+          <div className="mb-6 p-6 border-2 border-dashed rounded-lg bg-gray-50">
+            <h3 className="text-lg font-semibold text-foreground mb-2">Configurar Token Mapbox</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Insira seu token de acesso do Mapbox para visualizar o mapa.{' '}
+              <a
+                href="https://account.mapbox.com/access-tokens/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline inline-flex items-center gap-1"
+              >
+                Obter token gratuito <ExternalLink className="h-3 w-3" />
+              </a>
+            </p>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="pk.eyJ1Ijoi..."
+                value={mapboxToken}
+                onChange={(e) => setMapboxToken(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleTokenSubmit()}
+                className="font-mono text-sm"
+              />
+              <Button onClick={handleTokenSubmit} disabled={!mapboxToken.trim()}>
+                Salvar
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Loading Indicator */}
-        {isLoading && (
+        {isLoading && !showTokenInput && (
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 bg-white rounded-lg shadow-lg p-4">
             <div className="flex items-center gap-3">
               <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
