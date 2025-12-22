@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useDesignMode } from "@/hooks/useDesignMode";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target, Search, X } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target, Search, X, MapPin } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -85,6 +85,7 @@ import { TeamReportExporter } from "@/components/TeamReportExporter";
 import { ReviewQueue } from "@/components/ReviewQueue";
 import { UnifiedPropertyFilters } from "@/components/UnifiedPropertyFilters";
 import { DashboardQuickActions } from "@/components/DashboardQuickActions";
+import { PropertyMapView } from "@/components/PropertyMapView";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
 import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
@@ -1192,6 +1193,10 @@ const Admin = () => {
                   <LayoutGrid className="h-4 w-4" />
                   Kanban
                 </TabsTrigger>
+                <TabsTrigger value="map" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Map
+                </TabsTrigger>
               </TabsList>
 
           <TabsContent value="kanban">
@@ -1213,6 +1218,13 @@ const Admin = () => {
               onPropertyClick={(property) => openEditDialog(property as Property)}
               selectedProperties={selectedProperties}
               onSelectionChange={togglePropertySelection}
+            />
+          </TabsContent>
+
+          <TabsContent value="map">
+            <PropertyMapView
+              properties={filteredProperties}
+              onPropertyClick={(property) => openEditDialog(property as Property)}
             />
           </TabsContent>
 
