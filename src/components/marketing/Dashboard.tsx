@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useEffect } from 'react';
 import { TestModeToggle } from './TestModeToggle';
+import { QuickApiTest } from './QuickApiTest';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -115,6 +116,9 @@ export const Dashboard = () => {
           <TestModeToggle />
         </CardContent>
       </Card>
+
+      {/* Quick API Test - Prominent */}
+      <QuickApiTest />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
