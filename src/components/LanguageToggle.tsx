@@ -8,7 +8,7 @@ interface LanguageToggleProps {
 const LanguageToggle = ({ language, onChange }: LanguageToggleProps) => {
   return (
     <div className="fixed top-4 right-4 z-40">
-      <div className="flex items-center gap-2 bg-card/95 backdrop-blur-sm rounded-full px-3 py-2 shadow-md border border-border">
+      <div className="flex items-center gap-2 bg-card rounded-full px-3 py-2 shadow-md border border-border">
         <Globe className="w-4 h-4 text-muted-foreground" />
         <button
           onClick={() => onChange('en')}

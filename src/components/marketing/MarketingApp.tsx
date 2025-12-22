@@ -68,7 +68,7 @@ const MarketingAppContent = () => {
         <Sidebar />
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-8 bg-background overflow-auto">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/send" element={<WizardLayout />} />
@@ -98,7 +98,7 @@ const Sidebar = () => {
     <aside
       className={`${
         collapsed ? 'w-20' : 'w-64'
-      } bg-card border-r transition-all duration-200 flex flex-col`}
+      } bg-card border-r transition-all duration-200 flex flex-col min-h-screen sticky top-0 z-50 shadow-md`}
     >
       {/* Header */}
       <div className="p-6 border-b flex items-center justify-between">

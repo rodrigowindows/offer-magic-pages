@@ -149,17 +149,17 @@ const PropertyMap = ({ address, city, state, zipCode }: PropertyMapProps) => {
       <div ref={mapContainer} className="absolute inset-0" />
 
       {/* Address Info */}
-      <div className="absolute top-4 left-4 bg-card/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-md border border-border">
+      <div className="absolute top-4 left-4 bg-card px-4 py-2 rounded-lg shadow-md border border-border z-10">
         <p className="text-sm font-semibold text-foreground">{address}</p>
         <p className="text-xs text-muted-foreground">{city}, {state} {zipCode}</p>
       </div>
 
       {/* Quick Links to Google Maps */}
-      <div className="absolute top-4 right-4 flex flex-col gap-2">
+      <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
         <Button
           size="sm"
           variant="secondary"
-          className="bg-card/95 backdrop-blur-sm hover:bg-card shadow-md"
+          className="bg-card hover:bg-accent shadow-md"
           onClick={() => window.open(googleMapsUrl, '_blank')}
         >
           <MapPin className="h-4 w-4 mr-1" />
@@ -169,7 +169,7 @@ const PropertyMap = ({ address, city, state, zipCode }: PropertyMapProps) => {
         <Button
           size="sm"
           variant="secondary"
-          className="bg-card/95 backdrop-blur-sm hover:bg-card shadow-md"
+          className="bg-card hover:bg-accent shadow-md"
           onClick={() => window.open(streetViewUrl, '_blank')}
         >
           <ExternalLink className="h-4 w-4 mr-1" />
