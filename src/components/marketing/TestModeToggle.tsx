@@ -11,9 +11,13 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
   const updateSettings = useMarketingStore((state) => state.updateSettings);
 
+  const settings = useMarketingStore((state) => state.settings);
+  
   const toggleTestMode = (enabled: boolean) => {
     updateSettings({
       defaults: {
+        channels: settings.defaults.channels,
+        voicemail_style: settings.defaults.voicemail_style,
         test_mode: enabled,
       },
     });

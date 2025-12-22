@@ -35,31 +35,38 @@ export function Step3MessageCustomization() {
     ? 'call'
     : 'sms';
 
+  // Helper to get recipient with defaults
+  const getRecipientWithDefaults = () => ({
+    name: recipientInfo.name || 'Customer',
+    address: recipientInfo.address || 'Property Address',
+    seller_name: recipientInfo.seller_name,
+  });
+
   // SMS Handlers
   const getSMSPreview = () => {
     const template = smsMode === 'custom' && customMessages.sms ? customMessages.sms : DEFAULT_SMS_TEMPLATE;
-    return generateMessagePreview(template, recipientInfo, companyConfig);
+    return generateMessagePreview(template, getRecipientWithDefaults(), companyConfig);
   };
 
   // Email Handlers
   const getEmailPreview = () => {
     const template = emailMode === 'custom' && customMessages.emailBody ? customMessages.emailBody : DEFAULT_EMAIL_BODY;
-    return generateMessagePreview(template, recipientInfo, companyConfig);
+    return generateMessagePreview(template, getRecipientWithDefaults(), companyConfig);
   };
 
   const getEmailSubject = () => {
     const subject = emailMode === 'custom' && customMessages.emailSubject ? customMessages.emailSubject : DEFAULT_EMAIL_SUBJECT;
-    return generateMessagePreview(subject, recipientInfo, companyConfig);
+    return generateMessagePreview(subject, getRecipientWithDefaults(), companyConfig);
   };
 
   // Voicemail Handlers
   const getVoicemailPreview = () => {
     if (voicemailMode === 'custom' && customMessages.voicemail) {
-      return generateMessagePreview(customMessages.voicemail, recipientInfo, companyConfig);
+      return generateMessagePreview(customMessages.voicemail, getRecipientWithDefaults(), companyConfig);
     }
 
     const template = voicemailMode === 'template_2' ? DEFAULT_VOICEMAIL_TEMPLATE_2 : DEFAULT_VOICEMAIL_TEMPLATE_1;
-    return generateMessagePreview(template, recipientInfo, companyConfig);
+    return generateMessagePreview(template, getRecipientWithDefaults(), companyConfig);
   };
 
   return (
