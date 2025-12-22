@@ -1,7 +1,10 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 
-// URL base da API (pode ser configurável)
-const DEFAULT_API_URL = 'https://marketing.workfaraway.com';
+// URL base da API (configurável via .env)
+// Em desenvolvimento com proxy: use '/api/marketing'
+// Em produção: use 'https://marketing.workfaraway.com'
+const DEFAULT_API_URL = import.meta.env.VITE_MARKETING_API_URL ||
+  (import.meta.env.DEV ? '/api/marketing' : 'https://marketing.workfaraway.com');
 
 // Instância do Axios
 let apiInstance: AxiosInstance;
