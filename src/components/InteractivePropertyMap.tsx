@@ -164,6 +164,11 @@ export const InteractivePropertyMap = ({
           el.style.cursor = "pointer";
           el.style.transition = "transform 0.2s";
 
+          // Prevenir que o mapa se mova ao clicar no marcador
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+          });
+
           el.addEventListener("mouseenter", () => {
             el.style.transform = "scale(1.2)";
           });
@@ -224,8 +229,11 @@ export const InteractivePropertyMap = ({
             </div>
           `);
 
-          // Criar marcador
-          const marker = new mapboxgl.Marker(el)
+          // Criar marcador com anchor centralizado para evitar offset ao clicar
+          const marker = new mapboxgl.Marker({
+            element: el,
+            anchor: 'center' // Centralizar o marcador exatamente na coordenada
+          })
             .setLngLat([lng, lat])
             .setPopup(popup)
             .addTo(map.current!);
