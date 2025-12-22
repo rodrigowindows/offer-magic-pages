@@ -54,7 +54,7 @@ I hope this message finds you well. I wanted to reach out regarding your propert
 
 I represent a company that specializes in quick, hassle-free home purchases. We're interested in making a fair cash offer for your property.
 
-Based on current market conditions, we can offer ${cash_offer_amount} for your property, which represents a {offer_percentage}% of the estimated market value. We can close in as little as 7-10 days with no repairs, fees, or commissions required.
+Based on current market conditions, we can offer {cash_offer_amount} for your property, which represents a {offer_percentage}% of the estimated market value. We can close in as little as 7-10 days with no repairs, fees, or commissions required.
 
 Key benefits of working with us:
 • Fast closing (7-10 days)
@@ -78,7 +78,7 @@ Best regards,
 
 I wanted to follow up on my previous message regarding your property at {address}.
 
-I understand selling a home is a big decision, and I wanted to make sure you had all the information you need. Our offer of ${cash_offer_amount} is still available, and we're ready to move forward whenever you are.
+I understand selling a home is a big decision, and I wanted to make sure you had all the information you need. Our offer of {cash_offer_amount} is still available, and we're ready to move forward whenever you are.
 
 If you have any questions or concerns, I'm here to help. We pride ourselves on making the process as smooth and stress-free as possible.
 
@@ -133,9 +133,9 @@ Best regards,
 
 Thank you for getting back to me about {address}. I appreciate you taking the time to consider our offer.
 
-I understand that ${cash_offer_amount} may not meet your initial expectations. Let me explain how we arrived at this number:
+I understand that {cash_offer_amount} may not meet your initial expectations. Let me explain how we arrived at this number:
 
-• Current market value: ${estimated_value}
+• Current market value: {estimated_value}
 • Repair costs estimate: $[estimate]
 • Closing costs we cover: $[costs]
 • Speed premium for 7-day close: Included

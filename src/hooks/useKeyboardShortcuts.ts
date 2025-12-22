@@ -77,8 +77,11 @@ export function useKeyboardShortcuts() {
       // Ctrl/Cmd + T: Toggle test mode
       if (modifierKey && e.key === 't') {
         e.preventDefault();
+        const currentSettings = useMarketingStore.getState().settings;
         updateSettings({
           defaults: {
+            channels: currentSettings.defaults.channels,
+            voicemail_style: currentSettings.defaults.voicemail_style,
             test_mode: !testMode,
           },
         });

@@ -178,8 +178,7 @@ export const EnhancedPropertyTable = ({
           <TableRow>
             <TableHead className="w-12">
               <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected}
+                checked={allSelected || (someSelected ? "indeterminate" : false)}
                 onCheckedChange={(checked) => onSelectAll(!!checked)}
               />
             </TableHead>

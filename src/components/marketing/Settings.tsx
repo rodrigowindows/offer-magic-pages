@@ -31,13 +31,13 @@ const settingsSchema = z.object({
   company_name: z.string().min(2, 'Company name required'),
   contact_phone: z.string().min(10, 'Valid phone required'),
   contact_phone_alt: z.string().optional(),
-  website: z.string().url('Valid URL required').optional().or(z.literal('')),
   city: z.string().min(2, 'City required'),
+  region: z.string().optional(),
 
   // LLM
-  llm_provider: z.enum(['openai', 'anthropic']),
-  llm_model: z.string().min(1, 'Model required'),
-  llm_temperature: z.number().min(0).max(2),
+  use_llm: z.boolean(),
+  llm_model: z.enum(['mistral', 'llama', 'gpt-4']),
+  llm_prompt_style: z.enum(['persuasive', 'friendly', 'professional', 'casual']),
 
   // API
   marketing_url: z.string().url('Valid URL required'),
@@ -45,7 +45,7 @@ const settingsSchema = z.object({
 
   // Defaults
   default_channels: z.array(z.enum(['sms', 'email', 'call'])).min(1),
-  default_voicemail_style: z.enum(['professional', 'friendly', 'urgent', 'random']),
+  default_voicemail_style: z.enum(['random', 'template_1', 'template_2']),
   default_test_mode: z.boolean(),
 });
 
@@ -61,12 +61,12 @@ export const Settings = () => {
       company_name: settings.company.company_name,
       contact_phone: settings.company.contact_phone,
       contact_phone_alt: settings.company.contact_phone_alt,
-      website: settings.company.website,
       city: settings.company.city,
+      region: settings.company.region,
 
-      llm_provider: settings.llm.llm_provider,
+      use_llm: settings.llm.use_llm,
       llm_model: settings.llm.llm_model,
-      llm_temperature: settings.llm.llm_temperature,
+      llm_prompt_style: settings.llm.llm_prompt_style,
 
       marketing_url: settings.api.marketing_url,
       llm_url: settings.api.llm_url,
@@ -82,14 +82,16 @@ export const Settings = () => {
       company: {
         company_name: data.company_name,
         contact_phone: data.contact_phone,
-        contact_phone_alt: data.contact_phone_alt,
-        website: data.website,
+        contact_phone_alt: data.contact_phone_alt || '',
+        from_phone_number: settings.company.from_phone_number,
         city: data.city,
+        region: data.region || data.city,
       },
       llm: {
-        llm_provider: data.llm_provider,
+        use_llm: data.use_llm,
         llm_model: data.llm_model,
-        llm_temperature: data.llm_temperature,
+        llm_prompt_style: data.llm_prompt_style,
+        llm_max_words_voicemail: settings.llm.llm_max_words_voicemail,
       },
       api: {
         marketing_url: data.marketing_url,
@@ -185,17 +187,12 @@ export const Settings = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
+                  <Label htmlFor="region">Region</Label>
                   <Input
-                    id="website"
-                    {...form.register('website')}
-                    placeholder="https://yourcompany.com"
+                    id="region"
+                    {...form.register('region')}
+                    placeholder="Miami-Dade"
                   />
-                  {form.formState.errors.website && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.website.message}
-                    </p>
-                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -225,54 +222,57 @@ export const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="use_llm">Enable AI Generation</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Use AI to generate personalized messages
+                    </p>
+                  </div>
+                  <Switch
+                    id="use_llm"
+                    checked={form.watch('use_llm')}
+                    onCheckedChange={(checked) => form.setValue('use_llm', checked)}
+                  />
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="llm_provider">LLM Provider *</Label>
+                  <Label htmlFor="llm_model">LLM Model *</Label>
                   <Select
-                    value={form.watch('llm_provider')}
+                    value={form.watch('llm_model')}
                     onValueChange={(value) =>
-                      form.setValue('llm_provider', value as 'openai' | 'anthropic')
+                      form.setValue('llm_model', value as 'mistral' | 'llama' | 'gpt-4')
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="openai">OpenAI</SelectItem>
-                      <SelectItem value="anthropic">Anthropic</SelectItem>
+                      <SelectItem value="mistral">Mistral</SelectItem>
+                      <SelectItem value="llama">Llama</SelectItem>
+                      <SelectItem value="gpt-4">GPT-4</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="llm_model">Model *</Label>
-                  <Input
-                    id="llm_model"
-                    {...form.register('llm_model')}
-                    placeholder="gpt-4"
-                  />
-                  {form.formState.errors.llm_model && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.llm_model.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="llm_temperature">
-                    Temperature ({form.watch('llm_temperature')})
-                  </Label>
-                  <input
-                    type="range"
-                    id="llm_temperature"
-                    min="0"
-                    max="2"
-                    step="0.1"
-                    {...form.register('llm_temperature', { valueAsNumber: true })}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Lower = more focused, Higher = more creative
-                  </p>
+                  <Label htmlFor="llm_prompt_style">Prompt Style *</Label>
+                  <Select
+                    value={form.watch('llm_prompt_style')}
+                    onValueChange={(value) =>
+                      form.setValue('llm_prompt_style', value as 'persuasive' | 'friendly' | 'professional' | 'casual')
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="persuasive">Persuasive</SelectItem>
+                      <SelectItem value="friendly">Friendly</SelectItem>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="casual">Casual</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
@@ -365,17 +365,16 @@ export const Settings = () => {
                   <Select
                     value={form.watch('default_voicemail_style')}
                     onValueChange={(value) =>
-                      form.setValue('default_voicemail_style', value as any)
+                      form.setValue('default_voicemail_style', value as 'random' | 'template_1' | 'template_2')
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="professional">Professional</SelectItem>
-                      <SelectItem value="friendly">Friendly</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
                       <SelectItem value="random">Random</SelectItem>
+                      <SelectItem value="template_1">Template 1</SelectItem>
+                      <SelectItem value="template_2">Template 2</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

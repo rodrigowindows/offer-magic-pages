@@ -10,6 +10,8 @@ import type {
   DashboardStats,
   SavedTemplate,
   MarketingSettings,
+} from '@/types/marketing.types';
+import {
   DEFAULT_COMPANY_CONFIG,
   DEFAULT_LLM_CONFIG,
 } from '@/types/marketing.types';

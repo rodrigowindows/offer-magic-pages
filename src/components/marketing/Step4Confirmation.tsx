@@ -215,8 +215,9 @@ export const Step4Confirmation = () => {
           <div>
             <h4 className="font-medium mb-2">AI Settings</h4>
             <div className="text-sm space-y-1 text-muted-foreground">
-              <div>Model: {llmConfig.llm_provider} ({llmConfig.llm_model})</div>
-              <div>Temperature: {llmConfig.llm_temperature}</div>
+              <div>Model: {llmConfig.llm_model}</div>
+              <div>Style: {llmConfig.llm_prompt_style}</div>
+              <div>AI Enabled: {llmConfig.use_llm ? 'Yes' : 'No'}</div>
             </div>
           </div>
         </CardContent>
@@ -248,7 +249,7 @@ export const Step4Confirmation = () => {
         <Button
           variant="outline"
           className="flex-1"
-          onClick={() => store.setWizardStep(3)}
+          onClick={() => store.previousStep()}
           disabled={isSending}
         >
           Back
