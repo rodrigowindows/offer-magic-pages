@@ -14,6 +14,10 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
   const settings = useMarketingStore((state) => state.settings);
   
   const toggleTestMode = (enabled: boolean) => {
+    console.log('🔧 Test Mode Toggle:', enabled ? 'ATIVANDO' : 'DESATIVANDO');
+    console.log('  Modo anterior:', testMode);
+    console.log('  Modo novo:', enabled);
+
     updateSettings({
       defaults: {
         channels: settings.defaults.channels,
@@ -21,6 +25,17 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
         test_mode: enabled,
       },
     });
+
+    // Log confirmação
+    setTimeout(() => {
+      console.log('✅ Test Mode atualizado com sucesso!');
+      console.log('  Estado atual:', enabled ? '🧪 TEST MODE (Safe)' : '🚀 PRODUCTION MODE (Live)');
+      if (!enabled) {
+        console.warn('⚠️ ATENÇÃO: PRODUCTION MODE ATIVO - Comunicações serão enviadas REALMENTE!');
+      } else {
+        console.info('✅ SAFE MODE: Comunicações serão apenas simuladas');
+      }
+    }, 100);
   };
 
   if (compact) {

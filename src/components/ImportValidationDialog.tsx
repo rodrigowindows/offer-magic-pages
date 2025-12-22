@@ -96,7 +96,7 @@ export const ImportValidationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Import Validation Results</DialogTitle>
           <DialogDescription>
@@ -105,7 +105,7 @@ export const ImportValidationDialog = ({
         </DialogHeader>
 
         {/* Summary */}
-        <div className="grid grid-cols-3 gap-4 py-4">
+        <div className="grid grid-cols-3 gap-4 py-4 flex-shrink-0">
           <div className="p-4 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600 mb-1">Total Rows</div>
             <div className="text-2xl font-bold">{totalRows}</div>
@@ -145,7 +145,7 @@ export const ImportValidationDialog = ({
           </TabsList>
 
           <TabsContent value="valid" className="mt-4">
-            <ScrollArea className="h-64">
+            <ScrollArea className="h-[400px] max-h-[50vh]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -184,7 +184,7 @@ export const ImportValidationDialog = ({
           </TabsContent>
 
           <TabsContent value="invalid" className="mt-4">
-            <ScrollArea className="h-64">
+            <ScrollArea className="h-[400px] max-h-[50vh]">
               <div className="space-y-2">
                 {invalidRows.map((invalidRow) => (
                   <div

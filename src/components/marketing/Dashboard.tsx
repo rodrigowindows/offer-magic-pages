@@ -18,13 +18,25 @@ import {
   CheckCircle2,
   XCircle,
   TestTube2,
+  Settings,
 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
+import { TestModeToggle } from './TestModeToggle';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
   const history = useMarketingStore((state) => state.history);
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
+  const settings = useMarketingStore((state) => state.settings);
+
+  // Console de debug - mostra estado atual
+  useEffect(() => {
+    console.log('🎯 Marketing Dashboard - Estado Atual:');
+    console.log('  📊 Total de comunicações:', history.length);
+    console.log('  🧪 Test Mode:', testMode ? 'ATIVO ✅' : 'DESATIVADO ❌');
+    console.log('  ⚙️ Settings:', settings);
+    console.log('  📝 Histórico completo:', history);
+  }, [history, testMode, settings]);
 
   // Estatísticas computadas
   const stats = useMemo(() => {
@@ -70,19 +82,39 @@ export const Dashboard = () => {
         </p>
       </div>
 
-      {/* Test Mode Indicator */}
-      {testMode && (
-        <Card className="border-orange-500 bg-orange-50">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2">
-              <TestTube2 className="w-5 h-5 text-orange-600" />
-              <span className="font-medium text-orange-900">
-                Test Mode is currently active - new communications will be simulated
-              </span>
+      {/* Test Mode Toggle - Destaque */}
+      <Card className={testMode ? 'border-orange-500 bg-orange-50/50' : 'border-green-500 bg-green-50/50'}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                {testMode ? (
+                  <TestTube2 className="w-5 h-5 text-orange-600" />
+                ) : (
+                  <Send className="w-5 h-5 text-green-600" />
+                )}
+                Test Mode Configuration
+              </CardTitle>
+              <CardDescription>
+                {testMode
+                  ? 'Communications are currently simulated (safe for testing)'
+                  : 'Communications will be sent LIVE to real recipients'}
+              </CardDescription>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/marketing/settings')}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <TestModeToggle />
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -288,6 +320,51 @@ export const Dashboard = () => {
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Console de Debug - Estado do Sistema */}
+      <Card className="border-blue-500/50 bg-slate-50 dark:bg-slate-900">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 font-mono text-sm">
+            <span className="text-blue-600">{'>'}</span> Sistema Console
+          </CardTitle>
+          <CardDescription>
+            Estado em tempo real do Marketing System (abra DevTools Console para mais detalhes)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 font-mono text-xs">
+            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
+              <span className="text-muted-foreground">Test Mode:</span>
+              <span className={testMode ? 'text-orange-600 font-bold' : 'text-green-600 font-bold'}>
+                {testMode ? '🧪 ATIVO (Safe)' : '🚀 DESATIVADO (Live)'}
+              </span>
+            </div>
+            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
+              <span className="text-muted-foreground">Total Communications:</span>
+              <span className="font-bold">{stats.total}</span>
+            </div>
+            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
+              <span className="text-muted-foreground">Test/Production Split:</span>
+              <span className="font-bold">
+                {stats.testCommunications} test / {stats.prodCommunications} prod
+              </span>
+            </div>
+            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
+              <span className="text-muted-foreground">Success Rate:</span>
+              <span className="text-green-600 font-bold">{stats.successRate}%</span>
+            </div>
+            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
+              <span className="text-muted-foreground">API Endpoint:</span>
+              <span className="text-xs text-blue-600 truncate">{settings.api.marketing_url}</span>
+            </div>
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
+              <p className="text-blue-800 dark:text-blue-200 text-xs">
+                💡 <strong>Dica:</strong> Abra o Console do navegador (F12) para ver logs detalhados em tempo real
+              </p>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
