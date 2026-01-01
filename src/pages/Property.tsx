@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useABTest } from "@/hooks/useABTest";
 import PropertyHero from "@/components/PropertyHero";
 import PropertyMap from "@/components/PropertyMap";
 import CashOfferSection from "@/components/CashOfferSection";
@@ -13,6 +14,8 @@ import NeighborhoodComparables from "@/components/NeighborhoodComparables";
 import OfferProgressIndicator from "@/components/OfferProgressIndicator";
 import OfferChatBot from "@/components/OfferChatBot";
 import LanguageToggle from "@/components/LanguageToggle";
+import PropertyPageMinimal from "@/components/PropertyPageMinimal";
+import { Badge } from "@/components/ui/badge";
 
 interface PropertyData {
   id: string;
@@ -62,6 +65,10 @@ const Property = () => {
   const [loading, setLoading] = useState(true);
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [currentStep, setCurrentStep] = useState(1);
+  const [startTime] = useState(Date.now());
+
+  // A/B Test hook - only initialize after property is loaded
+  const { variant, trackEvent, trackFormSubmit, trackTimeOnPage } = useABTest(property?.id || '');
 
   const t = translations[language];
 
@@ -71,6 +78,20 @@ const Property = () => {
       trackPageView(slug);
     }
   }, [slug]);
+
+  // Track time on page when user leaves
+  useEffect(() => {
+    const handleUnload = () => {
+      const timeSpent = Math.round((Date.now() - startTime) / 1000);
+      trackTimeOnPage(timeSpent);
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    return () => {
+      handleUnload();
+      window.removeEventListener('beforeunload', handleUnload);
+    };
+  }, [startTime, trackTimeOnPage]);
 
   const trackAnalytics = async (propertyId: string, eventType: string) => {
     try {
@@ -116,6 +137,7 @@ const Property = () => {
 
   const handleFormSubmit = () => {
     setCurrentStep(2);
+    trackFormSubmit();
   };
 
   if (loading) {
@@ -141,6 +163,26 @@ const Property = () => {
     );
   }
 
+  // VARIANT B: Minimal/Clean version
+  if (variant === 'B') {
+    return (
+      <>
+        {/* Variant indicator for debugging - remove in production */}
+        <div className="fixed bottom-4 left-4 z-50">
+          <Badge variant="secondary" className="text-xs opacity-50">
+            Variant B
+          </Badge>
+        </div>
+        <PropertyPageMinimal 
+          property={property} 
+          onFormSubmit={handleFormSubmit}
+          trackEvent={trackEvent}
+        />
+      </>
+    );
+  }
+
+  // VARIANT A: Full version (original)
   const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
   const propertyUrl = `${window.location.origin}/property/${property.slug}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
@@ -152,6 +194,13 @@ const Property = () => {
 
   return (
     <main className="min-h-screen">
+      {/* Variant indicator for debugging - remove in production */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <Badge variant="outline" className="text-xs opacity-50">
+          Variant A
+        </Badge>
+      </div>
+
       {/* Language Toggle */}
       <LanguageToggle language={language} onChange={setLanguage} />
 
