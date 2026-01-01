@@ -976,8 +976,8 @@ const Admin = () => {
             <div className="flex items-center gap-2">
               <ApprovedPropertiesExport
                 filters={{
-                  userId: filters.assignedToUserId,
-                  tags: filters.tags,
+                  userId: filterUserId || undefined,
+                  tags: selectedTags,
                   searchQuery: searchQuery,
                 }}
               />
