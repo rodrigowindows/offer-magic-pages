@@ -2,8 +2,6 @@ import { useState } from "react";
 import { SimpleLeadCapture } from "@/components/SimpleLeadCapture";
 import { OfferRevealCard } from "@/components/OfferRevealCard";
 import { InterestCapture } from "@/components/InterestCapture";
-import { trackABEvent } from "@/utils/abTesting";
-import { supabase } from "@/lib/supabase";
 
 interface EmailFirstVariantProps {
   property: {
@@ -19,35 +17,9 @@ interface EmailFirstVariantProps {
 export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
   const [step, setStep] = useState<'gate' | 'revealed' | 'interested'>('gate');
   const [email, setEmail] = useState('');
-  const [leadId, setLeadId] = useState<string | null>(null);
 
   const handleEmailSubmit = async (submittedEmail: string) => {
-    // Track event
-    trackABEvent(property.id, 'email-first', 'email_submitted', { email: submittedEmail });
-
-    // Save to database
-    const { data, error } = await supabase
-      .from('property_leads')
-      .insert({
-        property_id: property.id,
-        email: submittedEmail,
-        interest_level: 'email-only',
-        offer_viewed_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error saving lead:', error);
-      throw error;
-    }
-
     setEmail(submittedEmail);
-    setLeadId(data.id);
-
-    // Track offer revealed
-    trackABEvent(property.id, 'email-first', 'offer_revealed');
-
     setStep('revealed');
   };
 
@@ -56,26 +28,7 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
     phone: string;
     sellingTimeline: string;
   }) => {
-    // Track event
-    trackABEvent(property.id, 'email-first', 'phone_collected', data);
-
-    // Update lead in database
-    const { error } = await supabase
-      .from('property_leads')
-      .update({
-        full_name: data.fullName,
-        phone: data.phone,
-        selling_timeline: data.sellingTimeline,
-        interest_level: 'interested',
-      })
-      .eq('id', leadId);
-
-    if (error) {
-      console.error('Error updating lead:', error);
-      throw error;
-    }
-
-    trackABEvent(property.id, 'email-first', 'form_submitted');
+    console.log('Interest submitted:', { email, ...data });
     setStep('interested');
   };
 

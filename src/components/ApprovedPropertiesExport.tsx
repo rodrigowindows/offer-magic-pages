@@ -34,7 +34,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
 
     // Apply filters if provided
     if (filters?.userId) {
-      query = query.eq("user_id", filters.userId);
+      query = query.eq("approved_by", filters.userId);
     }
 
     if (filters?.tags && filters.tags.length > 0) {
@@ -78,9 +78,8 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
         "ZIP Code",
         "Owner Name",
         "Owner Phone",
-        "Owner Email",
         "Estimated Value",
-        "Offer Amount",
+        "Cash Offer Amount",
         "Lead Status",
         "Lead Score",
         "Approval Status",
@@ -97,12 +96,6 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
         "Square Feet",
         "Lot Size",
         "Year Built",
-        "Last Sale Date",
-        "Last Sale Price",
-        "Tax Amount",
-        "Tax Year",
-        "Delinquent Amount",
-        "Notes",
         "Tags",
         "Created At",
         "Updated At",
@@ -118,14 +111,13 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
           prop.zip_code || "",
           prop.owner_name || "",
           prop.owner_phone || "",
-          prop.owner_email || "",
           prop.estimated_value?.toString() || "",
-          prop.offer_amount?.toString() || "",
+          prop.cash_offer_amount?.toString() || "",
           prop.lead_status || "",
           prop.lead_score?.toString() || "",
           prop.approval_status || "",
           prop.approved_at ? format(new Date(prop.approved_at), "yyyy-MM-dd HH:mm:ss") : "",
-          prop.approved_by || "",
+          prop.approved_by_name || prop.approved_by || "",
         ];
 
         if (includeExtendedData) {
@@ -137,12 +129,6 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
             prop.square_feet?.toString() || "",
             prop.lot_size?.toString() || "",
             prop.year_built?.toString() || "",
-            prop.last_sale_date || "",
-            prop.last_sale_price?.toString() || "",
-            prop.tax_amount?.toString() || "",
-            prop.tax_year?.toString() || "",
-            prop.delinquent_amount?.toString() || "",
-            prop.notes || "",
             Array.isArray(prop.tags) ? prop.tags.join("; ") : "",
             prop.created_at ? format(new Date(prop.created_at), "yyyy-MM-dd HH:mm:ss") : "",
             prop.updated_at ? format(new Date(prop.updated_at), "yyyy-MM-dd HH:mm:ss") : "",
@@ -221,7 +207,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
       const rows = properties.map((prop) => [
         prop.owner_name || "",
         prop.owner_phone || "",
-        prop.owner_email || "",
+        "",
         prop.address || "",
         `${prop.city || ""}, ${prop.state || ""} ${prop.zip_code || ""}`.trim(),
       ]);

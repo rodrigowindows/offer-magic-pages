@@ -112,13 +112,8 @@ export async function trackABEvent(
   // Save to localStorage for offline tracking
   saveEventLocally(eventData);
 
-  // Send to server
-  try {
-    const { supabase } = await import('@/lib/supabase');
-    await supabase.from('ab_test_events').insert(eventData);
-  } catch (error) {
-    console.error('Error tracking AB event:', error);
-  }
+  // Log event for debugging (no database table for ab_test_events yet)
+  console.log('AB Test Event:', eventData);
 }
 
 /**
