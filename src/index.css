@@ -215,11 +215,7 @@ All colors MUST be HSL.
     background-color: hsl(var(--destructive) / 0.1) !important;
   }
 
-  /* Fix gradient backgrounds ending in transparent */
-  [class*="to-transparent"] {
-    background-image: none !important;
-    background-color: hsl(var(--card)) !important;
-  }
+  /* Note: Removed fix for to-transparent as it was breaking image overlays */
 
   /* Ensure proper stacking context */
   [class*="sticky"],
