@@ -15,9 +15,12 @@ const PropertyHero = ({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Reset states when imageUrl changes
   useEffect(() => {
     console.log("🖼️ PropertyHero - Image URL received:", imageUrl);
     console.log("🏠 PropertyHero - Address:", address);
+    setImageError(false);
+    setImageLoaded(false);
   }, [imageUrl, address]);
 
   const handleImageLoad = () => {
@@ -83,15 +86,10 @@ const PropertyHero = ({
                 <img 
                   src={imageUrl} 
                   alt={`Property at ${address}`}
-                  className={`w-full h-[400px] md:h-[500px] object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  className="w-full h-[400px] md:h-[500px] object-cover"
                   onLoad={handleImageLoad}
                   onError={handleImageError}
                 />
-              )}
-              {!imageLoaded && !imageError && (
-                <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
-                  <p className="text-muted-foreground">Carregando imagem...</p>
-                </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
             </div>
