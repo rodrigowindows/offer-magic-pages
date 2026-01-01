@@ -905,7 +905,7 @@ const Admin = () => {
     <>
       <MainNavigation />
       <div className="min-h-screen bg-gray-50">
-        <header className="border-b bg-white shadow-sm sticky top-[57px] md:top-[61px] z-40">
+        <header className="border-b bg-white shadow-sm">
         <div className="container mx-auto px-6 py-4">
           {/* Top row: Title + Badge + Actions */}
           <div className="flex items-center justify-between">
