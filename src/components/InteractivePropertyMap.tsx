@@ -9,6 +9,7 @@ import { MapPin, Navigation, Maximize2, Minimize2, Loader2, ExternalLink } from 
 
 interface Property {
   id: string;
+  slug?: string;
   address: string;
   city: string;
   state: string;
@@ -208,25 +209,50 @@ export const InteractivePropertyMap = ({
                 </button>
               </div>
               ` : ''}
-              <button
-                onclick="window.propertyMapClickHandler('${property.id}')"
-                style="
-                  margin-top: 8px;
-                  width: 100%;
-                  padding: 6px 12px;
-                  background-color: #3b82f6;
-                  color: white;
-                  border: none;
-                  border-radius: 4px;
-                  cursor: pointer;
-                  font-size: 14px;
-                  font-weight: 500;
-                "
-                onmouseover="this.style.backgroundColor='#2563eb'"
-                onmouseout="this.style.backgroundColor='#3b82f6'"
-              >
-                Ver Detalhes
-              </button>
+              <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button
+                  onclick="window.propertyMapClickHandler('${property.id}')"
+                  style="
+                    flex: 1;
+                    padding: 6px 12px;
+                    background-color: #3b82f6;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: 500;
+                  "
+                  onmouseover="this.style.backgroundColor='#2563eb'"
+                  onmouseout="this.style.backgroundColor='#3b82f6'"
+                >
+                  Ver Detalhes
+                </button>
+                ${property.slug ? `
+                <button
+                  onclick="window.open('/property/${property.slug}', '_blank')"
+                  style="
+                    flex: 1;
+                    padding: 6px 12px;
+                    background-color: #8b5cf6;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: 500;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 4px;
+                  "
+                  onmouseover="this.style.backgroundColor='#7c3aed'"
+                  onmouseout="this.style.backgroundColor='#8b5cf6'"
+                >
+                  🔗 Página Cliente
+                </button>
+                ` : ''}
+              </div>
             </div>
           `;
 
