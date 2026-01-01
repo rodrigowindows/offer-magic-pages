@@ -1,4 +1,5 @@
 import { MapPin, Home } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface PropertyHeroProps {
   address?: string;
@@ -11,6 +12,24 @@ const PropertyHero = ({
   imageUrl = "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80",
   qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://mylocalinvest.com"
 }: PropertyHeroProps) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    console.log("🖼️ PropertyHero - Image URL received:", imageUrl);
+    console.log("🏠 PropertyHero - Address:", address);
+  }, [imageUrl, address]);
+
+  const handleImageLoad = () => {
+    console.log("✅ Image loaded successfully:", imageUrl);
+    setImageLoaded(true);
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    console.error("❌ Image failed to load:", imageUrl);
+    console.error("❌ Error event:", e);
+    setImageError(true);
+  };
   return (
     <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-12 md:py-20">
       <div className="container mx-auto px-4">
@@ -53,12 +72,28 @@ const PropertyHero = ({
           {/* Right Column - Property Image */}
           <div className="relative">
             <div className="relative rounded-2xl overflow-hidden shadow-strong">
-              <img 
-                src={imageUrl} 
-                alt={`Property at ${address}`}
-                className="w-full h-[400px] md:h-[500px] object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+              {imageError ? (
+                <div className="w-full h-[400px] md:h-[500px] bg-muted flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <p className="text-lg font-medium">Imagem não disponível</p>
+                    <p className="text-sm mt-2">URL: {imageUrl?.substring(0, 50)}...</p>
+                  </div>
+                </div>
+              ) : (
+                <img 
+                  src={imageUrl} 
+                  alt={`Property at ${address}`}
+                  className={`w-full h-[400px] md:h-[500px] object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={handleImageLoad}
+                  onError={handleImageError}
+                />
+              )}
+              {!imageLoaded && !imageError && (
+                <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
+                  <p className="text-muted-foreground">Carregando imagem...</p>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
             </div>
           </div>
         </div>
