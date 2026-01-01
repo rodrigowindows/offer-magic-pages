@@ -759,6 +759,59 @@ const Admin = () => {
     setIsSuggestionsDialogOpen(true);
   };
 
+  // Map approve/reject handlers
+  const handleMapApprove = async (property: { id: string }) => {
+    const { error } = await supabase
+      .from('properties')
+      .update({
+        approval_status: 'approved',
+        approved_by: userId,
+        approved_by_name: userName,
+        approved_at: new Date().toISOString()
+      } as any)
+      .eq('id', property.id);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao aprovar propriedade",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Aprovado",
+        description: "Propriedade aprovada com sucesso",
+      });
+      fetchProperties();
+    }
+  };
+
+  const handleMapReject = async (property: { id: string }) => {
+    const { error } = await supabase
+      .from('properties')
+      .update({
+        approval_status: 'rejected',
+        approved_by: userId,
+        approved_by_name: userName,
+        approved_at: new Date().toISOString()
+      } as any)
+      .eq('id', property.id);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Falha ao recusar propriedade",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Recusado",
+        description: "Propriedade recusada",
+      });
+      fetchProperties();
+    }
+  };
+
   const filteredProperties = properties
     .filter(p => {
       // Filter by search query
@@ -1229,6 +1282,8 @@ const Admin = () => {
             <InteractivePropertyMap
               properties={filteredProperties}
               onPropertyClick={(property) => openEditDialog(property as Property)}
+              onApprove={handleMapApprove}
+              onReject={handleMapReject}
             />
           </TabsContent>
 
