@@ -22,11 +22,15 @@ interface Property {
 interface InteractivePropertyMapProps {
   properties: Property[];
   onPropertyClick?: (property: Property) => void;
+  onApprove?: (property: Property) => void;
+  onReject?: (property: Property) => void;
 }
 
 export const InteractivePropertyMap = ({
   properties,
   onPropertyClick,
+  onApprove,
+  onReject,
 }: InteractivePropertyMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -133,9 +137,10 @@ export const InteractivePropertyMap = ({
               ? "#ef4444"
               : "#f59e0b";
 
-          // Create popup HTML
+          // Create popup HTML with approve/reject buttons
+          const isPending = property.approval_status !== "approved" && property.approval_status !== "rejected";
           const popupHTML = `
-            <div style="padding: 8px; min-width: 200px;">
+            <div style="padding: 8px; min-width: 220px;">
               <h3 style="font-weight: bold; margin-bottom: 8px; color: #1f2937;">${property.address}</h3>
               <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">
                 ${property.city}, ${property.state} ${property.zip_code}
@@ -163,6 +168,46 @@ export const InteractivePropertyMap = ({
                   ${property.approval_status || "pending"}
                 </span>
               </div>
+              ${isPending ? `
+              <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button
+                  onclick="window.propertyMapApproveHandler('${property.id}')"
+                  style="
+                    flex: 1;
+                    padding: 8px 12px;
+                    background-color: #10b981;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                  onmouseover="this.style.backgroundColor='#059669'"
+                  onmouseout="this.style.backgroundColor='#10b981'"
+                >
+                  ✓ Aprovar
+                </button>
+                <button
+                  onclick="window.propertyMapRejectHandler('${property.id}')"
+                  style="
+                    flex: 1;
+                    padding: 8px 12px;
+                    background-color: #ef4444;
+                    color: white;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    font-weight: 600;
+                  "
+                  onmouseover="this.style.backgroundColor='#dc2626'"
+                  onmouseout="this.style.backgroundColor='#ef4444'"
+                >
+                  ✗ Recusar
+                </button>
+              </div>
+              ` : ''}
               <button
                 onclick="window.propertyMapClickHandler('${property.id}')"
                 style="
@@ -227,7 +272,7 @@ export const InteractivePropertyMap = ({
     };
   }, [properties, mapboxToken, showTokenInput]);
 
-  // Handler for property clicks
+  // Handler for property clicks, approve, and reject
   useEffect(() => {
     (window as any).propertyMapClickHandler = (propertyId: string) => {
       const property = properties.find((p) => p.id === propertyId);
@@ -236,10 +281,26 @@ export const InteractivePropertyMap = ({
       }
     };
 
+    (window as any).propertyMapApproveHandler = (propertyId: string) => {
+      const property = properties.find((p) => p.id === propertyId);
+      if (property && onApprove) {
+        onApprove(property);
+      }
+    };
+
+    (window as any).propertyMapRejectHandler = (propertyId: string) => {
+      const property = properties.find((p) => p.id === propertyId);
+      if (property && onReject) {
+        onReject(property);
+      }
+    };
+
     return () => {
       delete (window as any).propertyMapClickHandler;
+      delete (window as any).propertyMapApproveHandler;
+      delete (window as any).propertyMapRejectHandler;
     };
-  }, [properties, onPropertyClick]);
+  }, [properties, onPropertyClick, onApprove, onReject]);
 
   // Go to my location
   const goToMyLocation = () => {
