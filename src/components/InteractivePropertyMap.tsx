@@ -30,10 +30,8 @@ export const InteractivePropertyMap = ({
 }: InteractivePropertyMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const markers = useRef<mapboxgl.Marker[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [mapReady, setMapReady] = useState(false);
   const [geocodingProgress, setGeocodingProgress] = useState({ current: 0, total: 0 });
   const [mapboxToken, setMapboxToken] = useState<string>(
     localStorage.getItem('mapbox_token') || ''
@@ -47,7 +45,7 @@ export const InteractivePropertyMap = ({
     }
   };
 
-  // Geocodificar endereço usando Mapbox Geocoding API
+  // Geocode address
   const geocodeAddress = async (property: Property): Promise<[number, number] | null> => {
     const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
 
@@ -66,25 +64,6 @@ export const InteractivePropertyMap = ({
         return [lng, lat];
       }
 
-      // Fallback: tentar apenas com cidade e estado
-      const cityStateResponse = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-          `${property.city}, ${property.state}`
-        )}.json?access_token=${mapboxToken}&limit=1`
-      );
-
-      const cityStateData = await cityStateResponse.json();
-
-      if (cityStateData.features && cityStateData.features.length > 0) {
-        const [lng, lat] = cityStateData.features[0].center;
-        // Adicionar pequeno offset aleatório para evitar sobreposição
-        const offsetLng = lng + (Math.random() - 0.5) * 0.01;
-        const offsetLat = lat + (Math.random() - 0.5) * 0.01;
-        console.log(`⚠ Fallback geocoded: ${property.address} -> [${offsetLng}, ${offsetLat}]`);
-        return [offsetLng, offsetLat];
-      }
-
-      console.error(`✗ Failed to geocode: ${property.address}`);
       return null;
     } catch (error) {
       console.error(`✗ Error geocoding ${fullAddress}:`, error);
@@ -92,61 +71,43 @@ export const InteractivePropertyMap = ({
     }
   };
 
-  // Inicializar mapa apenas uma vez
+  // Initialize and update map
   useEffect(() => {
-    if (!mapContainer.current || map.current || !mapboxToken || showTokenInput) return;
+    if (!mapContainer.current || !mapboxToken || showTokenInput) return;
+    if (properties.length === 0) return;
+
+    // Clean up existing map
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
 
     mapboxgl.accessToken = mapboxToken;
 
     console.log("Initializing map...");
 
-    // Criar mapa centrado em Orlando, FL
-    map.current = new mapboxgl.Map({
+    // Create map
+    const newMap = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/streets-v12",
       center: [-81.3792, 28.5383], // Orlando, FL
       zoom: 11,
     });
 
-    // Adicionar controles de navegação
-    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+    // Add controls
+    newMap.addControl(new mapboxgl.NavigationControl(), "top-right");
+    newMap.addControl(new mapboxgl.FullscreenControl(), "top-right");
 
-    // Adicionar controle de fullscreen
-    map.current.addControl(new mapboxgl.FullscreenControl(), "top-right");
-
-    map.current.on("load", () => {
-      console.log("Map loaded successfully");
-      setIsLoading(false);
-      setMapReady(true);
-    });
-
-    return () => {
-      console.log("Cleaning up map...");
-      markers.current.forEach((marker) => marker.remove());
-      markers.current = [];
-      map.current?.remove();
-      map.current = null;
-      setMapReady(false);
-    };
-  }, [mapboxToken, showTokenInput]);
-
-  // Adicionar marcadores apenas quando o mapa estiver pronto
-  useEffect(() => {
-    if (!map.current || !mapReady || properties.length === 0 || !mapboxToken) return;
-
-    const addMarkers = async () => {
-      console.log(`Adding markers for ${properties.length} properties...`);
+    // Wait for map to load
+    newMap.on("load", async () => {
+      console.log("Map loaded, adding markers...");
       setIsLoading(true);
       setGeocodingProgress({ current: 0, total: properties.length });
 
-      // Limpar marcadores existentes
-      markers.current.forEach((marker) => marker.remove());
-      markers.current = [];
-
       const bounds = new mapboxgl.LngLatBounds();
-      let addedMarkers = 0;
+      let addedCount = 0;
 
-      // Adicionar marcadores para cada propriedade
+      // Add markers
       for (let i = 0; i < properties.length; i++) {
         const property = properties[i];
         setGeocodingProgress({ current: i + 1, total: properties.length });
@@ -156,46 +117,24 @@ export const InteractivePropertyMap = ({
         if (coordinates) {
           const [lng, lat] = coordinates;
 
-          // Validar coordenadas
-          if (isNaN(lng) || isNaN(lat) || Math.abs(lng) > 180 || Math.abs(lat) > 90) {
-            console.error(`Invalid coordinates for ${property.address}: [${lng}, ${lat}]`);
+          // Validate
+          if (isNaN(lng) || isNaN(lat)) {
+            console.error(`Invalid coordinates: [${lng}, ${lat}]`);
             continue;
           }
 
-          // Cor do marcador baseado no status
-          const markerColor =
+          console.log(`Adding marker at [${lng}, ${lat}] for ${property.address}`);
+
+          // Color based on status
+          const color =
             property.approval_status === "approved"
-              ? "#10b981" // verde
+              ? "#10b981"
               : property.approval_status === "rejected"
-              ? "#ef4444" // vermelho
-              : "#f59e0b"; // amarelo (pending)
+              ? "#ef4444"
+              : "#f59e0b";
 
-          // Criar elemento customizado do marcador
-          const el = document.createElement("div");
-          el.className = "custom-marker";
-          el.style.width = "30px";
-          el.style.height = "30px";
-          el.style.borderRadius = "50%";
-          el.style.backgroundColor = markerColor;
-          el.style.border = "3px solid white";
-          el.style.boxShadow = "0 2px 4px rgba(0,0,0,0.3)";
-          el.style.cursor = "pointer";
-          el.style.transition = "transform 0.2s";
-
-          el.addEventListener("mouseenter", () => {
-            el.style.transform = "scale(1.2)";
-          });
-
-          el.addEventListener("mouseleave", () => {
-            el.style.transform = "scale(1)";
-          });
-
-          // Criar popup
-          const popup = new mapboxgl.Popup({
-            offset: 25,
-            closeButton: true,
-            closeOnClick: false
-          }).setHTML(`
+          // Create popup HTML
+          const popupHTML = `
             <div style="padding: 8px; min-width: 200px;">
               <h3 style="font-weight: bold; margin-bottom: 8px; color: #1f2937;">${property.address}</h3>
               <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">
@@ -203,7 +142,7 @@ export const InteractivePropertyMap = ({
               </div>
               <div style="display: flex; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
                 <div>
-                  <div style="font-size: 12px; color: #6b7280;">Valor Estimado</div>
+                  <div style="font-size: 12px; color: #6b7280;">Valor</div>
                   <div style="font-weight: 600; color: #1f2937;">$${property.estimated_value.toLocaleString()}</div>
                 </div>
                 <div>
@@ -218,8 +157,8 @@ export const InteractivePropertyMap = ({
                   border-radius: 4px;
                   font-size: 12px;
                   font-weight: 500;
-                  background-color: ${markerColor}20;
-                  color: ${markerColor};
+                  background-color: ${color}20;
+                  color: ${color};
                 ">
                   ${property.approval_status || "pending"}
                 </span>
@@ -244,42 +183,51 @@ export const InteractivePropertyMap = ({
                 Ver Detalhes
               </button>
             </div>
-          `);
+          `;
 
-          // Criar marcador com anchor centralizado
-          const marker = new mapboxgl.Marker({
-            element: el,
-            anchor: 'center'
-          })
+          // Create popup
+          const popup = new mapboxgl.Popup({
+            offset: 25,
+            closeButton: true,
+            closeOnClick: false,
+          }).setHTML(popupHTML);
+
+          // Use default Mapbox marker (simpler, more reliable)
+          const marker = new mapboxgl.Marker({ color })
             .setLngLat([lng, lat])
             .setPopup(popup)
-            .addTo(map.current!);
+            .addTo(newMap);
 
-          markers.current.push(marker);
           bounds.extend([lng, lat]);
-          addedMarkers++;
+          addedCount++;
         }
       }
 
-      console.log(`Added ${addedMarkers} markers successfully`);
+      console.log(`Added ${addedCount} markers`);
 
-      // Ajustar o mapa para mostrar todos os marcadores
-      if (addedMarkers > 0) {
-        map.current?.fitBounds(bounds, {
-          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+      // Fit to bounds
+      if (addedCount > 0) {
+        newMap.fitBounds(bounds, {
+          padding: 50,
           maxZoom: 15,
-          duration: 1000
         });
       }
 
       setIsLoading(false);
       setGeocodingProgress({ current: 0, total: 0 });
+    });
+
+    map.current = newMap;
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
     };
+  }, [properties, mapboxToken, showTokenInput]);
 
-    addMarkers();
-  }, [properties, mapReady, mapboxToken]);
-
-  // Handler global para clique em propriedade
+  // Handler for property clicks
   useEffect(() => {
     (window as any).propertyMapClickHandler = (propertyId: string) => {
       const property = properties.find((p) => p.id === propertyId);
@@ -293,7 +241,7 @@ export const InteractivePropertyMap = ({
     };
   }, [properties, onPropertyClick]);
 
-  // Centralizar mapa na localização do usuário
+  // Go to my location
   const goToMyLocation = () => {
     if (navigator.geolocation && map.current) {
       navigator.geolocation.getCurrentPosition(
@@ -305,7 +253,7 @@ export const InteractivePropertyMap = ({
           });
         },
         (error) => {
-          console.error("Erro ao obter localização:", error);
+          console.error("Error getting location:", error);
         }
       );
     }
@@ -409,7 +357,7 @@ export const InteractivePropertyMap = ({
         </div>
 
         {/* Instructions */}
-        {properties.length === 0 && (
+        {properties.length === 0 && !showTokenInput && (
           <div className="text-center py-8 text-gray-500">
             Nenhuma propriedade para exibir. Adicione propriedades para vê-las no mapa.
           </div>

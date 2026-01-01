@@ -135,6 +135,8 @@ All colors MUST be HSL.
 }
 
 @layer components {
+  /* ===== FORCE ALL BACKGROUNDS TO BE SOLID ===== */
+
   /* Ensure all cards and surfaces have solid backgrounds */
   [class*="bg-card"],
   [class*="bg-popover"],
@@ -162,15 +164,60 @@ All colors MUST be HSL.
 
   /* Remove backdrop-blur transparency issues */
   .backdrop-blur-sm,
-  .backdrop-blur {
+  .backdrop-blur,
+  [class*="backdrop-blur"] {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
 
-  /* Fix semi-transparent backgrounds */
+  /* Fix ALL semi-transparent background classes */
   [class*="bg-white/"],
   [class*="bg-card/"],
-  [class*="bg-background/"] {
+  [class*="bg-background/"],
+  [class*="bg-muted/"],
+  [class*="bg-primary/"],
+  [class*="bg-secondary/"],
+  [class*="bg-accent/"],
+  [class*="bg-destructive/"],
+  [class*="bg-success/"],
+  [class*="bg-warning/"],
+  [class*="bg-chart-"] {
+    opacity: 1 !important;
+  }
+
+  /* Specific fixes for common patterns */
+  [class*="bg-muted/50"],
+  [class*="bg-muted/30"] {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  [class*="bg-primary/5"],
+  [class*="bg-primary/10"],
+  [class*="bg-primary/20"] {
+    background-color: hsl(var(--primary) / 0.1) !important;
+  }
+
+  [class*="bg-secondary/10"] {
+    background-color: hsl(var(--secondary) / 0.1) !important;
+  }
+
+  [class*="bg-success/5"],
+  [class*="bg-success/10"] {
+    background-color: hsl(var(--success) / 0.1) !important;
+  }
+
+  [class*="bg-warning/5"],
+  [class*="bg-warning/10"] {
+    background-color: hsl(var(--warning) / 0.1) !important;
+  }
+
+  [class*="bg-destructive/10"] {
+    background-color: hsl(var(--destructive) / 0.1) !important;
+  }
+
+  /* Fix gradient backgrounds ending in transparent */
+  [class*="to-transparent"] {
+    background-image: none !important;
     background-color: hsl(var(--card)) !important;
   }
 
@@ -184,5 +231,17 @@ All colors MUST be HSL.
   nav[class*="sticky"],
   aside[class*="sticky"] {
     z-index: 50;
+  }
+
+  /* Fix for buttons and interactive elements */
+  button[class*="bg-secondary/"],
+  button[class*="bg-primary/"] {
+    background-color: hsl(var(--secondary)) !important;
+  }
+
+  /* Fix white backgrounds with transparency */
+  [class*="bg-white/80"],
+  [class*="bg-white/95"] {
+    background-color: hsl(var(--card)) !important;
   }
 }
