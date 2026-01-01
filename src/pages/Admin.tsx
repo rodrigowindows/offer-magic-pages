@@ -88,6 +88,7 @@ import { UnifiedPropertyFilters } from "@/components/UnifiedPropertyFilters";
 import { DashboardQuickActions } from "@/components/DashboardQuickActions";
 import { PropertyMapView } from "@/components/PropertyMapView";
 import { InteractivePropertyMap } from "@/components/InteractivePropertyMap";
+import { ApprovedPropertiesExport } from "@/components/ApprovedPropertiesExport";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
 import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
@@ -973,6 +974,13 @@ const Admin = () => {
 
             {/* Compact action menu */}
             <div className="flex items-center gap-2">
+              <ApprovedPropertiesExport
+                filters={{
+                  userId: filters.assignedToUserId,
+                  tags: filters.tags,
+                  searchQuery: searchQuery,
+                }}
+              />
               <DesignModeToggle isMinimal={isMinimal} onToggle={toggleDesignMode} />
               <HeaderActionsMenu
                 onBulkImport={() => setIsBulkImportDialogOpen(true)}
