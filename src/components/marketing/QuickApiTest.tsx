@@ -50,7 +50,7 @@ export const QuickApiTest = () => {
         phone: "+1 (407) 555-0123",
         email: "test@example.com",
         address: "123 Test St, Orlando, FL",
-        channels: ["sms"] as const,
+        channels: ["sms"] as ("sms" | "email" | "call")[],
         test_mode: true,
         company_name: "Test Company",
         contact_phone: "+1 (407) 555-9999",
