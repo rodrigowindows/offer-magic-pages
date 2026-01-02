@@ -231,34 +231,10 @@ const ImportProperties = () => {
 
       console.log('Preview first row:', preview[0]);
 
-      // Validate required columns
-      const errors: string[] = [];
-      const requiredColumns = ['account_number', 'property_address'];
-
-      // Check exact match first
-      const hasAccountNumber = headers.includes('account_number');
-      const hasPropertyAddress = headers.includes('property_address');
-
-      console.log('Exact match - account_number:', hasAccountNumber);
-      console.log('Exact match - property_address:', hasPropertyAddress);
-
-      // Check fuzzy match
-      const hasRequired = requiredColumns.filter(col =>
-        headers.some(h => h.toLowerCase().includes(col.toLowerCase().replace('_', '')))
-      );
-
-      console.log('Fuzzy match found:', hasRequired);
-
-      if (!hasAccountNumber && !hasPropertyAddress) {
-        const errorMsg = "CSV deve ter pelo menos 'account_number' ou 'property_address'";
-        console.error('VALIDATION ERROR:', errorMsg);
-        console.error('Available headers:', headers);
-        errors.push(errorMsg);
-      } else {
-        console.log('✓ Validation passed!');
-      }
-
-      setCsvErrors(errors);
+      // No strict validation - allow any CSV structure
+      // User will map columns in the mapping dialog
+      console.log('CSV loaded - proceeding to column mapping dialog');
+      setCsvErrors([]);
       setShowMappingDialog(true);
 
       toast({
