@@ -90,60 +90,82 @@ function parseAIResponse(responseText: string): AIColumnMapping[] {
   }
 }
 
-// Main AI mapping function using Lovable AI
+// Main AI mapping function using Lovable AI with batch processing
 export async function mapColumnsWithAI(
   csvHeaders: string[],
   onProgress?: (status: string) => void
 ): Promise<AIMapperResult> {
+  const BATCH_SIZE = 50; // Process 50 columns at a time to avoid token limits
+
   try {
     onProgress?.('Conectando com IA...');
 
-    // Generate prompt
-    const prompt = generateMappingPrompt(csvHeaders);
+    const allMappings: AIColumnMapping[] = [];
+    const totalBatches = Math.ceil(csvHeaders.length / BATCH_SIZE);
 
-    onProgress?.('Analisando colunas do CSV...');
+    // Process columns in batches
+    for (let i = 0; i < csvHeaders.length; i += BATCH_SIZE) {
+      const batch = csvHeaders.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
 
-    // Call Lovable AI via edge function
-    const { data, error } = await supabase.functions.invoke('ai-column-mapper', {
-      body: { prompt, csvHeaders },
-    });
+      onProgress?.(`Mapeando lote ${batchNum}/${totalBatches} (${batch.length} colunas)...`);
 
-    if (error) {
-      console.error('AI mapping error:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to call AI service',
-        mappings: [],
-      };
-    }
+      try {
+        // Generate prompt for this batch
+        const prompt = generateMappingPrompt(batch);
 
-    onProgress?.('Processando sugestões da IA...');
-
-    // Parse response
-    const mappings = parseAIResponse(data.content || data.text || JSON.stringify(data));
-
-    // Validate that all CSV columns are mapped
-    const mappedColumns = new Set(mappings.map(m => m.csvColumn));
-    const missingColumns = csvHeaders.filter(h => !mappedColumns.has(h));
-
-    if (missingColumns.length > 0) {
-      console.warn('AI did not map all columns:', missingColumns);
-      // Add skip mappings for missing columns
-      missingColumns.forEach(col => {
-        mappings.push({
-          csvColumn: col,
-          suggestedField: 'skip',
-          confidence: 'low',
-          reason: 'Não foi possível mapear automaticamente',
+        // Call Lovable AI via edge function
+        const { data, error } = await supabase.functions.invoke('ai-column-mapper', {
+          body: { prompt, csvHeaders: batch },
         });
-      });
+
+        if (error) {
+          console.error(`AI mapping error for batch ${batchNum}:`, error);
+          // Fallback to string matching for this batch
+          const fallbackBatch = fallbackToStringMatching(batch);
+          allMappings.push(...fallbackBatch);
+          continue;
+        }
+
+        // Parse response for this batch
+        const batchMappings = parseAIResponse(data.content || data.text || JSON.stringify(data));
+
+        // Validate batch columns are mapped
+        const mappedColumns = new Set(batchMappings.map(m => m.csvColumn));
+        const missingColumns = batch.filter(h => !mappedColumns.has(h));
+
+        if (missingColumns.length > 0) {
+          console.warn(`Batch ${batchNum}: AI did not map all columns:`, missingColumns);
+          // Add skip mappings for missing columns
+          missingColumns.forEach(col => {
+            batchMappings.push({
+              csvColumn: col,
+              suggestedField: 'skip',
+              confidence: 'low',
+              reason: 'Não foi possível mapear automaticamente',
+            });
+          });
+        }
+
+        allMappings.push(...batchMappings);
+      } catch (batchError: any) {
+        console.error(`Error processing batch ${batchNum}:`, batchError);
+        // Fallback to string matching for failed batches
+        const fallbackBatch = fallbackToStringMatching(batch);
+        allMappings.push(...fallbackBatch);
+      }
+
+      // Small delay between batches to avoid rate limiting
+      if (i + BATCH_SIZE < csvHeaders.length) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
 
-    onProgress?.('Mapeamento concluído!');
+    onProgress?.(`Mapeamento concluído: ${allMappings.length} colunas processadas`);
 
     return {
       success: true,
-      mappings,
+      mappings: allMappings,
     };
   } catch (error: any) {
     console.error('AI mapping error:', error);

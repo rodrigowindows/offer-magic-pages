@@ -500,7 +500,7 @@ const ColumnMappingDialog = ({
                 {/* Database Field Select */}
                 <div className="w-[220px]">
                   <Select
-                    value={mapping.dbField}
+                    value={mapping.dbField || undefined}
                     onValueChange={(value) => handleMappingChange(
                       mapping.csvColumn, 
                       value as DatabaseFieldKey | 'skip' | ''
