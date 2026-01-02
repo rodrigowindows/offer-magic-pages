@@ -289,7 +289,8 @@ export function autoDetectDatabaseField(csvColumnName: string): string {
 
 // Get all CSV variations for a database field
 export function getCSVVariations(dbField: string): string[] {
-  return EXTENDED_COLUMN_MAPPINGS[dbField as keyof typeof EXTENDED_COLUMN_MAPPINGS] || [];
+  const variations = EXTENDED_COLUMN_MAPPINGS[dbField as keyof typeof EXTENDED_COLUMN_MAPPINGS];
+  return variations ? [...variations] : [];
 }
 
 // Test function to see what a CSV column would map to

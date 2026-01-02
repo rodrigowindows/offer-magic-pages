@@ -1,5 +1,5 @@
-// AI-Powered Column Mapping using Gemini
-import { GoogleGenerativeAI } from "@google/generative-ai";
+// AI-Powered Column Mapping using Lovable AI
+import { supabase } from "@/integrations/supabase/client";
 import { DATABASE_FIELDS } from "@/components/ColumnMappingDialog";
 import type { DatabaseFieldKey } from "@/components/ColumnMappingDialog";
 
@@ -14,20 +14,6 @@ interface AIMapperResult {
   mappings: AIColumnMapping[];
   success: boolean;
   error?: string;
-}
-
-// Get Gemini API key from localStorage
-function getGeminiApiKey(): string | null {
-  try {
-    const settings = localStorage.getItem('gemini_api_settings');
-    if (settings) {
-      const parsed = JSON.parse(settings);
-      return parsed.apiKey || null;
-    }
-  } catch (error) {
-    console.error('Error reading Gemini API key:', error);
-  }
-  return null;
 }
 
 // Generate prompt for AI column mapping
@@ -104,42 +90,37 @@ function parseAIResponse(responseText: string): AIColumnMapping[] {
   }
 }
 
-// Main AI mapping function
+// Main AI mapping function using Lovable AI
 export async function mapColumnsWithAI(
   csvHeaders: string[],
   onProgress?: (status: string) => void
 ): Promise<AIMapperResult> {
   try {
-    // Check for API key
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) {
-      return {
-        success: false,
-        error: 'Gemini API key not configured. Please add your API key in Settings.',
-        mappings: [],
-      };
-    }
-
-    onProgress?.('Conectando com Gemini AI...');
-
-    // Initialize Gemini
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    onProgress?.('Analisando colunas do CSV...');
+    onProgress?.('Conectando com IA...');
 
     // Generate prompt
     const prompt = generateMappingPrompt(csvHeaders);
 
-    // Call AI
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    onProgress?.('Analisando colunas do CSV...');
+
+    // Call Lovable AI via edge function
+    const { data, error } = await supabase.functions.invoke('ai-column-mapper', {
+      body: { prompt, csvHeaders },
+    });
+
+    if (error) {
+      console.error('AI mapping error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to call AI service',
+        mappings: [],
+      };
+    }
 
     onProgress?.('Processando sugestões da IA...');
 
     // Parse response
-    const mappings = parseAIResponse(text);
+    const mappings = parseAIResponse(data.content || data.text || JSON.stringify(data));
 
     // Validate that all CSV columns are mapped
     const mappedColumns = new Set(mappings.map(m => m.csvColumn));
@@ -172,25 +153,6 @@ export async function mapColumnsWithAI(
       mappings: [],
     };
   }
-}
-
-// Test function for development
-export async function testAIMapping(sampleHeaders: string[]) {
-  console.log('🤖 Testing AI Column Mapping...');
-  console.log('CSV Headers:', sampleHeaders);
-
-  const result = await mapColumnsWithAI(sampleHeaders, (status) => {
-    console.log('Status:', status);
-  });
-
-  if (result.success) {
-    console.log('✅ Success!');
-    console.table(result.mappings);
-  } else {
-    console.log('❌ Error:', result.error);
-  }
-
-  return result;
 }
 
 // Fallback to string matching if AI fails
