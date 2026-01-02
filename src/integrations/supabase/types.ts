@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_test_events: {
+        Row: {
+          event: string
+          id: string
+          metadata: Json | null
+          property_id: string | null
+          session_id: string
+          timestamp: string
+          variant: string
+        }
+        Insert: {
+          event: string
+          id?: string
+          metadata?: Json | null
+          property_id?: string | null
+          session_id: string
+          timestamp?: string
+          variant: string
+        }
+        Update: {
+          event?: string
+          id?: string
+          metadata?: Json | null
+          property_id?: string | null
+          session_id?: string
+          timestamp?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ab_tests: {
         Row: {
           created_at: string
@@ -567,6 +605,8 @@ export type Database = {
           import_batch: string | null
           import_date: string | null
           last_contact_date: string | null
+          lead_captured: boolean | null
+          lead_captured_at: string | null
           lead_score: number | null
           lead_status: string
           letter_sent: boolean
@@ -625,6 +665,8 @@ export type Database = {
           import_batch?: string | null
           import_date?: string | null
           last_contact_date?: string | null
+          lead_captured?: boolean | null
+          lead_captured_at?: string | null
           lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
@@ -683,6 +725,8 @@ export type Database = {
           import_batch?: string | null
           import_date?: string | null
           last_contact_date?: string | null
+          lead_captured?: boolean | null
+          lead_captured_at?: string | null
           lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
@@ -754,6 +798,77 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "property_analytics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_leads: {
+        Row: {
+          contacted: boolean | null
+          contacted_at: string | null
+          contacted_by: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          interest_level: string | null
+          ip_address: string | null
+          is_owner: boolean | null
+          notes: string | null
+          offer_viewed_at: string | null
+          phone: string | null
+          property_id: string | null
+          selling_timeline: string | null
+          status: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          contacted?: boolean | null
+          contacted_at?: string | null
+          contacted_by?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          interest_level?: string | null
+          ip_address?: string | null
+          is_owner?: boolean | null
+          notes?: string | null
+          offer_viewed_at?: string | null
+          phone?: string | null
+          property_id?: string | null
+          selling_timeline?: string | null
+          status?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          contacted?: boolean | null
+          contacted_at?: string | null
+          contacted_by?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          interest_level?: string | null
+          ip_address?: string | null
+          is_owner?: boolean | null
+          notes?: string | null
+          offer_viewed_at?: string | null
+          phone?: string | null
+          property_id?: string | null
+          selling_timeline?: string | null
+          status?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_leads_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
@@ -926,7 +1041,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_column_if_not_exists: {
+        Args: {
+          p_column_name: string
+          p_column_type?: string
+          p_table_name: string
+        }
+        Returns: boolean
+      }
+      column_exists: {
+        Args: { p_column_name: string; p_table_name: string }
+        Returns: boolean
+      }
+      get_table_columns: {
+        Args: { p_table_name: string }
+        Returns: {
+          column_name: string
+          data_type: string
+          is_nullable: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

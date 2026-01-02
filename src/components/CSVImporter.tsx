@@ -160,11 +160,12 @@ export const CSVImporter = () => {
     if (createNewColumns && newColumns.length > 0) {
       for (const columnName of newColumns) {
         try {
-          // Add column to properties table
-          const { error } = await supabase.rpc('add_column_if_not_exists', {
-            table_name: 'properties',
-            column_name: columnName,
-            column_type: 'text',
+          // Add column to properties table using raw SQL via RPC
+          // Note: This requires the add_column_if_not_exists function to be created in Supabase
+          const { error } = await (supabase.rpc as any)('add_column_if_not_exists', {
+            p_table_name: 'properties',
+            p_column_name: columnName,
+            p_column_type: 'text',
           });
 
           if (error) {
@@ -183,7 +184,7 @@ export const CSVImporter = () => {
 
     for (let i = 0; i < csvData.data.length; i++) {
       const row = csvData.data[i];
-      const mappedRow: Record<string, any> = {};
+      const mappedRow: Record<string, string | number | boolean | null> = {};
 
       // Map CSV columns to DB columns
       columnMappings.forEach((mapping) => {
@@ -199,10 +200,33 @@ export const CSVImporter = () => {
         }
       });
 
+      // Map to properties table fields - convert property_address to address
+      const propertyData: Record<string, any> = {
+        address: mappedRow.property_address || '',
+        city: (mappedRow.city as string) || 'Unknown',
+        state: (mappedRow.state as string) || 'FL',
+        zip_code: (mappedRow.zip_code as string) || '00000',
+        estimated_value: 0,
+        cash_offer_amount: 0,
+        slug: `prop-${Date.now()}-${i}`,
+      };
+      
+      // Add optional fields
+      if (mappedRow.owner_full_name || mappedRow.owner_first_name || mappedRow.owner_last_name) {
+        propertyData.owner_name = mappedRow.owner_full_name || 
+          `${mappedRow.owner_first_name || ''} ${mappedRow.owner_last_name || ''}`.trim();
+      }
+      if (mappedRow.mail_address) propertyData.owner_address = mappedRow.mail_address;
+      if (mappedRow.sqft) propertyData.square_feet = parseInt(String(mappedRow.sqft)) || null;
+      if (mappedRow.beds) propertyData.bedrooms = parseInt(String(mappedRow.beds)) || null;
+      if (mappedRow.baths) propertyData.bathrooms = parseFloat(String(mappedRow.baths)) || null;
+      if (mappedRow.year_built) propertyData.year_built = parseInt(String(mappedRow.year_built)) || null;
+      if (mappedRow.lot_size) propertyData.lot_size = parseFloat(String(mappedRow.lot_size)) || null;
+      if (mappedRow.property_type) propertyData.property_type = mappedRow.property_type;
+      if (mappedRow.assessed_value) propertyData.estimated_value = parseFloat(String(mappedRow.assessed_value)) || 0;
+
       // Only insert if we have at least the required fields
-      const hasRequiredFields =
-        mappedRow.property_address &&
-        mappedRow.city;
+      const hasRequiredFields = propertyData.address && propertyData.city;
 
       if (!hasRequiredFields) {
         errorCount++;
@@ -215,7 +239,7 @@ export const CSVImporter = () => {
       try {
         const { error } = await supabase
           .from('properties')
-          .insert(mappedRow);
+          .insert(propertyData as any);
 
         if (error) {
           errorCount++;
