@@ -157,15 +157,41 @@ export async function mapColumnsWithAI(
 
 // Fallback to string matching if AI fails
 export function fallbackToStringMatching(csvHeaders: string[]): AIColumnMapping[] {
-  const { autoDetectDatabaseField } = require('./csvColumnMappings');
+  // Simple string matching using inline logic (avoid circular import)
+  const simpleMatch = (header: string): DatabaseFieldKey | 'skip' => {
+    const h = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    const mappings: Record<string, DatabaseFieldKey> = {
+      'address': 'address', 'propertyaddress': 'address', 'situsaddress': 'address', 'inputpropertyaddress': 'address',
+      'city': 'city', 'propertycity': 'city', 'situscity': 'city',
+      'state': 'state', 'propertystate': 'state', 'situsstate': 'state',
+      'zip': 'zip_code', 'zipcode': 'zip_code', 'postalcode': 'zip_code',
+      'county': 'county',
+      'neighborhood': 'neighborhood', 'subdivision': 'neighborhood',
+      'ownername': 'owner_name', 'owner': 'owner_name', 'inputlastname': 'owner_name', 'inputfirstname': 'owner_name',
+      'ownerphone': 'owner_phone', 'phone': 'owner_phone', 'phonenumber': 'owner_phone',
+      'owneraddress': 'owner_address', 'mailingaddress': 'owner_address', 'inputmailingaddress': 'owner_address',
+      'beds': 'bedrooms', 'bedrooms': 'bedrooms',
+      'baths': 'bathrooms', 'bathrooms': 'bathrooms',
+      'sqft': 'square_feet', 'squarefeet': 'square_feet', 'livingarea': 'square_feet',
+      'lotsize': 'lot_size', 'lot': 'lot_size', 'landarea': 'lot_size',
+      'yearbuilt': 'year_built', 'year': 'year_built',
+      'propertytype': 'property_type', 'type': 'property_type', 'usecode': 'property_type',
+      'justvalue': 'estimated_value', 'estimatedvalue': 'estimated_value', 'marketvalue': 'estimated_value', 'assessedvalue': 'estimated_value',
+      'cashoffer': 'cash_offer_amount', 'offer': 'cash_offer_amount',
+      'accountnumber': 'origem', 'account': 'origem', 'parcelid': 'origem', 'folio': 'origem', 'pid': 'origem',
+    };
+    
+    return mappings[h] || 'skip';
+  };
 
   return csvHeaders.map(header => {
-    const detected = autoDetectDatabaseField(header);
+    const detected = simpleMatch(header);
     return {
       csvColumn: header,
-      suggestedField: detected || 'skip',
-      confidence: detected ? 'medium' : 'low',
-      reason: detected ? 'Auto-detectado por similaridade' : 'Nenhuma correspondência encontrada',
+      suggestedField: detected,
+      confidence: detected !== 'skip' ? 'medium' as const : 'low' as const,
+      reason: detected !== 'skip' ? 'Auto-detectado por similaridade' : 'Nenhuma correspondência encontrada',
     };
   });
 }

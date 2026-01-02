@@ -23,6 +23,7 @@ import {
   Database,
   Trash2,
   Settings2,
+  RefreshCw,
 } from "lucide-react";
 import {
   Table,
@@ -63,6 +64,15 @@ const ImportProperties = () => {
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [showMappingDialog, setShowMappingDialog] = useState(false);
+
+  // Import preview state
+  const [importPreview, setImportPreview] = useState<{
+    toInsert: number;
+    toUpdate: number;
+    toSkip: number;
+    existingAccounts: Set<string>;
+    isLoading: boolean;
+  } | null>(null);
 
   // Import state
   const [isImporting, setIsImporting] = useState(false);
@@ -246,9 +256,83 @@ const ImportProperties = () => {
     reader.readAsText(file);
   };
 
-  // Handle column mapping changes
-  const handleMappingChange = (mappings: ColumnMapping[]) => {
+  // Handle column mapping changes and calculate preview
+  const handleMappingChange = async (mappings: ColumnMapping[]) => {
     setColumnMappings(mappings);
+    
+    // Calculate import preview after mapping change
+    await calculateImportPreview(mappings);
+  };
+
+  // Calculate how many records will be inserted vs updated
+  const calculateImportPreview = async (mappings: ColumnMapping[]) => {
+    if (!csvFile || mappings.length === 0) return;
+
+    // Check if we have origem mapped
+    const origemMapping = mappings.find(m => m.dbField === 'origem');
+    if (!origemMapping) {
+      setImportPreview({
+        toInsert: totalRows,
+        toUpdate: 0,
+        toSkip: 0,
+        existingAccounts: new Set(),
+        isLoading: false,
+      });
+      return;
+    }
+
+    setImportPreview(prev => ({ ...prev, isLoading: true } as any));
+
+    // Read CSV to get all account numbers
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const content = event.target?.result as string;
+      const lines = content.trim().split('\n');
+      const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
+      
+      const origemIdx = headers.indexOf(origemMapping.csvColumn);
+      if (origemIdx === -1) {
+        setImportPreview({
+          toInsert: totalRows,
+          toUpdate: 0,
+          toSkip: 0,
+          existingAccounts: new Set(),
+          isLoading: false,
+        });
+        return;
+      }
+
+      // Extract all account numbers from CSV
+      const csvAccounts = new Set<string>();
+      for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        const account = values[origemIdx]?.replace(/"/g, '').trim();
+        if (account) csvAccounts.add(account);
+      }
+
+      // Fetch existing accounts from database
+      const { data: existingProperties } = await supabase
+        .from('properties')
+        .select('origem')
+        .in('origem', Array.from(csvAccounts));
+
+      const existingAccounts = new Set<string>(
+        existingProperties?.map(p => p.origem).filter(Boolean) as string[] || []
+      );
+
+      const toUpdate = Array.from(csvAccounts).filter(a => existingAccounts.has(a)).length;
+      const toInsert = csvAccounts.size - toUpdate;
+      const toSkip = updateExisting ? 0 : toUpdate;
+
+      setImportPreview({
+        toInsert,
+        toUpdate: updateExisting ? toUpdate : 0,
+        toSkip,
+        existingAccounts,
+        isLoading: false,
+      });
+    };
+    reader.readAsText(csvFile);
   };
 
   // Generate slug from address
@@ -645,7 +729,16 @@ const ImportProperties = () => {
                 <Checkbox
                   id="update-existing"
                   checked={updateExisting}
-                  onCheckedChange={(checked) => setUpdateExisting(checked as boolean)}
+                  onCheckedChange={(checked) => {
+                    setUpdateExisting(checked as boolean);
+                    // Recalculate preview when this changes
+                    if (importPreview) {
+                      setImportPreview(prev => prev ? {
+                        ...prev,
+                        toSkip: !(checked as boolean) ? prev.toUpdate : 0,
+                      } : null);
+                    }
+                  }}
                 />
                 <Label htmlFor="update-existing">Atualizar propriedades existentes</Label>
               </div>
@@ -834,6 +927,53 @@ const ImportProperties = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Import Preview - show before importing */}
+            {importPreview && !importResult && !isImporting && (
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                    📊 Preview da Importação
+                    {importPreview.isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  </p>
+                  <button
+                    onClick={() => calculateImportPreview(columnMappings)}
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Atualizar
+                  </button>
+                </div>
+                {!importPreview.isLoading && (
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="bg-green-100 dark:bg-green-900 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                        {importPreview.toInsert}
+                      </p>
+                      <p className="text-green-600 dark:text-green-400">Novos registros</p>
+                    </div>
+                    <div className="bg-yellow-100 dark:bg-yellow-900 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
+                        {updateExisting ? importPreview.toUpdate : 0}
+                      </p>
+                      <p className="text-yellow-600 dark:text-yellow-400">Serão atualizados</p>
+                    </div>
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-center">
+                      <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                        {!updateExisting ? importPreview.toUpdate : 0}
+                      </p>
+                      <p className="text-gray-600 dark:text-gray-400">Serão ignorados</p>
+                    </div>
+                  </div>
+                )}
+                {!updateExisting && importPreview.toUpdate > 0 && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    ⚠️ {importPreview.toUpdate} propriedades existentes serão ignoradas. 
+                    Marque "Atualizar existentes" para atualizá-las.
+                  </p>
+                )}
+              </div>
+            )}
+
             {isImporting && (
               <div className="space-y-2">
                 <Progress value={importProgress} />
