@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import ColumnMappingDialog, { ColumnMapping, DatabaseFieldKey } from "@/components/ColumnMappingDialog";
+import { FieldCombiner, CombinedField } from "@/components/FieldCombiner";
+import { processRowWithCombinedFields } from "@/utils/fieldCombinerUtils";
 import {
   Upload,
   Image,
@@ -64,6 +66,7 @@ const ImportProperties = () => {
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [showMappingDialog, setShowMappingDialog] = useState(false);
+  const [combinedFields, setCombinedFields] = useState<CombinedField[]>([]);
 
   // Import preview state
   const [importPreview, setImportPreview] = useState<{
@@ -431,6 +434,10 @@ const ImportProperties = () => {
           headers.forEach((h, idx) => {
             row[h] = values[idx]?.replace(/"/g, '') || '';
           });
+
+          // Process combined fields
+          const processedRow = processRowWithCombinedFields(row, combinedFields);
+          Object.assign(row, processedRow);
 
           // Build property data from mappings
           const propertyData: Record<string, any> = {
@@ -868,14 +875,29 @@ const ImportProperties = () => {
           </Card>
         </div>
 
-        {/* Column Mapping Section */}
-        {showMappingDialog && csvHeaders.length > 0 && (
-          <ColumnMappingDialog
-            csvHeaders={csvHeaders}
-            onMappingChange={handleMappingChange}
-            initialMappings={columnMappings}
+        {/* Field Combiner Section */}
+        {csvHeaders.length > 0 && csvPreview.length > 0 && (
+          <FieldCombiner
+            availableColumns={csvHeaders}
+            sampleData={csvPreview[0]}
+            onFieldsChange={setCombinedFields}
           />
         )}
+
+        {/* Column Mapping Section */}
+        {showMappingDialog && csvHeaders.length > 0 && (() => {
+          const allAvailableColumns = [
+            ...csvHeaders,
+            ...combinedFields.map(f => f.name)
+          ];
+          return (
+            <ColumnMappingDialog
+              csvHeaders={allAvailableColumns}
+              onMappingChange={handleMappingChange}
+              initialMappings={columnMappings}
+            />
+          );
+        })()}
 
         {/* CSV Preview */}
         {csvPreview.length > 0 && (
