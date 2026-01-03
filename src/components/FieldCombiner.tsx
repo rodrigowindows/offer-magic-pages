@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, X, Eye, Sparkles, Trash2 } from "lucide-react";
+import { Plus, X, Eye, Sparkles, Trash2, Wand2, CheckCircle2, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { autoDetectBestCombinations, type DetectionResult } from "@/utils/smartFieldDetector";
 
 export interface CombinedField {
   id: string;
@@ -203,6 +205,71 @@ export const FieldCombiner = ({ availableColumns, sampleData, onFieldsChange }: 
         ? prev.filter(r => r !== rule)
         : [...prev, rule]
     );
+  };
+
+
+  const handleAutoDetect = async () => {
+    if (!sampleData) {
+      toast({
+        title: 'Erro',
+        description: 'Nenhum dado de amostra disponível',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsDetecting(true);
+    setDetectionResults([]);
+
+    try {
+      const results = await autoDetectBestCombinations(
+        availableColumns,
+        sampleData,
+        (status) => {
+          console.log(status);
+        }
+      );
+
+      setDetectionResults(results);
+
+      if (results.length === 0) {
+        toast({
+          title: 'Nenhuma combinação encontrada',
+          description: 'Não foi possível encontrar combinações que correspondam ao banco de dados',
+        });
+      } else {
+        toast({
+          title: 'Detecção concluída!',
+          description: `Encontradas ${results.length} combinações com matches`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro na detecção',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDetecting(false);
+    }
+  };
+
+  const handleApplyDetectedField = (result: DetectionResult) => {
+    const exists = combinedFields.find(f => f.name === result.field.name);
+    if (exists) {
+      toast({
+        title: 'Campo já existe',
+        description: `O campo "${result.field.name}" já foi adicionado`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCombinedFields([...combinedFields, result.field]);
+    toast({
+      title: 'Campo adicionado!',
+      description: `"${result.field.name}" foi adicionado aos campos combinados`,
+    });
   };
 
   return (
