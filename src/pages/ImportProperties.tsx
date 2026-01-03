@@ -259,36 +259,77 @@ const ImportProperties = () => {
     reader.readAsText(file);
   };
 
-  // Handle column mapping changes and calculate preview
+  // Debounce ref for preview calculation
+  const previewTimeoutRef = useState<NodeJS.Timeout | null>(null);
+  const isCalculatingRef = useState(false);
+
+  // Handle column mapping changes and calculate preview with debounce
   const handleMappingChange = async (mappings: ColumnMapping[]) => {
     setColumnMappings(mappings);
     
-    // Calculate import preview after mapping change
-    await calculateImportPreview(mappings);
+    // Debounce the preview calculation to avoid multiple calls
+    if (previewTimeoutRef[0]) {
+      clearTimeout(previewTimeoutRef[0]);
+    }
+    
+    previewTimeoutRef[0] = setTimeout(() => {
+      calculateImportPreview(mappings);
+    }, 500); // Wait 500ms after last change before calculating
   };
 
-  // Normalize string for comparison (remove special chars, lowercase, trim)
+  // Normalize string for comparison - extract key parts only
   const normalizeForMatch = (str: string | null | undefined): string => {
     if (!str) return '';
     return str
       .toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
+      .replace(/[^a-z0-9\s]/g, '') // Keep spaces for word splitting
+      .replace(/\s+/g, ' ')
       .trim();
   };
 
-  // Extract address parts for flexible matching
-  const extractAddressParts = (address: string): { street: string; number: string } => {
+  // Create address key for matching - extracts just the essential parts
+  const createAddressKey = (address: string): string => {
+    if (!address) return '';
+    
     const normalized = address.trim().toUpperCase();
-    const numberMatch = normalized.match(/^(\d+)\s+(.+)/);
+    
+    // Remove common suffixes that vary between records
+    const cleaned = normalized
+      .replace(/,?\s*(FL|FLORIDA)\s*\d{5}(-\d{4})?/gi, '') // Remove state + zip
+      .replace(/,?\s*ORLANDO\s*/gi, '') // Remove city name
+      .replace(/,?\s*UNINCORPORATED\s*/gi, '')
+      .replace(/,?\s*BELLE ISLE\s*/gi, '')
+      .replace(/,?\s*EATONVILLE\s*/gi, '')
+      .replace(/,?\s*APOPKA\s*/gi, '')
+      .replace(/,?\s*WINTER GARDEN\s*/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Extract street number and first 3 words of street name
+    const parts = cleaned.split(' ');
+    const numberMatch = parts[0]?.match(/^\d+$/);
+    
     if (numberMatch) {
-      return { number: numberMatch[1], street: numberMatch[2] };
+      // Has street number: take number + next 3 words
+      const streetParts = parts.slice(0, 4).join(' ');
+      return streetParts.toLowerCase().replace(/[^a-z0-9]/g, '');
+    } else {
+      // No street number: take first 3 words
+      const streetParts = parts.slice(0, 3).join(' ');
+      return streetParts.toLowerCase().replace(/[^a-z0-9]/g, '');
     }
-    return { number: '', street: normalized };
   };
 
   // Calculate how many records will be inserted vs updated
   const calculateImportPreview = async (mappings: ColumnMapping[]) => {
     if (!csvFile || mappings.length === 0) return;
+    
+    // Prevent concurrent calculations
+    if (isCalculatingRef[0]) {
+      console.log('Preview calculation already in progress, skipping...');
+      return;
+    }
+    isCalculatingRef[0] = true;
 
     setImportPreview(prev => ({ ...prev, isLoading: true } as any));
 
@@ -308,6 +349,7 @@ const ImportProperties = () => {
         existingAccounts: new Set(),
         isLoading: false,
       });
+      isCalculatingRef[0] = false;
       return;
     }
 
@@ -327,7 +369,7 @@ const ImportProperties = () => {
         const ownerNameIdx = getColIdx(ownerNameMapping);
         const ownerAddressIdx = getColIdx(ownerAddressMapping);
 
-        // Fetch ALL existing properties for matching
+        // Fetch ALL existing properties for matching (only once)
         console.log('Buscando propriedades existentes para matching...');
         const { data: existingProperties, error } = await supabase
           .from('properties')
@@ -342,6 +384,7 @@ const ImportProperties = () => {
             existingAccounts: new Set(),
             isLoading: false,
           });
+          isCalculatingRef[0] = false;
           return;
         }
 
@@ -350,66 +393,77 @@ const ImportProperties = () => {
         // Create normalized lookup maps for fast matching
         const matchMaps = {
           byOrigem: new Map<string, string>(),
-          byAddress: new Map<string, string>(),
+          byAddressKey: new Map<string, string>(), // Use address key for flexible matching
           byOwnerName: new Map<string, string>(),
           byOwnerAddress: new Map<string, string>(),
         };
 
         existingProperties?.forEach(prop => {
           if (prop.origem) {
-            matchMaps.byOrigem.set(normalizeForMatch(prop.origem), prop.id);
+            matchMaps.byOrigem.set(normalizeForMatch(prop.origem).replace(/\s/g, ''), prop.id);
           }
           if (prop.address) {
-            matchMaps.byAddress.set(normalizeForMatch(prop.address), prop.id);
-            // Also add just the street number + name for partial matching
-            const { number, street } = extractAddressParts(prop.address);
-            if (number) {
-              matchMaps.byAddress.set(normalizeForMatch(`${number} ${street.split(' ').slice(0, 3).join(' ')}`), prop.id);
+            // Use the address key for flexible matching
+            const addrKey = createAddressKey(prop.address);
+            if (addrKey) {
+              matchMaps.byAddressKey.set(addrKey, prop.id);
             }
           }
           if (prop.owner_name) {
-            matchMaps.byOwnerName.set(normalizeForMatch(prop.owner_name), prop.id);
+            matchMaps.byOwnerName.set(normalizeForMatch(prop.owner_name).replace(/\s/g, ''), prop.id);
           }
           if (prop.owner_address) {
-            matchMaps.byOwnerAddress.set(normalizeForMatch(prop.owner_address), prop.id);
+            matchMaps.byOwnerAddress.set(normalizeForMatch(prop.owner_address).replace(/\s/g, ''), prop.id);
           }
         });
 
+        console.log(`Índices criados: ${matchMaps.byAddressKey.size} endereços únicos`);
+
         // Process each CSV row and check for matches
         const matchedIds = new Set<string>();
-        let matchCount = 0;
+        const matchDetails: { row: number; csvAddr: string; matchedKey: string }[] = [];
 
         for (let i = 1; i < lines.length; i++) {
           const values = parseCSVLine(lines[i]);
           
           const getValue = (idx: number) => idx >= 0 ? values[idx]?.replace(/"/g, '').trim() || '' : '';
           
-          const csvOrigem = normalizeForMatch(getValue(origemIdx));
-          const csvAddress = normalizeForMatch(getValue(addressIdx));
-          const csvOwnerName = normalizeForMatch(getValue(ownerNameIdx));
-          const csvOwnerAddress = normalizeForMatch(getValue(ownerAddressIdx));
+          const csvOrigem = normalizeForMatch(getValue(origemIdx)).replace(/\s/g, '');
+          const csvAddress = getValue(addressIdx);
+          const csvAddressKey = createAddressKey(csvAddress);
+          const csvOwnerName = normalizeForMatch(getValue(ownerNameIdx)).replace(/\s/g, '');
+          const csvOwnerAddress = normalizeForMatch(getValue(ownerAddressIdx)).replace(/\s/g, '');
 
           // Try to find a match using any of the fields
           let matchedId: string | undefined;
+          let matchType = '';
 
           // Priority: origem > address > owner_name > owner_address
           if (csvOrigem && matchMaps.byOrigem.has(csvOrigem)) {
             matchedId = matchMaps.byOrigem.get(csvOrigem);
-          } else if (csvAddress && matchMaps.byAddress.has(csvAddress)) {
-            matchedId = matchMaps.byAddress.get(csvAddress);
+            matchType = 'origem';
+          } else if (csvAddressKey && matchMaps.byAddressKey.has(csvAddressKey)) {
+            matchedId = matchMaps.byAddressKey.get(csvAddressKey);
+            matchType = 'address';
+            matchDetails.push({ row: i, csvAddr: csvAddress, matchedKey: csvAddressKey });
           } else if (csvOwnerName && matchMaps.byOwnerName.has(csvOwnerName)) {
             matchedId = matchMaps.byOwnerName.get(csvOwnerName);
+            matchType = 'owner_name';
           } else if (csvOwnerAddress && matchMaps.byOwnerAddress.has(csvOwnerAddress)) {
             matchedId = matchMaps.byOwnerAddress.get(csvOwnerAddress);
+            matchType = 'owner_address';
           }
 
           if (matchedId) {
             matchedIds.add(matchedId);
-            matchCount++;
           }
         }
 
-        console.log(`✓ Encontradas ${matchCount} correspondências!`);
+        const matchCount = matchedIds.size;
+        console.log(`✓ Encontradas ${matchCount} correspondências únicas!`);
+        if (matchDetails.length > 0) {
+          console.log('Primeiros matches por endereço:', matchDetails.slice(0, 5));
+        }
 
         const toUpdate = updateExisting ? matchCount : 0;
         const toInsert = totalRows - matchCount;
@@ -431,6 +485,8 @@ const ImportProperties = () => {
           existingAccounts: new Set(),
           isLoading: false,
         });
+      } finally {
+        isCalculatingRef[0] = false;
       }
     };
     reader.readAsText(csvFile);
