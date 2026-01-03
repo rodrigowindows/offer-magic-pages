@@ -26,6 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { autoDetectBestCombinations, type DetectionResult } from "@/utils/smartFieldDetector";
 import { SmartFieldTester } from "./SmartFieldTester";
 import { ManualFieldMatcher } from "./ManualFieldMatcher";
+import { SmartManualMatcher } from "./SmartManualMatcher";
 
 export interface CombinedField {
   id: string;
@@ -47,6 +48,7 @@ export type CleanupRule =
 interface FieldCombinerProps {
   availableColumns: string[];
   sampleData?: Record<string, string>;
+  csvData?: Record<string, string>[]; // Full CSV data for smart matching
   onFieldsChange: (fields: CombinedField[]) => void;
 }
 
