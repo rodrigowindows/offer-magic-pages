@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -75,7 +75,14 @@ const ImportProperties = () => {
     toSkip: number;
     existingAccounts: Set<string>;
     isLoading: boolean;
+    progress: number;
+    matchedFields: { csvColumn: string; dbField: string }[];
+    dbFieldsCount: { origem: number; address: number; owner_name: number; owner_address: number };
   } | null>(null);
+  
+  // Use useRef instead of useState for timeout and lock - FIXES THE LOOP
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isCalculatingRef = useRef(false);
 
   // Import state
   const [isImporting, setIsImporting] = useState(false);
@@ -259,20 +266,16 @@ const ImportProperties = () => {
     reader.readAsText(file);
   };
 
-  // Debounce ref for preview calculation
-  const previewTimeoutRef = useState<NodeJS.Timeout | null>(null);
-  const isCalculatingRef = useState(false);
-
   // Handle column mapping changes and calculate preview with debounce
   const handleMappingChange = async (mappings: ColumnMapping[]) => {
     setColumnMappings(mappings);
     
     // Debounce the preview calculation to avoid multiple calls
-    if (previewTimeoutRef[0]) {
-      clearTimeout(previewTimeoutRef[0]);
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
     }
     
-    previewTimeoutRef[0] = setTimeout(() => {
+    previewTimeoutRef.current = setTimeout(() => {
       calculateImportPreview(mappings);
     }, 500); // Wait 500ms after last change before calculating
   };
@@ -325,19 +328,35 @@ const ImportProperties = () => {
     if (!csvFile || mappings.length === 0) return;
     
     // Prevent concurrent calculations
-    if (isCalculatingRef[0]) {
+    if (isCalculatingRef.current) {
       console.log('Preview calculation already in progress, skipping...');
       return;
     }
-    isCalculatingRef[0] = true;
-
-    setImportPreview(prev => ({ ...prev, isLoading: true } as any));
+    isCalculatingRef.current = true;
 
     // Find all relevant mappings for matching
     const origemMapping = mappings.find(m => m.dbField === 'origem');
     const addressMapping = mappings.find(m => m.dbField === 'address');
     const ownerNameMapping = mappings.find(m => m.dbField === 'owner_name');
     const ownerAddressMapping = mappings.find(m => m.dbField === 'owner_address');
+
+    // Build matchedFields list for display
+    const matchedFields: { csvColumn: string; dbField: string }[] = [];
+    if (origemMapping) matchedFields.push({ csvColumn: origemMapping.csvColumn, dbField: 'origem' });
+    if (addressMapping) matchedFields.push({ csvColumn: addressMapping.csvColumn, dbField: 'address' });
+    if (ownerNameMapping) matchedFields.push({ csvColumn: ownerNameMapping.csvColumn, dbField: 'owner_name' });
+    if (ownerAddressMapping) matchedFields.push({ csvColumn: ownerAddressMapping.csvColumn, dbField: 'owner_address' });
+
+    setImportPreview({
+      toInsert: 0,
+      toUpdate: 0,
+      toSkip: 0,
+      existingAccounts: new Set(),
+      isLoading: true,
+      progress: 0,
+      matchedFields,
+      dbFieldsCount: { origem: 0, address: 0, owner_name: 0, owner_address: 0 },
+    });
 
     // If no matchable fields are mapped, all are new inserts
     if (!origemMapping && !addressMapping && !ownerNameMapping && !ownerAddressMapping) {
@@ -348,8 +367,11 @@ const ImportProperties = () => {
         toSkip: 0,
         existingAccounts: new Set(),
         isLoading: false,
+        progress: 100,
+        matchedFields: [],
+        dbFieldsCount: { origem: 0, address: 0, owner_name: 0, owner_address: 0 },
       });
-      isCalculatingRef[0] = false;
+      isCalculatingRef.current = false;
       return;
     }
 
@@ -359,6 +381,7 @@ const ImportProperties = () => {
         const content = event.target?.result as string;
         const lines = content.trim().split('\n');
         const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
+        const totalToProcess = lines.length - 1;
         
         // Build index maps for CSV columns
         const getColIdx = (mapping: ColumnMapping | undefined) => 
@@ -368,6 +391,9 @@ const ImportProperties = () => {
         const addressIdx = getColIdx(addressMapping);
         const ownerNameIdx = getColIdx(ownerNameMapping);
         const ownerAddressIdx = getColIdx(ownerAddressMapping);
+
+        // Show progress: 10% - fetching DB
+        setImportPreview(prev => prev ? { ...prev, progress: 10 } : prev);
 
         // Fetch ALL existing properties for matching (only once)
         console.log('Buscando propriedades existentes para matching...');
@@ -383,17 +409,31 @@ const ImportProperties = () => {
             toSkip: 0,
             existingAccounts: new Set(),
             isLoading: false,
+            progress: 100,
+            matchedFields,
+            dbFieldsCount: { origem: 0, address: 0, owner_name: 0, owner_address: 0 },
           });
-          isCalculatingRef[0] = false;
+          isCalculatingRef.current = false;
           return;
         }
 
         console.log(`Encontradas ${existingProperties?.length || 0} propriedades no banco`);
 
+        // Count fields in DB for display
+        const dbFieldsCount = {
+          origem: existingProperties?.filter(p => p.origem).length || 0,
+          address: existingProperties?.filter(p => p.address).length || 0,
+          owner_name: existingProperties?.filter(p => p.owner_name).length || 0,
+          owner_address: existingProperties?.filter(p => p.owner_address).length || 0,
+        };
+
+        // Show progress: 30% - building indexes
+        setImportPreview(prev => prev ? { ...prev, progress: 30, dbFieldsCount } : prev);
+
         // Create normalized lookup maps for fast matching
         const matchMaps = {
           byOrigem: new Map<string, string>(),
-          byAddressKey: new Map<string, string>(), // Use address key for flexible matching
+          byAddressKey: new Map<string, string>(),
           byOwnerName: new Map<string, string>(),
           byOwnerAddress: new Map<string, string>(),
         };
@@ -403,7 +443,6 @@ const ImportProperties = () => {
             matchMaps.byOrigem.set(normalizeForMatch(prop.origem).replace(/\s/g, ''), prop.id);
           }
           if (prop.address) {
-            // Use the address key for flexible matching
             const addrKey = createAddressKey(prop.address);
             if (addrKey) {
               matchMaps.byAddressKey.set(addrKey, prop.id);
@@ -436,26 +475,27 @@ const ImportProperties = () => {
 
           // Try to find a match using any of the fields
           let matchedId: string | undefined;
-          let matchType = '';
 
           // Priority: origem > address > owner_name > owner_address
           if (csvOrigem && matchMaps.byOrigem.has(csvOrigem)) {
             matchedId = matchMaps.byOrigem.get(csvOrigem);
-            matchType = 'origem';
           } else if (csvAddressKey && matchMaps.byAddressKey.has(csvAddressKey)) {
             matchedId = matchMaps.byAddressKey.get(csvAddressKey);
-            matchType = 'address';
             matchDetails.push({ row: i, csvAddr: csvAddress, matchedKey: csvAddressKey });
           } else if (csvOwnerName && matchMaps.byOwnerName.has(csvOwnerName)) {
             matchedId = matchMaps.byOwnerName.get(csvOwnerName);
-            matchType = 'owner_name';
           } else if (csvOwnerAddress && matchMaps.byOwnerAddress.has(csvOwnerAddress)) {
             matchedId = matchMaps.byOwnerAddress.get(csvOwnerAddress);
-            matchType = 'owner_address';
           }
 
           if (matchedId) {
             matchedIds.add(matchedId);
+          }
+
+          // Update progress every 100 rows (30% to 90%)
+          if (i % 100 === 0 || i === totalToProcess) {
+            const progressPct = 30 + Math.round((i / totalToProcess) * 60);
+            setImportPreview(prev => prev ? { ...prev, progress: progressPct } : prev);
           }
         }
 
@@ -475,6 +515,9 @@ const ImportProperties = () => {
           toSkip,
           existingAccounts: matchedIds,
           isLoading: false,
+          progress: 100,
+          matchedFields,
+          dbFieldsCount,
         });
       } catch (err) {
         console.error('Erro no cálculo de preview:', err);
@@ -484,9 +527,12 @@ const ImportProperties = () => {
           toSkip: 0,
           existingAccounts: new Set(),
           isLoading: false,
+          progress: 100,
+          matchedFields: [],
+          dbFieldsCount: { origem: 0, address: 0, owner_name: 0, owner_address: 0 },
         });
       } finally {
-        isCalculatingRef[0] = false;
+        isCalculatingRef.current = false;
       }
     };
     reader.readAsText(csvFile);
@@ -1114,42 +1160,62 @@ const ImportProperties = () => {
                   <button
                     onClick={() => calculateImportPreview(columnMappings)}
                     className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                    disabled={importPreview.isLoading}
                   >
-                    <RefreshCw className="h-3 w-3" />
+                    <RefreshCw className={`h-3 w-3 ${importPreview.isLoading ? 'animate-spin' : ''}`} />
                     Atualizar
                   </button>
                 </div>
                 
-                {/* Show which fields are being used for matching */}
-                {(() => {
-                  const matchFields = columnMappings.filter(m => 
-                    ['origem', 'address', 'owner_name', 'owner_address'].includes(m.dbField || '')
-                  );
-                  if (matchFields.length === 0) {
-                    return (
-                      <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 rounded p-2">
-                        ⚠️ Nenhum campo de correspondência mapeado. Todos os registros serão inseridos como novos.
-                        <br />
-                        <span className="text-xs">Campos usados para matching: ID Único, Endereço, Nome do Proprietário, Endereço do Proprietário</span>
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="text-sm text-blue-700 dark:text-blue-300 bg-blue-100/50 dark:bg-blue-900/50 rounded p-2">
-                      <span className="font-medium">Campos usados para correspondência:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {matchFields.map((m, idx) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded bg-blue-200 dark:bg-blue-800 text-xs">
-                            {m.csvColumn} → {m.dbField === 'origem' ? 'ID Único' : 
-                              m.dbField === 'address' ? 'Endereço' :
-                              m.dbField === 'owner_name' ? 'Nome Proprietário' :
-                              m.dbField === 'owner_address' ? 'End. Proprietário' : m.dbField}
-                          </span>
-                        ))}
-                      </div>
+                {/* Progress bar during calculation */}
+                {importPreview.isLoading && (
+                  <div className="space-y-2">
+                    <Progress value={importPreview.progress} className="h-2" />
+                    <p className="text-xs text-center text-blue-600 dark:text-blue-400">
+                      Analisando correspondências... {importPreview.progress}%
+                    </p>
+                  </div>
+                )}
+                
+                {/* Show matched fields - CSV → DB */}
+                {importPreview.matchedFields.length > 0 ? (
+                  <div className="text-sm bg-blue-100/50 dark:bg-blue-900/50 rounded p-3 space-y-2">
+                    <p className="font-medium text-blue-800 dark:text-blue-200">🔗 Campos de Correspondência (CSV → Banco):</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {importPreview.matchedFields.map((f, idx) => {
+                        const dbLabel = f.dbField === 'origem' ? 'ID Único (origem)' : 
+                          f.dbField === 'address' ? 'Endereço' :
+                          f.dbField === 'owner_name' ? 'Nome Proprietário' :
+                          f.dbField === 'owner_address' ? 'End. Proprietário' : f.dbField;
+                        const dbCount = importPreview.dbFieldsCount[f.dbField as keyof typeof importPreview.dbFieldsCount] || 0;
+                        return (
+                          <div key={idx} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded px-3 py-2 border">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-0.5 rounded">
+                                CSV
+                              </span>
+                              <span className="text-blue-700 dark:text-blue-300 truncate max-w-[120px]" title={f.csvColumn}>
+                                {f.csvColumn}
+                              </span>
+                              <span className="text-gray-400">→</span>
+                              <span className="font-mono text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded">
+                                DB
+                              </span>
+                              <span className="text-purple-700 dark:text-purple-300">{dbLabel}</span>
+                            </div>
+                            <span className="text-xs text-gray-500">({dbCount} no banco)</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })()}
+                  </div>
+                ) : !importPreview.isLoading && (
+                  <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 rounded p-2">
+                    ⚠️ Nenhum campo de correspondência mapeado. Todos os registros serão inseridos como novos.
+                    <br />
+                    <span className="text-xs">Campos usados para matching: ID Único, Endereço, Nome do Proprietário, Endereço do Proprietário</span>
+                  </div>
+                )}
 
                 {!importPreview.isLoading && (
                   <div className="grid grid-cols-3 gap-4 text-sm">
@@ -1173,7 +1239,7 @@ const ImportProperties = () => {
                     </div>
                   </div>
                 )}
-                {!updateExisting && importPreview.toUpdate > 0 && (
+                {!updateExisting && importPreview.toUpdate > 0 && !importPreview.isLoading && (
                   <p className="text-sm text-amber-600 dark:text-amber-400">
                     ⚠️ {importPreview.toUpdate} propriedades existentes serão ignoradas. 
                     Marque "Atualizar existentes" para atualizá-las.
