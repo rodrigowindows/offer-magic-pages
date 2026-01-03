@@ -267,13 +267,40 @@ const ImportProperties = () => {
     await calculateImportPreview(mappings);
   };
 
+  // Normalize string for comparison (remove special chars, lowercase, trim)
+  const normalizeForMatch = (str: string | null | undefined): string => {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+  };
+
+  // Extract address parts for flexible matching
+  const extractAddressParts = (address: string): { street: string; number: string } => {
+    const normalized = address.trim().toUpperCase();
+    const numberMatch = normalized.match(/^(\d+)\s+(.+)/);
+    if (numberMatch) {
+      return { number: numberMatch[1], street: numberMatch[2] };
+    }
+    return { number: '', street: normalized };
+  };
+
   // Calculate how many records will be inserted vs updated
   const calculateImportPreview = async (mappings: ColumnMapping[]) => {
     if (!csvFile || mappings.length === 0) return;
 
-    // Check if we have origem mapped
+    setImportPreview(prev => ({ ...prev, isLoading: true } as any));
+
+    // Find all relevant mappings for matching
     const origemMapping = mappings.find(m => m.dbField === 'origem');
-    if (!origemMapping) {
+    const addressMapping = mappings.find(m => m.dbField === 'address');
+    const ownerNameMapping = mappings.find(m => m.dbField === 'owner_name');
+    const ownerAddressMapping = mappings.find(m => m.dbField === 'owner_address');
+
+    // If no matchable fields are mapped, all are new inserts
+    if (!origemMapping && !addressMapping && !ownerNameMapping && !ownerAddressMapping) {
+      console.log('Nenhum campo de match mapeado - todos serão inseridos como novos');
       setImportPreview({
         toInsert: totalRows,
         toUpdate: 0,
@@ -284,17 +311,119 @@ const ImportProperties = () => {
       return;
     }
 
-    setImportPreview(prev => ({ ...prev, isLoading: true } as any));
-
-    // Read CSV to get all account numbers
     const reader = new FileReader();
     reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      const lines = content.trim().split('\n');
-      const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
-      
-      const origemIdx = headers.indexOf(origemMapping.csvColumn);
-      if (origemIdx === -1) {
+      try {
+        const content = event.target?.result as string;
+        const lines = content.trim().split('\n');
+        const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
+        
+        // Build index maps for CSV columns
+        const getColIdx = (mapping: ColumnMapping | undefined) => 
+          mapping ? headers.indexOf(mapping.csvColumn) : -1;
+        
+        const origemIdx = getColIdx(origemMapping);
+        const addressIdx = getColIdx(addressMapping);
+        const ownerNameIdx = getColIdx(ownerNameMapping);
+        const ownerAddressIdx = getColIdx(ownerAddressMapping);
+
+        // Fetch ALL existing properties for matching
+        console.log('Buscando propriedades existentes para matching...');
+        const { data: existingProperties, error } = await supabase
+          .from('properties')
+          .select('id, origem, address, owner_name, owner_address');
+
+        if (error) {
+          console.error('Erro ao buscar propriedades:', error);
+          setImportPreview({
+            toInsert: totalRows,
+            toUpdate: 0,
+            toSkip: 0,
+            existingAccounts: new Set(),
+            isLoading: false,
+          });
+          return;
+        }
+
+        console.log(`Encontradas ${existingProperties?.length || 0} propriedades no banco`);
+
+        // Create normalized lookup maps for fast matching
+        const matchMaps = {
+          byOrigem: new Map<string, string>(),
+          byAddress: new Map<string, string>(),
+          byOwnerName: new Map<string, string>(),
+          byOwnerAddress: new Map<string, string>(),
+        };
+
+        existingProperties?.forEach(prop => {
+          if (prop.origem) {
+            matchMaps.byOrigem.set(normalizeForMatch(prop.origem), prop.id);
+          }
+          if (prop.address) {
+            matchMaps.byAddress.set(normalizeForMatch(prop.address), prop.id);
+            // Also add just the street number + name for partial matching
+            const { number, street } = extractAddressParts(prop.address);
+            if (number) {
+              matchMaps.byAddress.set(normalizeForMatch(`${number} ${street.split(' ').slice(0, 3).join(' ')}`), prop.id);
+            }
+          }
+          if (prop.owner_name) {
+            matchMaps.byOwnerName.set(normalizeForMatch(prop.owner_name), prop.id);
+          }
+          if (prop.owner_address) {
+            matchMaps.byOwnerAddress.set(normalizeForMatch(prop.owner_address), prop.id);
+          }
+        });
+
+        // Process each CSV row and check for matches
+        const matchedIds = new Set<string>();
+        let matchCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i]);
+          
+          const getValue = (idx: number) => idx >= 0 ? values[idx]?.replace(/"/g, '').trim() || '' : '';
+          
+          const csvOrigem = normalizeForMatch(getValue(origemIdx));
+          const csvAddress = normalizeForMatch(getValue(addressIdx));
+          const csvOwnerName = normalizeForMatch(getValue(ownerNameIdx));
+          const csvOwnerAddress = normalizeForMatch(getValue(ownerAddressIdx));
+
+          // Try to find a match using any of the fields
+          let matchedId: string | undefined;
+
+          // Priority: origem > address > owner_name > owner_address
+          if (csvOrigem && matchMaps.byOrigem.has(csvOrigem)) {
+            matchedId = matchMaps.byOrigem.get(csvOrigem);
+          } else if (csvAddress && matchMaps.byAddress.has(csvAddress)) {
+            matchedId = matchMaps.byAddress.get(csvAddress);
+          } else if (csvOwnerName && matchMaps.byOwnerName.has(csvOwnerName)) {
+            matchedId = matchMaps.byOwnerName.get(csvOwnerName);
+          } else if (csvOwnerAddress && matchMaps.byOwnerAddress.has(csvOwnerAddress)) {
+            matchedId = matchMaps.byOwnerAddress.get(csvOwnerAddress);
+          }
+
+          if (matchedId) {
+            matchedIds.add(matchedId);
+            matchCount++;
+          }
+        }
+
+        console.log(`✓ Encontradas ${matchCount} correspondências!`);
+
+        const toUpdate = updateExisting ? matchCount : 0;
+        const toInsert = totalRows - matchCount;
+        const toSkip = updateExisting ? 0 : matchCount;
+
+        setImportPreview({
+          toInsert,
+          toUpdate,
+          toSkip,
+          existingAccounts: matchedIds,
+          isLoading: false,
+        });
+      } catch (err) {
+        console.error('Erro no cálculo de preview:', err);
         setImportPreview({
           toInsert: totalRows,
           toUpdate: 0,
@@ -302,38 +431,7 @@ const ImportProperties = () => {
           existingAccounts: new Set(),
           isLoading: false,
         });
-        return;
       }
-
-      // Extract all account numbers from CSV
-      const csvAccounts = new Set<string>();
-      for (let i = 1; i < lines.length; i++) {
-        const values = parseCSVLine(lines[i]);
-        const account = values[origemIdx]?.replace(/"/g, '').trim();
-        if (account) csvAccounts.add(account);
-      }
-
-      // Fetch existing accounts from database
-      const { data: existingProperties } = await supabase
-        .from('properties')
-        .select('origem')
-        .in('origem', Array.from(csvAccounts));
-
-      const existingAccounts = new Set<string>(
-        existingProperties?.map(p => p.origem).filter(Boolean) as string[] || []
-      );
-
-      const toUpdate = Array.from(csvAccounts).filter(a => existingAccounts.has(a)).length;
-      const toInsert = csvAccounts.size - toUpdate;
-      const toSkip = updateExisting ? 0 : toUpdate;
-
-      setImportPreview({
-        toInsert,
-        toUpdate: updateExisting ? toUpdate : 0,
-        toSkip,
-        existingAccounts,
-        isLoading: false,
-      });
     };
     reader.readAsText(csvFile);
   };
@@ -965,6 +1063,38 @@ const ImportProperties = () => {
                     Atualizar
                   </button>
                 </div>
+                
+                {/* Show which fields are being used for matching */}
+                {(() => {
+                  const matchFields = columnMappings.filter(m => 
+                    ['origem', 'address', 'owner_name', 'owner_address'].includes(m.dbField || '')
+                  );
+                  if (matchFields.length === 0) {
+                    return (
+                      <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 rounded p-2">
+                        ⚠️ Nenhum campo de correspondência mapeado. Todos os registros serão inseridos como novos.
+                        <br />
+                        <span className="text-xs">Campos usados para matching: ID Único, Endereço, Nome do Proprietário, Endereço do Proprietário</span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="text-sm text-blue-700 dark:text-blue-300 bg-blue-100/50 dark:bg-blue-900/50 rounded p-2">
+                      <span className="font-medium">Campos usados para correspondência:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {matchFields.map((m, idx) => (
+                          <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded bg-blue-200 dark:bg-blue-800 text-xs">
+                            {m.csvColumn} → {m.dbField === 'origem' ? 'ID Único' : 
+                              m.dbField === 'address' ? 'Endereço' :
+                              m.dbField === 'owner_name' ? 'Nome Proprietário' :
+                              m.dbField === 'owner_address' ? 'End. Proprietário' : m.dbField}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {!importPreview.isLoading && (
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div className="bg-green-100 dark:bg-green-900 rounded-lg p-3 text-center">
