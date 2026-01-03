@@ -25,6 +25,7 @@ import { Plus, X, Eye, Sparkles, Trash2, Wand2, CheckCircle2, XCircle } from "lu
 import { useToast } from "@/hooks/use-toast";
 import { autoDetectBestCombinations, type DetectionResult } from "@/utils/smartFieldDetector";
 import { SmartFieldTester } from "./SmartFieldTester";
+import { ManualFieldMatcher } from "./ManualFieldMatcher";
 
 export interface CombinedField {
   id: string;
