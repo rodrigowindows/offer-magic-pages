@@ -50,7 +50,7 @@ export function combineFieldValues(
   values = values.map(v => applyCleanup(v, config.cleanupRules));
 
   // Join with separator
-  return values.join(config.separator);
+  const actualSeparator = config.separator === "__NONE__" ? "" : config.separator; return values.join(actualSeparator);
 }
 
 /**
@@ -151,7 +151,7 @@ export function createPresetField(
     propertyAddressOnly: {
       name: 'Property Address Only',
       sourceColumns: ['Owner Fix - Mailing Address'],
-      separator: '',
+      separator: '__NONE__',
       cleanupRules: ['trim'] as CleanupRule[],
     },
     fullName: {

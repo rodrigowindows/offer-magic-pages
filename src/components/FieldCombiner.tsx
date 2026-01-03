@@ -52,7 +52,7 @@ const SEPARATOR_OPTIONS = [
   { value: ',', label: 'Vírgula' },
   { value: '-', label: 'Hífen' },
   { value: '_', label: 'Underscore' },
-  { value: '', label: 'Sem separador' },
+  { value: '__NONE__', label: 'Sem separador' },
 ];
 
 const CLEANUP_OPTIONS: { value: CleanupRule; label: string; description: string }[] = [
@@ -76,7 +76,7 @@ const PRESET_TEMPLATES = [
     name: 'Property Address Only',
     description: 'Apenas endereço da propriedade (limpo)',
     columns: ['Owner Fix - Mailing Address'],
-    separator: '',
+    separator: '__NONE__',
     cleanupRules: ['trim'] as CleanupRule[],
   },
   {
@@ -146,7 +146,7 @@ export const FieldCombiner = ({ availableColumns, sampleData, onFieldsChange }: 
 
     values = values.map(v => applyCleanup(v, rules));
 
-    return values.join(sep);
+    const actualSeparator = sep === "__NONE__" ? "" : sep; return values.join(actualSeparator);
   };
 
   const currentPreview = generatePreview(selectedColumns, separator, cleanupRules);
@@ -416,7 +416,7 @@ export const FieldCombiner = ({ availableColumns, sampleData, onFieldsChange }: 
                       </Badge>
                       {idx < field.sourceColumns.length - 1 && (
                         <span className="mx-1 text-muted-foreground">
-                          {field.separator === '' ? '→' : `"${field.separator}"`}
+                          {field.separator === '__NONE__' ? '→' : `"${field.separator}"`}
                         </span>
                       )}
                     </span>
