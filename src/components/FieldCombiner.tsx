@@ -98,8 +98,11 @@ const PRESET_TEMPLATES = [
 ];
 
 export const FieldCombiner = ({ availableColumns, sampleData, onFieldsChange }: FieldCombinerProps) => {
+  const { toast } = useToast();
   const [combinedFields, setCombinedFields] = useState<CombinedField[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectionResults, setDetectionResults] = useState<DetectionResult[]>([]);
 
   // New field state
   const [newFieldName, setNewFieldName] = useState('');
@@ -285,13 +288,32 @@ export const FieldCombiner = ({ availableColumns, sampleData, onFieldsChange }: 
               Combine múltiplas colunas em um único campo
             </CardDescription>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Adicionar Campo
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAutoDetect}
+              disabled={isDetecting || !sampleData}
+            >
+              {isDetecting ? (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2 animate-spin" />
+                  Detectando...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Testar Combinações
+                </>
+              )}
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Campo
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Criar Campo Combinado</DialogTitle>
@@ -442,10 +464,74 @@ export const FieldCombiner = ({ availableColumns, sampleData, onFieldsChange }: 
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </CardHeader>
 
       <CardContent>
+        {/* Auto-Detection Results */}
+        {detectionResults.length > 0 && (
+          <div className="mb-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium text-sm">✨ Combinações Detectadas ({detectionResults.length})</h4>
+              <Button variant="ghost" size="sm" onClick={() => setDetectionResults([])}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {detectionResults.map((result, idx) => (
+                <div
+                  key={idx}
+                  className="border rounded-lg p-3 bg-green-50 dark:bg-green-950 border-green-200"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-sm">{result.field.name}</span>
+                        <Badge variant="outline" className="text-xs bg-white">
+                          → {result.dbField}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        ✓ {result.matchCount} matches encontrados ({result.matchPercentage.toFixed(1)}% do banco)
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleApplyDetectedField(result)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Adicionar
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {result.field.sourceColumns.map((col) => (
+                      <Badge key={col} variant="secondary" className="text-xs font-mono">
+                        {col}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {result.field.preview && (
+                    <div className="bg-white dark:bg-background rounded p-2 text-xs font-mono mt-2">
+                      Preview: <span className="text-green-700 dark:text-green-400">{result.field.preview}</span>
+                    </div>
+                  )}
+
+                  {result.sampleMatches.length > 0 && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Exemplos do banco: <span className="font-mono">{result.sampleMatches.slice(0, 2).join(', ')}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {combinedFields.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Sparkles className="h-12 w-12 mx-auto mb-2 opacity-50" />
