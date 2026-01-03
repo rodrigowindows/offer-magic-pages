@@ -24,6 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, X, Eye, Sparkles, Trash2, Wand2, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { autoDetectBestCombinations, type DetectionResult } from "@/utils/smartFieldDetector";
+import { SmartFieldTester } from "./SmartFieldTester";
 
 export interface CombinedField {
   id: string;
