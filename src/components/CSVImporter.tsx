@@ -30,27 +30,80 @@ interface DatabaseColumn {
   isRequired: boolean;
 }
 
-// Database columns for properties table (extend as needed)
+// Database columns for properties table - includes skip tracing fields
 const AVAILABLE_DB_COLUMNS: DatabaseColumn[] = [
+  // Property fields
   { name: 'property_address', type: 'text', isRequired: true },
   { name: 'city', type: 'text', isRequired: true },
   { name: 'state', type: 'text', isRequired: false },
   { name: 'zip_code', type: 'text', isRequired: false },
+  { name: 'property_type', type: 'text', isRequired: false },
+  // Owner fields
   { name: 'owner_first_name', type: 'text', isRequired: false },
   { name: 'owner_last_name', type: 'text', isRequired: false },
   { name: 'owner_full_name', type: 'text', isRequired: false },
+  { name: 'owner_age', type: 'integer', isRequired: false },
+  { name: 'owner_deceased', type: 'boolean', isRequired: false },
+  { name: 'dnc_litigator', type: 'text', isRequired: false },
+  // Mailing address fields
   { name: 'mail_address', type: 'text', isRequired: false },
   { name: 'mail_city', type: 'text', isRequired: false },
   { name: 'mail_state', type: 'text', isRequired: false },
   { name: 'mail_zip_code', type: 'text', isRequired: false },
+  // Phone fields (up to 5)
+  { name: 'phone1', type: 'text', isRequired: false },
+  { name: 'phone1_type', type: 'text', isRequired: false },
+  { name: 'phone2', type: 'text', isRequired: false },
+  { name: 'phone2_type', type: 'text', isRequired: false },
+  { name: 'phone3', type: 'text', isRequired: false },
+  { name: 'phone3_type', type: 'text', isRequired: false },
+  { name: 'phone4', type: 'text', isRequired: false },
+  { name: 'phone4_type', type: 'text', isRequired: false },
+  { name: 'phone5', type: 'text', isRequired: false },
+  { name: 'phone5_type', type: 'text', isRequired: false },
+  // Property details
   { name: 'assessed_value', type: 'numeric', isRequired: false },
-  { name: 'beds', type: 'numeric', isRequired: false },
+  { name: 'beds', type: 'integer', isRequired: false },
   { name: 'baths', type: 'numeric', isRequired: false },
-  { name: 'sqft', type: 'numeric', isRequired: false },
-  { name: 'year_built', type: 'numeric', isRequired: false },
+  { name: 'sqft', type: 'integer', isRequired: false },
+  { name: 'year_built', type: 'integer', isRequired: false },
   { name: 'lot_size', type: 'numeric', isRequired: false },
-  { name: 'property_type', type: 'text', isRequired: false },
+  // Custom fields
+  { name: 'custom_field_1', type: 'text', isRequired: false },
+  { name: 'custom_field_2', type: 'text', isRequired: false },
+  { name: 'custom_field_3', type: 'text', isRequired: false },
+  // Result codes
+  { name: 'result_code', type: 'text', isRequired: false },
 ];
+
+// Common CSV header mappings to DB columns
+const COLUMN_ALIASES: Record<string, string> = {
+  'input_property_address': 'property_address',
+  'input_property_city': 'city',
+  'input_property_state': 'state',
+  'input_property_zip': 'zip_code',
+  'input_last_name': 'owner_last_name',
+  'input_first_name': 'owner_first_name',
+  'input_mailing_address': 'mail_address',
+  'input_mailing_city': 'mail_city',
+  'input_mailing_state': 'mail_state',
+  'input_mailing_zip': 'mail_zip_code',
+  'input_custom_field_1': 'custom_field_1',
+  'input_custom_field_2': 'custom_field_2',
+  'input_custom_field_3': 'custom_field_3',
+  'owner_fix_last_name': 'owner_last_name',
+  'owner_fix_first_name': 'owner_first_name',
+  'owner_fix_mailing_address': 'mail_address',
+  'owner_fix_mailing_city': 'mail_city',
+  'owner_fix_mailing_state': 'mail_state',
+  'owner_fix_mailing_zip': 'mail_zip_code',
+  'matched_first_name': 'owner_first_name',
+  'matched_last_name': 'owner_last_name',
+  'dnc_litigator_scrub': 'dnc_litigator',
+  'age': 'owner_age',
+  'deceased': 'owner_deceased',
+  'resultcode': 'result_code',
+};
 
 type ImportStep = 'upload' | 'mapping' | 'preview' | 'importing' | 'complete';
 
@@ -59,11 +112,12 @@ export const CSVImporter = () => {
   const [csvData, setCSVData] = useState<CSVParseResult | null>(null);
   const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
   const [newColumns, setNewColumns] = useState<string[]>([]);
-  const [createNewColumns, setCreateNewColumns] = useState(false);
+  const [createNewColumns, setCreateNewColumns] = useState(true); // Default to true for auto-create
   const [skipEmptyValues, setSkipEmptyValues] = useState(true);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [importResults, setImportResults] = useState({ success: 0, errors: 0 });
   const [errors, setErrors] = useState<string[]>([]);
+  const [columnsCreated, setColumnsCreated] = useState<string[]>([]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,20 +135,44 @@ export const CSVImporter = () => {
 
       setCSVData(parsed);
 
-      // Auto-map columns based on similarity
+      // Auto-map columns based on similarity and aliases
       const mappings = parsed.headers.map((csvHeader) => {
         const normalized = normalizeColumnName(csvHeader);
+        
+        // First check aliases
+        const aliasMatch = COLUMN_ALIASES[normalized];
+        if (aliasMatch) {
+          const dbColumn = AVAILABLE_DB_COLUMNS.find(db => db.name === aliasMatch);
+          return {
+            csvColumn: csvHeader,
+            dbColumn: aliasMatch,
+            isRequired: dbColumn?.isRequired || false,
+            skipEmpty: true,
+          };
+        }
+        
+        // Then check exact match
         const dbColumn = AVAILABLE_DB_COLUMNS.find(
           (db) => normalizeColumnName(db.name) === normalized
         );
 
+        // If no match, auto-suggest creating the column
+        const suggestedColumn = dbColumn?.name || normalized;
+        
         return {
           csvColumn: csvHeader,
-          dbColumn: dbColumn?.name || '',
+          dbColumn: dbColumn?.name || suggestedColumn,
           isRequired: dbColumn?.isRequired || false,
           skipEmpty: true,
         };
       });
+
+      // Identify new columns that need to be created
+      const existingColumnNames = AVAILABLE_DB_COLUMNS.map(c => c.name);
+      const newCols = mappings
+        .filter(m => m.dbColumn && !existingColumnNames.includes(m.dbColumn))
+        .map(m => m.dbColumn);
+      setNewColumns([...new Set(newCols)]);
 
       setColumnMappings(mappings);
       setStep('mapping');
@@ -154,28 +232,53 @@ export const CSVImporter = () => {
     setStep('importing');
     setImportProgress({ current: 0, total: csvData.rowCount });
     setImportResults({ success: 0, errors: 0 });
+    setColumnsCreated([]);
     const importErrors: string[] = [];
+    const createdCols: string[] = [];
 
-    // Create new columns if needed
-    if (createNewColumns && newColumns.length > 0) {
-      for (const columnName of newColumns) {
+    // Identify ALL columns that need to be created (not just from newColumns state)
+    const existingColumnNames = AVAILABLE_DB_COLUMNS.map(c => c.name);
+    const mappedColumns = columnMappings
+      .filter(m => m.dbColumn)
+      .map(m => m.dbColumn);
+    
+    const columnsToCreate = [...new Set(mappedColumns)]
+      .filter(col => !existingColumnNames.includes(col) || newColumns.includes(col));
+
+    // Always create new columns dynamically
+    if (columnsToCreate.length > 0) {
+      console.log('Creating columns:', columnsToCreate);
+      for (const columnName of columnsToCreate) {
         try {
-          // Add column to properties table using raw SQL via RPC
-          // Note: This requires the add_column_if_not_exists function to be created in Supabase
-          const { error } = await (supabase.rpc as any)('add_column_if_not_exists', {
+          // Determine column type based on naming convention
+          let columnType = 'text';
+          if (columnName.includes('age') || columnName.includes('beds') || columnName.includes('sqft') || columnName.includes('year')) {
+            columnType = 'integer';
+          } else if (columnName.includes('baths') || columnName.includes('value') || columnName.includes('size')) {
+            columnType = 'numeric';
+          } else if (columnName.includes('deceased') || columnName.includes('is_') || columnName.includes('has_')) {
+            columnType = 'boolean';
+          }
+
+          const { data, error } = await supabase.rpc('add_column_if_not_exists', {
             p_table_name: 'properties',
             p_column_name: columnName,
-            p_column_type: 'text',
+            p_column_type: columnType,
           });
 
           if (error) {
             console.error(`Failed to create column ${columnName}:`, error);
             importErrors.push(`Failed to create column ${columnName}: ${error.message}`);
+          } else if (data === true) {
+            createdCols.push(columnName);
+            console.log(`Created column: ${columnName} (${columnType})`);
           }
         } catch (error) {
           console.error(`Error creating column ${columnName}:`, error);
+          importErrors.push(`Error creating column ${columnName}: ${error}`);
         }
       }
+      setColumnsCreated(createdCols);
     }
 
     // Import data row by row
@@ -305,6 +408,7 @@ export const CSVImporter = () => {
     setErrors([]);
     setImportProgress({ current: 0, total: 0 });
     setImportResults({ success: 0, errors: 0 });
+    setColumnsCreated([]);
   };
 
   return (
@@ -444,23 +548,31 @@ export const CSVImporter = () => {
               </div>
 
               {newColumns.length > 0 && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
+                <Alert className="bg-blue-50 border-blue-200">
+                  <CheckCircle className="h-4 w-4 text-blue-600" />
                   <AlertDescription>
-                    <div className="flex items-center justify-between">
-                      <span>
-                        {newColumns.length} new column(s) will be created:{' '}
-                        <strong>{newColumns.join(', ')}</strong>
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="create-columns"
-                          checked={createNewColumns}
-                          onCheckedChange={(checked) =>
-                            setCreateNewColumns(checked as boolean)
-                          }
-                        />
-                        <Label htmlFor="create-columns">Allow creation</Label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-blue-800">
+                          {newColumns.length} new column(s) will be created automatically:
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="create-columns"
+                            checked={createNewColumns}
+                            onCheckedChange={(checked) =>
+                              setCreateNewColumns(checked as boolean)
+                            }
+                          />
+                          <Label htmlFor="create-columns" className="text-sm">Auto-create enabled</Label>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {newColumns.map(col => (
+                          <Badge key={col} variant="secondary" className="text-xs">
+                            {col}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
                   </AlertDescription>
@@ -581,6 +693,21 @@ export const CSVImporter = () => {
                     <div className="text-sm text-red-700">Errors</div>
                   </div>
                 </div>
+
+                {columnsCreated.length > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="text-sm text-blue-800 font-medium mb-2">
+                      {columnsCreated.length} new column(s) created:
+                    </div>
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {columnsCreated.map(col => (
+                        <Badge key={col} variant="secondary" className="text-xs">
+                          {col}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {errors.length > 0 && (
