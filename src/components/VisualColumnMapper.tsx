@@ -69,12 +69,12 @@ export default function VisualColumnMapper({
 
       return {
         ...mapping,
-        dbField: suggestedField || mapping.dbField,
+        dbField: (suggestedField || mapping.dbField) as DatabaseFieldKey | 'skip' | '',
         confidence: suggestedField ? confidence : undefined
       };
     });
 
-    setMappings(detected);
+    setMappings(detected as ColumnMapping[]);
 
     const mappedCount = detected.filter(m => m.dbField && m.dbField !== 'skip').length;
     toast({
@@ -253,7 +253,7 @@ export default function VisualColumnMapper({
               {mappings.map((mapping, index) => {
                 const fieldInfo = getFieldInfo(mapping.dbField);
                 const isRequired = fieldInfo?.required;
-                const isMapped = mapping.dbField && mapping.dbField !== '';
+                const isMapped = mapping.dbField && mapping.dbField !== 'skip';
 
                 return (
                   <TableRow key={index} className={isRequired && !isMapped ? 'bg-red-50' : ''}>

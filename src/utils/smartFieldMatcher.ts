@@ -1,7 +1,6 @@
 // Enhanced field matcher with flexible column selection and AI comparison
 import { supabase } from "@/integrations/supabase/client";
-import type { CombinedField, CleanupRule } from "@/components/FieldCombiner";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import type { CombinedField } from "@/components/FieldCombiner";
 
 export interface MatchResult {
   csvValue: string;
@@ -78,7 +77,7 @@ export async function testFieldCombination(
         }
       }
 
-      undefined
+      if (bestMatch && bestSimilarity > 0.5) {
         matches.push(bestMatch);
         totalMatches++;
       }
@@ -107,13 +106,14 @@ export async function testFieldCombination(
 /**
  * Test multiple combinations against multiple DB fields and rank by quality
  */
-undefined
+export async function testAllCombinations(
   csvData: Record<string, string>[],
   availableColumns: string[],
   dbFields: string[],
   onProgress?: (status: string) => void
 ): Promise<FieldTestResult[]> {
-  undefined
+  const results: FieldTestResult[] = [];
+  const csvSample = csvData.slice(0, 50);
 
   // Generate smart combinations
   const combinations = generateSmartCombinations(availableColumns);
@@ -154,65 +154,26 @@ undefined
 
 /**
  * Use AI to compare and rank matches by address similarity
+ * Note: This is a simplified version that uses local similarity scoring
  */
 export async function rankMatchesWithAI(
   matches: MatchResult[],
   onProgress?: (status: string) => void
 ): Promise<MatchResult[]> {
   try {
-    const apiKey = localStorage.getItem('gemini_api_key');
-    if (!apiKey) {
-      console.warn('Gemini API key not found, using simple ranking');
-      return matches;
-    }
+    onProgress?.('Rankeando matches por similaridade...');
 
-    onProgress?.('Usando IA para rankear matches...');
+    // Sort matches by similarity score (descending)
+    const ranked = [...matches].sort((a, b) => b.similarity - a.similarity);
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-    const prompt = `
-Você é um especialista em comparação de endereços. Analise os seguintes pares de endereços e dê uma pontuação de similaridade de 0 a 1 para cada par.
-
-Considere:
-- Variações de abreviações (ST vs Street, AVE vs Avenue)
-- Diferenças de formatação
-- Presença de cidade/estado
-- Números de endereço
-
-Pares para analisar:
-${matches.map((m, i) => `${i + 1}. CSV: "${m.csvValue}" | DB: "${m.dbValue}"`).join('\n')}
-
-Retorne APENAS um JSON array com as pontuações:
-[0.95, 0.87, 0.62, ...]
-`;
-
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-
-    // Parse AI scores
-    const jsonMatch = text.match(/\[[\d.,\s]+\]/);
-    if (jsonMatch) {
-      const scores = JSON.parse(jsonMatch[0]);
-
-      // Update matches with AI scores
-      matches.forEach((match, i) => {
-        if (scores[i] !== undefined) {
-          match.similarity = scores[i];
-        }
-      });
-
-      // Re-sort by AI scores
-      matches.sort((a, b) => b.similarity - a.similarity);
-    }
-
-    onProgress?.('✓ Ranking com IA completo!');
-    return matches;
+    onProgress?.('✓ Ranking completo!');
+    return ranked;
   } catch (error) {
-    console.error('Error ranking with AI:', error);
+    console.error('Error ranking matches:', error);
     return matches;
   }
 }
+
 
 /**
  * Generate smart field combinations based on available columns
