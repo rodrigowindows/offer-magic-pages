@@ -459,9 +459,19 @@ const ImportProperties = () => {
 
         console.log(`Índices criados: ${matchMaps.byAddressKey.size} endereços únicos`);
 
+        // DEBUG: Show sample of DB address keys
+        console.log('=== DEBUG: Amostras de chaves de endereço do BANCO ===');
+        const dbAddrSamples = Array.from(matchMaps.byAddressKey.entries()).slice(0, 10);
+        dbAddrSamples.forEach(([key, id]) => {
+          console.log(`  DB Key: "${key}" -> ID: ${id.substring(0, 8)}...`);
+        });
+
         // Process each CSV row and check for matches
         const matchedIds = new Set<string>();
-        const matchDetails: { row: number; csvAddr: string; matchedKey: string }[] = [];
+        const matchDetails: { row: number; csvAddr: string; csvKey: string; dbKey: string }[] = [];
+        const noMatchDetails: { row: number; csvAddr: string; csvKey: string }[] = [];
+
+        console.log('=== DEBUG: Processando linhas do CSV ===');
 
         for (let i = 1; i < lines.length; i++) {
           const values = parseCSVLine(lines[i]);
@@ -474,23 +484,58 @@ const ImportProperties = () => {
           const csvOwnerName = normalizeForMatch(getValue(ownerNameIdx)).replace(/\s/g, '');
           const csvOwnerAddress = normalizeForMatch(getValue(ownerAddressIdx)).replace(/\s/g, '');
 
+          // DEBUG: Log first 5 CSV rows being processed
+          if (i <= 5) {
+            console.log(`\n--- CSV Row ${i} ---`);
+            console.log(`  CSV Address Raw: "${csvAddress}"`);
+            console.log(`  CSV Address Key: "${csvAddressKey}"`);
+            console.log(`  CSV Origem: "${csvOrigem}"`);
+            console.log(`  CSV Owner Name: "${csvOwnerName}"`);
+            
+            // Check if key exists in DB
+            const dbMatch = matchMaps.byAddressKey.get(csvAddressKey);
+            if (dbMatch) {
+              console.log(`  ✓ MATCH FOUND in DB!`);
+            } else {
+              // Find similar keys in DB for debugging
+              const similarKeys = Array.from(matchMaps.byAddressKey.keys())
+                .filter(k => k.includes(csvAddressKey.substring(0, 10)) || csvAddressKey.includes(k.substring(0, 10)))
+                .slice(0, 3);
+              if (similarKeys.length > 0) {
+                console.log(`  ✗ No match. Similar DB keys: ${similarKeys.join(', ')}`);
+              } else {
+                console.log(`  ✗ No match found`);
+              }
+            }
+          }
+
           // Try to find a match using any of the fields
           let matchedId: string | undefined;
+          let matchedBy = '';
 
           // Priority: origem > address > owner_name > owner_address
           if (csvOrigem && matchMaps.byOrigem.has(csvOrigem)) {
             matchedId = matchMaps.byOrigem.get(csvOrigem);
+            matchedBy = 'origem';
           } else if (csvAddressKey && matchMaps.byAddressKey.has(csvAddressKey)) {
             matchedId = matchMaps.byAddressKey.get(csvAddressKey);
-            matchDetails.push({ row: i, csvAddr: csvAddress, matchedKey: csvAddressKey });
+            matchedBy = 'address';
+            matchDetails.push({ row: i, csvAddr: csvAddress, csvKey: csvAddressKey, dbKey: csvAddressKey });
           } else if (csvOwnerName && matchMaps.byOwnerName.has(csvOwnerName)) {
             matchedId = matchMaps.byOwnerName.get(csvOwnerName);
+            matchedBy = 'owner_name';
           } else if (csvOwnerAddress && matchMaps.byOwnerAddress.has(csvOwnerAddress)) {
             matchedId = matchMaps.byOwnerAddress.get(csvOwnerAddress);
+            matchedBy = 'owner_address';
           }
 
           if (matchedId) {
             matchedIds.add(matchedId);
+            if (i <= 10) {
+              console.log(`  ✓ Row ${i} matched by ${matchedBy}`);
+            }
+          } else if (csvAddressKey && noMatchDetails.length < 10) {
+            noMatchDetails.push({ row: i, csvAddr: csvAddress, csvKey: csvAddressKey });
           }
 
           // Update progress every 100 rows (30% to 90%)
@@ -501,9 +546,21 @@ const ImportProperties = () => {
         }
 
         const matchCount = matchedIds.size;
+        console.log(`\n=== RESULTADO FINAL ===`);
         console.log(`✓ Encontradas ${matchCount} correspondências únicas!`);
+        
         if (matchDetails.length > 0) {
-          console.log('Primeiros matches por endereço:', matchDetails.slice(0, 5));
+          console.log('\nMatches encontrados:');
+          matchDetails.slice(0, 5).forEach(m => {
+            console.log(`  Row ${m.row}: "${m.csvAddr}" -> Key: "${m.csvKey}"`);
+          });
+        }
+        
+        if (noMatchDetails.length > 0) {
+          console.log('\nEndereços SEM match (primeiros 10):');
+          noMatchDetails.forEach(m => {
+            console.log(`  Row ${m.row}: "${m.csvAddr}" -> Key: "${m.csvKey}"`);
+          });
         }
 
         const toUpdate = updateExisting ? matchCount : 0;
