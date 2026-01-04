@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Upload, CheckCircle, XCircle, AlertTriangle, Loader2, Download } from "lucide-react";
 import Papa from "papaparse";
 
 interface SkipTracingRow {
@@ -42,6 +43,7 @@ interface SkipTracingRow {
 export function SkipTracingImporter() {
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [updateExisting, setUpdateExisting] = useState(false);
   const [results, setResults] = useState<{
     total: number;
     matched: number;
@@ -98,10 +100,10 @@ export function SkipTracingImporter() {
                 continue;
               }
 
-              // Find property by address
+              // Find property by address - select only existing fields
               const { data: properties, error: searchError } = await supabase
                 .from("properties")
-                .select("id, address, owner_name, owner_phone, owner_email")
+                .select("id, address, city, state, zip_code, owner_name, owner_phone, tags")
                 .ilike("address", `%${address}%`)
                 .ilike("city", `%${city}%`)
                 .eq("state", state)
@@ -111,15 +113,15 @@ export function SkipTracingImporter() {
 
               if (!properties || properties.length === 0) {
                 stats.skipped++;
-                stats.details.push(`❌ Not found: ${address}, ${city}, ${state}`);
+                stats.details.push(`⏭️ Not found: ${address}, ${city}, ${state}`);
                 continue;
               }
 
-              // If multiple matches, try exact match with zip
+              // If multiple matches, try exact match
               let property = properties[0];
-              if (properties.length > 1 && zipCode) {
+              if (properties.length > 1) {
                 const exactMatch = properties.find(p =>
-                  p.address.toLowerCase().includes(address.toLowerCase())
+                  p.address.toLowerCase().trim() === address.toLowerCase().trim()
                 );
                 if (exactMatch) property = exactMatch;
               }
@@ -146,7 +148,6 @@ export function SkipTracingImporter() {
               const bestPhone = getBestPhone(phones);
               const email1 = row["Email1"]?.trim();
               const email2 = row["Email2"]?.trim();
-              const bestEmail = email1 || email2 || null;
 
               // Build skip tracing metadata
               const skipTracingData = {
@@ -161,30 +162,38 @@ export function SkipTracingImporter() {
                 updatedAt: new Date().toISOString(),
               };
 
-              // Update property
+              // Build update data
               const updateData: any = {
                 skip_tracing_data: skipTracingData,
               };
 
-              // Only update if we have better data
-              if (firstName && lastName && !property.owner_name) {
-                updateData.owner_name = `${firstName} ${lastName}`;
-              }
-
-              if (bestPhone && !property.owner_phone) {
-                updateData.owner_phone = bestPhone;
-              }
-
-              if (bestEmail && !property.owner_email) {
-                updateData.owner_email = bestEmail;
-              }
-
-              // Add DNC tag if applicable
-              if (isDNC) {
-                const currentTags = property.tags || [];
-                if (!currentTags.includes("DNC")) {
-                  updateData.tags = [...currentTags, "DNC"];
+              // Update owner fields based on checkbox
+              if (updateExisting || !property.owner_name) {
+                if (firstName && lastName) {
+                  updateData.owner_name = `${firstName} ${lastName}`;
                 }
+              }
+
+              if (updateExisting || !property.owner_phone) {
+                if (bestPhone) {
+                  updateData.owner_phone = bestPhone;
+                }
+              }
+
+              // Build tags
+              const currentTags = Array.isArray(property.tags) ? property.tags : [];
+              const newTags = [...currentTags];
+
+              if (isDNC && !newTags.includes("DNC")) {
+                newTags.push("DNC");
+              }
+
+              if (isDeceased && !newTags.includes("Deceased")) {
+                newTags.push("Deceased");
+              }
+
+              if (newTags.length > currentTags.length) {
+                updateData.tags = newTags;
               }
 
               const { error: updateError } = await supabase
@@ -195,13 +204,16 @@ export function SkipTracingImporter() {
               if (updateError) throw updateError;
 
               stats.updated++;
+              const tags = [];
+              if (isDNC) tags.push("DNC");
+              if (isDeceased) tags.push("Deceased");
               stats.details.push(
-                `✅ Updated: ${address} - ${firstName} ${lastName} ${isDNC ? "(DNC)" : ""}`
+                `✅ ${address} → ${firstName} ${lastName} | ${phones.length} phones | ${tags.join(", ")}`
               );
 
             } catch (error: any) {
               stats.errors++;
-              stats.details.push(`❌ Error: ${row["Input Property Address"]} - ${error.message}`);
+              stats.details.push(`❌ ${row["Input Property Address"]} - ${error.message}`);
             }
           }
 
@@ -249,6 +261,27 @@ export function SkipTracingImporter() {
     return relatives;
   };
 
+  const exportResults = () => {
+    if (!results) return;
+
+    const csvContent = [
+      "Status,Address,Details",
+      ...results.details.map(detail => {
+        const status = detail.startsWith("✅") ? "Success" : detail.startsWith("⏭️") ? "Skipped" : "Error";
+        const cleanDetail = detail.replace(/^(✅|❌|⏭️)\s*/, "");
+        return `"${status}","${cleanDetail.split(" → ")[0]}","${cleanDetail}"`;
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `skip-tracing-results-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -271,8 +304,23 @@ export function SkipTracingImporter() {
             disabled={processing}
           />
           <p className="text-xs text-muted-foreground">
-            Expected format: PropStream skip tracing export with property address matching
+            Expected format: PropStream/BatchSkipTracing export with property address
           </p>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="update-existing"
+            checked={updateExisting}
+            onCheckedChange={(checked) => setUpdateExisting(checked as boolean)}
+            disabled={processing}
+          />
+          <label
+            htmlFor="update-existing"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Overwrite existing owner data
+          </label>
         </div>
 
         <Alert>
@@ -281,10 +329,10 @@ export function SkipTracingImporter() {
             <strong>How it works:</strong>
             <ul className="list-disc list-inside mt-1 space-y-1">
               <li>Matches properties by address (fuzzy matching)</li>
-              <li>Updates owner name, phone (mobile preferred), email</li>
-              <li>Saves all phones, relatives, ages in skip_tracing_data</li>
-              <li>Tags properties with "DNC" if flagged</li>
-              <li>Won't overwrite existing owner data unless empty</li>
+              <li>Updates owner name & phone (mobile preferred)</li>
+              <li>Saves ALL data (emails, relatives, ages) in JSON</li>
+              <li>Auto-tags "DNC" and "Deceased" properties</li>
+              <li>{updateExisting ? "⚠️ WILL overwrite existing data" : "Won't overwrite if data exists"}</li>
             </ul>
           </AlertDescription>
         </Alert>
@@ -301,7 +349,7 @@ export function SkipTracingImporter() {
             </>
           ) : (
             <>
-              <Upload className="w-4 h-4 mr-2" />
+              <Upload className="w-4 w-4 mr-2" />
               Import Skip Tracing Data
             </>
           )}
@@ -330,15 +378,25 @@ export function SkipTracingImporter() {
               </Badge>
             </div>
 
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportResults}
+                className="flex-1"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export Results
+              </Button>
+            </div>
+
             <details className="text-xs">
               <summary className="cursor-pointer font-semibold">
                 View Details ({results.details.length} entries)
               </summary>
-              <div className="mt-2 max-h-96 overflow-y-auto bg-muted p-3 rounded space-y-1">
+              <div className="mt-2 max-h-96 overflow-y-auto bg-muted p-3 rounded space-y-1 font-mono">
                 {results.details.map((detail, i) => (
-                  <div key={i} className="font-mono">
-                    {detail}
-                  </div>
+                  <div key={i}>{detail}</div>
                 ))}
               </div>
             </details>
