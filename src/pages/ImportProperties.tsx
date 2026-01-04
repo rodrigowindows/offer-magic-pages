@@ -292,6 +292,7 @@ const ImportProperties = () => {
   };
 
   // Create address key for matching - extracts just the essential parts
+  // IMPORTANT: This removes ZIP codes, cities, and state to match addresses flexibly
   const createAddressKey = (address: string): string => {
     if (!address) return '';
     
@@ -300,12 +301,19 @@ const ImportProperties = () => {
     // Remove common suffixes that vary between records
     const cleaned = normalized
       .replace(/,?\s*(FL|FLORIDA)\s*\d{5}(-\d{4})?/gi, '') // Remove state + zip
-      .replace(/,?\s*ORLANDO\s*/gi, '') // Remove city name
+      .replace(/\s+\d{5}(-\d{4})?\s*$/gi, '') // Remove trailing ZIP code alone
+      .replace(/,?\s*\d{5}(-\d{4})?\s*$/gi, '') // Remove trailing ZIP with comma
+      .replace(/,?\s*ORLANDO\s*/gi, '') // Remove city names
       .replace(/,?\s*UNINCORPORATED\s*/gi, '')
       .replace(/,?\s*BELLE ISLE\s*/gi, '')
       .replace(/,?\s*EATONVILLE\s*/gi, '')
       .replace(/,?\s*APOPKA\s*/gi, '')
       .replace(/,?\s*WINTER GARDEN\s*/gi, '')
+      .replace(/,?\s*WINTER PARK\s*/gi, '')
+      .replace(/,?\s*MAITLAND\s*/gi, '')
+      .replace(/,?\s*OCOEE\s*/gi, '')
+      .replace(/,?\s*KISSIMMEE\s*/gi, '')
+      .replace(/,?\s*SANFORD\s*/gi, '')
       .replace(/\s+/g, ' ')
       .trim();
     
