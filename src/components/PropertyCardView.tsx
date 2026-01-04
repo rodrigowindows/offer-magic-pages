@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
-import { MoreVertical, TrendingUp, DollarSign, MapPin, ExternalLink } from "lucide-react";
+import { SkipTracingDataModal } from "./SkipTracingDataModal";
+import { MoreVertical, TrendingUp, DollarSign, MapPin, ExternalLink, Phone } from "lucide-react";
 
 interface Property {
   id: string;
@@ -68,6 +70,8 @@ export const PropertyCardView = ({
   onCopyLink,
   onGenerateQR,
 }: PropertyCardViewProps) => {
+  const [showSkipTracing, setShowSkipTracing] = useState(false);
+  
   const offerPercentage = ((property.cash_offer_amount / property.estimated_value) * 100).toFixed(1);
   const score = property.focar ? parseInt(property.focar) : 0;
 
@@ -305,8 +309,12 @@ export const PropertyCardView = ({
               </Badge>
             )}
             {property.owner_phone && (
-              <Badge variant="outline" className="gap-1">
-                📞 Tem Telefone
+              <Badge 
+                variant="outline" 
+                className="gap-1 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                onClick={() => setShowSkipTracing(true)}
+              >
+                📞 Ver Telefones
               </Badge>
             )}
           </div>
@@ -375,8 +383,19 @@ export const PropertyCardView = ({
               <DropdownMenuItem onClick={() => onGenerateQR(property.slug)}>
                 📱 Gerar QR Code
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowSkipTracing(true)}>
+                📞 Ver Skip Tracing
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Skip Tracing Modal */}
+          <SkipTracingDataModal
+            open={showSkipTracing}
+            onOpenChange={setShowSkipTracing}
+            propertyId={property.id}
+            propertyAddress={`${property.address}, ${property.city}, ${property.state}`}
+          />
         </div>
       </CardContent>
     </Card>
