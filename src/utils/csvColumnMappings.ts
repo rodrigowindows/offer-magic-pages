@@ -223,6 +223,11 @@ export const EXTENDED_COLUMN_MAPPINGS = {
     'total_value',
     'appraisedvalue',
     'appraised_value',
+    // Orlando CSV specific
+    'marketvalue2025',
+    'market_value_2025',
+    'taxablevalue',
+    'taxable_value',
   ],
 
   cash_offer_amount: [
