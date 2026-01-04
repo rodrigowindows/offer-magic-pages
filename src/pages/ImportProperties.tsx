@@ -12,6 +12,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import ColumnMappingDialog, { ColumnMapping, DatabaseFieldKey } from "@/components/ColumnMappingDialog";
 import { FieldCombiner, CombinedField } from "@/components/FieldCombiner";
 import { processRowWithCombinedFields } from "@/utils/fieldCombinerUtils";
+import { SkipTracingImporter } from "@/components/SkipTracingImporter";
 import {
   Upload,
   Image,
@@ -916,6 +917,9 @@ const ImportProperties = () => {
             Sample CSV
           </Button>
         </div>
+
+        {/* Skip Tracing Importer */}
+        <SkipTracingImporter />
 
         {/* Batch Name */}
         <Card>
