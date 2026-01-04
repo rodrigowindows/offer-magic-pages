@@ -31,7 +31,7 @@ const VisualColumnMatcher = ({
 
   // Agrupar campos do banco por categoria
   const groupedFields = useMemo(() => {
-    const groups: Record<string, typeof DATABASE_FIELDS> = {
+    const groups: Record<string, Array<{ key: DatabaseFieldKey; label: string; required: boolean; group: string }>> = {
       basic: [],
       owner: [],
       property: [],
@@ -40,7 +40,9 @@ const VisualColumnMatcher = ({
     };
 
     DATABASE_FIELDS.forEach((field) => {
-      groups[field.group].push(field);
+      if (groups[field.group]) {
+        groups[field.group].push(field);
+      }
     });
 
     return groups;
@@ -323,7 +325,7 @@ const VisualColumnMatcher = ({
             <span>
               ❓{" "}
               <strong>
-                {currentMappings.filter((m) => !m.dbField || m.dbField === "").length}
+                {currentMappings.filter((m) => !m.dbField).length}
               </strong>{" "}
               sem mapear
             </span>
