@@ -615,18 +615,39 @@ const ImportProperties = () => {
       const failedRows: Array<{line: number, account: string, address: string, error: string}> = [];
       const skippedRows: Array<{line: number, account: string, address: string, reason: string}> = [];
 
-      // Fetch ALL existing account numbers to check in batch (much faster than checking one by one)
+      // Fetch ALL existing properties to check in batch (much faster than checking one by one)
       setImportStatus("Verificando properties existentes...");
       const { data: existingProperties } = await supabase
         .from('properties')
-        .select('origem, id')
-        .not('origem', 'is', null);
+        .select('origem, id, address, owner_name, owner_address');
 
-      const existingAccountNumbers = new Set<string>(
-        existingProperties?.map(p => p.origem) || []
-      );
+      // Create multiple lookup maps for flexible matching
+      const existingByOrigem = new Map<string, { id: string; address: string }>();
+      const existingByAddressKey = new Map<string, { id: string; address: string }>();
+      const existingByOwnerName = new Map<string, { id: string; address: string }>();
+      
+      existingProperties?.forEach(p => {
+        if (p.origem) {
+          existingByOrigem.set(p.origem.toLowerCase().trim(), { id: p.id, address: p.address || '' });
+        }
+        if (p.address) {
+          const addrKey = createAddressKey(p.address);
+          if (addrKey) {
+            existingByAddressKey.set(addrKey, { id: p.id, address: p.address });
+          }
+        }
+        if (p.owner_name) {
+          const ownerKey = p.owner_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (ownerKey) {
+            existingByOwnerName.set(ownerKey, { id: p.id, address: p.address || '' });
+          }
+        }
+      });
 
-      console.log(`Found ${existingAccountNumbers.size} existing properties in database`);
+      console.log(`Found ${existingProperties?.length || 0} existing properties:`);
+      console.log(`  - ${existingByOrigem.size} with origem`);
+      console.log(`  - ${existingByAddressKey.size} with address key`);
+      console.log(`  - ${existingByOwnerName.size} with owner name`);
 
       for (let i = 1; i < lines.length; i++) {
         try {
@@ -695,19 +716,55 @@ const ImportProperties = () => {
             continue;
           }
 
-          // Check if already imported (SKIP if exists and updateExisting is false)
-          if (accountNumber && existingAccountNumbers.has(accountNumber)) {
-            if (!updateExisting) {
-              skippedRows.push({
-                line: i,
-                account: accountNumber,
-                address: propertyAddress,
-                reason: 'Already exists in database'
-              });
-              skipped++;
-              continue;
+          // Find existing property using multiple match strategies
+          let existingPropId: string | null = null;
+          let matchedBy = '';
+
+          // Priority 1: Match by origem (account_number)
+          if (accountNumber) {
+            const origemKey = accountNumber.toLowerCase().trim();
+            const match = existingByOrigem.get(origemKey);
+            if (match) {
+              existingPropId = match.id;
+              matchedBy = 'origem';
             }
-            // If updateExisting is true, we'll update it below
+          }
+
+          // Priority 2: Match by address key
+          if (!existingPropId && propertyAddress) {
+            const addrKey = createAddressKey(propertyAddress);
+            if (addrKey) {
+              const match = existingByAddressKey.get(addrKey);
+              if (match) {
+                existingPropId = match.id;
+                matchedBy = 'address';
+                console.log(`Matched by address: "${propertyAddress}" -> "${match.address}"`);
+              }
+            }
+          }
+
+          // Priority 3: Match by owner name
+          if (!existingPropId && propertyData.owner_name) {
+            const ownerKey = String(propertyData.owner_name).toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (ownerKey) {
+              const match = existingByOwnerName.get(ownerKey);
+              if (match) {
+                existingPropId = match.id;
+                matchedBy = 'owner_name';
+              }
+            }
+          }
+
+          // Check if already exists and skip if not updating
+          if (existingPropId && !updateExisting) {
+            skippedRows.push({
+              line: i,
+              account: accountNumber,
+              address: propertyAddress,
+              reason: `Already exists (matched by ${matchedBy})`
+            });
+            skipped++;
+            continue;
           }
 
           // Generate slug
@@ -761,22 +818,12 @@ const ImportProperties = () => {
             }
           });
 
-          // Check if property exists (using pre-fetched list)
-          const alreadyExists = accountNumber && existingAccountNumbers.has(accountNumber);
-
-          if (alreadyExists && updateExisting) {
-            // Get the ID for update
-            const existingProp = existingProperties?.find(p => p.origem === accountNumber);
-            if (!existingProp) {
-              console.warn(`Property ${accountNumber} in set but not found`);
-              errors++;
-              continue;
-            }
-
+          // UPDATE if property exists and updateExisting is true
+          if (existingPropId && updateExisting) {
             const { error: updateError } = await supabase
               .from('properties')
               .update(propertyData as any)
-              .eq('id', existingProp.id);
+              .eq('id', existingPropId);
 
             if (updateError) {
               console.error(`Update error (line ${i}):`, updateError);
@@ -790,7 +837,8 @@ const ImportProperties = () => {
             } else {
               updated++;
             }
-          } else if (!alreadyExists) {
+          } else if (!existingPropId) {
+            // INSERT new property
             const { error: insertError } = await supabase
               .from('properties')
               .insert(propertyData as any);
