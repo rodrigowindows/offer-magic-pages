@@ -677,11 +677,11 @@ const ImportProperties = () => {
         }
       });
 
-      // === DYNAMIC COLUMN CREATION ===
+      // === AUTOMATIC DYNAMIC COLUMN CREATION FOR ALL CSV FIELDS ===
       console.log('=== DYNAMIC COLUMN CREATION DEBUG ===');
-      console.log('Column mappings:', columnMappings.map(m => ({ csv: m.csvColumn, db: m.dbField })));
+      console.log('Total CSV headers:', headers.length);
       
-      // List of known database columns
+      // List of known database columns (will skip these)
       const knownColumns = [
         'id', 'slug', 'address', 'city', 'state', 'zip_code', 'property_image_url',
         'estimated_value', 'cash_offer_amount', 'status', 'created_at', 'updated_at',
@@ -696,55 +696,99 @@ const ImportProperties = () => {
         'lead_captured', 'lead_captured_at'
       ];
       
-      // Find columns that are mapped but don't exist in database
-      const columnsToCreate: string[] = [];
-      columnMappings.forEach(m => {
-        if (m.dbField && m.dbField !== 'skip' && !knownColumns.includes(m.dbField)) {
-          columnsToCreate.push(m.dbField);
+      // Helper to normalize column name for database
+      const normalizeColumnName = (csvHeader: string): string => {
+        return csvHeader
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '')
+          .substring(0, 63); // Max PostgreSQL column name length
+      };
+      
+      // Helper to determine column type from name
+      const inferColumnType = (normalizedName: string): string => {
+        if (normalizedName.includes('age') || normalizedName.includes('beds') || normalizedName.includes('sqft') || normalizedName.includes('year') || normalizedName.includes('count')) {
+          return 'integer';
+        } else if (normalizedName.includes('baths') || normalizedName.includes('value') || normalizedName.includes('size') || normalizedName.includes('price') || normalizedName.includes('amount')) {
+          return 'numeric';
+        } else if (normalizedName.includes('deceased') || normalizedName.includes('is_') || normalizedName.includes('has_') || normalizedName.includes('_flag')) {
+          return 'boolean';
+        }
+        return 'text';
+      };
+      
+      // Create a mapping from CSV header -> normalized DB column name
+      const csvToDbColumnMap = new Map<string, string>();
+      const columnsToCreate: Array<{normalized: string, type: string, original: string}> = [];
+      
+      // Process ALL CSV headers automatically
+      headers.forEach(header => {
+        const normalizedName = normalizeColumnName(header);
+        
+        // Skip if it's already a known column or if normalization results in empty string
+        if (!normalizedName || knownColumns.includes(normalizedName)) {
+          // Check if it's mapped to a known column
+          const mapping = columnMappings.find(m => m.csvColumn === header);
+          if (mapping?.dbField && mapping.dbField !== 'skip') {
+            csvToDbColumnMap.set(header, mapping.dbField);
+          }
+          return;
+        }
+        
+        // Add to mapping
+        csvToDbColumnMap.set(header, normalizedName);
+        
+        // Check if we need to create this column
+        if (!columnsToCreate.some(c => c.normalized === normalizedName)) {
+          columnsToCreate.push({
+            normalized: normalizedName,
+            type: inferColumnType(normalizedName),
+            original: header
+          });
         }
       });
       
-      console.log('Columns to potentially create:', columnsToCreate);
+      console.log('CSV to DB column mapping:', Object.fromEntries(csvToDbColumnMap));
+      console.log('Columns to create:', columnsToCreate.length);
       
       if (columnsToCreate.length > 0) {
-        setImportStatus(`Criando ${columnsToCreate.length} novas colunas...`);
+        setImportStatus(`Criando ${columnsToCreate.length} novas colunas automaticamente...`);
         
-        for (const columnName of columnsToCreate) {
-          // Normalize column name for database
-          const normalizedName = columnName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-          
-          // Determine column type
-          let columnType = 'text';
-          if (normalizedName.includes('age') || normalizedName.includes('beds') || normalizedName.includes('sqft') || normalizedName.includes('year')) {
-            columnType = 'integer';
-          } else if (normalizedName.includes('baths') || normalizedName.includes('value') || normalizedName.includes('size')) {
-            columnType = 'numeric';
-          } else if (normalizedName.includes('deceased') || normalizedName.includes('is_') || normalizedName.includes('has_')) {
-            columnType = 'boolean';
-          }
-          
-          console.log(`Attempting to create column: ${normalizedName} (${columnType})`);
+        let createdCount = 0;
+        let existedCount = 0;
+        let errorCount = 0;
+        
+        for (const col of columnsToCreate) {
+          console.log(`Creating column: ${col.normalized} (${col.type}) from "${col.original}"`);
           
           try {
             const { data, error } = await supabase.rpc('add_column_if_not_exists', {
               p_table_name: 'properties',
-              p_column_name: normalizedName,
-              p_column_type: columnType,
+              p_column_name: col.normalized,
+              p_column_type: col.type,
             });
             
             if (error) {
-              console.error(`Failed to create column ${normalizedName}:`, error);
+              console.error(`❌ Failed to create column ${col.normalized}:`, error);
+              errorCount++;
             } else if (data === true) {
-              console.log(`✅ Created column: ${normalizedName} (${columnType})`);
+              console.log(`✅ Created: ${col.normalized} (${col.type})`);
+              createdCount++;
             } else {
-              console.log(`Column ${normalizedName} already exists`);
+              console.log(`⏭️ Already exists: ${col.normalized}`);
+              existedCount++;
             }
           } catch (err) {
-            console.error(`Error creating column ${normalizedName}:`, err);
+            console.error(`Error creating column ${col.normalized}:`, err);
+            errorCount++;
           }
         }
+        
+        console.log(`Column creation summary: ${createdCount} created, ${existedCount} existed, ${errorCount} errors`);
+        setImportStatus(`Colunas: ${createdCount} criadas, ${existedCount} existentes`);
       } else {
-        console.log('No new columns to create - all mapped to known columns');
+        console.log('No new columns to create - all headers map to known columns');
       }
       // === END DYNAMIC COLUMN CREATION ===
 
