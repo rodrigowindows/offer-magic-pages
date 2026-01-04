@@ -677,6 +677,77 @@ const ImportProperties = () => {
         }
       });
 
+      // === DYNAMIC COLUMN CREATION ===
+      console.log('=== DYNAMIC COLUMN CREATION DEBUG ===');
+      console.log('Column mappings:', columnMappings.map(m => ({ csv: m.csvColumn, db: m.dbField })));
+      
+      // List of known database columns
+      const knownColumns = [
+        'id', 'slug', 'address', 'city', 'state', 'zip_code', 'property_image_url',
+        'estimated_value', 'cash_offer_amount', 'status', 'created_at', 'updated_at',
+        'sms_sent', 'email_sent', 'letter_sent', 'card_sent', 'phone_call_made',
+        'meeting_scheduled', 'lead_status', 'owner_address', 'owner_name', 'owner_phone',
+        'answer_flag', 'dnc_flag', 'neighborhood', 'origem', 'carta', 'zillow_url',
+        'evaluation', 'focar', 'comparative_price', 'lead_score', 'tags', 'approval_status',
+        'approved_by', 'approved_by_name', 'approved_at', 'rejection_reason', 'rejection_notes',
+        'updated_by', 'updated_by_name', 'airbnb_eligible', 'airbnb_check_date', 'airbnb_regulations',
+        'airbnb_notes', 'import_date', 'import_batch', 'last_contact_date', 'next_followup_date',
+        'county', 'property_type', 'bedrooms', 'bathrooms', 'square_feet', 'lot_size', 'year_built',
+        'lead_captured', 'lead_captured_at'
+      ];
+      
+      // Find columns that are mapped but don't exist in database
+      const columnsToCreate: string[] = [];
+      columnMappings.forEach(m => {
+        if (m.dbField && m.dbField !== 'skip' && !knownColumns.includes(m.dbField)) {
+          columnsToCreate.push(m.dbField);
+        }
+      });
+      
+      console.log('Columns to potentially create:', columnsToCreate);
+      
+      if (columnsToCreate.length > 0) {
+        setImportStatus(`Criando ${columnsToCreate.length} novas colunas...`);
+        
+        for (const columnName of columnsToCreate) {
+          // Normalize column name for database
+          const normalizedName = columnName.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+          
+          // Determine column type
+          let columnType = 'text';
+          if (normalizedName.includes('age') || normalizedName.includes('beds') || normalizedName.includes('sqft') || normalizedName.includes('year')) {
+            columnType = 'integer';
+          } else if (normalizedName.includes('baths') || normalizedName.includes('value') || normalizedName.includes('size')) {
+            columnType = 'numeric';
+          } else if (normalizedName.includes('deceased') || normalizedName.includes('is_') || normalizedName.includes('has_')) {
+            columnType = 'boolean';
+          }
+          
+          console.log(`Attempting to create column: ${normalizedName} (${columnType})`);
+          
+          try {
+            const { data, error } = await supabase.rpc('add_column_if_not_exists', {
+              p_table_name: 'properties',
+              p_column_name: normalizedName,
+              p_column_type: columnType,
+            });
+            
+            if (error) {
+              console.error(`Failed to create column ${normalizedName}:`, error);
+            } else if (data === true) {
+              console.log(`✅ Created column: ${normalizedName} (${columnType})`);
+            } else {
+              console.log(`Column ${normalizedName} already exists`);
+            }
+          } catch (err) {
+            console.error(`Error creating column ${normalizedName}:`, err);
+          }
+        }
+      } else {
+        console.log('No new columns to create - all mapped to known columns');
+      }
+      // === END DYNAMIC COLUMN CREATION ===
+
       const failedRows: Array<{line: number, account: string, address: string, error: string}> = [];
       const skippedRows: Array<{line: number, account: string, address: string, reason: string}> = [];
 
