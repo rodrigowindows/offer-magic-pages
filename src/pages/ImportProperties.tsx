@@ -1268,7 +1268,7 @@ const ImportProperties = () => {
           <CardContent className="space-y-4">
             {/* Import Preview - show before importing */}
             {importPreview && !importResult && !isImporting && (
-              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-4">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-blue-800 dark:text-blue-200 flex items-center gap-2">
                     📊 Preview da Importação
@@ -1294,73 +1294,139 @@ const ImportProperties = () => {
                   </div>
                 )}
                 
-                {/* Show matched fields - CSV → DB */}
-                {importPreview.matchedFields.length > 0 ? (
-                  <div className="text-sm bg-blue-100/50 dark:bg-blue-900/50 rounded p-3 space-y-2">
-                    <p className="font-medium text-blue-800 dark:text-blue-200">🔗 Campos de Correspondência (CSV → Banco):</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {importPreview.matchedFields.map((f, idx) => {
-                        const dbLabel = f.dbField === 'origem' ? 'ID Único (origem)' : 
-                          f.dbField === 'address' ? 'Endereço' :
-                          f.dbField === 'owner_name' ? 'Nome Proprietário' :
-                          f.dbField === 'owner_address' ? 'End. Proprietário' : f.dbField;
-                        const dbCount = importPreview.dbFieldsCount[f.dbField as keyof typeof importPreview.dbFieldsCount] || 0;
-                        return (
-                          <div key={idx} className="flex items-center justify-between bg-white dark:bg-gray-800 rounded px-3 py-2 border">
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-0.5 rounded">
-                                CSV
-                              </span>
-                              <span className="text-blue-700 dark:text-blue-300 truncate max-w-[120px]" title={f.csvColumn}>
-                                {f.csvColumn}
-                              </span>
-                              <span className="text-gray-400">→</span>
-                              <span className="font-mono text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-0.5 rounded">
-                                DB
-                              </span>
-                              <span className="text-purple-700 dark:text-purple-300">{dbLabel}</span>
-                            </div>
-                            <span className="text-xs text-gray-500">({dbCount} no banco)</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : !importPreview.isLoading && (
-                  <div className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 rounded p-2">
-                    ⚠️ Nenhum campo de correspondência mapeado. Todos os registros serão inseridos como novos.
-                    <br />
-                    <span className="text-xs">Campos usados para matching: ID Único, Endereço, Nome do Proprietário, Endereço do Proprietário</span>
-                  </div>
-                )}
-
                 {!importPreview.isLoading && (
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div className="bg-green-100 dark:bg-green-900 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                        {importPreview.toInsert}
-                      </p>
-                      <p className="text-green-600 dark:text-green-400">Novos registros</p>
+                  <>
+                    {/* BIG SUMMARY BOXES */}
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div className="bg-green-100 dark:bg-green-900 rounded-lg p-4 text-center border-2 border-green-300 dark:border-green-700">
+                        <p className="text-3xl font-bold text-green-700 dark:text-green-300">
+                          {importPreview.toInsert}
+                        </p>
+                        <p className="text-green-600 dark:text-green-400 font-medium">🆕 Novos</p>
+                        <p className="text-xs text-green-500">Serão inseridos</p>
+                      </div>
+                      <div className={`rounded-lg p-4 text-center border-2 ${updateExisting 
+                        ? 'bg-yellow-100 dark:bg-yellow-900 border-yellow-300 dark:border-yellow-700' 
+                        : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600'}`}>
+                        <p className={`text-3xl font-bold ${updateExisting 
+                          ? 'text-yellow-700 dark:text-yellow-300' 
+                          : 'text-gray-500 dark:text-gray-400'}`}>
+                          {importPreview.toUpdate}
+                        </p>
+                        <p className={`font-medium ${updateExisting 
+                          ? 'text-yellow-600 dark:text-yellow-400' 
+                          : 'text-gray-500 dark:text-gray-400'}`}>
+                          {updateExisting ? '✏️ Atualizar' : '⏭️ Ignorar'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {updateExisting ? 'Encontrados no banco' : 'Já existem'}
+                        </p>
+                      </div>
+                      <div className="bg-blue-100 dark:bg-blue-900 rounded-lg p-4 text-center border-2 border-blue-300 dark:border-blue-700">
+                        <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+                          {totalRows}
+                        </p>
+                        <p className="text-blue-600 dark:text-blue-400 font-medium">📄 Total CSV</p>
+                        <p className="text-xs text-blue-500">Linhas no arquivo</p>
+                      </div>
                     </div>
-                    <div className="bg-yellow-100 dark:bg-yellow-900 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
-                        {updateExisting ? importPreview.toUpdate : 0}
-                      </p>
-                      <p className="text-yellow-600 dark:text-yellow-400">Serão atualizados</p>
+
+                    {/* STEP BY STEP EXPLANATION */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border space-y-3">
+                      <h4 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        📋 O que vai acontecer ao clicar "Importar":
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-start gap-3 p-2 bg-green-50 dark:bg-green-900/30 rounded">
+                          <span className="text-lg">1️⃣</span>
+                          <div>
+                            <p className="font-medium text-green-700 dark:text-green-300">
+                              {importPreview.toInsert} propriedades novas serão INSERIDAS
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Não existem no banco (sem match por endereço)
+                            </p>
+                          </div>
+                        </div>
+                        {importPreview.toUpdate > 0 && (
+                          <div className={`flex items-start gap-3 p-2 rounded ${updateExisting 
+                            ? 'bg-yellow-50 dark:bg-yellow-900/30' 
+                            : 'bg-gray-50 dark:bg-gray-800'}`}>
+                            <span className="text-lg">2️⃣</span>
+                            <div>
+                              <p className={`font-medium ${updateExisting 
+                                ? 'text-yellow-700 dark:text-yellow-300' 
+                                : 'text-gray-600 dark:text-gray-400'}`}>
+                                {importPreview.toUpdate} propriedades serão {updateExisting ? 'ATUALIZADAS' : 'IGNORADAS'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {updateExisting 
+                                  ? 'Foram encontradas no banco por endereço - os campos mapeados serão atualizados' 
+                                  : 'Marque "Atualizar existentes" abaixo para atualizar'}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3 text-center">
-                      <p className="text-2xl font-bold text-gray-700 dark:text-gray-300">
-                        {!updateExisting ? importPreview.toUpdate : 0}
-                      </p>
-                      <p className="text-gray-600 dark:text-gray-400">Serão ignorados</p>
+
+                    {/* MAPPED FIELDS - What will be updated */}
+                    {columnMappings.filter(m => m.dbField && m.dbField !== 'skip').length > 0 && (
+                      <div className="bg-purple-50 dark:bg-purple-900/30 rounded-lg p-4 border border-purple-200 dark:border-purple-700">
+                        <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-3 flex items-center gap-2">
+                          🔄 Campos que serão importados/atualizados:
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {columnMappings.filter(m => m.dbField && m.dbField !== 'skip').map((m, idx) => {
+                            const fieldLabels: Record<string, string> = {
+                              'address': 'Endereço',
+                              'city': 'Cidade',
+                              'state': 'Estado',
+                              'zip_code': 'CEP',
+                              'owner_name': 'Nome Proprietário',
+                              'owner_address': 'End. Proprietário',
+                              'owner_phone': 'Telefone',
+                              'estimated_value': 'Valor Estimado',
+                              'bedrooms': 'Quartos',
+                              'bathrooms': 'Banheiros',
+                              'square_feet': 'Área m²',
+                              'year_built': 'Ano Construção',
+                              'lot_size': 'Tamanho Lote',
+                              'property_type': 'Tipo Imóvel',
+                              'origem': 'ID Único',
+                              'tags': 'Tags',
+                              'county': 'Condado',
+                              'neighborhood': 'Bairro',
+                            };
+                            return (
+                              <div key={idx} className="inline-flex items-center gap-1 bg-white dark:bg-gray-800 rounded-full px-3 py-1 border text-xs">
+                                <span className="text-gray-600 dark:text-gray-400">{m.csvColumn}</span>
+                                <span className="text-purple-500">→</span>
+                                <span className="font-medium text-purple-700 dark:text-purple-300">
+                                  {fieldLabels[m.dbField] || m.dbField}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Toggle for update existing */}
+                    <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                      <Checkbox
+                        id="updateExisting"
+                        checked={updateExisting}
+                        onCheckedChange={(checked) => setUpdateExisting(checked as boolean)}
+                      />
+                      <Label htmlFor="updateExisting" className="flex-1 cursor-pointer">
+                        <span className="font-medium">✅ Atualizar {importPreview.toUpdate} propriedades existentes</span>
+                        <p className="text-xs text-muted-foreground">
+                          Se desmarcado, {importPreview.toUpdate} registros serão ignorados
+                        </p>
+                      </Label>
                     </div>
-                  </div>
-                )}
-                {!updateExisting && importPreview.toUpdate > 0 && !importPreview.isLoading && (
-                  <p className="text-sm text-amber-600 dark:text-amber-400">
-                    ⚠️ {importPreview.toUpdate} propriedades existentes serão ignoradas. 
-                    Marque "Atualizar existentes" para atualizá-las.
-                  </p>
+                  </>
                 )}
               </div>
             )}
