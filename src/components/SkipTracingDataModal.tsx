@@ -142,17 +142,17 @@ export const SkipTracingDataModal = ({
 
   const getPhones = () => {
     if (!data) return [];
-    const phones: { number: string; type: string; formatted: string }[] = [];
+    const phones: { number: string; type: string; formatted: string; label: string }[] = [];
     
-    // Add phone1-5
-    for (let i = 1; i <= 5; i++) {
+    // Add phone1-7
+    for (let i = 1; i <= 7; i++) {
       const phone = data[`phone${i}`];
       const type = data[`phone${i}_type`] || 'Unknown';
       
       if (phone) {
         const formatted = formatPhone(phone);
         if (formatted) {
-          phones.push({ number: String(phone), type, formatted });
+          phones.push({ number: String(phone), type, formatted, label: `Phone ${i}` });
         }
       }
     }
@@ -161,7 +161,7 @@ export const SkipTracingDataModal = ({
     if (phones.length === 0 && data.owner_phone) {
       const formatted = formatPhone(data.owner_phone);
       if (formatted) {
-        phones.push({ number: data.owner_phone, type: 'Primary', formatted });
+        phones.push({ number: data.owner_phone, type: 'Primary', formatted, label: 'Principal' });
       }
     }
 
@@ -310,7 +310,9 @@ export const SkipTracingDataModal = ({
                           </div>
                           <div>
                             <p className="font-medium font-mono">{phone.formatted}</p>
-                            <p className="text-xs text-muted-foreground">{phone.type}</p>
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-semibold text-primary">{phone.label}</span> • {phone.type}
+                            </p>
                           </div>
                         </div>
                         <div className="flex gap-1">
