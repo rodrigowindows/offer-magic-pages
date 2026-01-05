@@ -1000,9 +1000,20 @@ const ImportProperties = () => {
 
           // UPDATE if property exists and updateExisting is true
           if (existingPropId && updateExisting) {
+            // Remove protected fields that should not be overwritten during updates
+            const updateData = { ...propertyData };
+            delete updateData.approval_status;
+            delete updateData.approved_by;
+            delete updateData.approved_by_name;
+            delete updateData.approved_at;
+            delete updateData.rejection_reason;
+            delete updateData.rejection_notes;
+            delete updateData.lead_status; // Don't reset lead status
+            delete updateData.status; // Don't reset status
+            
             const { error: updateError } = await supabase
               .from('properties')
-              .update(propertyData as any)
+              .update(updateData as any)
               .eq('id', existingPropId);
 
             if (updateError) {
