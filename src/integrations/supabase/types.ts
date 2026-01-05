@@ -578,6 +578,7 @@ export type Database = {
       properties: {
         Row: {
           address: string
+          age: number | null
           airbnb_check_date: string | null
           airbnb_eligible: boolean | null
           airbnb_notes: string | null
@@ -594,16 +595,37 @@ export type Database = {
           cash_offer_amount: number
           city: string
           comparative_price: number | null
+          confirmed_mailing_address: string | null
+          confirmed_mailing_city: string | null
+          confirmed_mailing_state: string | null
+          confirmed_mailing_zip: string | null
           county: string | null
           created_at: string
+          deceased: boolean | null
           dnc_flag: boolean | null
+          dnc_litigator_scrub: string | null
           email_sent: boolean
+          email1: string | null
+          email2: string | null
           estimated_value: number
           evaluation: string | null
           focar: string | null
           id: string
           import_batch: string | null
           import_date: string | null
+          input_custom_field_1: string | null
+          input_custom_field_2: string | null
+          input_custom_field_3: string | null
+          input_first_name: string | null
+          input_last_name: string | null
+          input_mailing_address: string | null
+          input_mailing_city: string | null
+          input_mailing_state: string | null
+          input_mailing_zip: string | null
+          input_property_address: string | null
+          input_property_city: string | null
+          input_property_state: string | null
+          input_property_zip: string | null
           last_contact_date: string | null
           lead_captured: boolean | null
           lead_captured_at: string | null
@@ -611,18 +633,156 @@ export type Database = {
           lead_status: string
           letter_sent: boolean
           lot_size: number | null
+          matched_first_name: string | null
+          matched_last_name: string | null
           meeting_scheduled: boolean
           neighborhood: string | null
           next_followup_date: string | null
           origem: string | null
           owner_address: string | null
+          owner_fix_first_name: string | null
+          owner_fix_last_name: string | null
+          owner_fix_mailing_address: string | null
+          owner_fix_mailing_city: string | null
+          owner_fix_mailing_state: string | null
+          owner_fix_mailing_zip: string | null
           owner_name: string | null
           owner_phone: string | null
+          person2_age: number | null
+          person2_confirmed_mailing_address: string | null
+          person2_confirmed_mailing_city: string | null
+          person2_confirmed_mailing_state: string | null
+          person2_confirmed_mailing_zip: string | null
+          person2_deceased: boolean | null
+          person2_email1: string | null
+          person2_email2: string | null
+          person2_first_name: string | null
+          person2_last_name: string | null
+          person2_phone1: string | null
+          person2_phone1_type: string | null
+          person2_phone2: string | null
+          person2_phone2_type: string | null
+          person2_phone3: string | null
+          person2_phone3_type: string | null
+          person2_phone4: string | null
+          person2_phone4_type: string | null
+          person2_phone5: string | null
+          person2_phone5_type: string | null
+          person2_phone6: string | null
+          person2_phone6_type: string | null
+          person2_phone7: string | null
+          person2_phone7_type: string | null
+          person2_relative1_age: number | null
+          person2_relative1_name: string | null
+          person2_relative1_phone1: string | null
+          person2_relative1_phone1_type: string | null
+          person2_relative1_phone2: string | null
+          person2_relative1_phone2_type: string | null
+          person2_relative1_phone3: string | null
+          person2_relative1_phone3_type: string | null
+          person2_relative1_phone4: string | null
+          person2_relative1_phone4_type: string | null
+          person2_relative1_phone5: string | null
+          person2_relative1_phone5_type: string | null
+          person2_relative2_age: number | null
+          person2_relative2_name: string | null
+          person2_relative2_phone1: string | null
+          person2_relative2_phone1_type: string | null
+          person2_relative2_phone2: string | null
+          person2_relative2_phone2_type: string | null
+          person2_relative2_phone3: string | null
+          person2_relative2_phone3_type: string | null
+          person2_relative2_phone4: string | null
+          person2_relative2_phone4_type: string | null
+          person2_relative2_phone5: string | null
+          person2_relative2_phone5_type: string | null
+          person2_relative3_age: number | null
+          person2_relative3_name: string | null
+          person2_relative3_phone1: string | null
+          person2_relative3_phone1_type: string | null
+          person2_relative3_phone2: string | null
+          person2_relative3_phone2_type: string | null
+          person2_relative3_phone3: string | null
           phone_call_made: boolean
+          phone1: string | null
+          phone1_type: string | null
+          phone2: string | null
+          phone2_type: string | null
+          phone3: string | null
+          phone3_type: string | null
+          phone4: string | null
+          phone4_type: string | null
+          phone5: string | null
+          phone5_type: string | null
+          phone6: string | null
+          phone6_type: string | null
+          phone7: string | null
+          phone7_type: string | null
           property_image_url: string | null
           property_type: string | null
           rejection_notes: string | null
           rejection_reason: string | null
+          relative1_age: number | null
+          relative1_name: string | null
+          relative1_phone1: string | null
+          relative1_phone1_type: string | null
+          relative1_phone2: string | null
+          relative1_phone2_type: string | null
+          relative1_phone3: string | null
+          relative1_phone3_type: string | null
+          relative1_phone4: string | null
+          relative1_phone4_type: string | null
+          relative1_phone5: string | null
+          relative1_phone5_type: string | null
+          relative2_age: number | null
+          relative2_name: string | null
+          relative2_phone1: string | null
+          relative2_phone1_type: string | null
+          relative2_phone2: string | null
+          relative2_phone2_type: string | null
+          relative2_phone3: string | null
+          relative2_phone3_type: string | null
+          relative2_phone4: string | null
+          relative2_phone4_type: string | null
+          relative2_phone5: string | null
+          relative2_phone5_type: string | null
+          relative3_age: number | null
+          relative3_name: string | null
+          relative3_phone1: string | null
+          relative3_phone1_type: string | null
+          relative3_phone2: string | null
+          relative3_phone2_type: string | null
+          relative3_phone3: string | null
+          relative3_phone3_type: string | null
+          relative3_phone4: string | null
+          relative3_phone4_type: string | null
+          relative3_phone5: string | null
+          relative3_phone5_type: string | null
+          relative4_age: number | null
+          relative4_name: string | null
+          relative4_phone1: string | null
+          relative4_phone1_type: string | null
+          relative4_phone2: string | null
+          relative4_phone2_type: string | null
+          relative4_phone3: string | null
+          relative4_phone3_type: string | null
+          relative4_phone4: string | null
+          relative4_phone4_type: string | null
+          relative4_phone5: string | null
+          relative4_phone5_type: string | null
+          relative5_age: number | null
+          relative5_name: string | null
+          relative5_phone1: string | null
+          relative5_phone1_type: string | null
+          relative5_phone2: string | null
+          relative5_phone2_type: string | null
+          relative5_phone3: string | null
+          relative5_phone3_type: string | null
+          relative5_phone4: string | null
+          relative5_phone4_type: string | null
+          relative5_phone5: string | null
+          relative5_phone5_type: string | null
+          resultcode: string | null
           slug: string
           sms_sent: boolean
           square_feet: number | null
@@ -638,6 +798,7 @@ export type Database = {
         }
         Insert: {
           address: string
+          age?: number | null
           airbnb_check_date?: string | null
           airbnb_eligible?: boolean | null
           airbnb_notes?: string | null
@@ -654,16 +815,37 @@ export type Database = {
           cash_offer_amount: number
           city?: string
           comparative_price?: number | null
+          confirmed_mailing_address?: string | null
+          confirmed_mailing_city?: string | null
+          confirmed_mailing_state?: string | null
+          confirmed_mailing_zip?: string | null
           county?: string | null
           created_at?: string
+          deceased?: boolean | null
           dnc_flag?: boolean | null
+          dnc_litigator_scrub?: string | null
           email_sent?: boolean
+          email1?: string | null
+          email2?: string | null
           estimated_value: number
           evaluation?: string | null
           focar?: string | null
           id?: string
           import_batch?: string | null
           import_date?: string | null
+          input_custom_field_1?: string | null
+          input_custom_field_2?: string | null
+          input_custom_field_3?: string | null
+          input_first_name?: string | null
+          input_last_name?: string | null
+          input_mailing_address?: string | null
+          input_mailing_city?: string | null
+          input_mailing_state?: string | null
+          input_mailing_zip?: string | null
+          input_property_address?: string | null
+          input_property_city?: string | null
+          input_property_state?: string | null
+          input_property_zip?: string | null
           last_contact_date?: string | null
           lead_captured?: boolean | null
           lead_captured_at?: string | null
@@ -671,18 +853,156 @@ export type Database = {
           lead_status?: string
           letter_sent?: boolean
           lot_size?: number | null
+          matched_first_name?: string | null
+          matched_last_name?: string | null
           meeting_scheduled?: boolean
           neighborhood?: string | null
           next_followup_date?: string | null
           origem?: string | null
           owner_address?: string | null
+          owner_fix_first_name?: string | null
+          owner_fix_last_name?: string | null
+          owner_fix_mailing_address?: string | null
+          owner_fix_mailing_city?: string | null
+          owner_fix_mailing_state?: string | null
+          owner_fix_mailing_zip?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          person2_age?: number | null
+          person2_confirmed_mailing_address?: string | null
+          person2_confirmed_mailing_city?: string | null
+          person2_confirmed_mailing_state?: string | null
+          person2_confirmed_mailing_zip?: string | null
+          person2_deceased?: boolean | null
+          person2_email1?: string | null
+          person2_email2?: string | null
+          person2_first_name?: string | null
+          person2_last_name?: string | null
+          person2_phone1?: string | null
+          person2_phone1_type?: string | null
+          person2_phone2?: string | null
+          person2_phone2_type?: string | null
+          person2_phone3?: string | null
+          person2_phone3_type?: string | null
+          person2_phone4?: string | null
+          person2_phone4_type?: string | null
+          person2_phone5?: string | null
+          person2_phone5_type?: string | null
+          person2_phone6?: string | null
+          person2_phone6_type?: string | null
+          person2_phone7?: string | null
+          person2_phone7_type?: string | null
+          person2_relative1_age?: number | null
+          person2_relative1_name?: string | null
+          person2_relative1_phone1?: string | null
+          person2_relative1_phone1_type?: string | null
+          person2_relative1_phone2?: string | null
+          person2_relative1_phone2_type?: string | null
+          person2_relative1_phone3?: string | null
+          person2_relative1_phone3_type?: string | null
+          person2_relative1_phone4?: string | null
+          person2_relative1_phone4_type?: string | null
+          person2_relative1_phone5?: string | null
+          person2_relative1_phone5_type?: string | null
+          person2_relative2_age?: number | null
+          person2_relative2_name?: string | null
+          person2_relative2_phone1?: string | null
+          person2_relative2_phone1_type?: string | null
+          person2_relative2_phone2?: string | null
+          person2_relative2_phone2_type?: string | null
+          person2_relative2_phone3?: string | null
+          person2_relative2_phone3_type?: string | null
+          person2_relative2_phone4?: string | null
+          person2_relative2_phone4_type?: string | null
+          person2_relative2_phone5?: string | null
+          person2_relative2_phone5_type?: string | null
+          person2_relative3_age?: number | null
+          person2_relative3_name?: string | null
+          person2_relative3_phone1?: string | null
+          person2_relative3_phone1_type?: string | null
+          person2_relative3_phone2?: string | null
+          person2_relative3_phone2_type?: string | null
+          person2_relative3_phone3?: string | null
           phone_call_made?: boolean
+          phone1?: string | null
+          phone1_type?: string | null
+          phone2?: string | null
+          phone2_type?: string | null
+          phone3?: string | null
+          phone3_type?: string | null
+          phone4?: string | null
+          phone4_type?: string | null
+          phone5?: string | null
+          phone5_type?: string | null
+          phone6?: string | null
+          phone6_type?: string | null
+          phone7?: string | null
+          phone7_type?: string | null
           property_image_url?: string | null
           property_type?: string | null
           rejection_notes?: string | null
           rejection_reason?: string | null
+          relative1_age?: number | null
+          relative1_name?: string | null
+          relative1_phone1?: string | null
+          relative1_phone1_type?: string | null
+          relative1_phone2?: string | null
+          relative1_phone2_type?: string | null
+          relative1_phone3?: string | null
+          relative1_phone3_type?: string | null
+          relative1_phone4?: string | null
+          relative1_phone4_type?: string | null
+          relative1_phone5?: string | null
+          relative1_phone5_type?: string | null
+          relative2_age?: number | null
+          relative2_name?: string | null
+          relative2_phone1?: string | null
+          relative2_phone1_type?: string | null
+          relative2_phone2?: string | null
+          relative2_phone2_type?: string | null
+          relative2_phone3?: string | null
+          relative2_phone3_type?: string | null
+          relative2_phone4?: string | null
+          relative2_phone4_type?: string | null
+          relative2_phone5?: string | null
+          relative2_phone5_type?: string | null
+          relative3_age?: number | null
+          relative3_name?: string | null
+          relative3_phone1?: string | null
+          relative3_phone1_type?: string | null
+          relative3_phone2?: string | null
+          relative3_phone2_type?: string | null
+          relative3_phone3?: string | null
+          relative3_phone3_type?: string | null
+          relative3_phone4?: string | null
+          relative3_phone4_type?: string | null
+          relative3_phone5?: string | null
+          relative3_phone5_type?: string | null
+          relative4_age?: number | null
+          relative4_name?: string | null
+          relative4_phone1?: string | null
+          relative4_phone1_type?: string | null
+          relative4_phone2?: string | null
+          relative4_phone2_type?: string | null
+          relative4_phone3?: string | null
+          relative4_phone3_type?: string | null
+          relative4_phone4?: string | null
+          relative4_phone4_type?: string | null
+          relative4_phone5?: string | null
+          relative4_phone5_type?: string | null
+          relative5_age?: number | null
+          relative5_name?: string | null
+          relative5_phone1?: string | null
+          relative5_phone1_type?: string | null
+          relative5_phone2?: string | null
+          relative5_phone2_type?: string | null
+          relative5_phone3?: string | null
+          relative5_phone3_type?: string | null
+          relative5_phone4?: string | null
+          relative5_phone4_type?: string | null
+          relative5_phone5?: string | null
+          relative5_phone5_type?: string | null
+          resultcode?: string | null
           slug: string
           sms_sent?: boolean
           square_feet?: number | null
@@ -698,6 +1018,7 @@ export type Database = {
         }
         Update: {
           address?: string
+          age?: number | null
           airbnb_check_date?: string | null
           airbnb_eligible?: boolean | null
           airbnb_notes?: string | null
@@ -714,16 +1035,37 @@ export type Database = {
           cash_offer_amount?: number
           city?: string
           comparative_price?: number | null
+          confirmed_mailing_address?: string | null
+          confirmed_mailing_city?: string | null
+          confirmed_mailing_state?: string | null
+          confirmed_mailing_zip?: string | null
           county?: string | null
           created_at?: string
+          deceased?: boolean | null
           dnc_flag?: boolean | null
+          dnc_litigator_scrub?: string | null
           email_sent?: boolean
+          email1?: string | null
+          email2?: string | null
           estimated_value?: number
           evaluation?: string | null
           focar?: string | null
           id?: string
           import_batch?: string | null
           import_date?: string | null
+          input_custom_field_1?: string | null
+          input_custom_field_2?: string | null
+          input_custom_field_3?: string | null
+          input_first_name?: string | null
+          input_last_name?: string | null
+          input_mailing_address?: string | null
+          input_mailing_city?: string | null
+          input_mailing_state?: string | null
+          input_mailing_zip?: string | null
+          input_property_address?: string | null
+          input_property_city?: string | null
+          input_property_state?: string | null
+          input_property_zip?: string | null
           last_contact_date?: string | null
           lead_captured?: boolean | null
           lead_captured_at?: string | null
@@ -731,18 +1073,156 @@ export type Database = {
           lead_status?: string
           letter_sent?: boolean
           lot_size?: number | null
+          matched_first_name?: string | null
+          matched_last_name?: string | null
           meeting_scheduled?: boolean
           neighborhood?: string | null
           next_followup_date?: string | null
           origem?: string | null
           owner_address?: string | null
+          owner_fix_first_name?: string | null
+          owner_fix_last_name?: string | null
+          owner_fix_mailing_address?: string | null
+          owner_fix_mailing_city?: string | null
+          owner_fix_mailing_state?: string | null
+          owner_fix_mailing_zip?: string | null
           owner_name?: string | null
           owner_phone?: string | null
+          person2_age?: number | null
+          person2_confirmed_mailing_address?: string | null
+          person2_confirmed_mailing_city?: string | null
+          person2_confirmed_mailing_state?: string | null
+          person2_confirmed_mailing_zip?: string | null
+          person2_deceased?: boolean | null
+          person2_email1?: string | null
+          person2_email2?: string | null
+          person2_first_name?: string | null
+          person2_last_name?: string | null
+          person2_phone1?: string | null
+          person2_phone1_type?: string | null
+          person2_phone2?: string | null
+          person2_phone2_type?: string | null
+          person2_phone3?: string | null
+          person2_phone3_type?: string | null
+          person2_phone4?: string | null
+          person2_phone4_type?: string | null
+          person2_phone5?: string | null
+          person2_phone5_type?: string | null
+          person2_phone6?: string | null
+          person2_phone6_type?: string | null
+          person2_phone7?: string | null
+          person2_phone7_type?: string | null
+          person2_relative1_age?: number | null
+          person2_relative1_name?: string | null
+          person2_relative1_phone1?: string | null
+          person2_relative1_phone1_type?: string | null
+          person2_relative1_phone2?: string | null
+          person2_relative1_phone2_type?: string | null
+          person2_relative1_phone3?: string | null
+          person2_relative1_phone3_type?: string | null
+          person2_relative1_phone4?: string | null
+          person2_relative1_phone4_type?: string | null
+          person2_relative1_phone5?: string | null
+          person2_relative1_phone5_type?: string | null
+          person2_relative2_age?: number | null
+          person2_relative2_name?: string | null
+          person2_relative2_phone1?: string | null
+          person2_relative2_phone1_type?: string | null
+          person2_relative2_phone2?: string | null
+          person2_relative2_phone2_type?: string | null
+          person2_relative2_phone3?: string | null
+          person2_relative2_phone3_type?: string | null
+          person2_relative2_phone4?: string | null
+          person2_relative2_phone4_type?: string | null
+          person2_relative2_phone5?: string | null
+          person2_relative2_phone5_type?: string | null
+          person2_relative3_age?: number | null
+          person2_relative3_name?: string | null
+          person2_relative3_phone1?: string | null
+          person2_relative3_phone1_type?: string | null
+          person2_relative3_phone2?: string | null
+          person2_relative3_phone2_type?: string | null
+          person2_relative3_phone3?: string | null
           phone_call_made?: boolean
+          phone1?: string | null
+          phone1_type?: string | null
+          phone2?: string | null
+          phone2_type?: string | null
+          phone3?: string | null
+          phone3_type?: string | null
+          phone4?: string | null
+          phone4_type?: string | null
+          phone5?: string | null
+          phone5_type?: string | null
+          phone6?: string | null
+          phone6_type?: string | null
+          phone7?: string | null
+          phone7_type?: string | null
           property_image_url?: string | null
           property_type?: string | null
           rejection_notes?: string | null
           rejection_reason?: string | null
+          relative1_age?: number | null
+          relative1_name?: string | null
+          relative1_phone1?: string | null
+          relative1_phone1_type?: string | null
+          relative1_phone2?: string | null
+          relative1_phone2_type?: string | null
+          relative1_phone3?: string | null
+          relative1_phone3_type?: string | null
+          relative1_phone4?: string | null
+          relative1_phone4_type?: string | null
+          relative1_phone5?: string | null
+          relative1_phone5_type?: string | null
+          relative2_age?: number | null
+          relative2_name?: string | null
+          relative2_phone1?: string | null
+          relative2_phone1_type?: string | null
+          relative2_phone2?: string | null
+          relative2_phone2_type?: string | null
+          relative2_phone3?: string | null
+          relative2_phone3_type?: string | null
+          relative2_phone4?: string | null
+          relative2_phone4_type?: string | null
+          relative2_phone5?: string | null
+          relative2_phone5_type?: string | null
+          relative3_age?: number | null
+          relative3_name?: string | null
+          relative3_phone1?: string | null
+          relative3_phone1_type?: string | null
+          relative3_phone2?: string | null
+          relative3_phone2_type?: string | null
+          relative3_phone3?: string | null
+          relative3_phone3_type?: string | null
+          relative3_phone4?: string | null
+          relative3_phone4_type?: string | null
+          relative3_phone5?: string | null
+          relative3_phone5_type?: string | null
+          relative4_age?: number | null
+          relative4_name?: string | null
+          relative4_phone1?: string | null
+          relative4_phone1_type?: string | null
+          relative4_phone2?: string | null
+          relative4_phone2_type?: string | null
+          relative4_phone3?: string | null
+          relative4_phone3_type?: string | null
+          relative4_phone4?: string | null
+          relative4_phone4_type?: string | null
+          relative4_phone5?: string | null
+          relative4_phone5_type?: string | null
+          relative5_age?: number | null
+          relative5_name?: string | null
+          relative5_phone1?: string | null
+          relative5_phone1_type?: string | null
+          relative5_phone2?: string | null
+          relative5_phone2_type?: string | null
+          relative5_phone3?: string | null
+          relative5_phone3_type?: string | null
+          relative5_phone4?: string | null
+          relative5_phone4_type?: string | null
+          relative5_phone5?: string | null
+          relative5_phone5_type?: string | null
+          resultcode?: string | null
           slug?: string
           sms_sent?: boolean
           square_feet?: number | null
