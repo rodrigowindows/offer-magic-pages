@@ -733,7 +733,13 @@ export type Database = {
           person2_relative5_phone5: string | null
           person2_relative5_phone5_type: string | null
           person3_age: number | null
+          person3_confirmed_mailing_address: string | null
+          person3_confirmed_mailing_city: string | null
+          person3_confirmed_mailing_state: string | null
+          person3_confirmed_mailing_zip: string | null
           person3_deceased: boolean | null
+          person3_email1: string | null
+          person3_email2: string | null
           person3_first_name: string | null
           person3_last_name: string | null
           person3_phone1: string | null
@@ -743,6 +749,73 @@ export type Database = {
           person3_phone3: string | null
           person3_phone3_type: string | null
           person3_phone4: string | null
+          person3_phone4_type: string | null
+          person3_phone5: string | null
+          person3_phone5_type: string | null
+          person3_phone6: string | null
+          person3_phone6_type: string | null
+          person3_phone7: string | null
+          person3_phone7_type: string | null
+          person3_relative1_age: number | null
+          person3_relative1_name: string | null
+          person3_relative1_phone1: string | null
+          person3_relative1_phone1_type: string | null
+          person3_relative1_phone2: string | null
+          person3_relative1_phone2_type: string | null
+          person3_relative1_phone3: string | null
+          person3_relative1_phone3_type: string | null
+          person3_relative1_phone4: string | null
+          person3_relative1_phone4_type: string | null
+          person3_relative1_phone5: string | null
+          person3_relative1_phone5_type: string | null
+          person3_relative2_age: number | null
+          person3_relative2_name: string | null
+          person3_relative2_phone1: string | null
+          person3_relative2_phone1_type: string | null
+          person3_relative2_phone2: string | null
+          person3_relative2_phone2_type: string | null
+          person3_relative2_phone3: string | null
+          person3_relative2_phone3_type: string | null
+          person3_relative2_phone4: string | null
+          person3_relative2_phone4_type: string | null
+          person3_relative2_phone5: string | null
+          person3_relative2_phone5_type: string | null
+          person3_relative3_age: number | null
+          person3_relative3_name: string | null
+          person3_relative3_phone1: string | null
+          person3_relative3_phone1_type: string | null
+          person3_relative3_phone2: string | null
+          person3_relative3_phone2_type: string | null
+          person3_relative3_phone3: string | null
+          person3_relative3_phone3_type: string | null
+          person3_relative3_phone4: string | null
+          person3_relative3_phone4_type: string | null
+          person3_relative3_phone5: string | null
+          person3_relative3_phone5_type: string | null
+          person3_relative4_age: number | null
+          person3_relative4_name: string | null
+          person3_relative4_phone1: string | null
+          person3_relative4_phone1_type: string | null
+          person3_relative4_phone2: string | null
+          person3_relative4_phone2_type: string | null
+          person3_relative4_phone3: string | null
+          person3_relative4_phone3_type: string | null
+          person3_relative4_phone4: string | null
+          person3_relative4_phone4_type: string | null
+          person3_relative4_phone5: string | null
+          person3_relative4_phone5_type: string | null
+          person3_relative5_age: number | null
+          person3_relative5_name: string | null
+          person3_relative5_phone1: string | null
+          person3_relative5_phone1_type: string | null
+          person3_relative5_phone2: string | null
+          person3_relative5_phone2_type: string | null
+          person3_relative5_phone3: string | null
+          person3_relative5_phone3_type: string | null
+          person3_relative5_phone4: string | null
+          person3_relative5_phone4_type: string | null
+          person3_relative5_phone5: string | null
+          person3_relative5_phone5_type: string | null
           phone_call_made: boolean
           phone1: string | null
           phone1_type: string | null
@@ -993,7 +1066,13 @@ export type Database = {
           person2_relative5_phone5?: string | null
           person2_relative5_phone5_type?: string | null
           person3_age?: number | null
+          person3_confirmed_mailing_address?: string | null
+          person3_confirmed_mailing_city?: string | null
+          person3_confirmed_mailing_state?: string | null
+          person3_confirmed_mailing_zip?: string | null
           person3_deceased?: boolean | null
+          person3_email1?: string | null
+          person3_email2?: string | null
           person3_first_name?: string | null
           person3_last_name?: string | null
           person3_phone1?: string | null
@@ -1003,6 +1082,73 @@ export type Database = {
           person3_phone3?: string | null
           person3_phone3_type?: string | null
           person3_phone4?: string | null
+          person3_phone4_type?: string | null
+          person3_phone5?: string | null
+          person3_phone5_type?: string | null
+          person3_phone6?: string | null
+          person3_phone6_type?: string | null
+          person3_phone7?: string | null
+          person3_phone7_type?: string | null
+          person3_relative1_age?: number | null
+          person3_relative1_name?: string | null
+          person3_relative1_phone1?: string | null
+          person3_relative1_phone1_type?: string | null
+          person3_relative1_phone2?: string | null
+          person3_relative1_phone2_type?: string | null
+          person3_relative1_phone3?: string | null
+          person3_relative1_phone3_type?: string | null
+          person3_relative1_phone4?: string | null
+          person3_relative1_phone4_type?: string | null
+          person3_relative1_phone5?: string | null
+          person3_relative1_phone5_type?: string | null
+          person3_relative2_age?: number | null
+          person3_relative2_name?: string | null
+          person3_relative2_phone1?: string | null
+          person3_relative2_phone1_type?: string | null
+          person3_relative2_phone2?: string | null
+          person3_relative2_phone2_type?: string | null
+          person3_relative2_phone3?: string | null
+          person3_relative2_phone3_type?: string | null
+          person3_relative2_phone4?: string | null
+          person3_relative2_phone4_type?: string | null
+          person3_relative2_phone5?: string | null
+          person3_relative2_phone5_type?: string | null
+          person3_relative3_age?: number | null
+          person3_relative3_name?: string | null
+          person3_relative3_phone1?: string | null
+          person3_relative3_phone1_type?: string | null
+          person3_relative3_phone2?: string | null
+          person3_relative3_phone2_type?: string | null
+          person3_relative3_phone3?: string | null
+          person3_relative3_phone3_type?: string | null
+          person3_relative3_phone4?: string | null
+          person3_relative3_phone4_type?: string | null
+          person3_relative3_phone5?: string | null
+          person3_relative3_phone5_type?: string | null
+          person3_relative4_age?: number | null
+          person3_relative4_name?: string | null
+          person3_relative4_phone1?: string | null
+          person3_relative4_phone1_type?: string | null
+          person3_relative4_phone2?: string | null
+          person3_relative4_phone2_type?: string | null
+          person3_relative4_phone3?: string | null
+          person3_relative4_phone3_type?: string | null
+          person3_relative4_phone4?: string | null
+          person3_relative4_phone4_type?: string | null
+          person3_relative4_phone5?: string | null
+          person3_relative4_phone5_type?: string | null
+          person3_relative5_age?: number | null
+          person3_relative5_name?: string | null
+          person3_relative5_phone1?: string | null
+          person3_relative5_phone1_type?: string | null
+          person3_relative5_phone2?: string | null
+          person3_relative5_phone2_type?: string | null
+          person3_relative5_phone3?: string | null
+          person3_relative5_phone3_type?: string | null
+          person3_relative5_phone4?: string | null
+          person3_relative5_phone4_type?: string | null
+          person3_relative5_phone5?: string | null
+          person3_relative5_phone5_type?: string | null
           phone_call_made?: boolean
           phone1?: string | null
           phone1_type?: string | null
@@ -1253,7 +1399,13 @@ export type Database = {
           person2_relative5_phone5?: string | null
           person2_relative5_phone5_type?: string | null
           person3_age?: number | null
+          person3_confirmed_mailing_address?: string | null
+          person3_confirmed_mailing_city?: string | null
+          person3_confirmed_mailing_state?: string | null
+          person3_confirmed_mailing_zip?: string | null
           person3_deceased?: boolean | null
+          person3_email1?: string | null
+          person3_email2?: string | null
           person3_first_name?: string | null
           person3_last_name?: string | null
           person3_phone1?: string | null
@@ -1263,6 +1415,73 @@ export type Database = {
           person3_phone3?: string | null
           person3_phone3_type?: string | null
           person3_phone4?: string | null
+          person3_phone4_type?: string | null
+          person3_phone5?: string | null
+          person3_phone5_type?: string | null
+          person3_phone6?: string | null
+          person3_phone6_type?: string | null
+          person3_phone7?: string | null
+          person3_phone7_type?: string | null
+          person3_relative1_age?: number | null
+          person3_relative1_name?: string | null
+          person3_relative1_phone1?: string | null
+          person3_relative1_phone1_type?: string | null
+          person3_relative1_phone2?: string | null
+          person3_relative1_phone2_type?: string | null
+          person3_relative1_phone3?: string | null
+          person3_relative1_phone3_type?: string | null
+          person3_relative1_phone4?: string | null
+          person3_relative1_phone4_type?: string | null
+          person3_relative1_phone5?: string | null
+          person3_relative1_phone5_type?: string | null
+          person3_relative2_age?: number | null
+          person3_relative2_name?: string | null
+          person3_relative2_phone1?: string | null
+          person3_relative2_phone1_type?: string | null
+          person3_relative2_phone2?: string | null
+          person3_relative2_phone2_type?: string | null
+          person3_relative2_phone3?: string | null
+          person3_relative2_phone3_type?: string | null
+          person3_relative2_phone4?: string | null
+          person3_relative2_phone4_type?: string | null
+          person3_relative2_phone5?: string | null
+          person3_relative2_phone5_type?: string | null
+          person3_relative3_age?: number | null
+          person3_relative3_name?: string | null
+          person3_relative3_phone1?: string | null
+          person3_relative3_phone1_type?: string | null
+          person3_relative3_phone2?: string | null
+          person3_relative3_phone2_type?: string | null
+          person3_relative3_phone3?: string | null
+          person3_relative3_phone3_type?: string | null
+          person3_relative3_phone4?: string | null
+          person3_relative3_phone4_type?: string | null
+          person3_relative3_phone5?: string | null
+          person3_relative3_phone5_type?: string | null
+          person3_relative4_age?: number | null
+          person3_relative4_name?: string | null
+          person3_relative4_phone1?: string | null
+          person3_relative4_phone1_type?: string | null
+          person3_relative4_phone2?: string | null
+          person3_relative4_phone2_type?: string | null
+          person3_relative4_phone3?: string | null
+          person3_relative4_phone3_type?: string | null
+          person3_relative4_phone4?: string | null
+          person3_relative4_phone4_type?: string | null
+          person3_relative4_phone5?: string | null
+          person3_relative4_phone5_type?: string | null
+          person3_relative5_age?: number | null
+          person3_relative5_name?: string | null
+          person3_relative5_phone1?: string | null
+          person3_relative5_phone1_type?: string | null
+          person3_relative5_phone2?: string | null
+          person3_relative5_phone2_type?: string | null
+          person3_relative5_phone3?: string | null
+          person3_relative5_phone3_type?: string | null
+          person3_relative5_phone4?: string | null
+          person3_relative5_phone4_type?: string | null
+          person3_relative5_phone5?: string | null
+          person3_relative5_phone5_type?: string | null
           phone_call_made?: boolean
           phone1?: string | null
           phone1_type?: string | null
