@@ -850,7 +850,7 @@ const ImportProperties = () => {
             import_date: new Date().toISOString().split('T')[0],
           };
 
-          // Apply mappings
+          // Apply mappings from user-defined column mappings
           headers.forEach(csvCol => {
             const dbField = mappingLookup.get(csvCol);
             if (!dbField) return;
@@ -879,6 +879,20 @@ const ImportProperties = () => {
               default:
                 propertyData[dbField] = value;
             }
+          });
+
+          // Apply ALL CSV columns to their dynamic DB column names (for auto-created columns)
+          headers.forEach(csvCol => {
+            const dynamicDbField = csvToDbColumnMap.get(csvCol);
+            if (!dynamicDbField) return;
+            
+            // Skip if already set by user mappings
+            if (propertyData[dynamicDbField] !== undefined) return;
+            
+            const value = row[csvCol];
+            if (!value) return;
+            
+            propertyData[dynamicDbField] = value;
           });
 
           // Get unique identifier
