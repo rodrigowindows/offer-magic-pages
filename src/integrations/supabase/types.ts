@@ -703,6 +703,46 @@ export type Database = {
           person2_relative3_phone2: string | null
           person2_relative3_phone2_type: string | null
           person2_relative3_phone3: string | null
+          person2_relative3_phone3_type: string | null
+          person2_relative3_phone4: string | null
+          person2_relative3_phone4_type: string | null
+          person2_relative3_phone5: string | null
+          person2_relative3_phone5_type: string | null
+          person2_relative4_age: number | null
+          person2_relative4_name: string | null
+          person2_relative4_phone1: string | null
+          person2_relative4_phone1_type: string | null
+          person2_relative4_phone2: string | null
+          person2_relative4_phone2_type: string | null
+          person2_relative4_phone3: string | null
+          person2_relative4_phone3_type: string | null
+          person2_relative4_phone4: string | null
+          person2_relative4_phone4_type: string | null
+          person2_relative4_phone5: string | null
+          person2_relative4_phone5_type: string | null
+          person2_relative5_age: number | null
+          person2_relative5_name: string | null
+          person2_relative5_phone1: string | null
+          person2_relative5_phone1_type: string | null
+          person2_relative5_phone2: string | null
+          person2_relative5_phone2_type: string | null
+          person2_relative5_phone3: string | null
+          person2_relative5_phone3_type: string | null
+          person2_relative5_phone4: string | null
+          person2_relative5_phone4_type: string | null
+          person2_relative5_phone5: string | null
+          person2_relative5_phone5_type: string | null
+          person3_age: number | null
+          person3_deceased: boolean | null
+          person3_first_name: string | null
+          person3_last_name: string | null
+          person3_phone1: string | null
+          person3_phone1_type: string | null
+          person3_phone2: string | null
+          person3_phone2_type: string | null
+          person3_phone3: string | null
+          person3_phone3_type: string | null
+          person3_phone4: string | null
           phone_call_made: boolean
           phone1: string | null
           phone1_type: string | null
@@ -923,6 +963,46 @@ export type Database = {
           person2_relative3_phone2?: string | null
           person2_relative3_phone2_type?: string | null
           person2_relative3_phone3?: string | null
+          person2_relative3_phone3_type?: string | null
+          person2_relative3_phone4?: string | null
+          person2_relative3_phone4_type?: string | null
+          person2_relative3_phone5?: string | null
+          person2_relative3_phone5_type?: string | null
+          person2_relative4_age?: number | null
+          person2_relative4_name?: string | null
+          person2_relative4_phone1?: string | null
+          person2_relative4_phone1_type?: string | null
+          person2_relative4_phone2?: string | null
+          person2_relative4_phone2_type?: string | null
+          person2_relative4_phone3?: string | null
+          person2_relative4_phone3_type?: string | null
+          person2_relative4_phone4?: string | null
+          person2_relative4_phone4_type?: string | null
+          person2_relative4_phone5?: string | null
+          person2_relative4_phone5_type?: string | null
+          person2_relative5_age?: number | null
+          person2_relative5_name?: string | null
+          person2_relative5_phone1?: string | null
+          person2_relative5_phone1_type?: string | null
+          person2_relative5_phone2?: string | null
+          person2_relative5_phone2_type?: string | null
+          person2_relative5_phone3?: string | null
+          person2_relative5_phone3_type?: string | null
+          person2_relative5_phone4?: string | null
+          person2_relative5_phone4_type?: string | null
+          person2_relative5_phone5?: string | null
+          person2_relative5_phone5_type?: string | null
+          person3_age?: number | null
+          person3_deceased?: boolean | null
+          person3_first_name?: string | null
+          person3_last_name?: string | null
+          person3_phone1?: string | null
+          person3_phone1_type?: string | null
+          person3_phone2?: string | null
+          person3_phone2_type?: string | null
+          person3_phone3?: string | null
+          person3_phone3_type?: string | null
+          person3_phone4?: string | null
           phone_call_made?: boolean
           phone1?: string | null
           phone1_type?: string | null
@@ -1143,6 +1223,46 @@ export type Database = {
           person2_relative3_phone2?: string | null
           person2_relative3_phone2_type?: string | null
           person2_relative3_phone3?: string | null
+          person2_relative3_phone3_type?: string | null
+          person2_relative3_phone4?: string | null
+          person2_relative3_phone4_type?: string | null
+          person2_relative3_phone5?: string | null
+          person2_relative3_phone5_type?: string | null
+          person2_relative4_age?: number | null
+          person2_relative4_name?: string | null
+          person2_relative4_phone1?: string | null
+          person2_relative4_phone1_type?: string | null
+          person2_relative4_phone2?: string | null
+          person2_relative4_phone2_type?: string | null
+          person2_relative4_phone3?: string | null
+          person2_relative4_phone3_type?: string | null
+          person2_relative4_phone4?: string | null
+          person2_relative4_phone4_type?: string | null
+          person2_relative4_phone5?: string | null
+          person2_relative4_phone5_type?: string | null
+          person2_relative5_age?: number | null
+          person2_relative5_name?: string | null
+          person2_relative5_phone1?: string | null
+          person2_relative5_phone1_type?: string | null
+          person2_relative5_phone2?: string | null
+          person2_relative5_phone2_type?: string | null
+          person2_relative5_phone3?: string | null
+          person2_relative5_phone3_type?: string | null
+          person2_relative5_phone4?: string | null
+          person2_relative5_phone4_type?: string | null
+          person2_relative5_phone5?: string | null
+          person2_relative5_phone5_type?: string | null
+          person3_age?: number | null
+          person3_deceased?: boolean | null
+          person3_first_name?: string | null
+          person3_last_name?: string | null
+          person3_phone1?: string | null
+          person3_phone1_type?: string | null
+          person3_phone2?: string | null
+          person3_phone2_type?: string | null
+          person3_phone3?: string | null
+          person3_phone3_type?: string | null
+          person3_phone4?: string | null
           phone_call_made?: boolean
           phone1?: string | null
           phone1_type?: string | null
