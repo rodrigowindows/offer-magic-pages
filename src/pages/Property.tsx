@@ -15,8 +15,8 @@ import OfferProgressIndicator from "@/components/OfferProgressIndicator";
 import OfferChatBot from "@/components/OfferChatBot";
 import LanguageToggle from "@/components/LanguageToggle";
 import PropertyPageMinimal from "@/components/PropertyPageMinimal";
+import { OfferEditPanel } from "@/components/OfferEditPanel";
 import { Badge } from "@/components/ui/badge";
-
 interface PropertyData {
   id: string;
   slug: string;
@@ -30,6 +30,7 @@ interface PropertyData {
   status: string;
   owner_name: string | null;
   neighborhood: string | null;
+  zillow_url: string | null;
 }
 
 const translations = {
@@ -192,18 +193,32 @@ const Property = () => {
 
   const ownerFirstName = property.owner_name?.split(' ')[0] || '';
 
+  const handleOfferUpdate = (newEstimatedValue: number, newCashOffer: number) => {
+    setProperty(prev => prev ? {
+      ...prev,
+      estimated_value: newEstimatedValue,
+      cash_offer_amount: newCashOffer,
+    } : null);
+  };
+
   return (
     <main className="min-h-screen">
       {/* Variant indicator for debugging - remove in production */}
-      <div className="fixed bottom-4 left-4 z-50">
+      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2">
         <Badge variant="outline" className="text-xs opacity-50">
           Variant A
         </Badge>
+        <OfferEditPanel
+          propertyId={property.id}
+          currentEstimatedValue={property.estimated_value}
+          currentCashOffer={property.cash_offer_amount}
+          zillowUrl={property.zillow_url}
+          onUpdate={handleOfferUpdate}
+        />
       </div>
 
       {/* Language Toggle */}
       <LanguageToggle language={language} onChange={setLanguage} />
-
       {/* Personalized Greeting */}
       {ownerFirstName && (
         <div className="bg-gradient-to-r from-secondary/20 to-primary/20 py-4">
