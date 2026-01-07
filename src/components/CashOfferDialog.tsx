@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { sendEmail } from "@/services/marketingService";
 
 interface Property {
   id: string;
@@ -95,19 +96,64 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
 
     setSendingEmail(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-property-email', {
-        body: {
-          propertyId: property.id,
-          recipientEmail,
-          recipientName: property.owner_name || "Property Owner",
-          subject: language === "en" 
-            ? `Cash Offer for ${property.address}` 
-            : `Oferta en Efectivo para ${property.address}`,
-          language,
-        }
-      });
+      // Generate the offer letter HTML content
+      const offerLetterHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Cash Offer Letter</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .header { background: #f8f9fa; padding: 20px; text-align: center; }
+            .content { padding: 20px; }
+            .offer-amount { font-size: 24px; font-weight: bold; color: #28a745; }
+            .property-details { background: #f8f9fa; padding: 15px; margin: 20px 0; }
+            .signature { margin-top: 40px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>MyLocalInvest - Cash Offer</h1>
+            <p>We buy houses in any condition - Cash, fast closing!</p>
+          </div>
+          <div class="content">
+            <p>Dear ${property.owner_name || "Property Owner"},</p>
+            <p>We are pleased to present you with a <strong>cash offer</strong> for your property located at:</p>
+            <div class="property-details">
+              <p><strong>${property.address}</strong></p>
+              <p>${property.city}, ${property.state} ${property.zip_code}</p>
+            </div>
+            <p class="offer-amount">Our cash offer: $${property.cash_offer_amount.toLocaleString()}</p>
+            <ul>
+              <li>No repairs needed - we buy as-is</li>
+              <li>Cash payment - no financing contingencies</li>
+              <li>Fast closing - typically within 7 days</li>
+              <li>No real estate agent commissions</li>
+            </ul>
+            <p>This offer is valid for 30 days from the date of this letter. To accept this offer, please contact us at:</p>
+            <p><strong>Phone:</strong> ${phone}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Website:</strong> <a href="${offerUrl}">${offerUrl}</a></p>
+            <div class="signature">
+              <p>Sincerely,</p>
+              <p><strong>MyLocalInvest Team</strong></p>
+              <p>${email}</p>
+              <p>${phone}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
 
-      if (error) throw error;
+      // Use MCP service to send email
+      await sendEmail({
+        receiver_email: recipientEmail,
+        subject: language === "en"
+          ? `Cash Offer for ${property.address}`
+          : `Oferta en Efectivo para ${property.address}`,
+        message_body: offerLetterHtml,
+      });
 
       toast({
         title: "Email sent!",
@@ -117,7 +163,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
     } catch (error: any) {
       toast({
         title: "Error sending email",
-        description: error.message,
+        description: error.message || "Failed to send email",
         variant: "destructive",
       });
     } finally {

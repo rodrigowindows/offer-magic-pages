@@ -34,6 +34,7 @@ import {
   Send,
   History,
   Settings,
+  TestTube2,
   ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -72,6 +73,12 @@ const adminPages: NavigationItem[] = [
     href: '/admin/import',
     description: 'Bulk import from CSV',
     icon: Upload,
+  },
+  {
+    title: 'MCP Tester',
+    href: '/marketing/mcp-tester',
+    description: 'Debug MCP operations',
+    icon: TestTube2,
   },
 ];
 

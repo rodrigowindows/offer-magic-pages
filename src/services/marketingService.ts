@@ -8,24 +8,28 @@ import type {
   HealthCheckResponse,
 } from '@/types/marketing.types';
 
-// ===== HEALTH CHECK =====
-
+// ===== HEALTH CHECK (mantém endpoint antigo) =====
 export const checkHealth = async (): Promise<HealthCheckResponse> => {
   const api = getApiInstance();
   const response = await api.get<HealthCheckResponse>('/health');
   return response.data;
 };
 
-// ===== ENVIAR COMUNICADO COMPLETO =====
-
+// ===== ENVIAR COMUNICADO COMPLETO (via MCP) =====
 export const sendCommunication = async (
   payload: Partial<CommunicationPayload>
 ): Promise<CommunicationResponse> => {
   const api = getApiInstance();
-
   try {
-    const response = await api.post<CommunicationResponse>('/start', payload);
-    return response.data;
+    const response = await api.post('/mcp', {
+      operation: 'echo', // ou outro comando, se desejar customizar
+      data: payload,
+    });
+    if (response.data.status === 'ok') {
+      return response.data.result;
+    } else {
+      throw new Error(response.data.error || 'Erro desconhecido na comunicação');
+    }
   } catch (error: any) {
     if (error.response?.data?.error) {
       throw new Error(error.response.data.error);
@@ -34,14 +38,19 @@ export const sendCommunication = async (
   }
 };
 
-// ===== ENVIAR SMS INDIVIDUAL =====
-
+// ===== ENVIAR SMS INDIVIDUAL (via MCP) =====
 export const sendSMS = async (data: SendSMSRequest): Promise<{ message: string }> => {
   const api = getApiInstance();
-
   try {
-    const response = await api.post<{ message: string }>('/send_sms', data);
-    return response.data;
+    const response = await api.post('/mcp', {
+      operation: 'send_sms',
+      data,
+    });
+    if (response.data.status === 'ok') {
+      return { message: 'SMS enviado com sucesso', ...response.data.result };
+    } else {
+      throw new Error(response.data.error || 'Erro ao enviar SMS');
+    }
   } catch (error: any) {
     if (error.response?.data?.error) {
       throw new Error(error.response.data.error);
@@ -50,15 +59,13 @@ export const sendSMS = async (data: SendSMSRequest): Promise<{ message: string }
   }
 };
 
-// ===== ENVIAR EMAIL INDIVIDUAL =====
-
+// ===== ENVIAR EMAIL INDIVIDUAL (Híbrido: MCP ou endpoint direto) =====
 export const sendEmail = async (
   data: SendEmailRequest
 ): Promise<{ message: string }> => {
   const api = getApiInstance();
-
   try {
-    // Se houver imagem, usar FormData
+    // Se houver imagem, usa endpoint DIRETO /send_email com FormData
     if (data.image) {
       const formData = createFormData({
         receiver_email: data.receiver_email,
@@ -75,13 +82,20 @@ export const sendEmail = async (
       return response.data;
     }
 
-    // Sem imagem, enviar JSON
-    const response = await api.post<{ message: string }>('/send_email', {
-      receiver_email: data.receiver_email,
-      subject: data.subject,
-      message_body: data.message_body,
+    // Sem imagem, usa endpoint MCP (mais simples e padronizado)
+    const response = await api.post('/mcp', {
+      operation: 'send_email',
+      data: {
+        receiver_email: data.receiver_email,
+        subject: data.subject,
+        message_body: data.message_body,
+      },
     });
-    return response.data;
+    if (response.data.status === 'ok') {
+      return { message: 'Email enviado com sucesso', ...response.data.result };
+    } else {
+      throw new Error(response.data.error || 'Erro ao enviar email');
+    }
   } catch (error: any) {
     if (error.response?.data?.error) {
       throw new Error(error.response.data.error);
@@ -90,19 +104,21 @@ export const sendEmail = async (
   }
 };
 
-// ===== INICIAR CHAMADA INDIVIDUAL =====
-
+// ===== INICIAR CHAMADA INDIVIDUAL (via MCP) =====
 export const initiateCall = async (
   data: InitiateCallRequest
 ): Promise<{ call_id: string; status: string }> => {
   const api = getApiInstance();
-
   try {
-    const response = await api.post<{ call_id: string; status: string }>(
-      '/initiate_call',
-      data
-    );
-    return response.data;
+    const response = await api.post('/mcp', {
+      operation: 'initiate_call',
+      data,
+    });
+    if (response.data.status === 'ok') {
+      return { call_id: response.data.result?.call_id || '', status: 'ok', ...response.data.result };
+    } else {
+      throw new Error(response.data.error || 'Erro ao iniciar chamada');
+    }
   } catch (error: any) {
     if (error.response?.data?.error) {
       throw new Error(error.response.data.error);
@@ -111,37 +127,28 @@ export const initiateCall = async (
   }
 };
 
-// ===== ENVIO EM LOTE =====
-
+// ===== ENVIO EM LOTE (via MCP) =====
 export const sendBatchCommunication = async (
   recipients: Array<Partial<CommunicationPayload>>,
   onProgress?: (current: number, total: number) => void
 ): Promise<CommunicationResponse[]> => {
   const results: CommunicationResponse[] = [];
-
   for (let i = 0; i < recipients.length; i++) {
     try {
+      // Aqui você pode customizar a operação conforme o canal desejado
       const result = await sendCommunication(recipients[i]);
       results.push(result);
-
       if (onProgress) {
         onProgress(i + 1, recipients.length);
       }
     } catch (error: any) {
-      // Em caso de erro, adicionar resposta de erro
-      results.push({
-        error: error.message || 'Unknown error',
-      });
-
+      results.push({ error: error.message || 'Unknown error' });
       if (onProgress) {
         onProgress(i + 1, recipients.length);
       }
     }
-
-    // Pequeno delay entre requisições para não sobrecarregar a API
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-
   return results;
 };
 

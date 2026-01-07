@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, AlertCircle, MessageSquare, Settings } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, MessageSquare } from "lucide-react";
+import { sendSMS } from "@/services/marketingService";
 
 interface Property {
   id: string;
@@ -25,19 +25,11 @@ interface Property {
   owner_phone?: string;
 }
 
-interface SmsSettings {
-  api_endpoint: string;
-  api_key: string | null;
-  http_method: string;
-  headers: Record<string, string> | null;
-}
-
 interface SmsCampaignDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   propertyIds: string[];
   onSmssSent?: () => void;
-  onOpenSettings?: () => void;
 }
 
 export const SmsCampaignDialog = ({
@@ -45,13 +37,11 @@ export const SmsCampaignDialog = ({
   onOpenChange,
   propertyIds,
   onSmssSent,
-  onOpenSettings,
 }: SmsCampaignDialogProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [smsSettings, setSmsSettings] = useState<SmsSettings | null>(null);
   const [message, setMessage] = useState(
     `Hi {owner_name}, we have a cash offer of ${"{cash_offer}"} for your property at {address}. Interested? Reply YES or call 786-882-8251. - MyLocalInvest`
   );
@@ -59,7 +49,6 @@ export const SmsCampaignDialog = ({
   useEffect(() => {
     if (open && propertyIds.length > 0) {
       fetchProperties();
-      fetchSmsSettings();
     }
   }, [open, propertyIds]);
 
@@ -82,23 +71,6 @@ export const SmsCampaignDialog = ({
     setIsLoading(false);
   };
 
-  const fetchSmsSettings = async () => {
-    const { data, error } = await supabase
-      .from("sms_settings")
-      .select("*")
-      .limit(1)
-      .single();
-
-    if (!error && data) {
-      setSmsSettings({
-        api_endpoint: data.api_endpoint,
-        api_key: data.api_key,
-        http_method: data.http_method,
-        headers: data.headers as Record<string, string> | null,
-      });
-    }
-  };
-
   const propertiesWithPhone = properties.filter(p => p.owner_phone);
 
   const generateMessage = (property: Property) => {
@@ -109,15 +81,6 @@ export const SmsCampaignDialog = ({
   };
 
   const handleSendSms = async () => {
-    if (!smsSettings) {
-      toast({
-        title: "SMS Settings Required",
-        description: "Please configure SMS settings first",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (propertiesWithPhone.length === 0) {
       toast({
         title: "No Phone Numbers",
@@ -134,37 +97,21 @@ export const SmsCampaignDialog = ({
     for (const property of propertiesWithPhone) {
       try {
         const smsMessage = generateMessage(property);
-        
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...(smsSettings.headers || {}),
-        };
 
-        if (smsSettings.api_key) {
-          headers["Authorization"] = `Bearer ${smsSettings.api_key}`;
-        }
-
-        const response = await fetch(smsSettings.api_endpoint, {
-          method: smsSettings.http_method,
-          headers,
-          body: JSON.stringify({
-            to: property.owner_phone,
-            message: smsMessage,
-            property_id: property.id,
-          }),
+        // Usar serviço MCP para envio de SMS
+        await sendSMS({
+          phone_number: property.owner_phone!,
+          body: smsMessage,
         });
 
-        if (response.ok) {
-          await supabase
-            .from("properties")
-            .update({ sms_sent: true })
-            .eq("id", property.id);
-          successCount++;
-        } else {
-          console.error(`Failed to send SMS for property ${property.id}:`, await response.text());
-          errorCount++;
-        }
-      } catch (error) {
+        // Atualizar status no banco
+        await supabase
+          .from("properties")
+          .update({ sms_sent: true })
+          .eq("id", property.id);
+
+        successCount++;
+      } catch (error: any) {
         console.error(`Error sending SMS for property ${property.id}:`, error);
         errorCount++;
       }
@@ -200,21 +147,6 @@ export const SmsCampaignDialog = ({
             Send SMS messages to {propertiesWithPhone.length} of {properties.length} selected properties with phone numbers
           </DialogDescription>
         </DialogHeader>
-
-        {!smsSettings && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>SMS settings not configured. Please configure your SMS API first.</span>
-              {onOpenSettings && (
-                <Button variant="outline" size="sm" onClick={onOpenSettings}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Configure
-                </Button>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
@@ -254,7 +186,7 @@ export const SmsCampaignDialog = ({
               </Button>
               <Button
                 onClick={handleSendSms}
-                disabled={isSending || propertiesWithPhone.length === 0 || !smsSettings}
+                disabled={isSending || propertiesWithPhone.length === 0}
               >
                 {isSending ? (
                   <>

@@ -15,6 +15,7 @@ import { WizardLayout } from './WizardLayout';
 import { History } from './History';
 import { Settings } from './Settings';
 import { TestModeToggle } from './TestModeToggle';
+import McpTester from './McpTester';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
   Send,
   History as HistoryIcon,
   Settings as SettingsIcon,
+  TestTube2,
   Menu,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -73,6 +75,7 @@ const MarketingAppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/send" element={<WizardLayout />} />
             <Route path="/history" element={<History />} />
+            <Route path="/mcp-tester" element={<McpTester />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/marketing" replace />} />
           </Routes>
@@ -91,6 +94,7 @@ const Sidebar = () => {
     { path: '/marketing', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/marketing/send', icon: Send, label: 'New Communication' },
     { path: '/marketing/history', icon: HistoryIcon, label: 'History' },
+    { path: '/marketing/mcp-tester', icon: TestTube2, label: 'MCP Tester' },
     { path: '/marketing/settings', icon: SettingsIcon, label: 'Settings' },
   ];
 

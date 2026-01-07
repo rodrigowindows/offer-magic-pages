@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Copy, Send } from "lucide-react";
+import { Mail, Copy, Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { sendEmail } from "@/services/marketingService";
 
 interface Property {
   address: string;
@@ -188,6 +189,7 @@ export const EmailTemplatesDialog = ({
   const [selectedTemplate, setSelectedTemplate] = useState<keyof typeof EMAIL_TEMPLATES>('initial_contact');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const fillTemplate = (templateKey: keyof typeof EMAIL_TEMPLATES) => {
     const template = EMAIL_TEMPLATES[templateKey];
@@ -234,17 +236,41 @@ export const EmailTemplatesDialog = ({
     });
   };
 
-  const handleSendEmail = () => {
-    // Open default email client with pre-filled content
-    const mailtoLink = `mailto:${property.owner_email || ''}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailtoLink;
+  const handleSendEmail = async () => {
+    if (!property.owner_email) {
+      toast({
+        title: "No email address",
+        description: "This property doesn't have an email address",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    toast({
-      title: "Opening email client",
-      description: "Your default email client should open shortly",
-    });
+    setIsSending(true);
+    try {
+      // Convert plain text body to HTML for better email formatting
+      const htmlBody = body.replace(/\n/g, '<br>');
+
+      await sendEmail({
+        receiver_email: property.owner_email,
+        subject: subject,
+        message_body: htmlBody,
+      });
+
+      toast({
+        title: "Email sent!",
+        description: `Email sent to ${property.owner_email}`,
+      });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Error sending email",
+        description: error.message || "Failed to send email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // Initialize with default template
@@ -347,9 +373,18 @@ export const EmailTemplatesDialog = ({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSendEmail} className="gap-2" disabled={!property.owner_email}>
-              <Send className="h-4 w-4" />
-              Send Email
+            <Button onClick={handleSendEmail} className="gap-2" disabled={!property.owner_email || isSending}>
+              {isSending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Send Email
+                </>
+              )}
             </Button>
           </div>
         </DialogFooter>
