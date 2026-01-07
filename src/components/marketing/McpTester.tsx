@@ -8,17 +8,18 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getApiInstance, getApiBaseURL } from '@/services/api';
 import { TestTube2, Copy, Zap } from 'lucide-react';
+import { TEST_CONTACTS, getTestPhone, getTestEmail, getTestName } from '@/config/testContacts';
 
 const EXAMPLES: Record<string, any> = {
   echo: { test: 'conexao' },
-  send_sms: { phone_number: '3051234567', body: 'Olá! Interessado na propriedade?' },
-  send_email: { receiver_email: 'cliente@exemplo.com', subject: 'Oferta Especial', message_body: 'Olá! Temos uma oportunidade.' },
+  send_sms: { phone_number: getTestPhone(), body: 'Olá! Interessado na propriedade?' },
+  send_email: { receiver_email: getTestEmail(), subject: 'Oferta Especial', message_body: 'Olá! Temos uma oportunidade.' },
   initiate_call: {
-    name: 'João Silva',
+    name: getTestName(),
     address: 'Rua das Flores, 123',
     from_number: '7868828251',
-    to_number: '11987654321',
-    voicemail_drop: 'Olá João, temos uma oferta especial.',
+    to_number: getTestPhone(),
+    voicemail_drop: `Olá ${getTestName()}, temos uma oferta especial.`,
     seller_name: 'Carlos Vendedor',
   },
 };
