@@ -32,13 +32,15 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
     }, 100);
   };
 
+  // Sidebar compact version - shows clickable button
   if (compact) {
     return (
       <Button
         variant="ghost"
         size="sm"
         onClick={toggleTestMode}
-        className={testMode ? "text-orange-500" : "text-green-500"}
+        className={testMode ? "text-orange-500 hover:text-orange-600" : "text-green-500 hover:text-green-600"}
+        title={testMode ? "Test Mode - Click for Production" : "Production Mode - Click for Test"}
       >
         {testMode ? (
           <TestTube2 className="w-5 h-5" />
@@ -49,23 +51,22 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
     );
   }
 
+  // Sidebar expanded version - shows card with button
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
-        <div className="flex items-center gap-3">
+    <div className="space-y-2">
+      <div className="flex flex-col gap-2 p-3 rounded-lg border bg-card">
+        <div className="flex items-center gap-2">
           {testMode ? (
-            <TestTube2 className="w-6 h-6 text-orange-500" />
+            <TestTube2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
           ) : (
-            <Rocket className="w-6 h-6 text-green-500" />
+            <Rocket className="w-5 h-5 text-green-500 flex-shrink-0" />
           )}
-          <div>
-            <p className="font-medium text-lg">
-              {testMode ? '🧪 Test Mode' : '🚀 Production Mode'}
+          <div className="min-w-0">
+            <p className="font-medium text-sm">
+              {testMode ? 'Test Mode' : 'Production'}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {testMode
-                ? 'Communications are SIMULATED'
-                : 'Sending to +12405814595 & rodrigowindows@gmail.com'}
+            <p className="text-xs text-muted-foreground">
+              {testMode ? '(Safe)' : '(Live)'}
             </p>
           </div>
         </div>
@@ -73,28 +74,32 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
         <Button
           onClick={toggleTestMode}
           variant={testMode ? "default" : "destructive"}
-          size="lg"
-          className="font-bold"
+          size="sm"
+          className="w-full font-semibold"
         >
-          {testMode ? 'Activate PRODUCTION' : 'Back to TEST'}
+          {testMode ? '🚀 Go LIVE' : '🧪 Back to TEST'}
         </Button>
       </div>
 
       {testMode && (
-        <Alert variant="default" className="border-orange-500/50 bg-orange-50 dark:bg-orange-950/20">
-          <TestTube2 className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800 dark:text-orange-200">
-            <strong>🧪 TEST MODE:</strong> No real communications. Click "Activate PRODUCTION" to send real messages.
-          </AlertDescription>
+        <Alert variant="default" className="border-orange-500/50 bg-orange-50 dark:bg-orange-950/20 p-2">
+          <div className="flex items-start gap-2">
+            <TestTube2 className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-orange-800 dark:text-orange-200">
+              <strong>🧪 TEST MODE:</strong> Communications are simulated. Turn ON the switch above to send REAL messages.
+            </p>
+          </div>
         </Alert>
       )}
 
       {!testMode && (
-        <Alert variant="destructive">
-          <Rocket className="h-4 w-4" />
-          <AlertDescription>
-            <strong>🚀 PRODUCTION ACTIVE!</strong> Real SMS, Emails, and Calls will be sent!
-          </AlertDescription>
+        <Alert variant="destructive" className="p-2">
+          <div className="flex items-start gap-2">
+            <Rocket className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <p className="text-xs">
+              <strong>🚀 LIVE:</strong> Real SMS/Email/Calls will be sent!
+            </p>
+          </div>
         </Alert>
       )}
     </div>
