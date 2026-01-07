@@ -3,12 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getApiInstance, getApiBaseURL } from '@/services/api';
-import { TestTube2, Copy, Zap } from 'lucide-react';
+import { TestTube2, Copy } from 'lucide-react';
 import { TEST_CONTACTS, getTestPhone, getTestEmail, getTestName } from '@/config/testContacts';
+import { useMarketingStore } from '@/store/marketingStore';
 
 const EXAMPLES: Record<string, any> = {
   echo: { test: 'conexao' },
@@ -27,10 +27,13 @@ const EXAMPLES: Record<string, any> = {
 export const McpTester = () => {
   const [operation, setOperation] = useState<'echo' | 'send_sms' | 'send_email' | 'initiate_call'>('echo');
   const [payloadText, setPayloadText] = useState<string>(JSON.stringify(EXAMPLES.echo, null, 2));
-  const [testMode, setTestMode] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<any>(null);
   const { toast } = useToast();
+  
+  // Use global test mode from store
+  const settings = useMarketingStore((state) => state.settings);
+  const testMode = settings?.defaults?.test_mode ?? true;
 
   // Update example when operation changes
   const example = useMemo(() => EXAMPLES[operation], [operation]);
@@ -107,8 +110,9 @@ export const McpTester = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Label className="mr-2">Test Mode</Label>
-            <Switch checked={testMode} onCheckedChange={(v) => setTestMode(Boolean(v))} />
+            <Label className={testMode ? "text-orange-600" : "text-green-600"}>
+              {testMode ? '🧪 Test Mode' : '🚀 Production'}
+            </Label>
           </div>
 
           <div className="ml-auto flex gap-2">
