@@ -61,24 +61,31 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
           )}
           <div>
             <p className="font-medium">
-              {testMode ? 'Test Mode' : 'Production Mode'}
+              {testMode ? 'Test Mode (Safe)' : 'Production Mode (Live)'}
             </p>
             <p className="text-sm text-muted-foreground">
               {testMode
-                ? 'Communications will NOT be sent'
+                ? 'Click switch to enable REAL sending'
                 : 'Communications will be sent LIVE'}
             </p>
           </div>
         </div>
-        <Switch checked={testMode} onCheckedChange={toggleTestMode} />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {testMode ? 'Test' : 'Live'}
+          </span>
+          <Switch 
+            checked={!testMode} 
+            onCheckedChange={(checked) => toggleTestMode(!checked)} 
+          />
+        </div>
       </div>
 
       {testMode && (
         <Alert variant="default" className="border-orange-500/50 bg-orange-50 dark:bg-orange-950/20">
           <TestTube2 className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800 dark:text-orange-200">
-            <strong>TEST MODE ACTIVE:</strong> No real SMS, Emails, or Calls will be
-            sent. API will return simulated responses. No credits will be consumed.
+            <strong>🧪 TEST MODE:</strong> Communications are simulated. Turn ON the switch above to send REAL messages.
           </AlertDescription>
         </Alert>
       )}
@@ -87,8 +94,9 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
         <Alert variant="destructive" className="border-red-500/50">
           <Rocket className="h-4 w-4" />
           <AlertDescription>
-            <strong>PRODUCTION MODE:</strong> Communications will be sent to REAL
-            recipients. Credits will be consumed.
+            <strong>🚀 PRODUCTION:</strong> Real SMS, Emails, and Calls will be sent to {' '}
+            <span className="font-mono">+12405814595</span> and{' '}
+            <span className="font-mono">rodrigowindows@gmail.com</span>
           </AlertDescription>
         </Alert>
       )}
