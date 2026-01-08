@@ -112,16 +112,29 @@ const AutomatedABTesting = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('ab_tests')
-        .select('*')
+        .select(`
+          *,
+          ab_test_results (*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTests(data || []);
+
+      // Ensure all required fields have default values
+      const testsWithDefaults = (data || []).map(test => ({
+        ...test,
+        sampleSize: test.sampleSize || test.sample_size || 1000,
+        targetMetric: test.targetMetric || test.target_metric || 'open_rate',
+        confidenceThreshold: test.confidenceThreshold || test.confidence_threshold || 95,
+        variants: test.variants || []
+      }));
+
+      setTests(testsWithDefaults);
     } catch (error) {
       console.error('Erro ao carregar testes A/B:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os testes A/B",
+        description: "Não foi possível carregar os testes A/B. Verifique se a migração foi executada.",
         variant: "destructive"
       });
     } finally {
@@ -412,15 +425,15 @@ const AutomatedABTesting = () => {
         </TabsContent>
 
         <TabsContent value="results" className="space-y-4">
-          {selectedTest && results ? (
+          {selectedTest && results && results.variants ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold">{selectedTest.name}</h2>
                   <p className="text-muted-foreground">{selectedTest.description}</p>
                 </div>
-                {results.winnerDeclared && (
-                  <Badge className="bg-green-100 text-green-800 text-lg px-3 py-1">
+                {results.winnerDeclared && results.variants.find(v => v.isWinner) && (
+                  <Badge variant="default" className="bg-green-600">
                     <Crown className="w-4 h-4 mr-1" />
                     Vencedor: {results.variants.find(v => v.isWinner)?.name}
                   </Badge>
@@ -428,8 +441,8 @@ const AutomatedABTesting = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {results.variants.map((variant) => (
-                  <Card key={variant.variantId} className={variant.isWinner ? 'border-green-500 bg-green-50' : ''}>
+                {results.variants && results.variants.map((variant) => (
+                  <Card key={variant.variantId || variant.name} className={variant.isWinner ? 'border-green-500 bg-green-50' : ''}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center">
@@ -443,25 +456,25 @@ const AutomatedABTesting = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <div className="text-2xl font-bold text-blue-600">
-                            {variant.metrics.openRate.toFixed(1)}%
+                            {variant.metrics?.openRate?.toFixed(1) || '0.0'}%
                           </div>
                           <div className="text-xs text-muted-foreground">Taxa de Abertura</div>
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-green-600">
-                            {variant.metrics.clickRate.toFixed(1)}%
+                            {variant.metrics?.clickRate?.toFixed(1) || '0.0'}%
                           </div>
                           <div className="text-xs text-muted-foreground">Taxa de Cliques</div>
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-purple-600">
-                            {variant.metrics.conversionRate.toFixed(1)}%
+                            {variant.metrics?.conversionRate?.toFixed(1) || '0.0'}%
                           </div>
                           <div className="text-xs text-muted-foreground">Conversão</div>
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-orange-600">
-                            {variant.confidence.toFixed(0)}%
+                            {variant.confidence?.toFixed(0) || '0'}%
                           </div>
                           <div className="text-xs text-muted-foreground">Confiança</div>
                         </div>
@@ -471,12 +484,12 @@ const AutomatedABTesting = () => {
                 ))}
               </div>
 
-              {results.winnerDeclared && (
+              {results.winnerDeclared && results.variants && results.variants.find(v => v.isWinner) && (
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
                     <strong>{results.variants.find(v => v.isWinner)?.name}</strong> teve
-                    <strong> {results.improvement.toFixed(1)}% </strong>
+                    <strong> {results.improvement?.toFixed(1) || '0.0'}% </strong>
                     de melhoria na {getMetricLabel(selectedTest.targetMetric).toLowerCase()} comparado à segunda melhor variante.
                   </AlertDescription>
                 </Alert>

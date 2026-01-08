@@ -657,6 +657,30 @@ export const QuickCampaignDialog = ({
                     </Select>
                   </div>
                 </div>
+                {/* Data Availability Status */}
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-blue-900 mb-2">Data Availability:</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-700">Email ({selectedEmailColumn}):</span>
+                      <Badge variant={properties.filter(p => (p as any)[selectedEmailColumn]).length > 0 ? "default" : "secondary"}>
+                        {properties.filter(p => (p as any)[selectedEmailColumn]).length} / {properties.length}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-700">Phone ({selectedPhoneColumn}):</span>
+                      <Badge variant={properties.filter(p => (p as any)[selectedPhoneColumn]).length > 0 ? "default" : "secondary"}>
+                        {properties.filter(p => (p as any)[selectedPhoneColumn]).length} / {properties.length}
+                      </Badge>
+                    </div>
+                  </div>
+                  {enableFallback && (
+                    <p className="text-xs text-blue-600 mt-2">
+                      ✓ Fallback enabled - will try alternate columns if primary is empty
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex items-center space-x-2 mt-4">
                   <input
                     type="checkbox"

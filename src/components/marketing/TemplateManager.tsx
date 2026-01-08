@@ -54,16 +54,18 @@ import { useTemplates } from '@/hooks/useTemplates';
 import { Channel, SavedTemplate } from '@/types/marketing.types';
 import { TEMPLATE_CATEGORIES } from '@/constants/defaultTemplates';
 
-// Variáveis disponíveis para templates
+// Available variables for templates
 const TEMPLATE_VARIABLES = [
-  { key: '{name}', description: 'Nome do destinatário' },
-  { key: '{address}', description: 'Endereço da propriedade' },
-  { key: '{city}', description: 'Cidade' },
-  { key: '{state}', description: 'Estado' },
-  { key: '{cash_offer}', description: 'Valor da oferta em cash' },
-  { key: '{company_name}', description: 'Nome da empresa' },
-  { key: '{phone}', description: 'Telefone de contato' },
-  { key: '{seller_name}', description: 'Nome do vendedor/agente' },
+  { key: '{name}', description: 'Recipient name' },
+  { key: '{address}', description: 'Property address' },
+  { key: '{city}', description: 'City' },
+  { key: '{state}', description: 'State' },
+  { key: '{cash_offer}', description: 'Cash offer amount' },
+  { key: '{company_name}', description: 'Company name' },
+  { key: '{phone}', description: 'Contact phone' },
+  { key: '{seller_name}', description: 'Seller/Agent name' },
+  { key: '{property_url}', description: 'Property landing page URL' },
+  { key: '{qr_code_url}', description: 'QR code image URL for property page' },
 ];
 
 // Templates HTML pré-definidos
@@ -98,6 +100,11 @@ const HTML_TEMPLATES = {
         <div style="text-align: center; margin: 30px 0;">
           <a href="tel:{phone}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Call Us: {phone}</a>
         </div>
+        <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+          <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">Scan to view your personalized offer page:</p>
+          <img src="{qr_code_url}" alt="QR Code" style="width: 200px; height: 200px; margin: 0 auto; display: block; border: 4px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or visit: <a href="{property_url}" style="color: #667eea;">{property_url}</a></p>
+        </div>
       </td>
     </tr>
     <tr>
@@ -121,6 +128,11 @@ const HTML_TEMPLATES = {
     <p>Hello {name},</p>
     <p>We would like to make a cash offer of <strong style="color: #28a745;">{cash_offer}</strong> for your property at <strong>{address}, {city}, {state}</strong>.</p>
     <p>Please contact us at <a href="tel:{phone}">{phone}</a> to discuss this offer.</p>
+    <div style="text-align: center; margin: 30px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
+      <p style="font-size: 13px; margin: 0 0 10px 0;">View your personalized offer page:</p>
+      <img src="{qr_code_url}" alt="QR Code" style="width: 150px; height: 150px; margin: 0 auto; display: block;" />
+      <p style="font-size: 11px; margin: 10px 0 0 0;"><a href="{property_url}" style="color: #333;">{property_url}</a></p>
+    </div>
     <p>Best regards,<br><strong>{company_name}</strong></p>
   </div>
 </body>
@@ -157,6 +169,11 @@ const HTML_TEMPLATES = {
         </table>
         <p style="font-size: 16px; color: #333; line-height: 1.8;">We believe this offer represents fair market value and are prepared to close quickly at your convenience.</p>
         <p style="font-size: 16px; color: #333; line-height: 1.8;">Please do not hesitate to contact us at <strong>{phone}</strong> to discuss this opportunity.</p>
+        <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
+          <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;"><strong>View Full Details Online:</strong></p>
+          <img src="{qr_code_url}" alt="QR Code" style="width: 180px; height: 180px; margin: 0 auto; display: block; border: 3px solid #1a365d;" />
+          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Scan or visit: <a href="{property_url}" style="color: #1a365d; text-decoration: none;">{property_url}</a></p>
+        </div>
         <p style="font-size: 16px; color: #333; line-height: 1.8; margin-top: 30px;">Respectfully yours,<br><br><strong>{seller_name}</strong><br>{company_name}</p>
       </td>
     </tr>
