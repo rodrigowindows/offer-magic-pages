@@ -303,8 +303,6 @@ export const TemplateManager = () => {
       return;
     }
 
-    console.log('TemplateManager - Saving template:', formData);
-
     if (editingTemplate) {
       updateTemplate(editingTemplate.id, {
         name: formData.name,

@@ -12,11 +12,8 @@ export const useTemplates = () => {
   useEffect(() => {
     // Small delay to ensure store is hydrated
     const timer = setTimeout(() => {
-      console.log('useTemplates - Current templates length:', templates.length);
       if (templates.length === 0) {
-        console.log('useTemplates - Loading default templates...');
         DEFAULT_TEMPLATES.forEach(template => {
-          console.log('useTemplates - Adding template:', template.name);
           store.addTemplate(template);
         });
         toast.info('Templates padrão foram carregados automaticamente');
