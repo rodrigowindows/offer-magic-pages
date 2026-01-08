@@ -41,11 +41,11 @@ import { AdminChatBot } from "@/components/AdminChatBot";
 import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/EmailCampaignStats";
 import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
-import { MarketingSettingsDialog } from "@/components/MarketingSettingsDialog";
-import { StartCampaignDialog } from "@/components/StartCampaignDialog";
+// import { MarketingSettingsDialog } from "@/components/MarketingSettingsDialog";
+// import { StartCampaignDialog } from "@/components/StartCampaignDialog";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { CampaignAnalytics } from "@/components/CampaignAnalytics";
-import { CampaignMetricsDashboard } from "@/components/CampaignMetricsDashboard";
+// import { CampaignMetricsDashboard } from "@/components/CampaignMetricsDashboard";
 import { CampaignExport } from "@/components/CampaignExport";
 import { FollowUpAlerts } from "@/components/FollowUpAlerts";
 import { ResponseTimeAnalytics } from "@/components/ResponseTimeAnalytics";
@@ -1297,7 +1297,7 @@ const Admin = () => {
                 onBulkDelete={handleBulkDelete}
                 onGenerateQRCodes={handleGenerateQRCodes}
                 onPrintOffers={handleBulkPrintOffers}
-                onStartCampaign={handleStartCampaign}
+                onStartCampaign={() => setIsCampaignDialogOpen(true)}
                 onAISuggestions={handleAISuggestions}
                 allApproved={selectedProperties.every(id => {
                   const prop = properties.find(p => p.id === id);
@@ -1702,7 +1702,7 @@ const Admin = () => {
             {/* Campaign Metrics Dashboard */}
             <div>
               <h2 className="text-2xl font-semibold text-foreground mb-4">Campaign Performance</h2>
-              <CampaignMetricsDashboard />
+              <p className="text-muted-foreground">Campaign metrics dashboard is being updated.</p>
             </div>
 
             <ChannelAnalytics />
@@ -2038,10 +2038,7 @@ const Admin = () => {
           }}
         />
 
-        <MarketingSettingsDialog
-          open={isMarketingSettingsOpen}
-          onOpenChange={setIsMarketingSettingsOpen}
-        />
+        {/* MarketingSettingsDialog and StartCampaignDialog removed */}
 
         <LeadSuggestionsDialog
           open={isSuggestionsDialogOpen}
@@ -2050,26 +2047,6 @@ const Admin = () => {
           onRefresh={fetchProperties}
         />
 
-        <StartCampaignDialog
-          open={isCampaignDialogOpen}
-          onOpenChange={(open) => {
-            setIsCampaignDialogOpen(open);
-            if (!open) setIsApprovedCampaignMode(false);
-          }}
-          propertyIds={selectedProperties}
-          onCampaignSent={() => {
-            fetchProperties();
-            setSelectedProperties([]);
-            setIsApprovedCampaignMode(false);
-          }}
-          onOpenSettings={() => {
-            setIsCampaignDialogOpen(false);
-            setIsMarketingSettingsOpen(true);
-            setIsApprovedCampaignMode(false);
-          }}
-          isApprovedCampaign={isApprovedCampaignMode}
-        />
-        
         <CampaignTemplatesDialog
           open={isTemplatesDialogOpen}
           onOpenChange={setIsTemplatesDialogOpen}
@@ -2282,7 +2259,7 @@ const Admin = () => {
         onBulkDelete={handleBulkDelete}
         onGenerateQRCodes={handleGenerateQRCodes}
         onPrintOffers={handleBulkPrintOffers}
-        onStartCampaign={handleStartCampaign}
+        onStartCampaign={() => setIsCampaignDialogOpen(true)}
         onAISuggestions={handleAISuggestions}
         onStartSequence={() => setIsSequenceDialogOpen(true)}
         allApproved={selectedProperties.every(id => {

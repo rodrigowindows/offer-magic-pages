@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplates';
@@ -249,42 +250,18 @@ export const QuickCampaignDialog = ({
 
         // Send based on channel
         if (selectedTemplate.channel === 'sms') {
-          await sendSMS(contact, message);
+          await sendSMS({ phone_number: contact, body: message });
         } else if (selectedTemplate.channel === 'email') {
-          await sendEmail(contact, subject, message);
+          await sendEmail({ receiver_email: contact, subject, message_body: message });
         } else if (selectedTemplate.channel === 'call') {
-          await initiateCall(
-            property.owner_name || 'Homeowner',
-            property.address,
-            '(555) 123-4567', // From number
-            contact, // To number
-            message, // Voicemail message
-            'Your Agent Name'
-          );
-        }
-
-        successCount++;
-        } else if (selectedTemplate.channel === 'email') {
-          const email = (property as any)[selectedEmailColumn];
-          if (email) {
-            await sendEmail(email, subject, message);
-          } else {
-            throw new Error('No email available');
-          }
-        } else if (selectedTemplate.channel === 'call') {
-          const phoneNumber = (property as any)[selectedPhoneColumn];
-          if (phoneNumber) {
-            await initiateCall(
-              property.owner_name || 'Homeowner',
-              property.address,
-              '(555) 123-4567', // From number
-              phoneNumber, // To number
-              message, // Voicemail message
-              'Your Agent Name'
-            );
-          } else {
-            throw new Error('No phone number available');
-          }
+          await initiateCall({
+            name: property.owner_name || 'Homeowner',
+            address: property.address,
+            from_number: '(555) 123-4567',
+            to_number: contact,
+            voicemail_drop: message,
+            seller_name: 'Your Agent Name'
+          });
         }
 
         successCount++;
@@ -560,5 +537,4 @@ export const QuickCampaignDialog = ({
       </DialogContent>
     </Dialog>
   );
-};</content>
-<parameter name="filePath">g:\My Drive\Sell House - code\Orlando\Step 5 - Outreach & Campaigns\src\components\QuickCampaignDialog.tsx
+};

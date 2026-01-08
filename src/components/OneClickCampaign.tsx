@@ -102,28 +102,28 @@ export const OneClickCampaign = ({ selectedProperties, onSuccess }: OneClickCamp
           if (campaignConfig.channel === 'sms') {
             const phoneNumber = property.owner_phone;
             if (phoneNumber) {
-              await sendSMS(phoneNumber, message);
+              await sendSMS({ phone_number: phoneNumber, body: message });
             } else {
               throw new Error('No phone number');
             }
           } else if (campaignConfig.channel === 'email') {
             const email = property.owner_email;
             if (email) {
-              await sendEmail(email, subject, message);
+              await sendEmail({ receiver_email: email, subject, message_body: message });
             } else {
               throw new Error('No email');
             }
           } else if (campaignConfig.channel === 'call') {
             const phoneNumber = property.owner_phone;
             if (phoneNumber) {
-              await initiateCall(
-                property.owner_name || 'Homeowner',
-                property.address,
-                '(555) 123-4567',
-                phoneNumber,
-                message,
-                'Your Agent Name'
-              );
+              await initiateCall({
+                name: property.owner_name || 'Homeowner',
+                address: property.address,
+                from_number: '(555) 123-4567',
+                to_number: phoneNumber,
+                voicemail_drop: message,
+                seller_name: 'Your Agent Name'
+              });
             } else {
               throw new Error('No phone number');
             }
@@ -205,5 +205,4 @@ export const OneClickCampaign = ({ selectedProperties, onSuccess }: OneClickCamp
       )}
     </Button>
   );
-};</content>
-<parameter name="filePath">g:\My Drive\Sell House - code\Orlando\Step 5 - Outreach & Campaigns\src\components\OneClickCampaign.tsx
+};

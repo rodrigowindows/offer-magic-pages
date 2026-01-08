@@ -162,5 +162,4 @@ export const getTemplateScoreLabel = (score: number): string => {
   if (score >= 60) return 'Bom';
   if (score >= 40) return 'Regular';
   return 'Precisa Melhorar';
-};</content>
-<parameter name="filePath">g:\My Drive\Sell House - code\Orlando\Step 5 - Outreach & Campaigns\src\utils\templateValidator.ts
+};

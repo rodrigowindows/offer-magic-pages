@@ -295,5 +295,4 @@ export const SimpleCampaignDashboard = () => {
       />
     </div>
   );
-};</content>
-<parameter name="filePath">g:\My Drive\Sell House - code\Orlando\Step 5 - Outreach & Campaigns\src\components\SimpleCampaignDashboard.tsx
+};

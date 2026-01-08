@@ -50,6 +50,9 @@ import {
   AlertCircle,
   Check,
 } from 'lucide-react';
+import { useTemplates } from '@/hooks/useTemplates';
+import { Channel, SavedTemplate } from '@/types/marketing.types';
+import { TEMPLATE_CATEGORIES } from '@/constants/defaultTemplates';
 
 // Variáveis disponíveis para templates
 const TEMPLATE_VARIABLES = [
@@ -191,6 +194,7 @@ export const TemplateManager = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [showHtmlEditor, setShowHtmlEditor] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<SavedTemplate | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
