@@ -37,8 +37,8 @@ interface Property {
   state: string;
   zip_code: string;
   owner_name?: string;
-  owner_phone?: string;
-  owner_email?: string;
+  phone1?: string;
+  email1?: string;
   cash_offer_amount?: number;
   approval_status?: string;
 }
@@ -68,7 +68,7 @@ export const CampaignManager = () => {
     try {
       let query = supabase
         .from('properties')
-        .select('id, address, city, state, zip_code, owner_name, owner_phone, owner_email, cash_offer_amount, approval_status')
+        .select('id, address, city, state, zip_code, owner_name, phone1, email1, cash_offer_amount, approval_status')
         .order('created_at', { ascending: false });
 
       if (filterStatus !== 'all') {
@@ -130,28 +130,28 @@ export const CampaignManager = () => {
 
         // Enviar baseado no canal selecionado
         if (selectedChannel === 'sms') {
-          if (!prop.owner_phone) {
+          if (!prop.phone1) {
             console.warn(`Property ${prop.id} has no phone`);
             failCount++;
             continue;
           }
           await sendSMS({
-            phone_number: prop.owner_phone,
+            phone_number: prop.phone1,
             body: `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`,
           });
         } else if (selectedChannel === 'email') {
-          if (!prop.owner_email) {
+          if (!prop.email1) {
             console.warn(`Property ${prop.id} has no email`);
             failCount++;
             continue;
           }
           await sendEmail({
-            receiver_email: prop.owner_email,
+            receiver_email: prop.email1,
             subject: `Cash Offer for ${prop.address}`,
             message_body: `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`,
           });
         } else if (selectedChannel === 'call') {
-          if (!prop.owner_phone) {
+          if (!prop.phone1) {
             console.warn(`Property ${prop.id} has no phone`);
             failCount++;
             continue;
@@ -159,8 +159,8 @@ export const CampaignManager = () => {
           await initiateCall({
             name: prop.owner_name || 'Owner',
             address: fullAddress,
-            from_number: settings.phone.from_number,
-            to_number: prop.owner_phone,
+            from_number: settings.company.contact_phone,
+            to_number: prop.phone1,
             voicemail_drop: `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`,
             seller_name: settings.company.company_name,
           });
@@ -297,13 +297,13 @@ export const CampaignManager = () => {
                               <Badge variant="outline" className="text-xs">
                                 {property.owner_name || 'No Owner'}
                               </Badge>
-                              {property.owner_phone && (
+                              {property.phone1 && (
                                 <Badge variant="secondary" className="text-xs">
                                   <Phone className="w-3 h-3 mr-1" />
                                   Phone
                                 </Badge>
                               )}
-                              {property.owner_email && (
+                              {property.email1 && (
                                 <Badge variant="secondary" className="text-xs">
                                   <Mail className="w-3 h-3 mr-1" />
                                   Email
@@ -388,21 +388,21 @@ export const CampaignManager = () => {
               {selectedCount > 0 && (
                 <div className="space-y-2">
                   {selectedChannel === 'sms' &&
-                    selectedProps.some((p) => !p.owner_phone) && (
+                    selectedProps.some((p) => !p.phone1) && (
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription className="text-xs">
-                          {selectedProps.filter((p) => !p.owner_phone).length} propriedades sem
+                          {selectedProps.filter((p) => !p.phone1).length} propriedades sem
                           telefone
                         </AlertDescription>
                       </Alert>
                     )}
                   {selectedChannel === 'email' &&
-                    selectedProps.some((p) => !p.owner_email) && (
+                    selectedProps.some((p) => !p.email1) && (
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription className="text-xs">
-                          {selectedProps.filter((p) => !p.owner_email).length} propriedades sem
+                          {selectedProps.filter((p) => !p.email1).length} propriedades sem
                           email
                         </AlertDescription>
                       </Alert>
