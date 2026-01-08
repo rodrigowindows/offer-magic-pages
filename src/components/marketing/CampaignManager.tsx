@@ -71,8 +71,12 @@ interface Property {
   owner_name?: string;
   cash_offer_amount?: number;
   approval_status?: string;
+  skip_tracing_data?: {
+    preferred_phones?: string[];
+    preferred_emails?: string[];
+  };
   // Dynamic columns
-  [key: string]: string | number | boolean | null | undefined;
+  [key: string]: string | number | boolean | null | undefined | object;
 }
 
 type Channel = 'sms' | 'email' | 'call';
@@ -93,7 +97,7 @@ export const CampaignManager = () => {
   // Column selection state
   const [selectedPhoneColumn, setSelectedPhoneColumn] = useState('phone1');
   const [selectedEmailColumn, setSelectedEmailColumn] = useState('email1');
-  const [showContactInfo, setShowContactInfo] = useState(true);
+  const [showContactInfo, setShowContactInfo] = useState(false);
 
   // Build select columns based on selected phone/email columns
   const getSelectColumns = () => {
@@ -164,8 +168,43 @@ export const CampaignManager = () => {
   };
 
   // Get phone/email from property based on selected column
-  const getPhone = (prop: Property) => prop[selectedPhoneColumn] as string | undefined;
-  const getEmail = (prop: Property) => prop[selectedEmailColumn] as string | undefined;
+  const getPhone = (prop: Property): string | undefined => {
+    // First try preferred phones from skip tracing data
+    if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
+      return prop.skip_tracing_data.preferred_phones[0]; // Use first preferred phone
+    }
+    // Fall back to selected column
+    return prop[selectedPhoneColumn] as string | undefined;
+  };
+
+  const getEmail = (prop: Property): string | undefined => {
+    // First try preferred emails from skip tracing data
+    if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
+      return prop.skip_tracing_data.preferred_emails[0]; // Use first preferred email
+    }
+    // Fall back to selected column
+    return prop[selectedEmailColumn] as string | undefined;
+  };
+
+  const getAllPhones = (prop: Property): string[] => {
+    // Return all preferred phones if available
+    if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
+      return prop.skip_tracing_data.preferred_phones;
+    }
+    // Fall back to selected column
+    const phone = prop[selectedPhoneColumn] as string | undefined;
+    return phone ? [phone] : [];
+  };
+
+  const getAllEmails = (prop: Property): string[] => {
+    // Return all preferred emails if available
+    if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
+      return prop.skip_tracing_data.preferred_emails;
+    }
+    // Fall back to selected column
+    const email = prop[selectedEmailColumn] as string | undefined;
+    return email ? [email] : [];
+  };
 
   const handleSendCampaign = async () => {
     const selectedProps = getSelectedProperties();
@@ -185,45 +224,101 @@ export const CampaignManager = () => {
     for (const prop of selectedProps) {
       try {
         const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-        const phone = getPhone(prop);
-        const email = getEmail(prop);
+        const allPhones = getAllPhones(prop);
+        const allEmails = getAllEmails(prop);
+
+        let sent = false;
+        let lastError: any = null;
 
         // Enviar baseado no canal selecionado
         if (selectedChannel === 'sms') {
-          if (!phone) {
-            console.warn(`Property ${prop.id} has no phone in column ${selectedPhoneColumn}`);
+          if (allPhones.length === 0) {
+            console.warn(`Property ${prop.id} has no phones available`);
             failCount++;
             continue;
           }
-          await sendSMS({
-            phone_number: phone,
-            body: `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`,
-          });
+
+          // Try all phones until one succeeds
+          for (const phone of allPhones) {
+            try {
+              await sendSMS({
+                phone_number: phone,
+                body: `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`,
+              });
+              sent = true;
+              break; // Success, stop trying other phones
+            } catch (error) {
+              console.warn(`Failed to send SMS to ${phone} for property ${prop.id}:`, error);
+              lastError = error;
+            }
+          }
+
+          if (!sent) {
+            console.error(`All SMS attempts failed for property ${prop.id}:`, lastError);
+            failCount++;
+            continue;
+          }
+
         } else if (selectedChannel === 'email') {
-          if (!email) {
-            console.warn(`Property ${prop.id} has no email in column ${selectedEmailColumn}`);
+          if (allEmails.length === 0) {
+            console.warn(`Property ${prop.id} has no emails available`);
             failCount++;
             continue;
           }
-          await sendEmail({
-            receiver_email: email,
-            subject: `Cash Offer for ${prop.address}`,
-            message_body: `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`,
-          });
+
+          // Try all emails until one succeeds
+          for (const email of allEmails) {
+            try {
+              await sendEmail({
+                receiver_email: email,
+                subject: `Cash Offer for ${prop.address}`,
+                message_body: `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`,
+              });
+              sent = true;
+              break; // Success, stop trying other emails
+            } catch (error) {
+              console.warn(`Failed to send email to ${email} for property ${prop.id}:`, error);
+              lastError = error;
+            }
+          }
+
+          if (!sent) {
+            console.error(`All email attempts failed for property ${prop.id}:`, lastError);
+            failCount++;
+            continue;
+          }
+
         } else if (selectedChannel === 'call') {
-          if (!phone) {
-            console.warn(`Property ${prop.id} has no phone in column ${selectedPhoneColumn}`);
+          if (allPhones.length === 0) {
+            console.warn(`Property ${prop.id} has no phones available`);
             failCount++;
             continue;
           }
-          await initiateCall({
-            name: prop.owner_name || 'Owner',
-            address: fullAddress,
-            from_number: settings.company.contact_phone,
-            to_number: phone,
-            voicemail_drop: `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`,
-            seller_name: settings.company.company_name,
-          });
+
+          // Try all phones until one succeeds
+          for (const phone of allPhones) {
+            try {
+              await initiateCall({
+                name: prop.owner_name || 'Owner',
+                address: fullAddress,
+                from_number: settings.company.contact_phone,
+                to_number: phone,
+                voicemail_drop: `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`,
+                seller_name: settings.company.company_name,
+              });
+              sent = true;
+              break; // Success, stop trying other phones
+            } catch (error) {
+              console.warn(`Failed to call ${phone} for property ${prop.id}:`, error);
+              lastError = error;
+            }
+          }
+
+          if (!sent) {
+            console.error(`All call attempts failed for property ${prop.id}:`, lastError);
+            failCount++;
+            continue;
+          }
         }
 
         successCount++;
@@ -249,8 +344,8 @@ export const CampaignManager = () => {
   const selectedProps = getSelectedProperties();
 
   // Count properties with/without contact info
-  const propsWithPhone = selectedProps.filter((p) => getPhone(p)).length;
-  const propsWithEmail = selectedProps.filter((p) => getEmail(p)).length;
+  const propsWithPhone = selectedProps.filter((p) => getAllPhones(p).length > 0).length;
+  const propsWithEmail = selectedProps.filter((p) => getAllEmails(p).length > 0).length;
 
   return (
     <div className="space-y-6">
@@ -324,8 +419,8 @@ export const CampaignManager = () => {
                   onClick={() => setShowContactInfo(!showContactInfo)}
                   className="gap-2"
                 >
-                  {showContactInfo ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  {showContactInfo ? 'Mostrar Contatos' : 'Ocultar Contatos'}
+                  {showContactInfo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showContactInfo ? 'Ocultar Contatos' : 'Mostrar Contatos'}
                 </Button>
               </div>
 
@@ -377,30 +472,41 @@ export const CampaignManager = () => {
                                 <Badge variant="outline" className="text-xs">
                                   {property.owner_name || 'No Owner'}
                                 </Badge>
-                                {phone && (
-                                  <Badge variant="secondary" className="text-xs gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    {showContactInfo ? phone : '•••••••'}
-                                  </Badge>
-                                )}
-                                {!phone && (
-                                  <Badge variant="destructive" className="text-xs gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    Sem telefone
-                                  </Badge>
-                                )}
-                                {email && (
-                                  <Badge variant="secondary" className="text-xs gap-1">
-                                    <Mail className="w-3 h-3" />
-                                    {showContactInfo ? email : '•••@•••'}
-                                  </Badge>
-                                )}
-                                {!email && (
-                                  <Badge variant="destructive" className="text-xs gap-1">
-                                    <Mail className="w-3 h-3" />
-                                    Sem email
-                                  </Badge>
-                                )}
+                                {(() => {
+                                  const phones = getAllPhones(property);
+                                  const emails = getAllEmails(property);
+
+                                  return (
+                                    <>
+                                      {phones.length > 0 && phones.map((phone, index) => (
+                                        <Badge key={`phone-${index}`} variant="secondary" className="text-xs gap-1">
+                                          <Phone className="w-3 h-3" />
+                                          {showContactInfo ? phone : '•••••••'}
+                                          {phones.length > 1 && <span className="ml-1 text-xs opacity-70">#{index + 1}</span>}
+                                        </Badge>
+                                      ))}
+                                      {phones.length === 0 && (
+                                        <Badge variant="destructive" className="text-xs gap-1">
+                                          <Phone className="w-3 h-3" />
+                                          Sem telefone
+                                        </Badge>
+                                      )}
+                                      {emails.length > 0 && emails.map((email, index) => (
+                                        <Badge key={`email-${index}`} variant="secondary" className="text-xs gap-1">
+                                          <Mail className="w-3 h-3" />
+                                          {showContactInfo ? email : '•••@•••'}
+                                          {emails.length > 1 && <span className="ml-1 text-xs opacity-70">#{index + 1}</span>}
+                                        </Badge>
+                                      ))}
+                                      {emails.length === 0 && (
+                                        <Badge variant="destructive" className="text-xs gap-1">
+                                          <Mail className="w-3 h-3" />
+                                          Sem email
+                                        </Badge>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
                             {property.cash_offer_amount && (
@@ -510,7 +616,76 @@ export const CampaignManager = () => {
 
               <Separator />
 
-              {/* Summary */}
+              {/* Template Preview */}
+              {selectedCount > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Preview do Template</Label>
+                  <div className="bg-muted/50 rounded-lg p-3 border">
+                    {selectedChannel === 'sms' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <MessageSquare className="w-3 h-3" />
+                          SMS Preview
+                        </div>
+                        <div className="text-sm bg-white p-2 rounded border text-gray-800">
+                          {selectedProps.length > 0 ? (
+                            (() => {
+                              const prop = selectedProps[0];
+                              const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
+                              return `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`;
+                            })()
+                          ) : (
+                            'Selecione uma propriedade para ver o preview'
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedChannel === 'email' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Mail className="w-3 h-3" />
+                          Email Preview
+                        </div>
+                        <div className="text-sm bg-white p-3 rounded border space-y-2">
+                          <div className="font-medium text-gray-900">
+                            Subject: {selectedProps.length > 0 ? `Cash Offer for ${selectedProps[0].address}` : 'Subject'}
+                          </div>
+                          <div className="text-gray-800 whitespace-pre-line">
+                            {selectedProps.length > 0 ? (
+                              (() => {
+                                const prop = selectedProps[0];
+                                const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
+                                return `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`;
+                              })()
+                            ) : (
+                              'Selecione uma propriedade para ver o preview do email'
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedChannel === 'call' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Phone className="w-3 h-3" />
+                          Voicemail Preview
+                        </div>
+                        <div className="text-sm bg-white p-2 rounded border text-gray-800">
+                          {selectedProps.length > 0 ? (
+                            `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`
+                          ) : (
+                            'Selecione uma propriedade para ver o preview do voicemail'
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <Separator />
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Propriedades:</span>
@@ -552,7 +727,7 @@ export const CampaignManager = () => {
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription className="text-xs">
-                          {selectedCount - propsWithPhone} propriedade(s) sem telefone na coluna "{PHONE_COLUMNS.find(c => c.value === selectedPhoneColumn)?.label}"
+                          {selectedCount - propsWithPhone} propriedade(s) sem telefone disponível
                         </AlertDescription>
                       </Alert>
                     )}
@@ -561,7 +736,7 @@ export const CampaignManager = () => {
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription className="text-xs">
-                          {selectedCount - propsWithEmail} propriedade(s) sem email na coluna "{EMAIL_COLUMNS.find(c => c.value === selectedEmailColumn)?.label}"
+                          {selectedCount - propsWithEmail} propriedade(s) sem email disponível
                         </AlertDescription>
                       </Alert>
                     )}

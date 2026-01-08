@@ -28,10 +28,12 @@ import {
   Settings,
   Eye,
   Send as SendIcon,
+  BarChart3,
   Zap,
   Users,
-  BarChart3
 } from 'lucide-react';
+import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
+import type { SavedTemplate } from '@/types/marketing.types';
 
 interface CampaignTemplate {
   id: string;
@@ -52,8 +54,13 @@ interface Property {
   zip_code: string;
   owner_name?: string;
   owner_phone?: string;
+  owner_email?: string;
   approval_status?: string;
   lead_status?: string;
+  skip_tracing_data?: {
+    phones?: Array<{number: string; type: string}>;
+    emails?: string[];
+  };
 }
 
 const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
@@ -108,6 +115,51 @@ const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     category: 'quick'
   }
 ];
+
+// Helper functions for template preview
+const getDefaultTemplateForChannel = (channel: string): SavedTemplate | null => {
+  return DEFAULT_TEMPLATES.find(template => template.channel === channel && template.is_default) || null;
+};
+
+const renderTemplateContent = (content: string, property: any): string => {
+  if (!property || typeof property !== 'object') {
+    // Fallback values when no property is available
+    const fallbackReplacements: Record<string, string> = {
+      '{name}': 'João Silva',
+      '{address}': '123 Main Street, Orlando, FL',
+      '{city}': 'Orlando',
+      '{state}': 'FL',
+      '{cash_offer}': '$250,000',
+      '{company_name}': 'Your Real Estate Company',
+      '{phone}': '(555) 123-4567',
+      '{seller_name}': 'Alex Johnson',
+      '{estimated_value}': '$300,000',
+      '{offer_percentage}': '83'
+    };
+    return content.replace(/{([^}]+)}/g, (match, key) => {
+      return fallbackReplacements[key] || match;
+    });
+  }
+
+  const replacements: Record<string, string> = {
+    '{name}': property.owner_name || 'João Silva',
+    '{address}': property.address || '123 Main Street',
+    '{city}': property.city || 'Orlando',
+    '{state}': property.state || 'FL',
+    '{cash_offer}': `$${property.cash_offer_amount?.toLocaleString() || '250,000'}`,
+    '{company_name}': 'Your Real Estate Company',
+    '{phone}': '(555) 123-4567',
+    '{seller_name}': 'Alex Johnson',
+    '{estimated_value}': `$${property.estimated_value?.toLocaleString() || '300,000'}`,
+    '{offer_percentage}': property.estimated_value && property.cash_offer_amount
+      ? Math.round((property.cash_offer_amount / property.estimated_value) * 100).toString()
+      : '83'
+  };
+
+  return content.replace(/{([^}]+)}/g, (match, key) => {
+    return replacements[key] || match;
+  });
+};
 
 type WizardStep = 'template' | 'properties' | 'configure' | 'preview' | 'send';
 
@@ -361,6 +413,59 @@ export const CampaignWizard = () => {
                             {property.owner_name && (
                               <p className="text-sm">Owner: {property.owner_name}</p>
                             )}
+                            
+                            {/* Contact Information */}
+                            <div className="mt-2 space-y-1">
+                              {/* Primary Phone */}
+                              {property.owner_phone && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Phone className="h-3 w-3" />
+                                  <span>{property.owner_phone}</span>
+                                </div>
+                              )}
+                              
+                              {/* Primary Email */}
+                              {property.owner_email && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Mail className="h-3 w-3" />
+                                  <span>{property.owner_email}</span>
+                                </div>
+                              )}
+                              
+                              {/* Skip Tracing Phones */}
+                              {property.skip_tracing_data?.phones && property.skip_tracing_data.phones.length > 0 && (
+                                <div className="space-y-1">
+                                  {property.skip_tracing_data.phones.slice(0, 2).map((phone, idx) => (
+                                    <div key={idx} className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Phone className="h-3 w-3" />
+                                      <span>{phone.number} ({phone.type})</span>
+                                    </div>
+                                  ))}
+                                  {property.skip_tracing_data.phones.length > 2 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      +{property.skip_tracing_data.phones.length - 2} mais telefones
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Skip Tracing Emails */}
+                              {property.skip_tracing_data?.emails && property.skip_tracing_data.emails.length > 0 && (
+                                <div className="space-y-1">
+                                  {property.skip_tracing_data.emails.slice(0, 2).map((email, idx) => (
+                                    <div key={idx} className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <Mail className="h-3 w-3" />
+                                      <span>{email}</span>
+                                    </div>
+                                  ))}
+                                  {property.skip_tracing_data.emails.length > 2 && (
+                                    <div className="text-xs text-muted-foreground">
+                                      +{property.skip_tracing_data.emails.length - 2} mais emails
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center gap-2">
                             {property.approval_status && (
@@ -430,6 +535,46 @@ export const CampaignWizard = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Quick Message Preview */}
+            {selectedProperties.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Message Preview
+                  </CardTitle>
+                  <CardDescription>
+                    Quick preview of messages that will be sent
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {selectedTemplate?.channels.map((channel) => {
+                      const template = getDefaultTemplateForChannel(channel);
+                      if (!template) return null;
+
+                      return (
+                        <div key={channel} className="border rounded p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            {channel === 'sms' && <MessageSquare className="h-3 w-3 text-blue-500" />}
+                            {channel === 'email' && <Mail className="h-3 w-3 text-green-500" />}
+                            {channel === 'call' && <Phone className="h-3 w-3 text-purple-500" />}
+                            <span className="text-sm font-medium capitalize">{channel}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                            {channel === 'email' && template.subject && (
+                              <div className="font-medium mb-1">{renderTemplateContent(template.subject, selectedProperties[0])}</div>
+                            )}
+                            {renderTemplateContent(template.body, selectedProperties[0]).substring(0, 100)}...
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         );
 
@@ -462,9 +607,51 @@ export const CampaignWizard = () => {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>With Phone:</span>
+                      <span>Primary Phones:</span>
                       <span className="font-semibold text-blue-600">
                         {selectedProperties.filter(p => p.owner_phone).length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Skip Tracing Phones:</span>
+                      <span className="font-semibold text-blue-600">
+                        {selectedProperties.filter(p => p.skip_tracing_data?.phones && p.skip_tracing_data.phones.length > 0).length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Phone Contacts:</span>
+                      <span className="font-semibold text-blue-600">
+                        {selectedProperties.reduce((total, p) => {
+                          let count = p.owner_phone ? 1 : 0;
+                          if (p.skip_tracing_data?.phones) {
+                            count += p.skip_tracing_data.phones.length;
+                          }
+                          return total + count;
+                        }, 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Primary Emails:</span>
+                      <span className="font-semibold text-purple-600">
+                        {selectedProperties.filter(p => p.owner_email).length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Skip Tracing Emails:</span>
+                      <span className="font-semibold text-purple-600">
+                        {selectedProperties.filter(p => p.skip_tracing_data?.emails && p.skip_tracing_data.emails.length > 0).length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Email Contacts:</span>
+                      <span className="font-semibold text-purple-600">
+                        {selectedProperties.reduce((total, p) => {
+                          let count = p.owner_email ? 1 : 0;
+                          if (p.skip_tracing_data?.emails) {
+                            count += p.skip_tracing_data.emails.length;
+                          }
+                          return total + count;
+                        }, 0)}
                       </span>
                     </div>
                   </div>
@@ -496,6 +683,87 @@ export const CampaignWizard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Message Content Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Message Content Preview
+                </CardTitle>
+                <CardDescription>
+                  Preview of actual messages that will be sent to recipients
+                  {selectedProperties.length === 0 && " (showing sample data)"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {selectedTemplate?.channels.map((channel) => {
+                    const template = getDefaultTemplateForChannel(channel);
+                    if (!template) {
+                      return (
+                        <div key={channel} className="border rounded-lg p-4 border-dashed border-muted-foreground/30">
+                          <div className="flex items-center gap-2 mb-2">
+                            {channel === 'sms' && <MessageSquare className="h-4 w-4 text-muted-foreground" />}
+                            {channel === 'email' && <Mail className="h-4 w-4 text-muted-foreground" />}
+                            {channel === 'call' && <Phone className="h-4 w-4 text-muted-foreground" />}
+                            <span className="font-medium capitalize text-muted-foreground">{channel} Message</span>
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              No template available
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Template for {channel} channel is not configured yet.
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={channel} className="border rounded-lg p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          {channel === 'sms' && <MessageSquare className="h-4 w-4 text-blue-500" />}
+                          {channel === 'email' && <Mail className="h-4 w-4 text-green-500" />}
+                          {channel === 'call' && <Phone className="h-4 w-4 text-purple-500" />}
+                          <span className="font-medium capitalize">{channel} Message</span>
+                          <Badge variant="outline" className="text-xs">
+                            {template.name}
+                          </Badge>
+                        </div>
+
+                        {channel === 'email' && template.subject && (
+                          <div className="mb-2">
+                            <span className="text-sm font-medium text-muted-foreground">Subject: </span>
+                            <span className="text-sm">{renderTemplateContent(template.subject, selectedProperties[0] || {})}</span>
+                          </div>
+                        )}
+
+                        <div className="bg-muted/50 p-3 rounded text-sm">
+                          {channel === 'email' && template.body.includes('<!DOCTYPE') ? (
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: renderTemplateContent(template.body, selectedProperties[0] || {})
+                              }}
+                              className="max-h-32 overflow-y-auto"
+                            />
+                          ) : (
+                            <div className="whitespace-pre-wrap">
+                              {renderTemplateContent(template.body, selectedProperties[0] || {})}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          {channel === 'sms' && `~${renderTemplateContent(template.body, selectedProperties[0]).length} characters`}
+                          {channel === 'email' && 'HTML email with professional formatting'}
+                          {channel === 'call' && 'Voicemail message for unanswered calls'}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
             <Alert>
               <AlertCircle className="h-4 w-4" />
