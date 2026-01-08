@@ -1,6 +1,7 @@
 /**
  * Campaign Manager - Tela dedicada para criar e gerenciar campanhas
  * Fluxo claro: Selecionar Propriedades → Escolher Canal → Configurar → Enviar
+ * Updated: 2026-01-08
  */
 
 import { useState, useEffect } from 'react';
@@ -1185,562 +1186,99 @@ export const CampaignManager = () => {
       </Card>
 
       {/* Send Preview Modal */}
-                  >
-                    Aprovadas
-                  </Button>
-                  <Button
-                    variant={filterStatus === 'pending' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterStatus('pending')}
-                  >
-                    Pendentes
-                  </Button>
-                  <Button
-                    variant={filterStatus === 'all' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterStatus('all')}
-                  >
-                    Todas
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Show/Hide Contact Info Toggle */}
-              <div className="flex items-center justify-between mb-4 pb-3 border-b">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowContactInfo(!showContactInfo)}
-                  className="gap-2"
-                >
-                  {showContactInfo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  {showContactInfo ? 'Ocultar Contatos' : 'Mostrar Contatos'}
-                </Button>
-              </div>
-
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : properties.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  Nenhuma propriedade encontrada
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b">
-                    <Checkbox
-                      checked={selectedIds.length === properties.length && properties.length > 0}
-                      onCheckedChange={toggleSelectAll}
-                    />
-                    <span className="text-sm font-medium">
-                      Selecionar Todas ({properties.length})
-                    </span>
-                  </div>
-                  <ScrollArea className="h-[500px] pr-4">
-                    <div className="space-y-2">
-                      {properties.map((property) => {
-                        const phones = getAllPhones(property);
-                        const emails = getAllEmails(property);
-                        return (
-                          <div
-                            key={property.id}
-                            className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                              selectedIds.includes(property.id)
-                                ? 'bg-primary/5 border-primary'
-                                : 'hover:bg-muted/50'
-                            }`}
-                          >
-                            <Checkbox
-                              checked={selectedIds.includes(property.id)}
-                              onCheckedChange={() => toggleSelection(property.id)}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">
-                                {property.address}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                {property.city}, {property.state} {property.zip_code}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <Badge variant="outline" className="text-xs">
-                                  {property.owner_name || 'No Owner'}
-                                </Badge>
-                                {phones.length > 0 ? (
-                                  phones.map((phone, index) => (
-                                    <Badge key={`phone-${index}`} variant="secondary" className="text-xs gap-1">
-                                      <Phone className="w-3 h-3" />
-                                      {showContactInfo ? phone : '•••••••'}
-                                      {phones.length > 1 && <span className="ml-1 text-xs opacity-70">#{index + 1}</span>}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <Badge variant="destructive" className="text-xs gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    Sem telefone
-                                  </Badge>
-                                )}
-                                {emails.length > 0 ? (
-                                  emails.map((email, index) => (
-                                    <Badge key={`email-${index}`} variant="secondary" className="text-xs gap-1">
-                                      <Mail className="w-3 h-3" />
-                                      {showContactInfo ? email : '•••@•••'}
-                                      {emails.length > 1 && <span className="ml-1 text-xs opacity-70">#{index + 1}</span>}
-                                    </Badge>
-                                  ))
-                                ) : (
-                                  <Badge variant="destructive" className="text-xs gap-1">
-                                    <Mail className="w-3 h-3" />
-                                    Sem email
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            {property.cash_offer_amount && (
-                              <div className="text-right">
-                                <div className="text-sm font-semibold text-green-600">
-                                  ${property.cash_offer_amount.toLocaleString()}
-                                </div>
-                                <div className="text-xs text-muted-foreground">Offer</div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </ScrollArea>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right: Campaign Config */}
-        <div>
-          <Card className="sticky top-4">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Rocket className="w-5 h-5" />
-                Configurar Campanha
-              </CardTitle>
-              <CardDescription>
-                {selectedCount} propriedade{selectedCount !== 1 ? 's' : ''} selecionada
-                {selectedCount !== 1 ? 's' : ''}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Channel Selection */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Canal</Label>
-                <Tabs value={selectedChannel} onValueChange={(v) => setSelectedChannel(v as Channel)}>
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="sms" className="gap-1">
-                      <MessageSquare className="w-4 h-4" />
-                      SMS
-                    </TabsTrigger>
-                    <TabsTrigger value="email" className="gap-1">
-                      <Mail className="w-4 h-4" />
-                      Email
-                    </TabsTrigger>
-                    <TabsTrigger value="call" className="gap-1">
-                      <Phone className="w-4 h-4" />
-                      Call
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-
-              {/* Template Selection */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">Template</Label>
-                <Select value={selectedTemplateId || ''} onValueChange={setSelectedTemplateId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um template" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getTemplatesByChannel(selectedChannel).length > 0 ? (
-                      getTemplatesByChannel(selectedChannel).map((template) => (
-                        <SelectItem key={template.id} value={template.id}>
-                          {template.name} {template.is_default ? '(Padrão)' : ''}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="" disabled>
-                        Nenhum template disponível para {selectedChannel}
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                {getTemplatesByChannel(selectedChannel).length === 0 && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Crie templates na página de Templates primeiro
-                  </p>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Column Selection */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Colunas de Contato</Label>
-                
-                {/* Phone Column */}
-                {(selectedChannel === 'sms' || selectedChannel === 'call') && (
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Phone className="w-3 h-3" />
-                      Coluna de Telefone
-                    </Label>
-                    <Select value={selectedPhoneColumn} onValueChange={setSelectedPhoneColumn}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PHONE_COLUMNS.map((col) => (
-                          <SelectItem key={col.value} value={col.value}>
-                            {col.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {/* Email Column */}
-                {selectedChannel === 'email' && (
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Mail className="w-3 h-3" />
-                      Coluna de Email
-                    </Label>
-                    <Select value={selectedEmailColumn} onValueChange={setSelectedEmailColumn}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {EMAIL_COLUMNS.map((col) => (
-                          <SelectItem key={col.value} value={col.value}>
-                            {col.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Template Preview */}
-              {selectedCount > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Preview do Template</Label>
-                  <div className="bg-muted/50 rounded-lg p-3 border">
-                    {selectedChannel === 'sms' && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <MessageSquare className="w-3 h-3" />
-                          SMS Preview
-                        </div>
-                        <div className="text-sm bg-white p-2 rounded border text-gray-800">
-                          {selectedProps.length > 0 ? renderTemplatePreview(selectedProps[0]) : 'Selecione uma propriedade'}
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedChannel === 'email' && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Mail className="w-3 h-3" />
-                          Email Preview
-                        </div>
-                        {selectedProps.length > 0 ? (
-                          <div className="text-sm bg-white p-3 rounded border space-y-2">
-                            <div className="font-medium text-gray-900">
-                              Subject: {renderTemplatePreview(selectedProps[0], 'subject')}
-                            </div>
-                            <div className="text-gray-800 whitespace-pre-line">
-                              {renderTemplatePreview(selectedProps[0])}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-sm text-muted-foreground">Selecione uma propriedade</div>
-                        )}
-                      </div>
-                    )}
-
-                    {selectedChannel === 'call' && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Phone className="w-3 h-3" />
-                          Voicemail Preview
-                        </div>
-                        <div className="text-sm bg-white p-2 rounded border text-gray-800">
-                          {selectedProps.length > 0 ? renderTemplatePreview(selectedProps[0]) : 'Selecione uma propriedade'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Propriedades:</span>
-                  <span className="font-medium">{selectedCount}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Canal:</span>
-                  <span className="font-medium capitalize">{selectedChannel}</span>
-                </div>
-                {(selectedChannel === 'sms' || selectedChannel === 'call') && selectedCount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Com telefone:</span>
-                    <span className={`font-medium ${propsWithPhone === selectedCount ? 'text-green-600' : 'text-orange-600'}`}>
-                      {propsWithPhone}/{selectedCount}
-                    </span>
-                  </div>
-                )}
-                {selectedChannel === 'email' && selectedCount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Com email:</span>
-                    <span className={`font-medium ${propsWithEmail === selectedCount ? 'text-green-600' : 'text-orange-600'}`}>
-                      {propsWithEmail}/{selectedCount}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Modo:</span>
-                  <span className="font-medium">{testMode ? '🧪 Test' : '🚀 Live'}</span>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Validation Warnings */}
-              {selectedCount > 0 && (
-                <div className="space-y-2">
-                  {(selectedChannel === 'sms' || selectedChannel === 'call') &&
-                    propsWithPhone < selectedCount && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          {selectedCount - propsWithPhone} propriedade(s) sem telefone disponível
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  {selectedChannel === 'email' &&
-                    propsWithEmail < selectedCount && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          {selectedCount - propsWithEmail} propriedade(s) sem email disponível
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                </div>
-              )}
-
-              {/* Send Button */}
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handleSendCampaign}
-                disabled={selectedCount === 0 || sending || !selectedTemplate}
-              >
-                {sending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Enviando... ({selectedCount})
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4 mr-2" />
-                    Enviar Campanha ({selectedCount})
-                  </>
-                )}
-              </Button>
-
-              {selectedCount === 0 && (
-                <p className="text-xs text-center text-muted-foreground">
-                  Selecione propriedades à esquerda
-                </p>
-              )}
-              {selectedCount > 0 && !selectedTemplate && (
-                <p className="text-xs text-center text-muted-foreground">
-                  Selecione um template para enviar
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Send Preview Modal */}
       <Dialog open={showSendPreview} onOpenChange={setShowSendPreview}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Campaign Preview</DialogTitle>
+            <DialogTitle>Confirmar Envio da Campanha</DialogTitle>
             <DialogDescription>
-              Review your campaign before sending
+              Revise os detalhes antes de enviar a campanha para {selectedProps.length} propriedades via {selectedChannel.toUpperCase()}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Target Audience */}
-            <div>
-              <h3 className="font-semibold mb-3">Target Audience</h3>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {(() => {
-                    const stats = getCampaignStats();
-                    return (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Properties:</span>
-                          <span className="font-medium">{stats.totalProperties}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Approved:</span>
-                          <span className="font-medium text-green-600">{stats.approvedProperties}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Preferred Phones:</span>
-                          <span className="font-medium">{stats.propertiesWithPhones}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Primary Phones:</span>
-                          <span className="font-medium">{stats.totalPhoneContacts}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Skip Tracing Phones:</span>
-                          <span className="font-medium">0</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Phone Contacts:</span>
-                          <span className="font-medium">{stats.totalPhoneContacts}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Preferred Emails:</span>
-                          <span className="font-medium">{stats.propertiesWithEmails}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Primary Emails:</span>
-                          <span className="font-medium">{stats.totalEmailContacts}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Skip Tracing Emails:</span>
-                          <span className="font-medium">0</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Email Contacts:</span>
-                          <span className="font-medium">{stats.totalEmailContacts}</span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-
-            {/* Campaign Stats */}
-            <div>
-              <h3 className="font-semibold mb-3">Campaign Stats</h3>
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Template:</span>
-                    <span className="font-medium">{selectedTemplate?.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Channels:</span>
-                    <span className="font-medium">{selectedChannel}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Expected Success:</span>
-                    <span className="font-medium text-green-600">15-25%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Message Content Preview */}
-            <div>
-              <h3 className="font-semibold mb-3">Message Content Preview</h3>
-              <p className="text-sm text-muted-foreground mb-4">Preview of actual messages that will be sent to recipients</p>
-
-              {selectedProps.length > 0 && selectedTemplate ? (
-                <div className="space-y-4">
-                  {selectedChannel === 'sms' && (
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare className="w-4 h-4" />
-                        <span className="font-medium">SMS Message</span>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded border text-sm">
-                        {renderTemplatePreview(selectedProps[0])}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        ~{renderTemplatePreview(selectedProps[0]).length} characters
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedChannel === 'email' && (
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Mail className="w-4 h-4" />
-                        <span className="font-medium">Email Message</span>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded border text-sm">
-                        <div className="font-medium mb-2">
-                          Subject: {renderTemplatePreview(selectedProps[0], 'subject')}
-                        </div>
-                        <div className="whitespace-pre-line">
-                          {renderTemplatePreview(selectedProps[0])}
-                        </div>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        HTML email with professional formatting
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedChannel === 'call' && (
-                    <div className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Phone className="w-4 h-4" />
-                        <span className="font-medium">Call Message</span>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded border text-sm">
-                        {renderTemplatePreview(selectedProps[0])}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        Voicemail message for unanswered calls
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No preview available
-                </div>
-              )}
-            </div>
-
+            {/* Campaign Summary */}
             <div className="bg-muted/50 p-4 rounded-lg">
-              <p className="text-sm">
-                This campaign will be sent to {selectedIds.length} properties using {selectedChannel.toUpperCase()} communication channel.
-                Make sure your marketing API is configured before proceeding.
-              </p>
+              <h3 className="font-semibold mb-2">Resumo da Campanha</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Template:</span>
+                  <p className="font-medium">{selectedTemplate?.name}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Canal:</span>
+                  <p className="font-medium">{selectedChannel.toUpperCase()}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Propriedades:</span>
+                  <p className="font-medium">{selectedProps.length}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Contatos válidos:</span>
+                  <p className="font-medium">
+                    {selectedProps.filter(p => 
+                      selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
+                    ).length}
+                  </p>
+                </div>
+              </div>
             </div>
+
+            {/* Contact Details */}
+            <div>
+              <h3 className="font-semibold mb-3">Contatos que receberão a mensagem</h3>
+              <ScrollArea className="h-64 border rounded-lg">
+                <div className="p-4 space-y-3">
+                  {selectedProps.map((prop) => {
+                    const phones = getAllPhones(prop);
+                    const emails = getAllEmails(prop);
+                    const contacts = selectedChannel === 'email' ? emails : phones;
+                    
+                    if (contacts.length === 0) return null;
+                    
+                    return (
+                      <div key={prop.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                        <div>
+                          <div className="font-medium text-sm">{prop.address}</div>
+                          <div className="text-xs text-muted-foreground">{prop.owner_name || 'No Owner'}</div>
+                        </div>
+                        <div className="text-right">
+                          {contacts.map((contact, idx) => (
+                            <div key={idx} className="text-xs font-mono">{contact}</div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Template Preview */}
+            {selectedTemplate && selectedProps.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3">Preview do Template</h3>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <div className="text-sm">
+                    {selectedChannel === 'email' && selectedTemplate.subject && (
+                      <div className="mb-2">
+                        <span className="font-medium">Assunto:</span> {renderTemplatePreview(selectedProps[0], 'subject')}
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium">Mensagem:</span>
+                      <div className="mt-2 p-3 bg-white rounded border text-sm whitespace-pre-wrap">
+                        {renderTemplatePreview(selectedProps[0], 'body')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSendPreview(false)}>
-              Cancel
+              Cancelar
             </Button>
             <Button 
               onClick={handleConfirmSendCampaign} 
@@ -1750,14 +1288,14 @@ export const CampaignManager = () => {
               {sending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Sending...
+                  Enviando...
                 </>
               ) : (
                 <>
                   <Rocket className="w-4 h-4 mr-2" />
-                  Send Campaign ({selectedProps.filter(p => 
+                  Confirmar Envio ({selectedProps.filter(p => 
                     selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
-                  ).length} messages)
+                  ).length} mensagens)
                 </>
               )}
             </Button>
