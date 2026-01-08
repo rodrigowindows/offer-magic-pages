@@ -17,12 +17,10 @@ import { Settings } from './Settings';
 import { TestModeToggle } from './TestModeToggle';
 import McpTester from './McpTester';
 import CampaignManager from './CampaignManager';
-import { CampaignWizard } from './CampaignWizard';
 // Note: PredictiveAnalyticsDashboard and IntelligentFollowUps removed - need database tables
 import { AdvancedWebhookManager } from './AdvancedWebhookManager';
 import { AutomatedABTesting } from './AutomatedABTesting';
 import TemplateManager from './TemplateManager';
-import TemplatePreview from './TemplatePreview';
 import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 
 // Layout Components
@@ -92,13 +90,12 @@ const MarketingAppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/quick" element={<SimpleCampaignDashboard />} />
             <Route path="/campaigns" element={<CampaignManager />} />
-            <Route path="/campaigns/wizard" element={<CampaignWizard />} />
             <Route path="/analytics" element={<Dashboard />} />
             <Route path="/ab-testing" element={<AutomatedABTesting />} />
             <Route path="/follow-ups" element={<Dashboard />} />
             <Route path="/webhooks" element={<AdvancedWebhookManager />} />
             <Route path="/send" element={<WizardLayout />} />
-            <Route path="/templates" element={<TemplatePreview />} />
+            <Route path="/templates" element={<TemplateManager />} />
             <Route path="/history" element={<History />} />
             <Route path="/mcp-tester" element={<McpTester />} />
             <Route path="/settings" element={<Settings />} />

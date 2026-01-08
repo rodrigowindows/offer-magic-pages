@@ -13,7 +13,17 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -48,6 +58,13 @@ import {
   TrendingUp,
   ArrowRight,
   ArrowLeft,
+  Search,
+  X,
+  DollarSign,
+  Sun,
+  Moon,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
@@ -111,7 +128,61 @@ export const CampaignManager = () => {
   const [filterStatus, setFilterStatus] = useState<string>('approved');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [showSendPreview, setShowSendPreview] = useState(false);
-  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<{id: string; label: string}[]>([]);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [progressStats, setProgressStats] = useState({ 
+    completed: 0, 
+    total: 0, 
+    success: 0, 
+    fail: 0,
+    successCount: 0,
+    failCount: 0,
+    estimatedTimeRemaining: '0s'
+  });
+
+  // Toggle theme
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+
+  // Update progress
+  const updateProgress = (completed: number, total: number, success: number, fail: number) => {
+    const remaining = total - completed;
+    const avgTime = 0.5; // seconds per message
+    const estimatedSeconds = Math.round(remaining * avgTime);
+    const estimatedTimeRemaining = estimatedSeconds > 60 
+      ? `${Math.round(estimatedSeconds / 60)}m` 
+      : `${estimatedSeconds}s`;
+    setProgressStats({ 
+      completed, 
+      total, 
+      success, 
+      fail, 
+      successCount: success, 
+      failCount: fail,
+      estimatedTimeRemaining 
+    });
+  };
+
+  // Preview navigation
+  const prevPreview = () => setPreviewIndex(prev => Math.max(0, prev - 1));
+  const nextPreview = () => setPreviewIndex(prev => Math.min(getSelectedProperties().length - 1, prev + 1));
+
+  // Remove filter
+  const removeFilter = (id: string) => setActiveFilters(prev => prev.filter(f => f.id !== id));
+
+  // Get filtered properties
+  const getFilteredProperties = () => {
+    return properties.filter(p => {
+      const matchesSearch = !searchTerm || 
+        p.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.owner_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.city.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    });
+  };
+
   // Set default template when channel changes
   useEffect(() => {
     const defaultTemplate = getDefaultTemplate(selectedChannel);
@@ -573,18 +644,11 @@ export const CampaignManager = () => {
     toast({
       title: '🎉 Campanha Finalizada!',
       description: `${successCount} mensagens enviadas com sucesso, ${failCount} falharam. Taxa de sucesso: ${Math.round((successCount / (successCount + failCount)) * 100)}%`,
-      action: {
-        altText: 'Ver relatório detalhado',
-        onClick: () => {
-          // Futuramente: abrir modal de relatório detalhado
-          console.log('Abrir relatório detalhado');
-        },
-      },
       duration: 8000,
     });
 
     setSelectedIds([]);
-    setProgressStats({ completed: 0, total: 0, successCount: 0, failCount: 0, estimatedTimeRemaining: '0s' });
+    setProgressStats({ completed: 0, total: 0, success: 0, fail: 0, successCount: 0, failCount: 0, estimatedTimeRemaining: '0s' });
   };
 
   const selectedCount = selectedIds.length;
@@ -941,37 +1005,6 @@ export const CampaignManager = () => {
                                       onChange={() => {}}
                                       className="flex-shrink-0"
                                     />
-                                  </div>
-                                );
-                              })}
-                                      <div className="text-sm text-muted-foreground">
-                                        {property.city}, {property.state}
-                                      </div>
-                                      <div className="flex items-center gap-2 mt-1">
-                                        {property.approval_status === 'approved' && (
-                                          <Badge variant="default" className="text-xs">Approved</Badge>
-                                        )}
-                                        {phones.length > 0 && (
-                                          <Badge variant="secondary" className="text-xs gap-1">
-                                            <Phone className="w-3 h-3" />
-                                            {phones.length}
-                                          </Badge>
-                                        )}
-                                        {emails.length > 0 && (
-                                          <Badge variant="secondary" className="text-xs gap-1">
-                                            <Mail className="w-3 h-3" />
-                                            {emails.length}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                    {property.cash_offer_amount && (
-                                      <div className="text-right">
-                                        <div className="text-sm font-semibold text-green-600">
-                                          ${property.cash_offer_amount.toLocaleString()}
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
                                 );
                               })}
@@ -1529,6 +1562,7 @@ export const CampaignManager = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </TooltipProvider>
   );
 };
 
