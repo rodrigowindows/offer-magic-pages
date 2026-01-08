@@ -26,7 +26,10 @@ import {
   Send,
   Loader2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  TrendingUp,
+  Target
 } from 'lucide-react';
 
 interface Property {
@@ -757,14 +760,29 @@ export const QuickCampaignDialog = ({
               </div>
 
               {/* Validation Summary */}
-              {selectedTemplate && (
+              {((campaignMode === 'single' && selectedTemplate) ||
+                (campaignMode === 'ab-test' && selectedTemplate)) && (
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <h4 className="text-sm font-medium text-blue-900 mb-2">Resumo da Validação:</h4>
                   <div className="text-xs text-blue-800 space-y-1">
-                    <p>• {removeDuplicateContacts(properties, selectedTemplate.channel === 'email' ? 'email' : 'phone').length} 
-                      de {properties.length} propriedades têm {selectedTemplate.channel === 'email' ? 'email' : 'telefone'} válido</p>
+                    <p>• {removeDuplicateContacts(properties, selectedTemplate!.channel === 'email' ? 'email' : 'phone').length}
+                      de {properties.length} propriedades têm {selectedTemplate!.channel === 'email' ? 'email' : 'telefone'} válido</p>
                     {enableFallback && <p>• Fallback ativado para colunas alternativas</p>}
                     <p>• Delay de {rateLimitDelay}ms entre envios</p>
+                    {campaignMode === 'ab-test' && (
+                      <p>• Teste A/B: {abTestSplit}% recebem variante A, {100 - abTestSplit}% recebem variante B</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {campaignMode === 'sequence' && selectedSequence && (
+                <div className="p-3 bg-green-50 rounded-lg">
+                  <h4 className="text-sm font-medium text-green-900 mb-2">Sequência Selecionada:</h4>
+                  <div className="text-xs text-green-800 space-y-1">
+                    <p>• <strong>{selectedSequence.name}</strong> - {selectedSequence.expectedConversion}</p>
+                    <p>• Duração estimada: {selectedSequence.estimatedDuration}</p>
+                    <p>• {selectedSequence.steps.length} passos automatizados</p>
                   </div>
                 </div>
               )}
@@ -786,11 +804,17 @@ export const QuickCampaignDialog = ({
               </Button>
               <Button
                 onClick={handleSendCampaign}
-                disabled={!selectedTemplate || !getDefaultTemplate(selectedTemplate.channel)}
+                disabled={
+                  (campaignMode === 'single' && (!selectedTemplate || !getDefaultTemplate(selectedTemplate.channel))) ||
+                  (campaignMode === 'sequence' && !selectedSequence) ||
+                  (campaignMode === 'ab-test' && (!selectedTemplate || !abTestVariantA || !abTestVariantB))
+                }
                 className="gap-2"
               >
                 <Send className="w-4 h-4" />
-                {selectedTemplate ? `Enviar ${selectedTemplate.name}` : 'Selecionar Template'}
+                {campaignMode === 'single' && (selectedTemplate ? `Enviar ${selectedTemplate.name}` : 'Selecionar Template')}
+                {campaignMode === 'sequence' && (selectedSequence ? `Enviar ${selectedSequence.name}` : 'Selecionar Sequência')}
+                {campaignMode === 'ab-test' && (selectedTemplate ? `Executar A/B Test` : 'Configurar Teste')}
               </Button>
             </DialogFooter>
           </>

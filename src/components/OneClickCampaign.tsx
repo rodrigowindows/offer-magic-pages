@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useMarketingStore } from '@/store/marketingStore';
+import { useMarketing } from '@/hooks/useMarketing';
 import { useTemplates } from '@/hooks/useTemplates';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +31,7 @@ interface OneClickCampaignProps {
 export const OneClickCampaign = ({ selectedProperties, onSuccess }: OneClickCampaignProps) => {
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
+  const addToHistory = useMarketingStore((state) => state.addToHistory);
   const { templates } = useTemplates();
   const [sending, setSending] = useState(false);
 

@@ -24,6 +24,7 @@ import {
 import { useMemo, useEffect } from 'react';
 import { TestModeToggle } from './TestModeToggle';
 import { QuickApiTest } from './QuickApiTest';
+import { CreateTestProperty } from './CreateTestProperty';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -120,6 +121,9 @@ export const Dashboard = () => {
 
       {/* Quick API Test - Prominent */}
       <QuickApiTest />
+
+      {/* Create Test Property - For Testing */}
+      <CreateTestProperty />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

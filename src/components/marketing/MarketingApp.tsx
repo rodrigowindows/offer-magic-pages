@@ -17,6 +17,11 @@ import { Settings } from './Settings';
 import { TestModeToggle } from './TestModeToggle';
 import McpTester from './McpTester';
 import CampaignManager from './CampaignManager';
+import { CampaignWizard } from './CampaignWizard';
+import { PredictiveAnalyticsDashboard } from './PredictiveAnalyticsDashboard';
+import { AdvancedWebhookManager } from './AdvancedWebhookManager';
+import { AutomatedABTesting } from './AutomatedABTesting';
+import { IntelligentFollowUps } from './IntelligentFollowUps';
 import TemplateManager from './TemplateManager';
 import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 
@@ -33,6 +38,11 @@ import {
   Menu,
   FileText,
   Zap,
+  Sparkles,
+  BarChart3,
+  Webhook,
+  TestTube,
+  Brain,
 } from 'lucide-react';
 
 import { useState } from 'react';
@@ -82,6 +92,11 @@ const MarketingAppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/quick" element={<SimpleCampaignDashboard />} />
             <Route path="/campaigns" element={<CampaignManager />} />
+            <Route path="/campaigns/wizard" element={<CampaignWizard />} />
+            <Route path="/analytics" element={<PredictiveAnalyticsDashboard />} />
+            <Route path="/ab-testing" element={<AutomatedABTesting />} />
+            <Route path="/follow-ups" element={<IntelligentFollowUps />} />
+            <Route path="/webhooks" element={<AdvancedWebhookManager />} />
             <Route path="/send" element={<WizardLayout />} />
             <Route path="/templates" element={<TemplateManager />} />
             <Route path="/history" element={<History />} />
@@ -104,6 +119,11 @@ const Sidebar = () => {
     { path: '/marketing', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/marketing/quick', icon: Zap, label: 'Quick Campaigns' },
     { path: '/marketing/campaigns', icon: Rocket, label: 'Campaigns' },
+    { path: '/marketing/campaigns/wizard', icon: Sparkles, label: 'Campaign Wizard' },
+    { path: '/marketing/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/marketing/ab-testing', icon: TestTube, label: 'A/B Testing' },
+    { path: '/marketing/follow-ups', icon: Brain, label: 'Follow-ups' },
+    { path: '/marketing/webhooks', icon: Webhook, label: 'Webhooks' },
     { path: '/marketing/send', icon: Send, label: 'New Communication' },
     { path: '/marketing/templates', icon: FileText, label: 'Templates' },
     { path: '/marketing/history', icon: HistoryIcon, label: 'History' },

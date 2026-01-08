@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { OneClickCampaign } from './OneClickCampaign';
 import { QuickCampaignDialog } from './QuickCampaignDialog';
+import { CampaignScheduler } from './CampaignScheduler';
+import { CampaignInsightsDashboard } from './CampaignInsightsDashboard';
 import {
   CheckCircle2,
   Home,
@@ -22,7 +24,8 @@ import {
   Rocket,
   MessageSquare,
   Mail,
-  Phone
+  Phone,
+  Clock
 } from 'lucide-react';
 
 interface Property {
@@ -48,6 +51,7 @@ export const SimpleCampaignDashboard = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showQuickDialog, setShowQuickDialog] = useState(false);
+  const [showScheduler, setShowScheduler] = useState(false);
 
   // Load approved properties
   useEffect(() => {
@@ -134,6 +138,9 @@ export const SimpleCampaignDashboard = () => {
         </Badge>
       </div>
 
+      {/* Campaign Insights */}
+      <CampaignInsightsDashboard />
+
       {/* Quick Actions */}
       <Card>
         <CardHeader>
@@ -175,6 +182,15 @@ export const SimpleCampaignDashboard = () => {
                 >
                   <Rocket className="w-4 h-4" />
                   Campanha Avançada
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setShowScheduler(true)}
+                  className="gap-2"
+                >
+                  <Clock className="w-4 h-4" />
+                  Agendar Campanha
                 </Button>
               </>
             )}
@@ -291,6 +307,14 @@ export const SimpleCampaignDashboard = () => {
         properties={selectedProperties}
         open={showQuickDialog}
         onOpenChange={setShowQuickDialog}
+        onSuccess={handleCampaignSuccess}
+      />
+
+      {/* Campaign Scheduler */}
+      <CampaignScheduler
+        properties={selectedProperties}
+        open={showScheduler}
+        onOpenChange={setShowScheduler}
         onSuccess={handleCampaignSuccess}
       />
     </div>
