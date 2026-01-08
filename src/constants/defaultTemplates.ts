@@ -188,5 +188,4 @@ export const TEMPLATE_CATEGORIES = {
     icon: '📞',
     templates: DEFAULT_TEMPLATES.filter(t => t.channel === 'call')
   }
-};</content>
-<parameter name="filePath">g:\My Drive\Sell House - code\Orlando\Step 5 - Outreach & Campaigns\src\constants\defaultTemplates.ts
+};

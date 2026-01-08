@@ -131,19 +131,6 @@ export const DashboardQuickActions = ({
             </div>
           </div>
         </div>
-          <Button variant="ghost" size="sm" className="justify-start">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Analytics
-          </Button>
-          <Button variant="ghost" size="sm" className="justify-start">
-            <Phone className="h-4 w-4 mr-2" />
-            Call Queue
-          </Button>
-          <Button variant="ghost" size="sm" className="justify-start">
-            <Mail className="h-4 w-4 mr-2" />
-            Email Queue
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );
