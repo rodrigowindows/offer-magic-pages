@@ -1,0 +1,155 @@
+/**
+ * Contact Availability Filter
+ * Filtro para mostrar propriedades com/sem telefones e emails
+ */
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Phone, Mail, Filter } from "lucide-react";
+
+export interface ContactFilters {
+  hasPhone?: boolean;
+  hasEmail?: boolean;
+  hasPreferredContacts?: boolean;
+}
+
+interface ContactAvailabilityFilterProps {
+  filters: ContactFilters;
+  onFiltersChange: (filters: ContactFilters) => void;
+  phonesCount?: number;
+  emailsCount?: number;
+  preferredCount?: number;
+}
+
+export const ContactAvailabilityFilter = ({
+  filters,
+  onFiltersChange,
+  phonesCount = 0,
+  emailsCount = 0,
+  preferredCount = 0,
+}: ContactAvailabilityFilterProps) => {
+  const activeFiltersCount = Object.values(filters).filter(Boolean).length;
+
+  const toggleFilter = (key: keyof ContactFilters) => {
+    const newFilters = { ...filters };
+    if (newFilters[key] === true) {
+      delete newFilters[key];
+    } else {
+      newFilters[key] = true;
+    }
+    onFiltersChange(newFilters);
+  };
+
+  const clearFilters = () => {
+    onFiltersChange({});
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Filter className="h-4 w-4" />
+            Contact Filters
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel>Filter by Contact Availability</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+
+          <DropdownMenuCheckboxItem
+            checked={filters.hasPhone === true}
+            onCheckedChange={() => toggleFilter('hasPhone')}
+          >
+            <Phone className="h-4 w-4 mr-2" />
+            Has Phone Numbers
+            {phonesCount > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {phonesCount}
+              </Badge>
+            )}
+          </DropdownMenuCheckboxItem>
+
+          <DropdownMenuCheckboxItem
+            checked={filters.hasEmail === true}
+            onCheckedChange={() => toggleFilter('hasEmail')}
+          >
+            <Mail className="h-4 w-4 mr-2" />
+            Has Email Addresses
+            {emailsCount > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {emailsCount}
+              </Badge>
+            )}
+          </DropdownMenuCheckboxItem>
+
+          <DropdownMenuCheckboxItem
+            checked={filters.hasPreferredContacts === true}
+            onCheckedChange={() => toggleFilter('hasPreferredContacts')}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Has Preferred Contacts Selected
+            {preferredCount > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {preferredCount}
+              </Badge>
+            )}
+          </DropdownMenuCheckboxItem>
+
+          {activeFiltersCount > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="p-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="w-full"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Active filters display */}
+      {activeFiltersCount > 0 && (
+        <div className="flex gap-1 flex-wrap">
+          {filters.hasPhone && (
+            <Badge variant="secondary" className="gap-1">
+              <Phone className="h-3 w-3" />
+              Has Phone
+            </Badge>
+          )}
+          {filters.hasEmail && (
+            <Badge variant="secondary" className="gap-1">
+              <Mail className="h-3 w-3" />
+              Has Email
+            </Badge>
+          )}
+          {filters.hasPreferredContacts && (
+            <Badge variant="secondary" className="gap-1">
+              <Filter className="h-3 w-3" />
+              Preferred Set
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

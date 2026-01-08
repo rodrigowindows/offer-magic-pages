@@ -117,15 +117,51 @@ export const SkipTracingDataModal = ({
       if (error) throw error;
       setData(property);
 
-      // Load from tags field if available (using tags as storage for preferences)
-      const tags = property.tags || [];
-      const phonePrefs = tags.filter((t: string) => t.startsWith('pref_phone:'));
-      const emailPrefs = tags.filter((t: string) => t.startsWith('pref_email:'));
-      if (phonePrefs.length > 0) {
-        setSelectedPhones(phonePrefs.map((t: string) => t.replace('pref_phone:', '')));
+      // Load saved preferences or auto-select defaults
+      if (property.preferred_phones && Array.isArray(property.preferred_phones) && property.preferred_phones.length > 0) {
+        // Load saved preferences
+        setSelectedPhones(property.preferred_phones);
+      } else {
+        // Auto-select first 2 phones as default
+        const phones = [];
+        for (let i = 1; i <= 7; i++) {
+          const phone = property[`phone${i}`];
+          if (phone) {
+            const formatted = formatPhone(phone);
+            if (formatted) {
+              phones.push(formatted);
+              if (phones.length === 2) break; // Only first 2
+            }
+          }
+        }
+        // Fallback to owner_phone if less than 2 found
+        if (phones.length < 2 && property.owner_phone) {
+          const formatted = formatPhone(property.owner_phone);
+          if (formatted && !phones.includes(formatted)) {
+            phones.push(formatted);
+          }
+        }
+        setSelectedPhones(phones);
       }
-      if (emailPrefs.length > 0) {
-        setSelectedEmails(emailPrefs.map((t: string) => t.replace('pref_email:', '')));
+
+      if (property.preferred_emails && Array.isArray(property.preferred_emails) && property.preferred_emails.length > 0) {
+        // Load saved preferences
+        setSelectedEmails(property.preferred_emails);
+      } else {
+        // Auto-select first email as default
+        const emails = [];
+        for (let i = 1; i <= 5; i++) {
+          const email = property[`email${i}`];
+          if (email && typeof email === 'string' && email.includes('@')) {
+            emails.push(email);
+            break; // Only first 1
+          }
+        }
+        // Fallback to owner_email
+        if (emails.length === 0 && property.owner_email && typeof property.owner_email === 'string' && property.owner_email.includes('@')) {
+          emails.push(property.owner_email);
+        }
+        setSelectedEmails(emails);
       }
     } catch (error) {
       console.error("Error fetching skip tracing data:", error);

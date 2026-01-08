@@ -726,6 +726,35 @@ export const QuickCampaignDialog = ({
                   )}
                 </div>
 
+                {/* Preferred Contacts Status */}
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h4 className="text-sm font-medium text-green-900 mb-2">
+                    <span className="flex items-center gap-2">
+                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Preferred Contacts (Pre-selected in Skip Trace):
+                    </span>
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-green-700">Preferred Emails:</span>
+                      <Badge variant={properties.filter(p => p.preferred_emails && p.preferred_emails.length > 0).length > 0 ? "default" : "outline"}>
+                        {properties.filter(p => p.preferred_emails && p.preferred_emails.length > 0).length} / {properties.length}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-green-700">Preferred Phones:</span>
+                      <Badge variant={properties.filter(p => p.preferred_phones && p.preferred_phones.length > 0).length > 0 ? "default" : "outline"}>
+                        {properties.filter(p => p.preferred_phones && p.preferred_phones.length > 0).length} / {properties.length}
+                      </Badge>
+                    </div>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    ✓ Preferred contacts will be used with priority over column selection
+                  </p>
+                </div>
+
                 <div className="flex items-center space-x-2 mt-4">
                   <input
                     type="checkbox"
