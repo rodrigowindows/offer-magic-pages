@@ -17,6 +17,7 @@ import { Settings } from './Settings';
 import { TestModeToggle } from './TestModeToggle';
 import McpTester from './McpTester';
 import CampaignManager from './CampaignManager';
+import TemplateManager from './TemplateManager';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ import {
   TestTube2,
   Rocket,
   Menu,
+  FileText,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -77,6 +79,7 @@ const MarketingAppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/campaigns" element={<CampaignManager />} />
             <Route path="/send" element={<WizardLayout />} />
+            <Route path="/templates" element={<TemplateManager />} />
             <Route path="/history" element={<History />} />
             <Route path="/mcp-tester" element={<McpTester />} />
             <Route path="/settings" element={<Settings />} />
@@ -97,6 +100,7 @@ const Sidebar = () => {
     { path: '/marketing', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/marketing/campaigns', icon: Rocket, label: 'Campaigns' },
     { path: '/marketing/send', icon: Send, label: 'New Communication' },
+    { path: '/marketing/templates', icon: FileText, label: 'Templates' },
     { path: '/marketing/history', icon: HistoryIcon, label: 'History' },
     { path: '/marketing/mcp-tester', icon: TestTube2, label: 'MCP Tester' },
     { path: '/marketing/settings', icon: SettingsIcon, label: 'Settings' },
