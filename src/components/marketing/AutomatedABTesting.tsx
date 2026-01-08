@@ -153,9 +153,19 @@ const AutomatedABTesting = () => {
     }
 
     try {
+      const testData = {
+        name: newTest.name,
+        description: newTest.description || '',
+        status: 'draft',
+        variants: newTest.variants,
+        target_metric: newTest.targetMetric || 'open_rate',
+        sample_size: newTest.sampleSize || 1000,
+        confidence_threshold: newTest.confidenceThreshold || 95
+      };
+
       const { data, error } = await supabase
         .from('ab_tests')
-        .insert([newTest])
+        .insert([testData])
         .select()
         .single();
 
