@@ -20,6 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -36,6 +44,8 @@ import {
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
+import { useTemplates } from '@/hooks/useTemplates';
+import type { SavedTemplate, Property, Channel } from '@/types/marketing.types';
 
 // Colunas de telefone disponíveis na tabela properties
 const PHONE_COLUMNS = [
@@ -85,6 +95,22 @@ export const CampaignManager = () => {
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
   const settings = useMarketingStore((state) => state.settings);
+  const { templates, getTemplatesByChannel, getDefaultTemplate } = useTemplates();
+
+  // Debug: Log templates on mount
+  useEffect(() => {
+    console.log('CampaignManager - Available templates:', templates);
+    console.log('CampaignManager - Templates by channel:', {
+      sms: getTemplatesByChannel('sms'),
+      email: getTemplatesByChannel('email'),
+      call: getTemplatesByChannel('call')
+    });
+    
+    // Force create default templates if none exist
+    if (templates.length === 0) {
+      console.log('CampaignManager - No templates found, this should not happen');
+    }
+  }, [templates, getTemplatesByChannel]);
 
   // State
   const [loading, setLoading] = useState(false);
@@ -93,6 +119,93 @@ export const CampaignManager = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<Channel>('sms');
   const [filterStatus, setFilterStatus] = useState<string>('approved');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [showSendPreview, setShowSendPreview] = useState(false);
+  
+  // Set default template when channel changes
+  useEffect(() => {
+    const defaultTemplate = getDefaultTemplate(selectedChannel);
+    if (defaultTemplate) {
+      setSelectedTemplateId(defaultTemplate.id);
+    }
+  }, [selectedChannel, getDefaultTemplate]);
+
+  // Get selected template
+  const selectedTemplate = selectedTemplateId 
+    ? templates.find(t => t.id === selectedTemplateId) 
+    : getDefaultTemplate(selectedChannel);
+
+  // Helper function to render template preview
+  const renderTemplatePreview = (prop: Property, type: 'body' | 'subject' = 'body') => {
+    if (!selectedTemplate) {
+      return 'Selecione um template';
+    }
+
+    const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+    
+    if (type === 'subject' && selectedTemplate.subject) {
+      let subject = selectedTemplate.subject;
+      subject = subject.replace(/\{address\}/g, prop.address);
+      subject = subject.replace(/\{name\}/g, prop.owner_name || 'Owner');
+      subject = subject.replace(/\{city\}/g, prop.city);
+      subject = subject.replace(/\{state\}/g, prop.state);
+      return subject;
+    }
+
+    // Replace template variables for body
+    let content = selectedTemplate.body;
+    content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{address\}/g, prop.address);
+    content = content.replace(/\{city\}/g, prop.city);
+    content = content.replace(/\{state\}/g, prop.state);
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{company_name\}/g, settings.company.company_name);
+    content = content.replace(/\{phone\}/g, settings.company.contact_phone);
+    content = content.replace(/\{seller_name\}/g, settings.company.company_name);
+    content = content.replace(/\{full_address\}/g, fullAddress);
+    content = content.replace(/\{property_url\}/g, propertyUrl);
+    content = content.replace(/\{qr_code_url\}/g, qrCodeUrl);
+    content = content.replace(/\{source_channel\}/g, selectedChannel);
+
+    return content;
+  };
+
+  // Helper function to generate template content for sending
+  const generateTemplateContent = (template: any, prop: Property, trackingId?: string) => {
+    const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+
+    // Generate trackable link if tracking ID is provided
+    const trackablePropertyUrl = trackingId
+      ? `${window.location.origin}/track/click?tid=${trackingId}&url=${encodeURIComponent(propertyUrl)}`
+      : propertyUrl;
+
+    const trackingPixel = trackingId ? `<img src="${window.location.origin}/track/open?tid=${trackingId}" width="1" height="1" style="display:none;" alt="" />` : '';
+    const unsubscribeUrl = `${window.location.origin}/unsubscribe?property=${prop.id}`;
+
+    let content = template.body;
+    content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{address\}/g, prop.address);
+    content = content.replace(/\{city\}/g, prop.city);
+    content = content.replace(/\{state\}/g, prop.state);
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{company_name\}/g, settings.company.company_name);
+    content = content.replace(/\{phone\}/g, settings.company.contact_phone);
+    content = content.replace(/\{seller_name\}/g, settings.company.company_name);
+    content = content.replace(/\{full_address\}/g, fullAddress);
+    content = content.replace(/\{property_url\}/g, trackablePropertyUrl);
+    content = content.replace(/\{qr_code_url\}/g, qrCodeUrl);
+    content = content.replace(/\{source_channel\}/g, selectedChannel);
+    content = content.replace(/\{tracking_pixel\}/g, trackingPixel);
+    content = content.replace(/\{unsubscribe_url\}/g, unsubscribeUrl);
+
+    const subject = template.subject?.replace(/\{address\}/g, prop.address) || `Cash Offer for ${prop.address}`;
+
+    return { content, subject };
+  };
   
   // Column selection state
   const [selectedPhoneColumn, setSelectedPhoneColumn] = useState('phone1');
@@ -101,7 +214,7 @@ export const CampaignManager = () => {
 
   // Build select columns based on selected phone/email columns
   const getSelectColumns = () => {
-    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status'];
+    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'skip_tracing_data', 'preferred_phones', 'preferred_emails'];
     const phoneCol = selectedPhoneColumn;
     const emailCol = selectedEmailColumn;
     
@@ -213,6 +326,23 @@ export const CampaignManager = () => {
       return;
     }
 
+    if (!selectedTemplate) {
+      toast({
+        title: 'Nenhum template selecionado',
+        description: 'Selecione um template antes de enviar',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Show preview modal instead of sending directly
+    setShowSendPreview(true);
+  };
+
+  const handleConfirmSendCampaign = async () => {
+    const selectedProps = getSelectedProperties();
+    setShowSendPreview(false);
+
     setSending(true);
     let successCount = 0;
     let failCount = 0;
@@ -232,12 +362,37 @@ export const CampaignManager = () => {
             continue;
           }
 
+          if (!selectedTemplate) {
+            failCount++;
+            continue;
+          }
+
+          const trackingId = crypto.randomUUID();
+          const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
+
           for (const phone of allPhones) {
             try {
               await sendSMS({
                 phone_number: phone,
-                body: `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`,
+                body: content,
               });
+
+              // Log successful SMS send
+              await supabase.from('campaign_logs').insert({
+                tracking_id: trackingId,
+                campaign_type: 'manual',
+                channel: 'sms',
+                property_id: prop.id,
+                recipient_phone: phone,
+                sent_at: new Date().toISOString(),
+                metadata: {
+                  template_id: selectedTemplate.id,
+                  template_name: selectedTemplate.name,
+                  contact_index: allPhones.indexOf(phone),
+                  total_contacts: allPhones.length
+                }
+              });
+
               sent = true;
               break;
             } catch (error) {
@@ -255,13 +410,39 @@ export const CampaignManager = () => {
             continue;
           }
 
+          if (!selectedTemplate) {
+            failCount++;
+            continue;
+          }
+
+          const trackingId = crypto.randomUUID();
+          const { content, subject } = generateTemplateContent(selectedTemplate, prop, trackingId);
+
           for (const email of allEmails) {
             try {
               await sendEmail({
                 receiver_email: email,
-                subject: `Cash Offer for ${prop.address}`,
-                message_body: `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`,
+                subject: subject,
+                message_body: content,
               });
+
+              // Log successful email send
+              await supabase.from('campaign_logs').insert({
+                tracking_id: trackingId,
+                campaign_type: 'manual',
+                channel: 'email',
+                property_id: prop.id,
+                recipient_email: email,
+                sent_at: new Date().toISOString(),
+                metadata: {
+                  template_id: selectedTemplate.id,
+                  template_name: selectedTemplate.name,
+                  contact_index: allEmails.indexOf(email),
+                  total_contacts: allEmails.length,
+                  subject: subject
+                }
+              });
+
               sent = true;
               break;
             } catch (error) {
@@ -279,6 +460,14 @@ export const CampaignManager = () => {
             continue;
           }
 
+          if (!selectedTemplate) {
+            failCount++;
+            continue;
+          }
+
+          const trackingId = crypto.randomUUID();
+          const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
+
           for (const phone of allPhones) {
             try {
               await initiateCall({
@@ -286,9 +475,26 @@ export const CampaignManager = () => {
                 address: fullAddress,
                 from_number: settings.company.contact_phone,
                 to_number: phone,
-                voicemail_drop: `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`,
+                voicemail_drop: content,
                 seller_name: settings.company.company_name,
               });
+
+              // Log successful call initiation
+              await supabase.from('campaign_logs').insert({
+                tracking_id: trackingId,
+                campaign_type: 'manual',
+                channel: 'call',
+                property_id: prop.id,
+                recipient_phone: phone,
+                sent_at: new Date().toISOString(),
+                metadata: {
+                  template_id: selectedTemplate.id,
+                  template_name: selectedTemplate.name,
+                  contact_index: allPhones.indexOf(phone),
+                  total_contacts: allPhones.length
+                }
+              });
+
               sent = true;
               break;
             } catch (error) {
@@ -534,6 +740,34 @@ export const CampaignManager = () => {
                 </Tabs>
               </div>
 
+              {/* Template Selection */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Template</Label>
+                <Select value={selectedTemplateId || ''} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getTemplatesByChannel(selectedChannel).length > 0 ? (
+                      getTemplatesByChannel(selectedChannel).map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name} {template.is_default ? '(Padrão)' : ''}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        Nenhum template disponível para {selectedChannel}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {getTemplatesByChannel(selectedChannel).length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Crie templates na página de Templates primeiro
+                  </p>
+                )}
+              </div>
+
               <Separator />
 
               {/* Column Selection */}
@@ -599,15 +833,7 @@ export const CampaignManager = () => {
                           SMS Preview
                         </div>
                         <div className="text-sm bg-white p-2 rounded border text-gray-800">
-                          {selectedProps.length > 0 ? (
-                            (() => {
-                              const prop = selectedProps[0];
-                              const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-                              return `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`;
-                            })()
-                          ) : (
-                            'Selecione uma propriedade para ver o preview'
-                          )}
+                          {selectedProps.length > 0 ? renderTemplatePreview(selectedProps[0]) : 'Selecione uma propriedade'}
                         </div>
                       </div>
                     )}
@@ -618,22 +844,18 @@ export const CampaignManager = () => {
                           <Mail className="w-3 h-3" />
                           Email Preview
                         </div>
-                        <div className="text-sm bg-white p-3 rounded border space-y-2">
-                          <div className="font-medium text-gray-900">
-                            Subject: {selectedProps.length > 0 ? `Cash Offer for ${selectedProps[0].address}` : 'Subject'}
+                        {selectedProps.length > 0 ? (
+                          <div className="text-sm bg-white p-3 rounded border space-y-2">
+                            <div className="font-medium text-gray-900">
+                              Subject: {renderTemplatePreview(selectedProps[0], 'subject')}
+                            </div>
+                            <div className="text-gray-800 whitespace-pre-line">
+                              {renderTemplatePreview(selectedProps[0])}
+                            </div>
                           </div>
-                          <div className="text-gray-800 whitespace-pre-line">
-                            {selectedProps.length > 0 ? (
-                              (() => {
-                                const prop = selectedProps[0];
-                                const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-                                return `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`;
-                              })()
-                            ) : (
-                              'Selecione uma propriedade para ver o preview do email'
-                            )}
-                          </div>
-                        </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">Selecione uma propriedade</div>
+                        )}
                       </div>
                     )}
 
@@ -644,11 +866,7 @@ export const CampaignManager = () => {
                           Voicemail Preview
                         </div>
                         <div className="text-sm bg-white p-2 rounded border text-gray-800">
-                          {selectedProps.length > 0 ? (
-                            `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`
-                          ) : (
-                            'Selecione uma propriedade para ver o preview do voicemail'
-                          )}
+                          {selectedProps.length > 0 ? renderTemplatePreview(selectedProps[0]) : 'Selecione uma propriedade'}
                         </div>
                       </div>
                     )}
@@ -719,7 +937,7 @@ export const CampaignManager = () => {
                 className="w-full"
                 size="lg"
                 onClick={handleSendCampaign}
-                disabled={selectedCount === 0 || sending}
+                disabled={selectedCount === 0 || sending || !selectedTemplate}
               >
                 {sending ? (
                   <>
@@ -739,10 +957,159 @@ export const CampaignManager = () => {
                   Selecione propriedades à esquerda
                 </p>
               )}
+              {selectedCount > 0 && !selectedTemplate && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Selecione um template para enviar
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Send Preview Modal */}
+      <Dialog open={showSendPreview} onOpenChange={setShowSendPreview}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Confirmar Envio da Campanha</DialogTitle>
+            <DialogDescription>
+              Revise os detalhes antes de enviar a campanha para {selectedProps.length} propriedades via {selectedChannel.toUpperCase()}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Campaign Summary */}
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2">Resumo da Campanha</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Template:</span>
+                  <p className="font-medium">{selectedTemplate?.name}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Canal:</span>
+                  <p className="font-medium">{selectedChannel.toUpperCase()}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Propriedades:</span>
+                  <p className="font-medium">{selectedProps.length}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Contatos válidos:</span>
+                  <p className="font-medium">
+                    {selectedProps.filter(p => 
+                      selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
+                    ).length}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Details */}
+            <div>
+              <h3 className="font-semibold mb-3">Contatos que receberão a mensagem</h3>
+              <ScrollArea className="h-64 border rounded-lg">
+                <div className="p-4 space-y-3">
+                  {selectedProps.map((prop) => {
+                    const phones = getAllPhones(prop);
+                    const emails = getAllEmails(prop);
+                    const hasValidContact = selectedChannel === 'email' ? emails.length > 0 : phones.length > 0;
+
+                    return (
+                      <div key={prop.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <div className="font-medium">{prop.address}</div>
+                          <div className="text-sm text-muted-foreground">{prop.owner_name || 'Proprietário não informado'}</div>
+                          {hasValidContact ? (
+                            <div className="mt-2">
+                              <Badge variant="secondary" className="text-xs">
+                                {selectedChannel === 'email' ? (
+                                  <>
+                                    <Mail className="w-3 h-3 mr-1" />
+                                    {emails[0]} {/* Mostra apenas o primeiro email que será usado */}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Phone className="w-3 h-3 mr-1" />
+                                    {phones[0]} {/* Mostra apenas o primeiro telefone que será usado */}
+                                  </>
+                                )}
+                              </Badge>
+                              {(selectedChannel === 'email' ? emails.length : phones.length) > 1 && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  +{(selectedChannel === 'email' ? emails.length : phones.length) - 1} contatos alternativos disponíveis
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <Badge variant="destructive" className="text-xs mt-2">
+                              Sem contato válido
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {prop.cash_offer_amount && (
+                            <div className="text-sm font-semibold text-green-600">
+                              ${prop.cash_offer_amount.toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* Template Preview */}
+            {selectedTemplate && selectedProps.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3">Preview do Template</h3>
+                <div className="bg-muted/50 p-4 rounded-lg border">
+                  <div className="text-sm">
+                    {selectedChannel === 'email' && selectedTemplate.subject && (
+                      <div className="mb-2">
+                        <span className="font-medium">Assunto:</span> {renderTemplatePreview(selectedProps[0], 'subject')}
+                      </div>
+                    )}
+                    <div>
+                      <span className="font-medium">Mensagem:</span>
+                      <div className="mt-2 p-3 bg-white rounded border text-sm whitespace-pre-wrap">
+                        {renderTemplatePreview(selectedProps[0], 'body')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSendPreview(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirmSendCampaign} 
+              disabled={sending}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {sending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                <>
+                  <Rocket className="w-4 h-4 mr-2" />
+                  Confirmar Envio ({selectedProps.filter(p => 
+                    selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
+                  ).length} mensagens)
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

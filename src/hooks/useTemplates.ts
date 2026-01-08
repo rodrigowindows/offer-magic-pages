@@ -10,12 +10,20 @@ export const useTemplates = () => {
 
   // Inicializar templates padrão se nenhum existir
   useEffect(() => {
-    if (templates.length === 0) {
-      DEFAULT_TEMPLATES.forEach(template => {
-        store.addTemplate(template);
-      });
-      toast.info('Templates padrão foram carregados automaticamente');
-    }
+    // Small delay to ensure store is hydrated
+    const timer = setTimeout(() => {
+      console.log('useTemplates - Current templates length:', templates.length);
+      if (templates.length === 0) {
+        console.log('useTemplates - Loading default templates...');
+        DEFAULT_TEMPLATES.forEach(template => {
+          console.log('useTemplates - Adding template:', template.name);
+          store.addTemplate(template);
+        });
+        toast.info('Templates padrão foram carregados automaticamente');
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [templates.length, store]);
 
   // Obter templates por canal

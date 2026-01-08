@@ -54,10 +54,14 @@ const Property = () => {
         },
       });
 
-      // Also save to property_analytics table for permanent tracking
-      await supabase.from('property_analytics').insert({
+      // Also save to property_visits table for permanent tracking
+      await supabase.from('property_visits').insert({
         property_id: propertyId,
-        event_type: eventType,
+        visit_source: source,
+        campaign_name: campaign,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
         referrer: document.referrer || 'direct',
         user_agent: navigator.userAgent,
       });
