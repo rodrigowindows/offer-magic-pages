@@ -31,7 +31,10 @@ import {
   BarChart3,
   Zap,
   Users,
+  Loader2,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
 import type { SavedTemplate } from '@/types/marketing.types';
 
