@@ -20,6 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -98,6 +105,7 @@ export const CampaignManager = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel>('sms');
   const [filterStatus, setFilterStatus] = useState<string>('approved');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [showSendPreview, setShowSendPreview] = useState(false);
   
   // Set default template when channel changes
   useEffect(() => {
@@ -314,6 +322,14 @@ export const CampaignManager = () => {
       });
       return;
     }
+
+    // Show preview modal instead of sending directly
+    setShowSendPreview(true);
+  };
+
+  const handleConfirmSendCampaign = async () => {
+    const selectedProps = getSelectedProperties();
+    setShowSendPreview(false);
 
     setSending(true);
     let successCount = 0;
@@ -880,6 +896,175 @@ export const CampaignManager = () => {
           </Card>
         </div>
       </div>
+
+      {/* Send Preview Modal */}
+      <Dialog open={showSendPreview} onOpenChange={setShowSendPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Confirmar Envio de Campanha
+            </DialogTitle>
+            <DialogDescription>
+              Revise os detalhes abaixo antes de enviar a campanha para {selectedProps.length} propriedade(s)
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Campaign Summary */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Resumo da Campanha</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Canal:</span>
+                  <Badge variant="outline" className="capitalize">
+                    {selectedChannel === 'sms' ? 'SMS' : selectedChannel === 'email' ? 'Email' : 'Chamada'}
+                  </Badge>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Propriedades selecionadas:</span>
+                  <span className="text-sm">{selectedProps.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Template:</span>
+                  <span className="text-sm">{selectedTemplate?.name || 'Nenhum'}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contact Details */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Contatos que Receberão a Campanha</CardTitle>
+                <CardDescription>
+                  Lista detalhada dos números/telefones que serão utilizados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96">
+                  <div className="space-y-3">
+                    {selectedProps.map((property) => {
+                      const allPhones = getAllPhones(property);
+                      const allEmails = getAllEmails(property);
+                      const contacts = selectedChannel === 'email' ? allEmails : allPhones;
+                      const hasContacts = contacts.length > 0;
+
+                      return (
+                        <div key={property.id} className="border rounded-lg p-3">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">
+                                {property.address}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {property.city}, {property.state} {property.zip_code}
+                              </div>
+                              {property.owner_name && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  Proprietário: {property.owner_name}
+                                </div>
+                              )}
+                            </div>
+                            {property.cash_offer_amount && (
+                              <div className="text-right">
+                                <div className="text-sm font-semibold text-green-600">
+                                  ${property.cash_offer_amount.toLocaleString()}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-3">
+                            <div className="text-xs font-medium mb-2">
+                              {selectedChannel === 'email' ? 'Emails que receberão:' : 'Telefones que receberão:'}
+                            </div>
+                            {hasContacts ? (
+                              <div className="flex flex-wrap gap-2">
+                                {contacts.map((contact, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {selectedChannel === 'email' ? (
+                                      <>
+                                        <Mail className="w-3 h-3 mr-1" />
+                                        {contact}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Phone className="w-3 h-3 mr-1" />
+                                        {contact}
+                                      </>
+                                    )}
+                                    {contacts.length > 1 && (
+                                      <span className="ml-1 opacity-70">#{index + 1}</span>
+                                    )}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <Badge variant="destructive" className="text-xs">
+                                {selectedChannel === 'email' ? 'Sem email disponível' : 'Sem telefone disponível'}
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Template Preview for this property */}
+                          {selectedTemplate && hasContacts && (
+                            <div className="mt-3 pt-3 border-t">
+                              <div className="text-xs font-medium mb-2">Preview da mensagem:</div>
+                              <div className="bg-muted p-2 rounded text-xs max-h-20 overflow-y-auto">
+                                {selectedChannel === 'sms' ? (
+                                  generateTemplateContent(selectedTemplate, property).content.substring(0, 160) + '...'
+                                ) : (
+                                  <div dangerouslySetInnerHTML={{
+                                    __html: generateTemplateContent(selectedTemplate, property).content.substring(0, 200) + '...'
+                                  }} />
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowSendPreview(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConfirmSendCampaign}
+                disabled={sending}
+                className="flex-1"
+              >
+                {sending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Confirmar Envio ({selectedProps.length})
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
