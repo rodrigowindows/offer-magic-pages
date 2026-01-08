@@ -19,6 +19,7 @@ import {
   XCircle,
   TestTube2,
   Settings,
+  Rocket,
 } from 'lucide-react';
 import { useMemo, useEffect } from 'react';
 import { TestModeToggle } from './TestModeToggle';
@@ -121,10 +122,21 @@ export const Dashboard = () => {
       <QuickApiTest />
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Button
           size="lg"
-          onClick={() => navigate('/send')}
+          onClick={() => navigate('/marketing/campaigns')}
+          className="h-auto py-6 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+        >
+          <Rocket className="w-5 h-5 mr-2" />
+          <div className="text-left">
+            <div className="font-bold">Create Campaign</div>
+            <div className="text-xs opacity-80">Bulk send to properties</div>
+          </div>
+        </Button>
+        <Button
+          size="lg"
+          onClick={() => navigate('/marketing/send')}
           className="h-auto py-6"
         >
           <Send className="w-5 h-5 mr-2" />
@@ -136,7 +148,7 @@ export const Dashboard = () => {
         <Button
           size="lg"
           variant="outline"
-          onClick={() => navigate('/history')}
+          onClick={() => navigate('/marketing/history')}
           className="h-auto py-6"
         >
           <History className="w-5 h-5 mr-2" />

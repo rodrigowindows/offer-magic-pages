@@ -16,6 +16,7 @@ import { History } from './History';
 import { Settings } from './Settings';
 import { TestModeToggle } from './TestModeToggle';
 import McpTester from './McpTester';
+import CampaignManager from './CampaignManager';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import {
   History as HistoryIcon,
   Settings as SettingsIcon,
   TestTube2,
+  Rocket,
   Menu,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -73,6 +75,7 @@ const MarketingAppContent = () => {
         <main className="flex-1 p-8 bg-background overflow-auto">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/campaigns" element={<CampaignManager />} />
             <Route path="/send" element={<WizardLayout />} />
             <Route path="/history" element={<History />} />
             <Route path="/mcp-tester" element={<McpTester />} />
@@ -92,6 +95,7 @@ const Sidebar = () => {
 
   const navItems = [
     { path: '/marketing', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/marketing/campaigns', icon: Rocket, label: 'Campaigns' },
     { path: '/marketing/send', icon: Send, label: 'New Communication' },
     { path: '/marketing/history', icon: HistoryIcon, label: 'History' },
     { path: '/marketing/mcp-tester', icon: TestTube2, label: 'MCP Tester' },
