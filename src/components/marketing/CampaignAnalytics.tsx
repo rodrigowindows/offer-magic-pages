@@ -26,30 +26,30 @@ export const CampaignAnalytics = () => {
     try {
       setLoading(true);
 
-      // Get total visits and unique properties
+      // Get total visits and unique properties from property_analytics table
       const { data: visits, error: visitsError } = await supabase
-        .from('property_visits')
+        .from('property_analytics')
         .select('*')
-        .order('visited_at', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (visitsError) throw visitsError;
 
       // Calculate stats
-      const totalVisits = visits.length;
-      const uniqueProperties = new Set(visits.map(v => v.property_id)).size;
+      const totalVisits = visits?.length || 0;
+      const uniqueProperties = new Set(visits?.map(v => v.property_id)).size;
 
-      // Source breakdown
+      // Source breakdown - using event_type as source indicator
       const sourceBreakdown: Record<string, number> = {};
-      visits.forEach(visit => {
-        sourceBreakdown[visit.visit_source || 'unknown'] =
-          (sourceBreakdown[visit.visit_source || 'unknown'] || 0) + 1;
+      visits?.forEach(visit => {
+        sourceBreakdown[visit.event_type || 'unknown'] =
+          (sourceBreakdown[visit.event_type || 'unknown'] || 0) + 1;
       });
 
-      // Campaign breakdown
+      // Referrer breakdown as campaign stand-in
       const campaignBreakdown: Record<string, number> = {};
-      visits.forEach(visit => {
-        campaignBreakdown[visit.campaign_name || 'unknown'] =
-          (campaignBreakdown[visit.campaign_name || 'unknown'] || 0) + 1;
+      visits?.forEach(visit => {
+        campaignBreakdown[visit.referrer || 'direct'] =
+          (campaignBreakdown[visit.referrer || 'direct'] || 0) + 1;
       });
 
       setStats({
@@ -57,7 +57,7 @@ export const CampaignAnalytics = () => {
         uniqueProperties,
         sourceBreakdown,
         campaignBreakdown,
-        recentVisits: visits.slice(0, 10)
+        recentVisits: visits?.slice(0, 10) || []
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
@@ -239,18 +239,18 @@ export const CampaignAnalytics = () => {
                 {stats?.recentVisits.map((visit) => (
                   <div key={visit.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      {getSourceIcon(visit.visit_source)}
+                      {getSourceIcon(visit.event_type)}
                       <div>
                         <div className="font-medium text-sm">
-                          Property {visit.property_id.slice(0, 8)}...
+                          Property {visit.property_id?.slice(0, 8)}...
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {visit.visit_source} • {visit.campaign_name || 'No campaign'}
+                          {visit.event_type} • {visit.referrer || 'direct'}
                         </div>
                       </div>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(visit.visited_at).toLocaleString()}
+                      {new Date(visit.created_at).toLocaleString()}
                     </div>
                   </div>
                 ))}
@@ -261,5 +261,6 @@ export const CampaignAnalytics = () => {
       </Tabs>
     </div>
   );
-};</content>
-<parameter name="filePath">g:\My Drive\Sell House - code\Orlando\Step 5 - Outreach & Campaigns\src\components\marketing\CampaignAnalytics.tsx
+};
+
+export default CampaignAnalytics;
