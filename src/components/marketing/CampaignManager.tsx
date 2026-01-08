@@ -75,6 +75,8 @@ interface Property {
     preferred_phones?: string[];
     preferred_emails?: string[];
   };
+  preferred_phones?: string[];
+  preferred_emails?: string[];
   // Dynamic columns
   [key: string]: string | number | boolean | null | undefined | object;
 }
@@ -101,7 +103,7 @@ export const CampaignManager = () => {
 
   // Build select columns based on selected phone/email columns
   const getSelectColumns = () => {
-    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status'];
+    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'preferred_phones', 'preferred_emails'];
     const phoneCol = selectedPhoneColumn;
     const emailCol = selectedEmailColumn;
     
@@ -169,7 +171,11 @@ export const CampaignManager = () => {
 
   // Get phone/email from property based on selected column
   const getPhone = (prop: Property): string | undefined => {
-    // First try preferred phones from skip tracing data
+    // First try direct preferred_phones field
+    if (prop.preferred_phones && prop.preferred_phones.length > 0) {
+      return prop.preferred_phones[0]; // Use first preferred phone
+    }
+    // Then try skip_tracing_data
     if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
       return prop.skip_tracing_data.preferred_phones[0]; // Use first preferred phone
     }
@@ -178,7 +184,11 @@ export const CampaignManager = () => {
   };
 
   const getEmail = (prop: Property): string | undefined => {
-    // First try preferred emails from skip tracing data
+    // First try direct preferred_emails field
+    if (prop.preferred_emails && prop.preferred_emails.length > 0) {
+      return prop.preferred_emails[0]; // Use first preferred email
+    }
+    // Then try skip_tracing_data
     if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
       return prop.skip_tracing_data.preferred_emails[0]; // Use first preferred email
     }
@@ -187,7 +197,11 @@ export const CampaignManager = () => {
   };
 
   const getAllPhones = (prop: Property): string[] => {
-    // Return all preferred phones if available
+    // Return all preferred phones if available (direct field first)
+    if (prop.preferred_phones && prop.preferred_phones.length > 0) {
+      return prop.preferred_phones;
+    }
+    // Then try skip_tracing_data
     if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
       return prop.skip_tracing_data.preferred_phones;
     }
@@ -197,16 +211,18 @@ export const CampaignManager = () => {
   };
 
   const getAllEmails = (prop: Property): string[] => {
-    // Return all preferred emails if available
+    // Return all preferred emails if available (direct field first)
+    if (prop.preferred_emails && prop.preferred_emails.length > 0) {
+      return prop.preferred_emails;
+    }
+    // Then try skip_tracing_data
     if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
       return prop.skip_tracing_data.preferred_emails;
     }
     // Fall back to selected column
     const email = prop[selectedEmailColumn] as string | undefined;
     return email ? [email] : [];
-  };
-
-  const handleSendCampaign = async () => {
+  };  const handleSendCampaign = async () => {
     const selectedProps = getSelectedProperties();
     if (selectedProps.length === 0) {
       toast({
