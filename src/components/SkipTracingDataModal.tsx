@@ -117,10 +117,13 @@ export const SkipTracingDataModal = ({
       if (error) throw error;
       setData(property);
 
-      // Load saved preferences or auto-select defaults
-      if (property.preferred_phones && Array.isArray(property.preferred_phones) && property.preferred_phones.length > 0) {
-        // Load saved preferences
-        setSelectedPhones(property.preferred_phones);
+      // Load saved preferences from tags or auto-select defaults
+      const tags = (property.tags || []) as string[];
+      const savedPhones = tags.filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
+      const savedEmails = tags.filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
+
+      if (savedPhones.length > 0) {
+        setSelectedPhones(savedPhones);
       } else {
         // Auto-select first 2 phones as default
         const phones = [];
@@ -130,11 +133,10 @@ export const SkipTracingDataModal = ({
             const formatted = formatPhone(phone);
             if (formatted) {
               phones.push(formatted);
-              if (phones.length === 2) break; // Only first 2
+              if (phones.length === 2) break;
             }
           }
         }
-        // Fallback to owner_phone if less than 2 found
         if (phones.length < 2 && property.owner_phone) {
           const formatted = formatPhone(property.owner_phone);
           if (formatted && !phones.includes(formatted)) {
@@ -144,9 +146,8 @@ export const SkipTracingDataModal = ({
         setSelectedPhones(phones);
       }
 
-      if (property.preferred_emails && Array.isArray(property.preferred_emails) && property.preferred_emails.length > 0) {
-        // Load saved preferences
-        setSelectedEmails(property.preferred_emails);
+      if (savedEmails.length > 0) {
+        setSelectedEmails(savedEmails);
       } else {
         // Auto-select first email as default
         const emails = [];
@@ -154,12 +155,8 @@ export const SkipTracingDataModal = ({
           const email = property[`email${i}`];
           if (email && typeof email === 'string' && email.includes('@')) {
             emails.push(email);
-            break; // Only first 1
+            break;
           }
-        }
-        // Fallback to owner_email
-        if (emails.length === 0 && property.owner_email && typeof property.owner_email === 'string' && property.owner_email.includes('@')) {
-          emails.push(property.owner_email);
         }
         setSelectedEmails(emails);
       }
