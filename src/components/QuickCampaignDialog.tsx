@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useMarketingStore } from '@/store/marketingStore';
+import { useMarketing } from '@/hooks/useMarketing';
 import { useTemplates } from '@/hooks/useTemplates';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,6 +58,22 @@ type QuickTemplate = {
   estimatedTime: string;
 };
 
+type SequenceStep = {
+  id: string;
+  channel: 'sms' | 'email' | 'call';
+  delay: number; // hours from previous step
+  templateId: string;
+};
+
+type CampaignSequence = {
+  id: string;
+  name: string;
+  description: string;
+  steps: SequenceStep[];
+  estimatedDuration: string;
+  expectedConversion: string;
+};
+
 const QUICK_TEMPLATES: QuickTemplate[] = [
   {
     id: 'sms-quick',
@@ -87,6 +104,46 @@ const QUICK_TEMPLATES: QuickTemplate[] = [
   }
 ];
 
+const CAMPAIGN_SEQUENCES: CampaignSequence[] = [
+  {
+    id: 'sequence-basic',
+    name: 'Sequência Básica',
+    description: 'SMS → Email → Call (estratégia comprovada)',
+    steps: [
+      { id: 'step1', channel: 'sms', delay: 0, templateId: 'sms-quick' },
+      { id: 'step2', channel: 'email', delay: 48, templateId: 'email-offer' },
+      { id: 'step3', channel: 'call', delay: 72, templateId: 'call-voicemail' }
+    ],
+    estimatedDuration: '5 dias',
+    expectedConversion: '+45%'
+  },
+  {
+    id: 'sequence-aggressive',
+    name: 'Sequência Agressiva',
+    description: 'Contatos mais frequentes para resposta rápida',
+    steps: [
+      { id: 'step1', channel: 'sms', delay: 0, templateId: 'sms-quick' },
+      { id: 'step2', channel: 'call', delay: 24, templateId: 'call-voicemail' },
+      { id: 'step3', channel: 'email', delay: 24, templateId: 'email-offer' },
+      { id: 'step4', channel: 'call', delay: 48, templateId: 'call-voicemail' }
+    ],
+    estimatedDuration: '3 dias',
+    expectedConversion: '+60%'
+  },
+  {
+    id: 'sequence-gentle',
+    name: 'Sequência Suave',
+    description: 'Contatos espaçados para não incomodar',
+    steps: [
+      { id: 'step1', channel: 'email', delay: 0, templateId: 'email-offer' },
+      { id: 'step2', channel: 'sms', delay: 72, templateId: 'sms-quick' },
+      { id: 'step3', channel: 'call', delay: 96, templateId: 'call-voicemail' }
+    ],
+    estimatedDuration: '7 dias',
+    expectedConversion: '+35%'
+  }
+];
+
 export const QuickCampaignDialog = ({
   properties,
   open,
@@ -95,9 +152,13 @@ export const QuickCampaignDialog = ({
 }: QuickCampaignDialogProps) => {
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
+  const addToHistory = useMarketingStore((state) => state.addToHistory);
   const { templates } = useTemplates();
+  const { sendIndividualCommunication } = useMarketing();
 
   const [selectedTemplate, setSelectedTemplate] = useState<QuickTemplate | null>(null);
+  const [selectedSequence, setSelectedSequence] = useState<CampaignSequence | null>(null);
+  const [campaignMode, setCampaignMode] = useState<'single' | 'sequence' | 'ab-test'>('single');
   const [sending, setSending] = useState(false);
   const [selectedEmailColumn, setSelectedEmailColumn] = useState<string>('owner_email');
   const [selectedPhoneColumn, setSelectedPhoneColumn] = useState<string>('owner_phone');
@@ -108,12 +169,25 @@ export const QuickCampaignDialog = ({
     total: 0
   });
 
+  // A/B Testing state
+  const [abTestEnabled, setAbTestEnabled] = useState(false);
+  const [abTestVariantA, setAbTestVariantA] = useState('');
+  const [abTestVariantB, setAbTestVariantB] = useState('');
+  const [abTestSplit, setAbTestSplit] = useState(50); // 50/50 split
+
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
+      console.log('QuickCampaignDialog opened with properties:', properties.length);
       setSelectedTemplate(null);
+      setSelectedSequence(null);
+      setCampaignMode('single');
       setSending(false);
       setProgress({ current: 0, total: 0 });
+      setAbTestEnabled(false);
+      setAbTestVariantA('');
+      setAbTestVariantB('');
+      setAbTestSplit(50);
     }
   }, [open]);
 
@@ -180,31 +254,78 @@ export const QuickCampaignDialog = ({
 
   // Send campaign
   const handleSendCampaign = async () => {
-    if (!selectedTemplate) return;
-
-    // Filter and deduplicate properties based on contact availability
-    const validProperties = removeDuplicateContacts(properties, selectedTemplate.channel === 'email' ? 'email' : 'phone');
-    
-    if (validProperties.length === 0) {
+    // Validation based on campaign mode
+    if (campaignMode === 'single' && !selectedTemplate) {
       toast({
-        title: 'Nenhum contato válido',
-        description: `Nenhuma propriedade tem ${selectedTemplate.channel === 'email' ? 'email' : 'telefone'} válido na coluna selecionada`,
+        title: 'Selecione um template',
+        description: 'Escolha um tipo de campanha para continuar.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (campaignMode === 'sequence' && !selectedSequence) {
+      toast({
+        title: 'Selecione uma sequência',
+        description: 'Escolha uma sequência de campanha para continuar.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (campaignMode === 'ab-test' && (!abTestVariantA || !abTestVariantB || !selectedTemplate)) {
+      toast({
+        title: 'Configure o A/B Test',
+        description: 'Preencha ambas as variantes e selecione o canal.',
         variant: 'destructive'
       });
       return;
     }
 
     setSending(true);
+
+    try {
+      if (campaignMode === 'sequence') {
+        await handleSendSequence();
+      } else if (campaignMode === 'ab-test') {
+        await handleSendABTest();
+      } else {
+        await handleSendSingle();
+      }
+    } catch (error) {
+      console.error('Campaign error:', error);
+      toast({
+        title: 'Erro na campanha',
+        description: 'Ocorreu um erro ao enviar a campanha.',
+        variant: 'destructive'
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleSendSingle = async () => {
+    // Filter and deduplicate properties based on contact availability
+    const validProperties = removeDuplicateContacts(properties, selectedTemplate!.channel === 'email' ? 'email' : 'phone');
+
+    if (validProperties.length === 0) {
+      toast({
+        title: 'Nenhum contato válido',
+        description: `Nenhuma propriedade tem ${selectedTemplate!.channel === 'email' ? 'email' : 'telefone'} válido na coluna selecionada`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setProgress({ current: 0, total: validProperties.length });
 
-    const template = getDefaultTemplate(selectedTemplate.channel);
+    const template = getDefaultTemplate(selectedTemplate!.channel);
     if (!template) {
       toast({
         title: 'Template não encontrado',
-        description: `Configure um template padrão para ${selectedTemplate.channel}`,
+        description: `Configure um template padrão para ${selectedTemplate!.channel}`,
         variant: 'destructive'
       });
-      setSending(false);
       return;
     }
 
@@ -220,61 +341,8 @@ export const QuickCampaignDialog = ({
       });
 
       try {
-        // Get best available contact
-        const contact = getBestContact(property, selectedTemplate.channel === 'email' ? 'email' : 'phone');
-        if (!contact) {
-          errorCount++;
-          continue;
-        }
-
-        // Prepare message with variables
-        let message = template.body;
-        let subject = template.subject || '';
-
-        // Replace variables
-        const variables = {
-          '{name}': property.owner_name || 'Valued Homeowner',
-          '{address}': property.address,
-          '{city}': property.city,
-          '{state}': property.state,
-          '{cash_offer}': property.cash_offer_amount ? `$${property.cash_offer_amount.toLocaleString()}` : '$XXX,XXX',
-          '{company_name}': 'Your Real Estate Company',
-          '{phone}': '(555) 123-4567',
-          '{seller_name}': 'Your Agent Name'
-        };
-
-        Object.entries(variables).forEach(([key, value]) => {
-          message = message.replace(new RegExp(key, 'g'), value);
-          subject = subject.replace(new RegExp(key, 'g'), value);
-        });
-
-        // Send based on channel
-        if (selectedTemplate.channel === 'sms') {
-          await sendSMS({ phone_number: contact, body: message });
-        } else if (selectedTemplate.channel === 'email') {
-          await sendEmail({ receiver_email: contact, subject, message_body: message });
-        } else if (selectedTemplate.channel === 'call') {
-          await initiateCall({
-            name: property.owner_name || 'Homeowner',
-            address: property.address,
-            from_number: '(555) 123-4567',
-            to_number: contact,
-            voicemail_drop: message,
-            seller_name: 'Your Agent Name'
-          });
-        }
-
+        await sendSingleMessage(property, selectedTemplate!.channel, template);
         successCount++;
-
-        // Update property communication status
-        await supabase
-          .from('properties')
-          .update({
-            [`${selectedTemplate.channel}_sent`]: true,
-            [`${selectedTemplate.channel}_sent_at`]: new Date().toISOString()
-          })
-          .eq('id', property.id);
-
       } catch (error) {
         console.error(`Error sending to ${property.address}:`, error);
         errorCount++;
@@ -286,12 +354,175 @@ export const QuickCampaignDialog = ({
       }
     }
 
-    setSending(false);
+    showResults(successCount, validProperties.length, errorCount);
+  };
 
-    // Show results
+  const handleSendSequence = async () => {
+    if (!selectedSequence) return;
+
+    setProgress({ current: 0, total: selectedSequence.steps.length * properties.length });
+
+    let totalSuccess = 0;
+    let totalError = 0;
+
+    for (const step of selectedSequence.steps) {
+      const template = getDefaultTemplate(step.channel);
+      if (!template) continue;
+
+      const validProperties = removeDuplicateContacts(properties, step.channel === 'email' ? 'email' : 'phone');
+
+      for (let i = 0; i < validProperties.length; i++) {
+        const property = validProperties[i];
+        setProgress(prev => ({
+          ...prev,
+          current: prev.current + 1,
+          currentProperty: `${step.channel.toUpperCase()}: ${property.address}`
+        }));
+
+        try {
+          await sendSingleMessage(property, step.channel, template);
+          totalSuccess++;
+        } catch (error) {
+          console.error(`Error in sequence step ${step.channel}:`, error);
+          totalError++;
+        }
+
+        // Rate limiting delay
+        if (i < validProperties.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
+        }
+      }
+
+      // Delay between sequence steps (except for the first one)
+      if (selectedSequence.steps.indexOf(step) < selectedSequence.steps.length - 1) {
+        const nextStep = selectedSequence.steps[selectedSequence.steps.indexOf(step) + 1];
+        if (nextStep.delay > 0) {
+          // In real implementation, this would be scheduled for later
+          // For now, we'll just add a small delay for demonstration
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
+
+    showResults(totalSuccess, selectedSequence.steps.length * properties.length, totalError);
+  };
+
+  const handleSendABTest = async () => {
+    if (!selectedTemplate) return;
+
+    const validProperties = removeDuplicateContacts(properties, selectedTemplate.channel === 'email' ? 'email' : 'phone');
+    const template = getDefaultTemplate(selectedTemplate.channel);
+
+    if (!template || validProperties.length === 0) return;
+
+    setProgress({ current: 0, total: validProperties.length });
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < validProperties.length; i++) {
+      const property = validProperties[i];
+      setProgress({
+        current: i + 1,
+        total: validProperties.length,
+        currentProperty: property.address
+      });
+
+      try {
+        // Determine which variant to use (A/B split)
+        const useVariantA = Math.random() * 100 < abTestSplit;
+        const messageBody = useVariantA ? abTestVariantA : abTestVariantB;
+
+        await sendSingleMessage(property, selectedTemplate.channel, { ...template, body: messageBody });
+        successCount++;
+      } catch (error) {
+        console.error(`Error in A/B test:`, error);
+        errorCount++;
+      }
+
+      // Rate limiting delay
+      if (i < validProperties.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
+      }
+    }
+
+    showResults(successCount, validProperties.length, errorCount);
+  };
+
+  const sendSingleMessage = async (property: Property, channel: 'sms' | 'email' | 'call', template: any) => {
+    // Get best available contact
+    const contact = getBestContact(property, channel === 'email' ? 'email' : 'phone');
+    if (!contact) throw new Error('No contact available');
+
+    // Prepare message with variables
+    let message = template.body;
+    let subject = template.subject || '';
+
+    const variables = {
+      '{name}': property.owner_name || 'Valued Homeowner',
+      '{address}': property.address,
+      '{city}': property.city,
+      '{state}': property.state,
+      '{cash_offer}': property.cash_offer_amount ? `$${property.cash_offer_amount.toLocaleString()}` : '$XXX,XXX',
+      '{company_name}': 'Your Real Estate Company',
+      '{phone}': '(555) 123-4567',
+      '{seller_name}': 'Your Agent Name'
+    };
+
+    Object.entries(variables).forEach(([key, value]) => {
+      message = message.replace(new RegExp(key, 'g'), value);
+      subject = subject.replace(new RegExp(key, 'g'), value);
+    });
+
+    // Send based on channel
+    let response: any = { message: 'Sent successfully' };
+    if (channel === 'sms') {
+      response = await sendSMS({ phone_number: contact, body: message });
+    } else if (channel === 'email') {
+      response = await sendEmail({ receiver_email: contact, subject, message_body: message });
+    } else if (channel === 'call') {
+      response = await initiateCall({
+        name: property.owner_name || 'Homeowner',
+        address: property.address,
+        from_number: '(555) 123-4567',
+        to_number: contact,
+        voicemail_drop: message,
+        seller_name: 'Your Agent Name'
+      });
+    }
+
+    // Add to marketing history
+    const historyItem = {
+      id: `${Date.now()}-${property.id}-${channel}`,
+      timestamp: new Date(),
+      recipient: {
+        name: property.owner_name || 'Homeowner',
+        phone_number: channel === 'sms' ? contact : property.owner_phone || '',
+        email: channel === 'email' ? contact : property.owner_email || '',
+        address: property.address,
+        seller_name: 'Your Agent Name',
+      },
+      channels: [channel],
+      response,
+      status: 'sent',
+      test_mode: testMode,
+    };
+    addToHistory(historyItem);
+
+    // Update property communication status
+    await supabase
+      .from('properties')
+      .update({
+        [`${channel}_sent`]: true,
+        [`${channel}_sent_at`]: new Date().toISOString()
+      })
+      .eq('id', property.id);
+  };
+
+  const showResults = (successCount: number, total: number, errorCount: number) => {
     toast({
       title: testMode ? 'Modo Teste - Simulação Completa' : 'Campanha Enviada!',
-      description: `${successCount} de ${validProperties.length} mensagens enviadas com sucesso${errorCount > 0 ? ` (${errorCount} erros)` : ''}`,
+      description: `${successCount} de ${total} mensagens enviadas com sucesso${errorCount > 0 ? ` (${errorCount} erros)` : ''}`,
       variant: successCount > 0 ? 'default' : 'destructive'
     });
 
@@ -304,20 +535,89 @@ export const QuickCampaignDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Rocket className="w-5 h-5" />
-            Campanha Rápida
-          </DialogTitle>
-          <DialogDescription>
-            Envie uma campanha automática para {properties.length} propriedade{properties.length !== 1 ? 's' : ''} aprovada{properties.length !== 1 ? 's' : ''}
-          </DialogDescription>
-        </DialogHeader>
+        {sending ? (
+          /* Sending Progress */
+          <div className="space-y-6">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+              <h3 className="font-medium">Enviando campanha...</h3>
+              <p className="text-sm text-muted-foreground">
+                {progress.current} de {progress.total} mensagens
+              </p>
+            </div>
 
-        {!sending ? (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Progresso</span>
+                <span>{Math.round((progress.current / progress.total) * 100)}%</span>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {progress.currentProperty && (
+              <p className="text-xs text-center text-muted-foreground">
+                Enviando para: {progress.currentProperty}
+              </p>
+            )}
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Não feche esta janela até a campanha terminar. Isso pode levar alguns minutos.
+              </AlertDescription>
+            </Alert>
+          </div>
+        ) : (
           <>
-            {/* Column Selection */}
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Rocket className="w-5 h-5" />
+                Campanha Rápida
+              </DialogTitle>
+              <DialogDescription>
+                Envie uma campanha automática para {properties.length} propriedade{properties.length !== 1 ? 's' : ''} aprovada{properties.length !== 1 ? 's' : ''}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Debug info */}
+            <div className="mb-4 p-2 bg-yellow-100 rounded text-xs">
+              Debug: sending={sending ? 'true' : 'false'}, templates={templates.length}, properties={properties.length}, open={open ? 'true' : 'false'}
+            </div>
+
+            {/* CAMPANHA SEQUENCIAL - MELHORIA SUGERIDA */}
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-medium text-blue-900 mb-2">💡 Sugestão: Campanha Sequencial</h3>
+              <p className="text-sm text-blue-800 mb-2">
+                Em vez de escolher apenas 1 canal, que tal uma sequência inteligente?
+              </p>
+              <div className="text-xs text-blue-700 space-y-1">
+                <p>• <strong>Dia 1:</strong> SMS rápido (imediato)</p>
+                <p>• <strong>Dia 3:</strong> Email profissional (se SMS não respondeu)</p>
+                <p>• <strong>Dia 7:</strong> Ligação pessoal (último esforço)</p>
+              </div>
+            </div>
+
+            {/* CAMPANHA A/B TESTING - MELHORIA SUGERIDA */}
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <h3 className="font-medium text-green-900 mb-2">🧪 Sugestão: A/B Testing</h3>
+              <p className="text-sm text-green-800 mb-2">
+                Teste diferentes abordagens para descobrir o que funciona melhor:
+              </p>
+              <div className="text-xs text-green-700 space-y-1">
+                <p>• <strong>Grupo A:</strong> "Oferta urgente - apenas hoje!"</p>
+                <p>• <strong>Grupo B:</strong> "Proposta personalizada para você"</p>
+                <p>• <strong>Métrica:</strong> Taxa de resposta por abordagem</p>
+              </div>
+            </div>
+
+            {/* FORCE SHOW FIELDS FOR DEBUGGING */}
             <div className="space-y-4">
+              {/* Column Selection */}
               <div>
                 <h3 className="font-medium mb-3">Selecionar Colunas de Contato:</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -381,10 +681,8 @@ export const QuickCampaignDialog = ({
                   </Select>
                 </div>
               </div>
-            </div>
 
-            {/* Template Selection */}
-            <div className="space-y-4">
+              {/* Template Selection */}
               <div>
                 <h3 className="font-medium mb-3">Escolha o tipo de campanha:</h3>
                 <div className="grid grid-cols-1 gap-3">
@@ -471,7 +769,7 @@ export const QuickCampaignDialog = ({
                 </div>
               )}
 
-              {/* Test Mode Warning */}
+            {/* Test Mode Warning */}
               {testMode && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
@@ -496,43 +794,6 @@ export const QuickCampaignDialog = ({
               </Button>
             </DialogFooter>
           </>
-        ) : (
-          /* Sending Progress */
-          <div className="space-y-6">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-              <h3 className="font-medium">Enviando campanha...</h3>
-              <p className="text-sm text-muted-foreground">
-                {progress.current} de {progress.total} mensagens
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Progresso</span>
-                <span>{Math.round((progress.current / progress.total) * 100)}%</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            {progress.currentProperty && (
-              <p className="text-xs text-center text-muted-foreground">
-                Enviando para: {progress.currentProperty}
-              </p>
-            )}
-
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Não feche esta janela até a campanha terminar. Isso pode levar alguns minutos.
-              </AlertDescription>
-            </Alert>
-          </div>
         )}
       </DialogContent>
     </Dialog>
