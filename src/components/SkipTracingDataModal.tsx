@@ -117,10 +117,9 @@ export const SkipTracingDataModal = ({
       if (error) throw error;
       setData(property);
 
-      // Load saved preferences from tags or auto-select defaults
-      const tags = (property.tags || []) as string[];
-      const savedPhones = tags.filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
-      const savedEmails = tags.filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
+      // Load saved preferences from JSONB columns (preferred_phones and preferred_emails)
+      const savedPhones = (property.preferred_phones || []) as string[];
+      const savedEmails = (property.preferred_emails || []) as string[];
 
       if (savedPhones.length > 0) {
         setSelectedPhones(savedPhones);
@@ -250,33 +249,19 @@ export const SkipTracingDataModal = ({
 
     setSaving(true);
     try {
-      // Get current tags and update with preferences
-      const { data: currentData } = await supabase
-        .from('properties')
-        .select('tags')
-        .eq('id', propertyId)
-        .maybeSingle();
-
-      const currentTags = (currentData?.tags || []) as string[];
-      // Remove old preferences
-      const cleanedTags = currentTags.filter(t => 
-        !t.startsWith('pref_phone:') && !t.startsWith('pref_email:')
-      );
-      // Add new preferences
-      const newTags = [
-        ...cleanedTags,
-        ...selectedPhones.map(p => `pref_phone:${p}`),
-        ...selectedEmails.map(e => `pref_email:${e}`)
-      ];
-
+      // Save to JSONB columns (preferred_phones and preferred_emails)
       const { error } = await supabase
         .from('properties')
-        .update({ tags: newTags })
+        .update({
+          preferred_phones: selectedPhones,
+          preferred_emails: selectedEmails
+        })
         .eq('id', propertyId);
 
       if (error) throw error;
 
       toast.success('Preferências de contato salvas!');
+      onOpenChange(false); // Close dialog after saving
     } catch (error) {
       console.error('Error saving contact preferences:', error);
       toast.error('Erro ao salvar preferências');

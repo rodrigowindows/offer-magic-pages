@@ -1116,12 +1116,12 @@ export const CampaignWizard = () => {
 
                         <div className="bg-white p-4 rounded-lg border shadow-sm">
                           {channel === 'email' && (template.body.includes('<!DOCTYPE') || template.body.includes('<html')) ? (
-                            <div
-                              dangerouslySetInnerHTML={{
-                                __html: renderTemplateContent(template.body, selectedProperties[0] || {})
-                              }}
-                              className="max-h-64 overflow-y-auto text-sm border rounded bg-gray-50 p-3"
-                              style={{ zoom: '0.8' }}
+                            <iframe
+                              srcDoc={renderTemplateContent(template.body, selectedProperties[0] || {})}
+                              className="w-full border rounded bg-white"
+                              style={{ height: '500px', maxHeight: '70vh' }}
+                              title="Email Preview"
+                              sandbox="allow-same-origin"
                             />
                           ) : (
                             <div className="whitespace-pre-wrap text-sm leading-relaxed">
