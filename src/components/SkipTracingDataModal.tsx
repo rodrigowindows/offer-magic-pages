@@ -117,9 +117,10 @@ export const SkipTracingDataModal = ({
       if (error) throw error;
       setData(property);
 
-      // Load saved preferences from JSONB columns (preferred_phones and preferred_emails)
-      const savedPhones = (property.preferred_phones || []) as string[];
-      const savedEmails = (property.preferred_emails || []) as string[];
+      // Load saved preferences from tags column (prefixed with pref_phone: and pref_email:)
+      const tags = property.tags || [];
+      const savedPhones = tags.filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
+      const savedEmails = tags.filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
 
       if (savedPhones.length > 0) {
         setSelectedPhones(savedPhones);
@@ -249,13 +250,26 @@ export const SkipTracingDataModal = ({
 
     setSaving(true);
     try {
-      // Save to JSONB columns (preferred_phones and preferred_emails)
+      // First, get current tags
+      const { data: property, error: fetchError } = await supabase
+        .from('properties')
+        .select('tags')
+        .eq('id', propertyId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Remove old phone/email preferences and add new ones
+      const existingTags = (property?.tags || []).filter(
+        (t: string) => !t.startsWith('pref_phone:') && !t.startsWith('pref_email:')
+      );
+      const phoneTags = selectedPhones.map(p => `pref_phone:${p}`);
+      const emailTags = selectedEmails.map(e => `pref_email:${e}`);
+      const newTags = [...existingTags, ...phoneTags, ...emailTags];
+
       const { error } = await supabase
         .from('properties')
-        .update({
-          preferred_phones: selectedPhones,
-          preferred_emails: selectedEmails
-        })
+        .update({ tags: newTags })
         .eq('id', propertyId);
 
       if (error) throw error;
