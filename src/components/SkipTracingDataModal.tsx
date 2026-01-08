@@ -117,12 +117,15 @@ export const SkipTracingDataModal = ({
       if (error) throw error;
       setData(property);
 
-      // Load saved preferences
-      if (property.preferred_phones) {
-        setSelectedPhones(Array.isArray(property.preferred_phones) ? property.preferred_phones : []);
+      // Load from tags field if available (using tags as storage for preferences)
+      const tags = property.tags || [];
+      const phonePrefs = tags.filter((t: string) => t.startsWith('pref_phone:'));
+      const emailPrefs = tags.filter((t: string) => t.startsWith('pref_email:'));
+      if (phonePrefs.length > 0) {
+        setSelectedPhones(phonePrefs.map((t: string) => t.replace('pref_phone:', '')));
       }
-      if (property.preferred_emails) {
-        setSelectedEmails(Array.isArray(property.preferred_emails) ? property.preferred_emails : []);
+      if (emailPrefs.length > 0) {
+        setSelectedEmails(emailPrefs.map((t: string) => t.replace('pref_email:', '')));
       }
     } catch (error) {
       console.error("Error fetching skip tracing data:", error);
@@ -214,12 +217,28 @@ export const SkipTracingDataModal = ({
 
     setSaving(true);
     try {
+      // Get current tags and update with preferences
+      const { data: currentData } = await supabase
+        .from('properties')
+        .select('tags')
+        .eq('id', propertyId)
+        .maybeSingle();
+
+      const currentTags = (currentData?.tags || []) as string[];
+      // Remove old preferences
+      const cleanedTags = currentTags.filter(t => 
+        !t.startsWith('pref_phone:') && !t.startsWith('pref_email:')
+      );
+      // Add new preferences
+      const newTags = [
+        ...cleanedTags,
+        ...selectedPhones.map(p => `pref_phone:${p}`),
+        ...selectedEmails.map(e => `pref_email:${e}`)
+      ];
+
       const { error } = await supabase
         .from('properties')
-        .update({
-          preferred_phones: selectedPhones,
-          preferred_emails: selectedEmails,
-        })
+        .update({ tags: newTags })
         .eq('id', propertyId);
 
       if (error) throw error;

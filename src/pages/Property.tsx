@@ -23,8 +23,6 @@ const Property = () => {
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const t = translations[language];
-
   useEffect(() => {
     if (slug) {
       fetchProperty(slug);

@@ -531,7 +531,7 @@ export const QuickCampaignDialog = ({
       },
       channels: [channel],
       response,
-      status: 'sent',
+      status: 'sent' as const,
       test_mode: testMode,
     };
     addToHistory(historyItem);

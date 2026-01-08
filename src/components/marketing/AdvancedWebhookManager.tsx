@@ -133,14 +133,11 @@ const AdvancedWebhookManager = () => {
   const loadWebhooks = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('webhook_configs')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setWebhooks(data || []);
+      // Load from localStorage since webhook_configs table doesn't exist
+      const saved = localStorage.getItem('webhook_configs');
+      if (saved) {
+        setWebhooks(JSON.parse(saved));
+      }
     } catch (error) {
       console.error('Erro ao carregar webhooks:', error);
       toast({
@@ -164,20 +161,23 @@ const AdvancedWebhookManager = () => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('webhook_configs')
-        .insert([{
-          ...newWebhook,
-          events: newWebhook.events || [],
-          headers: newWebhook.headers || {},
-          retry_policy: newWebhook.retryPolicy
-        }])
-        .select()
-        .single();
+      const newWebhookData: WebhookConfig = {
+        id: crypto.randomUUID(),
+        name: newWebhook.name || '',
+        url: newWebhook.url || '',
+        events: newWebhook.events || [],
+        headers: newWebhook.headers || {},
+        method: newWebhook.method || 'POST',
+        active: newWebhook.active ?? true,
+        integration: newWebhook.integration || 'custom',
+        retryPolicy: newWebhook.retryPolicy || { maxRetries: 3, backoffMs: 1000 },
+        successCount: 0,
+        failureCount: 0
+      };
 
-      if (error) throw error;
-
-      setWebhooks([data, ...webhooks]);
+      const updatedWebhooks = [newWebhookData, ...webhooks];
+      setWebhooks(updatedWebhooks);
+      localStorage.setItem('webhook_configs', JSON.stringify(updatedWebhooks));
       setNewWebhook({
         name: '',
         url: '',
@@ -208,14 +208,9 @@ const AdvancedWebhookManager = () => {
 
   const deleteWebhook = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('webhook_configs')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setWebhooks(webhooks.filter(w => w.id !== id));
+      const updatedWebhooks = webhooks.filter(w => w.id !== id);
+      setWebhooks(updatedWebhooks);
+      localStorage.setItem('webhook_configs', JSON.stringify(updatedWebhooks));
       toast({
         title: "Sucesso",
         description: "Webhook removido com sucesso"
@@ -232,16 +227,11 @@ const AdvancedWebhookManager = () => {
 
   const toggleWebhook = async (id: string, active: boolean) => {
     try {
-      const { error } = await supabase
-        .from('webhook_configs')
-        .update({ active })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      setWebhooks(webhooks.map(w =>
+      const updatedWebhooks = webhooks.map(w =>
         w.id === id ? { ...w, active } : w
-      ));
+      );
+      setWebhooks(updatedWebhooks);
+      localStorage.setItem('webhook_configs', JSON.stringify(updatedWebhooks));
     } catch (error) {
       console.error('Erro ao atualizar webhook:', error);
     }
