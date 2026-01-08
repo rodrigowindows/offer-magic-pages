@@ -81,6 +81,8 @@ interface Property {
   owner_name?: string;
   cash_offer_amount?: number;
   approval_status?: string;
+  preferred_phones?: string[];  // Root level - from properties table
+  preferred_emails?: string[];  // Root level - from properties table
   skip_tracing_data?: {
     preferred_phones?: string[];
     preferred_emails?: string[];
@@ -96,21 +98,6 @@ export const CampaignManager = () => {
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
   const settings = useMarketingStore((state) => state.settings);
   const { templates, getTemplatesByChannel, getDefaultTemplate } = useTemplates();
-
-  // Debug: Log templates on mount
-  useEffect(() => {
-    console.log('CampaignManager - Available templates:', templates);
-    console.log('CampaignManager - Templates by channel:', {
-      sms: getTemplatesByChannel('sms'),
-      email: getTemplatesByChannel('email'),
-      call: getTemplatesByChannel('call')
-    });
-    
-    // Force create default templates if none exist
-    if (templates.length === 0) {
-      console.log('CampaignManager - No templates found, this should not happen');
-    }
-  }, [templates, getTemplatesByChannel]);
 
   // State
   const [loading, setLoading] = useState(false);
@@ -282,35 +269,55 @@ export const CampaignManager = () => {
 
   // Get phone/email from property based on selected column
   const getPhone = (prop: Property): string | undefined => {
-    // First try preferred phones from skip tracing data
+    // Priority 1: Root level preferred_phones (from properties table)
+    if (prop.preferred_phones && prop.preferred_phones.length > 0) {
+      return prop.preferred_phones[0];
+    }
+    // Priority 2: Skip tracing data preferred phones
     if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
       return prop.skip_tracing_data.preferred_phones[0];
     }
-    // Fall back to selected column
+    // Priority 3: Fall back to selected column
     return prop[selectedPhoneColumn] as string | undefined;
   };
 
   const getEmail = (prop: Property): string | undefined => {
-    // First try preferred emails from skip tracing data
+    // Priority 1: Root level preferred_emails (from properties table)
+    if (prop.preferred_emails && prop.preferred_emails.length > 0) {
+      return prop.preferred_emails[0];
+    }
+    // Priority 2: Skip tracing data preferred emails
     if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
       return prop.skip_tracing_data.preferred_emails[0];
     }
-    // Fall back to selected column
+    // Priority 3: Fall back to selected column
     return prop[selectedEmailColumn] as string | undefined;
   };
 
   const getAllPhones = (prop: Property): string[] => {
+    // Priority 1: Root level preferred_phones
+    if (prop.preferred_phones && prop.preferred_phones.length > 0) {
+      return prop.preferred_phones;
+    }
+    // Priority 2: Skip tracing data
     if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
       return prop.skip_tracing_data.preferred_phones;
     }
+    // Priority 3: Selected column
     const phone = prop[selectedPhoneColumn] as string | undefined;
     return phone ? [phone] : [];
   };
 
   const getAllEmails = (prop: Property): string[] => {
+    // Priority 1: Root level preferred_emails
+    if (prop.preferred_emails && prop.preferred_emails.length > 0) {
+      return prop.preferred_emails;
+    }
+    // Priority 2: Skip tracing data
     if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
       return prop.skip_tracing_data.preferred_emails;
     }
+    // Priority 3: Selected column
     const email = prop[selectedEmailColumn] as string | undefined;
     return email ? [email] : [];
   };
