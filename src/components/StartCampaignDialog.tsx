@@ -30,6 +30,7 @@ interface StartCampaignDialogProps {
   propertyIds: string[];
   onCampaignSent: () => void;
   onOpenSettings: () => void;
+  isApprovedCampaign?: boolean;
 }
 
 interface CampaignResult {
@@ -45,6 +46,7 @@ export const StartCampaignDialog = ({
   propertyIds,
   onCampaignSent,
   onOpenSettings,
+  isApprovedCampaign = false,
 }: StartCampaignDialogProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,7 @@ export const StartCampaignDialog = ({
   const [properties, setProperties] = useState<Property[]>([]);
   const [apiSettings, setApiSettings] = useState<{
     api_endpoint: string;
+    webhook_url?: string;
     seller_name: string;
   } | null>(null);
   const [results, setResults] = useState<CampaignResult[]>([]);
@@ -94,6 +97,7 @@ export const StartCampaignDialog = ({
       if (data) {
         setApiSettings({
           api_endpoint: data.api_endpoint,
+          webhook_url: data.webhook_url,
           seller_name: (data.headers as any)?.seller_name || "Alex",
         });
       } else {
@@ -130,6 +134,9 @@ export const StartCampaignDialog = ({
           address: fullAddress,
           email: "", // No email field in properties table currently
           seller_name: apiSettings.seller_name,
+          property_id: property.id,
+          campaign_id: `campaign_${Date.now()}_${property.id}`, // Unique campaign ID
+          webhook_url: apiSettings.webhook_url || null, // Include webhook URL if configured
         };
 
         console.log(`Sending campaign for ${property.address}:`, payload);
@@ -151,6 +158,7 @@ export const StartCampaignDialog = ({
 
         // Log the campaign to campaign_logs table
         await supabase.from("campaign_logs").insert({
+          id: payload.campaign_id, // Use the campaign_id as the record ID
           property_id: property.id,
           campaign_type: "marketing",
           recipient_phone: property.owner_phone,
@@ -219,9 +227,14 @@ export const StartCampaignDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Start Marketing Campaign</DialogTitle>
+          <DialogTitle>
+            {isApprovedCampaign ? "🚀 Launch Approved Campaign" : "Start Marketing Campaign"}
+          </DialogTitle>
           <DialogDescription>
-            Send unified marketing campaign (Call + SMS + Email) to selected properties
+            {isApprovedCampaign 
+              ? "Send marketing campaign to all approved properties ready for outreach"
+              : "Send unified marketing campaign (Call + SMS + Email) to selected properties"
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -248,6 +261,11 @@ export const StartCampaignDialog = ({
               <p>
                 <strong>API:</strong> {apiSettings.api_endpoint}
               </p>
+              {apiSettings.webhook_url && (
+                <p>
+                  <strong>📡 Webhook:</strong> {apiSettings.webhook_url}
+                </p>
+              )}
               <p>
                 <strong>Seller:</strong> {apiSettings.seller_name}
               </p>
@@ -262,53 +280,24 @@ export const StartCampaignDialog = ({
               </p>
             </div>
 
-            {results.length > 0 && (
-              <ScrollArea className="h-48 border rounded-lg p-2">
-                <div className="space-y-2">
-                  {results.map((result) => (
-                    <div
-                      key={result.propertyId}
-                      className={`flex items-center gap-2 text-sm p-2 rounded ${
-                        result.success
-                          ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                          : "bg-red-500/10 text-red-700 dark:text-red-400"
-                      }`}
-                    >
-                      {result.success ? (
-                        <CheckCircle className="h-4 w-4 flex-shrink-0" />
-                      ) : (
-                        <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                      )}
-                      <span className="truncate">{result.address}</span>
-                      {result.error && (
-                        <span className="text-xs">({result.error})</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                {results.length > 0 ? "Close" : "Cancel"}
+                Cancel
               </Button>
-              {results.length === 0 && (
-                <Button
-                  onClick={handleStartCampaign}
-                  disabled={sending || properties.length === 0}
-                  className="gap-2"
-                >
-                  {sending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    `Start Campaign (${properties.length})`
-                  )}
-                </Button>
-              )}
+              <Button
+                onClick={handleStartCampaign}
+                disabled={sending || properties.length === 0}
+                className="gap-2"
+              >
+                {sending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  `Start Campaign (${properties.length})`
+                )}
+              </Button>
             </div>
           </div>
         )}

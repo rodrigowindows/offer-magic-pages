@@ -45,6 +45,7 @@ import { MarketingSettingsDialog } from "@/components/MarketingSettingsDialog";
 import { StartCampaignDialog } from "@/components/StartCampaignDialog";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { CampaignAnalytics } from "@/components/CampaignAnalytics";
+import { CampaignMetricsDashboard } from "@/components/CampaignMetricsDashboard";
 import { CampaignExport } from "@/components/CampaignExport";
 import { FollowUpAlerts } from "@/components/FollowUpAlerts";
 import { ResponseTimeAnalytics } from "@/components/ResponseTimeAnalytics";
@@ -207,6 +208,7 @@ const Admin = () => {
   const [isSuggestionsDialogOpen, setIsSuggestionsDialogOpen] = useState(false);
   const [isMarketingSettingsOpen, setIsMarketingSettingsOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
+  const [isApprovedCampaignMode, setIsApprovedCampaignMode] = useState(false);
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
   const [isBatchPrintDialogOpen, setIsBatchPrintDialogOpen] = useState(false);
@@ -748,8 +750,29 @@ const Admin = () => {
     setIsEmailDialogOpen(true);
   };
 
-  const handleStartCampaign = () => {
-    setIsPreviewDialogOpen(true);
+  const handleStartApprovedCampaign = () => {
+    // Automatically select all approved properties
+    const approvedIds = properties
+      .filter(p => p.approval_status === 'approved')
+      .map(p => p.id);
+    
+    if (approvedIds.length === 0) {
+      toast({
+        title: "No Approved Properties",
+        description: "There are no approved properties to campaign to.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSelectedProperties(approvedIds);
+    setIsApprovedCampaignMode(true);
+    setIsCampaignDialogOpen(true);
+    
+    toast({
+      title: "Campaign Ready",
+      description: `Selected ${approvedIds.length} approved properties for campaign.`,
+    });
   };
 
   const handleConfirmCampaign = () => {
@@ -1036,6 +1059,7 @@ const Admin = () => {
               onAddProperty={() => setIsAddDialogOpen(true)}
               onExportData={() => {/* Export logic */}}
               onStartCampaign={() => setIsCampaignDialogOpen(true)}
+              onStartApprovedCampaign={() => handleStartApprovedCampaign()}
               pendingCount={statusCounts.pending}
             />
 
@@ -1275,6 +1299,10 @@ const Admin = () => {
                 onPrintOffers={handleBulkPrintOffers}
                 onStartCampaign={handleStartCampaign}
                 onAISuggestions={handleAISuggestions}
+                allApproved={selectedProperties.every(id => {
+                  const prop = properties.find(p => p.id === id);
+                  return prop?.approval_status === 'approved';
+                })}
               />
             )}
             <KanbanBoard
@@ -1671,6 +1699,12 @@ const Admin = () => {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-6">
+            {/* Campaign Metrics Dashboard */}
+            <div>
+              <h2 className="text-2xl font-semibold text-foreground mb-4">Campaign Performance</h2>
+              <CampaignMetricsDashboard />
+            </div>
+
             <ChannelAnalytics />
             <div>
               <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
@@ -2018,16 +2052,22 @@ const Admin = () => {
 
         <StartCampaignDialog
           open={isCampaignDialogOpen}
-          onOpenChange={setIsCampaignDialogOpen}
+          onOpenChange={(open) => {
+            setIsCampaignDialogOpen(open);
+            if (!open) setIsApprovedCampaignMode(false);
+          }}
           propertyIds={selectedProperties}
           onCampaignSent={() => {
             fetchProperties();
             setSelectedProperties([]);
+            setIsApprovedCampaignMode(false);
           }}
           onOpenSettings={() => {
             setIsCampaignDialogOpen(false);
             setIsMarketingSettingsOpen(true);
+            setIsApprovedCampaignMode(false);
           }}
+          isApprovedCampaign={isApprovedCampaignMode}
         />
         
         <CampaignTemplatesDialog
@@ -2245,6 +2285,10 @@ const Admin = () => {
         onStartCampaign={handleStartCampaign}
         onAISuggestions={handleAISuggestions}
         onStartSequence={() => setIsSequenceDialogOpen(true)}
+        allApproved={selectedProperties.every(id => {
+          const prop = properties.find(p => p.id === id);
+          return prop?.approval_status === 'approved';
+        })}
       />
       
       <AdminChatBot />

@@ -18,6 +18,7 @@ import { TestModeToggle } from './TestModeToggle';
 import McpTester from './McpTester';
 import CampaignManager from './CampaignManager';
 import TemplateManager from './TemplateManager';
+import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -77,6 +78,7 @@ const MarketingAppContent = () => {
         <main className="flex-1 p-8 bg-background overflow-auto">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/quick" element={<SimpleCampaignDashboard />} />
             <Route path="/campaigns" element={<CampaignManager />} />
             <Route path="/send" element={<WizardLayout />} />
             <Route path="/templates" element={<TemplateManager />} />
@@ -98,6 +100,7 @@ const Sidebar = () => {
 
   const navItems = [
     { path: '/marketing', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/marketing/quick', icon: Zap, label: 'Quick Campaigns' },
     { path: '/marketing/campaigns', icon: Rocket, label: 'Campaigns' },
     { path: '/marketing/send', icon: Send, label: 'New Communication' },
     { path: '/marketing/templates', icon: FileText, label: 'Templates' },

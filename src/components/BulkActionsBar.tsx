@@ -14,6 +14,7 @@ interface BulkActionsBarProps {
   onStartCampaign: () => void;
   onAISuggestions: () => void;
   onStartSequence?: () => void;
+  allApproved?: boolean;
 }
 
 export const BulkActionsBar = ({
@@ -26,6 +27,7 @@ export const BulkActionsBar = ({
   onStartCampaign,
   onAISuggestions,
   onStartSequence,
+  allApproved = false,
 }: BulkActionsBarProps) => {
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>('new');
 
@@ -40,11 +42,12 @@ export const BulkActionsBar = ({
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border border-border rounded-lg shadow-lg p-4 animate-in slide-in-from-bottom-5">
       <div className="flex items-center gap-4 flex-wrap">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-semibold text-primary">{selectedCount}</span>
+          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${allApproved ? 'bg-green-100' : 'bg-primary/10'}`}>
+            <span className={`text-sm font-semibold ${allApproved ? 'text-green-700' : 'text-primary'}`}>{selectedCount}</span>
           </div>
           <span className="text-sm font-medium text-foreground">
             {selectedCount} {selectedCount === 1 ? 'property' : 'properties'} selected
+            {allApproved && <span className="ml-2 text-green-600 font-semibold">✓ Approved</span>}
           </span>
         </div>
 
@@ -91,13 +94,13 @@ export const BulkActionsBar = ({
         <div className="h-6 w-px bg-border" />
 
         <Button
-          variant="secondary"
+          variant="default"
           size="sm"
           onClick={onStartCampaign}
-          className="gap-2"
+          className="gap-2 bg-green-600 hover:bg-green-700"
         >
           <Rocket className="h-4 w-4" />
-          Campaign
+          🚀 Campaign
         </Button>
 
         {onStartSequence && (

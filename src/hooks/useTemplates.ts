@@ -1,11 +1,22 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useMarketingStore } from '@/store/marketingStore';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
+import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
 
 export const useTemplates = () => {
   const store = useMarketingStore();
   const templates = store.templates;
+
+  // Inicializar templates padrão se nenhum existir
+  useEffect(() => {
+    if (templates.length === 0) {
+      DEFAULT_TEMPLATES.forEach(template => {
+        store.addTemplate(template);
+      });
+      toast.info('Templates padrão foram carregados automaticamente');
+    }
+  }, [templates.length, store]);
 
   // Obter templates por canal
   const getTemplatesByChannel = useCallback(

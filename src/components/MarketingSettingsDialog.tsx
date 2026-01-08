@@ -28,10 +28,11 @@ export const MarketingSettingsDialog = ({
   const [fetching, setFetching] = useState(false);
   const [testing, setTesting] = useState(false);
   const [showTestSection, setShowTestSection] = useState(false);
-  const [testResponse, setTestResponse] = useState<{ status: number; data: any } | null>(null);
-  const [settingsId, setSettingsId] = useState<string | null>(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     api_endpoint: "",
+    webhook_url: "",
     seller_name: "Alex",
   });
   const [testData, setTestData] = useState({
@@ -40,6 +41,40 @@ export const MarketingSettingsDialog = ({
     address: "123 Test Street, Miami, FL 33101",
     email: "test@example.com",
   });
+
+  const campaignTemplates = {
+    "generic": {
+      name: "Generic Marketing API",
+      api_endpoint: "https://api.example.com/campaign",
+      webhook_url: "https://your-app.com/webhooks/marketing",
+      seller_name: "Your Name"
+    },
+    "twilio": {
+      name: "Twilio SMS API",
+      api_endpoint: "https://api.twilio.com/2010-04-01/Accounts/YOUR_ACCOUNT_SID/Messages.json",
+      webhook_url: "https://your-app.com/webhooks/twilio",
+      seller_name: "Real Estate Agent"
+    },
+    "sendgrid": {
+      name: "SendGrid Email API",
+      api_endpoint: "https://api.sendgrid.com/v3/mail/send",
+      webhook_url: "https://your-app.com/webhooks/sendgrid",
+      seller_name: "Property Specialist"
+    }
+  };
+
+  const applyTemplate = (templateKey: string) => {
+    const template = campaignTemplates[templateKey as keyof typeof campaignTemplates];
+    if (template) {
+      setFormData({
+        api_endpoint: template.api_endpoint,
+        webhook_url: template.webhook_url,
+        seller_name: template.seller_name,
+      });
+      setSelectedTemplate(templateKey);
+      setShowTemplates(false);
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -63,6 +98,7 @@ export const MarketingSettingsDialog = ({
         setSettingsId(data.id);
         setFormData({
           api_endpoint: data.api_endpoint || "",
+          webhook_url: data.webhook_url || "",
           seller_name: (data.headers as any)?.seller_name || "Alex",
         });
       }
@@ -85,8 +121,40 @@ export const MarketingSettingsDialog = ({
 
     setLoading(true);
     try {
+      // Test the API endpoint first
+      const testPayload = {
+        phone_number: "+1234567890",
+        name: "Test User",
+        address: "123 Test St, Test City, FL 12345",
+        email: "test@example.com",
+        seller_name: formData.seller_name,
+      };
+
+      const testResponse = await fetch(formData.api_endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(testPayload),
+      });
+
+      if (!testResponse.ok && testResponse.status !== 200) {
+        toast({
+          title: "API Test Warning",
+          description: `API returned status ${testResponse.status}. Settings saved but verify API is working.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "API Test Successful",
+          description: "API endpoint is responding correctly.",
+        });
+      }
+
+      // Save settings
       const settingsData = {
         api_endpoint: formData.api_endpoint,
+        webhook_url: formData.webhook_url || null,
         http_method: "POST",
         headers: { seller_name: formData.seller_name },
       };
@@ -115,7 +183,7 @@ export const MarketingSettingsDialog = ({
       console.error("Error saving settings:", error);
       toast({
         title: "Error",
-        description: "Failed to save settings",
+        description: "Failed to save settings. Check API endpoint.",
         variant: "destructive",
       });
     } finally {
@@ -200,6 +268,37 @@ export const MarketingSettingsDialog = ({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex gap-2 mb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            Use Template
+          </Button>
+        </div>
+
+        {showTemplates && (
+          <div className="border rounded-lg p-3 mb-4 bg-muted/50">
+            <p className="text-sm font-medium mb-2">Quick Setup Templates:</p>
+            <div className="space-y-2">
+              {Object.entries(campaignTemplates).map(([key, template]) => (
+                <Button
+                  key={key}
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start text-left"
+                  onClick={() => applyTemplate(key)}
+                >
+                  <span className="font-medium">{template.name}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {fetching ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin" />
@@ -219,6 +318,21 @@ export const MarketingSettingsDialog = ({
                 />
                 <p className="text-xs text-muted-foreground">
                   The API will receive: phone_number, name, address, email, seller_name
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="webhook_url">Webhook URL (Optional)</Label>
+                <Input
+                  id="webhook_url"
+                  value={formData.webhook_url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, webhook_url: e.target.value })
+                  }
+                  placeholder="https://your-app.com/webhooks/marketing"
+                />
+                <p className="text-xs text-muted-foreground">
+                  URL to receive campaign responses (calls, clicks, replies)
                 </p>
               </div>
 

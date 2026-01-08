@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertCircle, Phone, Settings } from "lucide-react";
@@ -52,6 +53,9 @@ export const CallCampaignDialog = ({
   const [isCalling, setIsCalling] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [callSettings, setCallSettings] = useState<CallSettings | null>(null);
+  const [selectedPhoneColumn, setSelectedPhoneColumn] = useState<string>('owner_phone');
+  const [enableFallback, setEnableFallback] = useState<boolean>(true);
+  const [rateLimitDelay, setRateLimitDelay] = useState<number>(2000); // Calls need more delay
   const [script, setScript] = useState(
     `Hi {owner_name}, this is calling from MyLocalInvest about your property at {address}. We have a cash offer of ${"{cash_offer}"} that we'd like to discuss with you. Would you be interested in hearing more?`
   );
@@ -99,7 +103,46 @@ export const CallCampaignDialog = ({
     }
   };
 
-  const propertiesWithPhone = properties.filter(p => p.owner_phone);
+  const propertiesWithPhone = properties.filter(p => (p as any)[selectedPhoneColumn]);
+
+  // Validate contact data
+  const validateContact = (property: Property) => {
+    const value = (property as any)[selectedPhoneColumn];
+    if (!value) return null;
+    const cleanPhone = value.replace(/\D/g, '');
+    return cleanPhone.length >= 10 ? cleanPhone : null;
+  };
+
+  // Get best available contact with fallback
+  const getBestContact = (property: Property) => {
+    const primary = validateContact(property);
+    if (primary) return primary;
+    
+    if (!enableFallback) return null;
+    
+    const fallbackColumns = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'owner_phone'];
+    for (const col of fallbackColumns) {
+      if (col !== selectedPhoneColumn) {
+        const value = (property as any)[col];
+        if (value) {
+          const cleanPhone = value.replace(/\D/g, '');
+          if (cleanPhone.length >= 10) return cleanPhone;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Remove duplicates based on contact
+  const removeDuplicateContacts = (properties: Property[]) => {
+    const seen = new Set<string>();
+    return properties.filter(property => {
+      const contact = getBestContact(property);
+      if (!contact || seen.has(contact)) return false;
+      seen.add(contact);
+      return true;
+    });
+  };
 
   const generateScript = (property: Property) => {
     return script
@@ -118,10 +161,12 @@ export const CallCampaignDialog = ({
       return;
     }
 
-    if (propertiesWithPhone.length === 0) {
+    const validProperties = removeDuplicateContacts(properties);
+    
+    if (validProperties.length === 0) {
       toast({
         title: "No Phone Numbers",
-        description: "None of the selected properties have phone numbers",
+        description: "None of the selected properties have valid phone numbers",
         variant: "destructive",
       });
       return;
@@ -131,8 +176,16 @@ export const CallCampaignDialog = ({
     let successCount = 0;
     let errorCount = 0;
 
-    for (const property of propertiesWithPhone) {
+    for (let i = 0; i < validProperties.length; i++) {
+      const property = validProperties[i];
+      
       try {
+        const contact = getBestContact(property);
+        if (!contact) {
+          errorCount++;
+          continue;
+        }
+
         const callScript = generateScript(property);
         
         const headers: Record<string, string> = {
@@ -148,7 +201,7 @@ export const CallCampaignDialog = ({
           method: callSettings.http_method,
           headers,
           body: JSON.stringify({
-            to: property.owner_phone,
+            to: contact,
             script: callScript,
             property_id: property.id,
             owner_name: property.owner_name,
@@ -163,6 +216,11 @@ export const CallCampaignDialog = ({
             .update({ phone_call_made: true })
             .eq("id", property.id);
           successCount++;
+          
+          // Rate limiting for calls (calls need more delay)
+          if (i < validProperties.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
+          }
         } else {
           console.error(`Failed to initiate call for property ${property.id}:`, await response.text());
           errorCount++;
@@ -178,7 +236,7 @@ export const CallCampaignDialog = ({
     if (successCount > 0) {
       toast({
         title: "Calls Initiated!",
-        description: `Successfully initiated ${successCount} call${successCount > 1 ? "s" : ""}${errorCount > 0 ? `. ${errorCount} failed.` : ""}`,
+        description: `Successfully initiated ${successCount} of ${validProperties.length} call${validProperties.length > 1 ? "s" : ""}${errorCount > 0 ? `. ${errorCount} failed.` : ""}`,
       });
       onCallsMade?.();
       onOpenChange(false);
@@ -200,9 +258,27 @@ export const CallCampaignDialog = ({
             Initiate Call Campaign
           </DialogTitle>
           <DialogDescription>
-            Initiate calls to {propertiesWithPhone.length} of {properties.length} selected properties with phone numbers
+            Initiate calls to {removeDuplicateContacts(properties).length} of {properties.length} selected properties with valid phone numbers
           </DialogDescription>
         </DialogHeader>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone-column">Coluna de Telefone</Label>
+          <Select value={selectedPhoneColumn} onValueChange={setSelectedPhoneColumn}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione coluna de telefone" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="owner_phone">owner_phone</SelectItem>
+              <SelectItem value="phone1">phone1</SelectItem>
+              <SelectItem value="phone2">phone2</SelectItem>
+              <SelectItem value="phone3">phone3</SelectItem>
+              <SelectItem value="phone4">phone4</SelectItem>
+              <SelectItem value="phone5">phone5</SelectItem>
+              <SelectItem value="phone">phone</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {!callSettings && (
           <Alert variant="destructive">
@@ -240,14 +316,44 @@ export const CallCampaignDialog = ({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="phone-column">Coluna de Telefone</Label>
+              <Select value={selectedPhoneColumn} onValueChange={setSelectedPhoneColumn}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione coluna de telefone" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owner_phone">owner_phone</SelectItem>
+                  <SelectItem value="phone1">phone1</SelectItem>
+                  <SelectItem value="phone2">phone2</SelectItem>
+                  <SelectItem value="phone3">phone3</SelectItem>
+                  <SelectItem value="phone4">phone4</SelectItem>
+                  <SelectItem value="phone5">phone5</SelectItem>
+                  <SelectItem value="phone">phone</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center space-x-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="enable-fallback-call"
+                  checked={enableFallback}
+                  onChange={(e) => setEnableFallback(e.target.checked)}
+                  className="rounded"
+                />
+                <Label htmlFor="enable-fallback-call" className="text-xs">
+                  Usar fallback para colunas alternativas
+                </Label>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Preview (first property)</Label>
-              {propertiesWithPhone.length > 0 ? (
+              {removeDuplicateContacts(properties).length > 0 ? (
                 <div className="p-3 bg-muted rounded-lg text-sm">
-                  <p className="text-muted-foreground mb-1">To: {propertiesWithPhone[0].owner_phone}</p>
-                  <p>{generateScript(propertiesWithPhone[0])}</p>
+                  <p className="text-muted-foreground mb-1">To: {getBestContact(removeDuplicateContacts(properties)[0])}</p>
+                  <p>{generateScript(removeDuplicateContacts(properties)[0])}</p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No properties with phone numbers selected</p>
+                <p className="text-sm text-muted-foreground">No properties with valid phone numbers selected</p>
               )}
             </div>
 
@@ -257,7 +363,7 @@ export const CallCampaignDialog = ({
               </Button>
               <Button
                 onClick={handleMakeCalls}
-                disabled={isCalling || propertiesWithPhone.length === 0 || !callSettings}
+                disabled={isCalling || removeDuplicateContacts(properties).length === 0 || !callSettings}
               >
                 {isCalling ? (
                   <>
@@ -267,7 +373,7 @@ export const CallCampaignDialog = ({
                 ) : (
                   <>
                     <Phone className="h-4 w-4 mr-2" />
-                    Make {propertiesWithPhone.length} Calls
+                    Make {removeDuplicateContacts(properties).length} Calls
                   </>
                 )}
               </Button>

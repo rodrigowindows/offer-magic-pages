@@ -32,8 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useTemplates } from '@/hooks/useTemplates';
-import type { SavedTemplate, Channel } from '@/types/marketing.types';
+import { validateTemplate, getTemplateScoreColor, getTemplateScoreLabel } from '@/utils/templateValidator';
 import {
   Plus,
   Edit2,
@@ -191,7 +190,7 @@ export const TemplateManager = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showHtmlEditor, setShowHtmlEditor] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<SavedTemplate | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -354,6 +353,87 @@ export const TemplateManager = () => {
         </Card>
       </div>
 
+      {/* Suggested Templates */}
+      {channelTemplates.length === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+              Templates Sugeridos para {activeChannel.toUpperCase()}
+            </CardTitle>
+            <CardDescription>
+              Comece com templates pré-configurados e personalizados para {activeChannel}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {TEMPLATE_CATEGORIES[activeChannel].templates.map((suggestedTemplate) => (
+                <div
+                  key={suggestedTemplate.id}
+                  className="border rounded-lg p-4 hover:shadow-md transition-all cursor-pointer bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200"
+                  onClick={() => {
+                    createTemplate(
+                      suggestedTemplate.name,
+                      suggestedTemplate.channel,
+                      suggestedTemplate.body,
+                      suggestedTemplate.subject,
+                      suggestedTemplate.is_default
+                    );
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">{TEMPLATE_CATEGORIES[activeChannel].icon}</div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm">{suggestedTemplate.name}</h4>
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-3">
+                        {suggestedTemplate.body.replace(/{[^}]+}/g, '...').substring(0, 80)}...
+                      </p>
+                      {suggestedTemplate.is_default && (
+                        <Badge variant="secondary" className="text-xs mt-2">
+                          <Star className="w-3 h-3 mr-1" />
+                          Padrão
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPreviewTemplate(suggestedTemplate);
+                      }}
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      Preview
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        createTemplate(
+                          suggestedTemplate.name,
+                          suggestedTemplate.channel,
+                          suggestedTemplate.body,
+                          suggestedTemplate.subject,
+                          suggestedTemplate.is_default
+                        );
+                      }}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Usar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Template List */}
         <div className="lg:col-span-2">
@@ -396,6 +476,7 @@ export const TemplateManager = () => {
                     {channelTemplates.map((template) => {
                       const Icon = channelIcons[template.channel];
                       const isHtml = template.body.includes('<!DOCTYPE') || template.body.includes('<html');
+                      const validation = validateTemplate(template);
                       return (
                         <div
                           key={template.id}
@@ -403,7 +484,7 @@ export const TemplateManager = () => {
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 mb-2">
                                 <Icon className="w-4 h-4 text-muted-foreground" />
                                 <span className="font-medium">{template.name}</span>
                                 {template.is_default && (
@@ -418,6 +499,12 @@ export const TemplateManager = () => {
                                     HTML
                                   </Badge>
                                 )}
+                                <Badge
+                                  variant={validation.isValid ? "default" : "destructive"}
+                                  className={`gap-1 ${getTemplateScoreColor(validation.score)}`}
+                                >
+                                  {validation.score}/100 - {getTemplateScoreLabel(validation.score)}
+                                </Badge>
                               </div>
                               {template.subject && (
                                 <p className="text-sm text-muted-foreground mt-1">
@@ -677,6 +764,166 @@ export const TemplateManager = () => {
           </Card>
         </div>
       </div>
+
+      {/* Template Preview Modal */}
+      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Preview: {previewTemplate?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Veja como este template ficará quando enviado
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewTemplate && (
+            <div className="space-y-4">
+              {/* Template Info */}
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                {previewTemplate.channel === 'sms' && <MessageSquare className="w-4 h-4 text-blue-500" />}
+                {previewTemplate.channel === 'email' && <Mail className="w-4 h-4 text-green-500" />}
+                {previewTemplate.channel === 'call' && <Phone className="w-4 h-4 text-purple-500" />}
+                <span className="text-sm font-medium capitalize">{previewTemplate.channel}</span>
+                {previewTemplate.is_default && (
+                  <Badge variant="secondary" className="text-xs">
+                    <Star className="w-3 h-3 mr-1" />
+                    Padrão
+                  </Badge>
+                )}
+              </div>
+
+              {/* Subject (Email only) */}
+              {previewTemplate.channel === 'email' && previewTemplate.subject && (
+                <div>
+                  <Label className="text-sm font-medium">Assunto:</Label>
+                  <div className="p-3 bg-muted rounded mt-1">
+                    {previewTemplate.subject}
+                  </div>
+                </div>
+              )}
+
+              {/* Message Preview */}
+              <div>
+                <Label className="text-sm font-medium">
+                  {previewTemplate.channel === 'email' ? 'Conteúdo:' : 'Mensagem:'}
+                </Label>
+                <div className="border rounded-lg p-4 bg-white min-h-[200px]">
+                  {previewTemplate.channel === 'email' && previewTemplate.body.includes('<!DOCTYPE') ? (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: previewTemplate.body.replace(/{([^}]+)}/g, (match, variable) => {
+                          const sampleValues: Record<string, string> = {
+                            name: 'João Silva',
+                            address: '123 Main Street',
+                            city: 'Orlando',
+                            state: 'FL',
+                            cash_offer: '$250,000',
+                            company_name: 'Your Real Estate Company',
+                            phone: '(555) 123-4567',
+                            seller_name: 'Maria Santos'
+                          };
+                          return sampleValues[variable] || match;
+                        })
+                      }}
+                    />
+                  ) : (
+                    <pre className="whitespace-pre-wrap font-sans text-sm">
+                      {previewTemplate.body.replace(/{([^}]+)}/g, (match, variable) => {
+                        const sampleValues: Record<string, string> = {
+                          name: 'João Silva',
+                          address: '123 Main Street',
+                          city: 'Orlando',
+                          state: 'FL',
+                          cash_offer: '$250,000',
+                          company_name: 'Your Real Estate Company',
+                          phone: '(555) 123-4567',
+                          seller_name: 'Maria Santos'
+                        };
+                        return sampleValues[variable] || match;
+                      })}
+                    </pre>
+                  )}
+                </div>
+              </div>
+
+              {/* Template Validation */}
+              {(() => {
+                const validation = validateTemplate(previewTemplate);
+                return (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-sm font-medium">Qualidade do Template:</Label>
+                      <Badge
+                        variant={validation.isValid ? "default" : "destructive"}
+                        className={getTemplateScoreColor(validation.score)}
+                      >
+                        {validation.score}/100 - {getTemplateScoreLabel(validation.score)}
+                      </Badge>
+                    </div>
+
+                    {validation.issues.length > 0 && (
+                      <div className="space-y-2">
+                        {validation.issues.map((issue, index) => (
+                          <Alert key={index} variant={issue.type === 'error' ? 'destructive' : 'default'}>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>{issue.message}</AlertDescription>
+                          </Alert>
+                        ))}
+                      </div>
+                    )}
+
+                    {validation.suggestions.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-muted-foreground">Sugestões de Melhoria:</Label>
+                        {validation.suggestions.map((suggestion, index) => (
+                          <Alert key={index}>
+                            <Check className="h-4 w-4" />
+                            <AlertDescription>{suggestion}</AlertDescription>
+                          </Alert>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* Sample Data Notice */}
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Dados de exemplo:</strong> As variáveis foram substituídas por valores de exemplo para preview.
+                  Na campanha real, elas serão substituídas pelos dados reais da propriedade.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
+              Fechar
+            </Button>
+            {previewTemplate && (
+              <Button
+                onClick={() => {
+                  createTemplate(
+                    previewTemplate.name,
+                    previewTemplate.channel,
+                    previewTemplate.body,
+                    previewTemplate.subject,
+                    previewTemplate.is_default
+                  );
+                  setPreviewTemplate(null);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Usar Este Template
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
