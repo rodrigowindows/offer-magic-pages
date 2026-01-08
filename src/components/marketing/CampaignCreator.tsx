@@ -12,7 +12,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Calendar, Clock, AlertTriangle, Zap, Shield, TestTube, Users } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,
@@ -48,12 +49,12 @@ import {
   Users,
   Target,
   Settings,
+  RefreshCw,
   FileText,
   Play,
   QrCode,
   Link,
   BarChart3,
-  Upload,
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
@@ -86,6 +87,13 @@ interface CampaignConfig {
   properties: Property[];
   channels: Channel[];
   trackingId: string;
+  phoneColumns: string[];
+  emailColumns: string[];
+  scheduleDate?: Date;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  maxContactsPerProperty: number;
+  testMode: boolean;
+  complianceCheck: boolean;
 }
 
 export default function CampaignCreator() {
@@ -95,6 +103,12 @@ export default function CampaignCreator() {
     properties: [],
     channels: [],
     trackingId: '',
+    phoneColumns: ['preferred_phones', 'phone1', 'phone2', 'skip_tracing_phones'],
+    emailColumns: ['preferred_emails', 'email1', 'email2', 'skip_tracing_emails'],
+    priority: 'normal',
+    maxContactsPerProperty: 1,
+    testMode: false,
+    complianceCheck: true,
   });
   const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
   const [showSendDialog, setShowSendDialog] = useState(false);
@@ -165,7 +179,12 @@ export default function CampaignCreator() {
   const getAllPhones = (property: Property): string[] => {
     const phones: string[] = [];
 
-    // Preferred phones first
+    // Preferred phones first (from skip tracing data)
+    if (property.skip_tracing_data?.preferred_phones) {
+      phones.push(...property.skip_tracing_data.preferred_phones);
+    }
+
+    // Preferred phones from direct fields
     if (property.preferred_phone) phones.push(property.preferred_phone);
     if (property.preferred_phone_2) phones.push(property.preferred_phone_2);
 
@@ -173,7 +192,7 @@ export default function CampaignCreator() {
     if (property.phone) phones.push(property.phone);
     if (property.phone_2) phones.push(property.phone_2);
 
-    // Skip tracing phones
+    // Skip tracing phones (additional ones)
     if (property.skip_tracing_phone) phones.push(property.skip_tracing_phone);
     if (property.skip_tracing_phone_2) phones.push(property.skip_tracing_phone_2);
 
@@ -183,7 +202,12 @@ export default function CampaignCreator() {
   const getAllEmails = (property: Property): string[] => {
     const emails: string[] = [];
 
-    // Preferred emails first
+    // Preferred emails first (from skip tracing data)
+    if (property.skip_tracing_data?.preferred_emails) {
+      emails.push(...property.skip_tracing_data.preferred_emails);
+    }
+
+    // Preferred emails from direct fields
     if (property.preferred_email) emails.push(property.preferred_email);
     if (property.preferred_email_2) emails.push(property.preferred_email_2);
 
@@ -191,7 +215,7 @@ export default function CampaignCreator() {
     if (property.email) emails.push(property.email);
     if (property.email_2) emails.push(property.email_2);
 
-    // Skip tracing emails
+    // Skip tracing emails (additional ones)
     if (property.skip_tracing_email) emails.push(property.skip_tracing_email);
     if (property.skip_tracing_email_2) emails.push(property.skip_tracing_email_2);
 
@@ -238,12 +262,33 @@ export default function CampaignCreator() {
     let preferredEmails = 0, primaryEmails = 0, skipEmails = 0;
 
     selectedProps.forEach(prop => {
-      if (prop.preferred_phone || prop.preferred_phone_2) preferredPhones++;
-      if (prop.phone || prop.phone_2) primaryPhones++;
-      if (prop.skip_tracing_phone || prop.skip_tracing_phone_2) skipPhones++;
-      if (prop.preferred_email || prop.preferred_email_2) preferredEmails++;
-      if (prop.email || prop.email_2) primaryEmails++;
-      if (prop.skip_tracing_email || prop.skip_tracing_email_2) skipEmails++;
+      const allPhones = getAllPhones(prop);
+      const allEmails = getAllEmails(prop);
+
+      // Count phones by source
+      const preferredPhoneCount = (prop.skip_tracing_data?.preferred_phones?.length || 0) +
+                                 (prop.preferred_phone ? 1 : 0) +
+                                 (prop.preferred_phone_2 ? 1 : 0);
+      const primaryPhoneCount = (prop.phone ? 1 : 0) + (prop.phone_2 ? 1 : 0);
+      const skipPhoneCount = (prop.skip_tracing_phone ? 1 : 0) +
+                            (prop.skip_tracing_phone_2 ? 1 : 0) +
+                            ((prop.skip_tracing_data?.preferred_phones?.length || 0) - (preferredPhoneCount - (prop.preferred_phone ? 1 : 0) - (prop.preferred_phone_2 ? 1 : 0)));
+
+      // Count emails by source
+      const preferredEmailCount = (prop.skip_tracing_data?.preferred_emails?.length || 0) +
+                                 (prop.preferred_email ? 1 : 0) +
+                                 (prop.preferred_email_2 ? 1 : 0);
+      const primaryEmailCount = (prop.email ? 1 : 0) + (prop.email_2 ? 1 : 0);
+      const skipEmailCount = (prop.skip_tracing_email ? 1 : 0) +
+                            (prop.skip_tracing_email_2 ? 1 : 0) +
+                            ((prop.skip_tracing_data?.preferred_emails?.length || 0) - (preferredEmailCount - (prop.preferred_email ? 1 : 0) - (prop.preferred_email_2 ? 1 : 0)));
+
+      preferredPhones += preferredPhoneCount > 0 ? 1 : 0; // Count properties with preferred phones
+      primaryPhones += primaryPhoneCount > 0 ? 1 : 0; // Count properties with primary phones
+      skipPhones += skipPhoneCount > 0 ? 1 : 0; // Count properties with skip tracing phones
+      preferredEmails += preferredEmailCount > 0 ? 1 : 0; // Count properties with preferred emails
+      primaryEmails += primaryEmailCount > 0 ? 1 : 0; // Count properties with primary emails
+      skipEmails += skipEmailCount > 0 ? 1 : 0; // Count properties with skip tracing emails
     });
 
     return {
@@ -251,11 +296,11 @@ export default function CampaignCreator() {
       preferredPhones,
       primaryPhones,
       skipPhones,
-      totalPhones: preferredPhones + primaryPhones + skipPhones,
+      totalPhones: selectedProps.reduce((sum, prop) => sum + getAllPhones(prop).length, 0),
       preferredEmails,
       primaryEmails,
       skipEmails,
-      totalEmails: preferredEmails + primaryEmails + skipEmails,
+      totalEmails: selectedProps.reduce((sum, prop) => sum + getAllEmails(prop).length, 0),
     };
   };
 
@@ -509,87 +554,52 @@ export default function CampaignCreator() {
             </div>
 
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Target className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
+              <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <p className="text-lg font-medium text-gray-700">Loading Properties</p>
-                  <p className="text-sm text-gray-500">Please wait while we fetch your data...</p>
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+                  <p className="text-muted-foreground">Loading properties...</p>
                 </div>
-              </div>
-            ) : properties.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Target className="w-12 h-12 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Properties Found</h3>
-                <p className="text-gray-500 mb-4">You haven't imported any properties yet.</p>
-                <Button variant="outline">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Import Properties
-                </Button>
               </div>
             ) : (
               <ScrollArea className="h-96">
-                <div className="space-y-3">
-                  {properties.map((property) => {
-                    const phoneCount = getAllPhones(property).length;
-                    const emailCount = getAllEmails(property).length;
-                    const hasCashOffer = property.cash_offer_amount;
-
-                    return (
-                      <Card
-                        key={property.id}
-                        className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:scale-[1.02] ${
-                          selectedPropertyIds.includes(property.id)
-                            ? 'ring-2 ring-blue-500 bg-blue-50/50'
-                            : 'hover:bg-gray-50/50'
-                        }`}
-                        onClick={() => handlePropertyToggle(property.id)}
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1">
-                            <Checkbox
-                              checked={selectedPropertyIds.includes(property.id)}
-                              onCheckedChange={() => handlePropertyToggle(property.id)}
-                              className="pointer-events-none"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-gray-900 mb-1">{property.address}</div>
-                            <div className="text-sm text-gray-600 mb-3">
-                              {property.city}, {property.state} {property.zip_code}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              {phoneCount > 0 && (
-                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                  <Phone className="w-3 h-3 mr-1" />
-                                  {phoneCount} phones
-                                </Badge>
-                              )}
-                              {emailCount > 0 && (
-                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                  <Mail className="w-3 h-3 mr-1" />
-                                  {emailCount} emails
-                                </Badge>
-                              )}
-                              {hasCashOffer && (
-                                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                                  💰 ${property.cash_offer_amount?.toLocaleString()}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
+              <div className="space-y-2">
+                {properties.map((property) => (
+                  <Card key={property.id} className="p-4">
+                    <div className="flex items-start gap-4">
+                      <Checkbox
+                        checked={selectedPropertyIds.includes(property.id)}
+                        onCheckedChange={() => handlePropertyToggle(property.id)}
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium">{property.address}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {property.city}, {property.state} {property.zip_code}
                         </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
+                        <div className="flex gap-2 mt-2">
+                          {getAllPhones(property).length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              <Phone className="w-3 h-3 mr-1" />
+                              {getAllPhones(property).length} phones
+                            </Badge>
+                          )}
+                          {getAllEmails(property).length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              <Mail className="w-3 h-3 mr-1" />
+                              {getAllEmails(property).length} emails
+                            </Badge>
+                          )}
+                          {property.cash_offer_amount && (
+                            <Badge variant="default" className="text-xs">
+                              ${property.cash_offer_amount.toLocaleString()}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
             )}
           </div>
         );
@@ -656,6 +666,234 @@ export default function CampaignCreator() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Phone Column Selection */}
+            {(campaignConfig.channels.includes('sms') || campaignConfig.channels.includes('call')) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Phone Contact Settings</CardTitle>
+                  <CardDescription>Select which phone columns to use for SMS and calls</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Phone Columns</Label>
+                      <div className="space-y-2">
+                        {[
+                          { value: 'preferred_phones', label: 'Preferred Phones (Skip Tracing)' },
+                          { value: 'phone1', label: 'Phone 1 (Principal)' },
+                          { value: 'phone2', label: 'Phone 2' },
+                          { value: 'skip_tracing_phones', label: 'Skip Tracing Phones' },
+                        ].map((column) => (
+                          <div key={column.value} className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={campaignConfig.phoneColumns.includes(column.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setCampaignConfig(prev => ({
+                                    ...prev,
+                                    phoneColumns: [...prev.phoneColumns, column.value]
+                                  }));
+                                } else {
+                                  setCampaignConfig(prev => ({
+                                    ...prev,
+                                    phoneColumns: prev.phoneColumns.filter(c => c !== column.value)
+                                  }));
+                                }
+                              }}
+                            />
+                            <Label className="text-sm">{column.label}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(campaignConfig.channels.includes('email')) && (
+                      <div>
+                        <Label className="text-sm font-medium mb-2 block">Email Columns</Label>
+                        <div className="space-y-2">
+                          {[
+                            { value: 'preferred_emails', label: 'Preferred Emails (Skip Tracing)' },
+                            { value: 'email1', label: 'Email 1 (Principal)' },
+                            { value: 'email2', label: 'Email 2' },
+                            { value: 'skip_tracing_emails', label: 'Skip Tracing Emails' },
+                          ].map((column) => (
+                            <div key={column.value} className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={campaignConfig.emailColumns.includes(column.value)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setCampaignConfig(prev => ({
+                                      ...prev,
+                                      emailColumns: [...prev.emailColumns, column.value]
+                                    }));
+                                  } else {
+                                    setCampaignConfig(prev => ({
+                                      ...prev,
+                                      emailColumns: prev.emailColumns.filter(c => c !== column.value)
+                                    }));
+                                  }
+                                }}
+                              />
+                              <Label className="text-sm">{column.label}</Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Advanced Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Advanced Settings
+                </CardTitle>
+                <CardDescription>Configure sending behavior and compliance</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  {/* Priority & Contact Limits */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Campaign Priority</Label>
+                      <Select
+                        value={campaignConfig.priority}
+                        onValueChange={(value: 'low' | 'normal' | 'high' | 'urgent') =>
+                          setCampaignConfig(prev => ({ ...prev, priority: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                              Low Priority
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="normal">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                              Normal Priority
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="high">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                              High Priority
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="urgent">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              Urgent Priority
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Max Contacts per Property</Label>
+                      <Select
+                        value={campaignConfig.maxContactsPerProperty.toString()}
+                        onValueChange={(value) =>
+                          setCampaignConfig(prev => ({ ...prev, maxContactsPerProperty: parseInt(value) }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 contact (Recommended)</SelectItem>
+                          <SelectItem value="2">2 contacts</SelectItem>
+                          <SelectItem value="3">3 contacts</SelectItem>
+                          <SelectItem value="5">5 contacts (Aggressive)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Compliance & Testing */}
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={campaignConfig.testMode}
+                          onCheckedChange={(checked) =>
+                            setCampaignConfig(prev => ({ ...prev, testMode: checked || false }))
+                          }
+                        />
+                        <div className="flex items-center gap-2">
+                          <TestTube className="w-4 h-4 text-blue-500" />
+                          <Label className="text-sm">Test Mode (No actual sending)</Label>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={campaignConfig.complianceCheck}
+                          onCheckedChange={(checked) =>
+                            setCampaignConfig(prev => ({ ...prev, complianceCheck: checked || false }))
+                          }
+                        />
+                        <div className="flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-green-500" />
+                          <Label className="text-sm">Compliance Check</Label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {campaignConfig.testMode && (
+                      <Alert>
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Test mode enabled. Messages will be logged but not actually sent.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Campaign Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Campaign Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Template:</Label>
+                    <div className="font-medium">{campaignConfig.template?.name || 'None selected'}</div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Channel:</Label>
+                    <div className="font-medium">{campaignConfig.channels.join(', ') || 'None selected'}</div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Properties:</Label>
+                    <div className="font-medium">{getSelectedProperties().length}</div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Mode:</Label>
+                    <div className="font-medium">Production</div>
+                  </div>
+                </div>
+                <div className="pt-2 border-t">
+                  <div className="text-sm text-muted-foreground">
+                    URL: https://offer.mylocalinvest.com/marketing/campaigns
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         );
 
@@ -672,10 +910,12 @@ export default function CampaignCreator() {
 
             <div className="grid gap-6 md:grid-cols-2">
               {/* Target Audience */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
+              <Card className="bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg border-b">
+                  <CardTitle className="flex items-center gap-3 text-gray-800">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Users className="w-5 h-5 text-blue-600" />
+                    </div>
                     Target Audience
                   </CardTitle>
                 </CardHeader>
@@ -726,13 +966,11 @@ export default function CampaignCreator() {
               </Card>
 
               {/* Campaign Stats */}
-              <Card className="bg-gradient-to-br from-white to-purple-50/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-t-lg border-b">
-                  <CardTitle className="flex items-center gap-3 text-gray-800">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <BarChart3 className="w-5 h-5 text-purple-600" />
-                    </div>
-                    Campaign Statistics
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Campaign Stats
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -837,14 +1075,17 @@ export default function CampaignCreator() {
                           <Mail className="w-4 h-4" />
                           Email Message
                         </div>
-                        <div className="text-sm bg-gray-50 p-3 rounded border space-y-2">
-                          <div className="font-medium">
+                        <div className="text-sm bg-white p-4 rounded border space-y-3 border-gray-200">
+                          <div className="font-medium text-gray-900 border-b pb-2">
                             Subject: {generateTemplateContent(campaignConfig.template, sampleProperty).subject}
                           </div>
-                          <div className="whitespace-pre-line">
-                            {generateTemplateContent(campaignConfig.template, sampleProperty).content}
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div
+                            className="text-gray-800 leading-relaxed"
+                            dangerouslySetInnerHTML={{
+                              __html: generateTemplateContent(campaignConfig.template, sampleProperty).content
+                            }}
+                          />
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
                             <QrCode className="w-3 h-3" />
                             <Link className="w-3 h-3" />
                             QR Code and trackable links included
@@ -961,49 +1202,50 @@ export default function CampaignCreator() {
       </div>
 
       {/* Progress Steps */}
-      <Card>
+      <Card className="bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStepIndex > index;
+          <div className="relative">
+            <div className="flex items-center justify-between">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const isActive = currentStep === step.id;
+                const isCompleted = currentStepIndex > index;
 
-              return (
-                <div key={step.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isCompleted
-                          ? 'bg-green-500 text-white'
-                          : isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle className="w-5 h-5" />
-                      ) : (
-                        <Icon className="w-5 h-5" />
-                      )}
-                    </div>
-                    <div className="text-xs mt-2 text-center">
-                      <div className={`font-medium ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
-                        {index + 1}
+                return (
+                  <div key={step.id} className="flex items-center">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                          isCompleted
+                            ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg'
+                            : isActive
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg animate-pulse'
+                            : 'bg-gray-100 text-gray-400'
+                        }`}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle className="w-6 h-6" />
+                        ) : (
+                          <Icon className="w-6 h-6" />
+                        )}
                       </div>
-                      <div className="text-xs">{step.title}</div>
+                      <div className="text-xs mt-2 text-center max-w-20">
+                        <div className={`font-medium ${isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`}>
+                          {step.title}
+                        </div>
+                      </div>
                     </div>
+                    {index < steps.length - 1 && (
+                      <div
+                        className={`flex-1 h-1 mx-4 rounded-full transition-all duration-500 ${
+                          isCompleted ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gray-200'
+                        }`}
+                      />
+                    )}
                   </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`w-16 h-0.5 mx-4 ${
-                        isCompleted ? 'bg-green-500' : 'bg-muted'
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1016,39 +1258,25 @@ export default function CampaignCreator() {
       </Card>
 
       {/* Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between">
         <Button
           variant="outline"
           onClick={handlePrevious}
           disabled={currentStepIndex === 0}
-          className="transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Previous
         </Button>
 
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span>Step {currentStepIndex + 1} of {steps.length}</span>
-          <Progress value={((currentStepIndex + 1) / steps.length) * 100} className="w-20" />
-        </div>
-
         {currentStepIndex < steps.length - 1 ? (
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed()}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <Button onClick={handleNext} disabled={!canProceed()}>
             Next
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         ) : (
-          <Button
-            onClick={() => setShowSendDialog(true)}
-            disabled={!canProceed()}
-            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <Button onClick={() => setShowSendDialog(true)} disabled={!canProceed()}>
             <Send className="w-4 h-4 mr-2" />
-            Launch Campaign
+            Send Campaign
           </Button>
         )}
       </div>

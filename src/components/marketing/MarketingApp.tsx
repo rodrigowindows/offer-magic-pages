@@ -22,6 +22,7 @@ import { CampaignWizard } from './CampaignWizard';
 import { AdvancedWebhookManager } from './AdvancedWebhookManager';
 import { AutomatedABTesting } from './AutomatedABTesting';
 import TemplateManager from './TemplateManager';
+import TemplatePreview from './TemplatePreview';
 import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 
 // Layout Components
@@ -97,7 +98,7 @@ const MarketingAppContent = () => {
             <Route path="/follow-ups" element={<Dashboard />} />
             <Route path="/webhooks" element={<AdvancedWebhookManager />} />
             <Route path="/send" element={<WizardLayout />} />
-            <Route path="/templates" element={<TemplateManager />} />
+            <Route path="/templates" element={<TemplatePreview />} />
             <Route path="/history" element={<History />} />
             <Route path="/mcp-tester" element={<McpTester />} />
             <Route path="/settings" element={<Settings />} />
@@ -124,7 +125,7 @@ const Sidebar = () => {
     { path: '/marketing/follow-ups', icon: Brain, label: 'Follow-ups' },
     { path: '/marketing/webhooks', icon: Webhook, label: 'Webhooks' },
     { path: '/marketing/send', icon: Send, label: 'New Communication' },
-    { path: '/marketing/templates', icon: FileText, label: 'Templates' },
+    { path: '/marketing/templates', icon: FileText, label: 'Template Preview' },
     { path: '/marketing/history', icon: HistoryIcon, label: 'History' },
     { path: '/marketing/mcp-tester', icon: TestTube2, label: 'MCP Tester' },
     { path: '/marketing/settings', icon: SettingsIcon, label: 'Settings' },

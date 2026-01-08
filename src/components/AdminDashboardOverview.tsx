@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, TrendingUp, Clock, Activity, Mail, MousePointer, Calendar, Target, Zap, BarChart3, MessageSquare, Phone } from "lucide-react";
+import { Users, TrendingUp, Clock, Activity, Mail, MousePointer, Calendar, Target, Zap, BarChart3, MessageSquare, Phone, Lightbulb } from "lucide-react";
 
 // Enhanced Metric Card Component
 interface MetricCardProps {
@@ -314,4 +314,114 @@ export const AdminDashboardOverview = () => {
           subtitle="Customer service"
         />
       </div>
-};
+
+      {/* Enhanced Recent Activity Section */}
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-gray-50 to-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-700">
+            <Activity className="h-5 w-5" />
+            Recent Campaign Activity
+          </CardTitle>
+          <CardDescription>
+            Latest updates from your marketing campaigns and lead interactions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {metrics.recentActivity.length === 0 ? (
+            <div className="text-center py-8">
+              <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <div className="text-lg font-medium text-gray-900">No recent activity</div>
+              <div className="text-sm text-gray-600 mt-1">
+                Campaign activity will appear here as leads engage with your content
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {metrics.recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-4 p-4 bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex-shrink-0">
+                    {getActivityIcon(activity.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {activity.message}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {formatTimeAgo(activity.timestamp)}
+                    </div>
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    activity.type === 'email_opened' ? 'bg-blue-100 text-blue-700' :
+                    activity.type === 'link_clicked' ? 'bg-green-100 text-green-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>
+                    {activity.type.replace('_', ' ')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Tips & Shortcuts Section */}
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-gray-700">
+            <Lightbulb className="h-5 w-5" />
+            Quick Tips & Shortcuts
+          </CardTitle>
+          <CardDescription>
+            Boost your productivity with these campaign management tips
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-white rounded-lg border shadow-sm">
+                <Zap className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-medium text-sm text-gray-900">Smart Templates</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Use AI-powered templates for personalized messaging that converts 2x better
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white rounded-lg border shadow-sm">
+                <Target className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-medium text-sm text-gray-900">Lead Scoring</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Focus on high-scoring leads first - they convert 3x more often
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-white rounded-lg border shadow-sm">
+                <Clock className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-medium text-sm text-gray-900">Timing Matters</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Send campaigns Tuesday-Thursday between 10am-2pm for best open rates
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 bg-white rounded-lg border shadow-sm">
+                <TrendingUp className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <div className="font-medium text-sm text-gray-900">A/B Testing</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    Test subject lines and content to optimize your conversion rates
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
