@@ -184,6 +184,8 @@ export const CampaignWizard = () => {
     budget: 50
   });
   const [showOnlyWithPreferredContacts, setShowOnlyWithPreferredContacts] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
 
   const steps = [
@@ -223,10 +225,11 @@ export const CampaignWizard = () => {
 
       // Filter for preferred contacts only (client-side filter)
       if (showOnlyWithPreferredContacts) {
-        filteredData = filteredData.filter(property =>
-          (property.preferred_phones && property.preferred_phones.length > 0) ||
-          (property.preferred_emails && property.preferred_emails.length > 0)
-        );
+        filteredData = filteredData.filter(property => {
+          const phones = (property as any).preferred_phones || [];
+          const emails = (property as any).preferred_emails || [];
+          return phones.length > 0 || emails.length > 0;
+        });
       }
 
       setAvailableProperties(filteredData);
