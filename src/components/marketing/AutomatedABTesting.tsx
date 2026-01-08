@@ -352,11 +352,11 @@ const AutomatedABTesting = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>Amostra:</span>
-                      <span>{test.sampleSize.toLocaleString()}</span>
+                      <span>{test.sampleSize ? test.sampleSize.toLocaleString() : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Variantes:</span>
-                      <span>{test.variants.length}</span>
+                      <span>{test.variants?.length || 0}</span>
                     </div>
                   </div>
 
