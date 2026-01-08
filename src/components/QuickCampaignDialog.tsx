@@ -42,6 +42,14 @@ interface Property {
   cash_offer_amount?: number;
   owner_phone?: string;
   owner_email?: string;
+  preferred_phones?: string[];
+  preferred_emails?: string[];
+  skip_tracing_data?: {
+    phones?: string[];
+    emails?: string[];
+    preferred_phones?: string[];
+    preferred_emails?: string[];
+  };
 }
 
 interface QuickCampaignDialogProps {
@@ -218,29 +226,45 @@ export const QuickCampaignDialog = ({
 
   // Get best available contact with fallback
   const getBestContact = (property: Property, type: 'email' | 'phone') => {
-    // Try primary column first
+    // First priority: preferred contacts
+    if (type === 'phone' && property.preferred_phones && property.preferred_phones.length > 0) {
+      return property.preferred_phones[0]; // Use first preferred phone
+    }
+    if (type === 'email' && property.preferred_emails && property.preferred_emails.length > 0) {
+      return property.preferred_emails[0]; // Use first preferred email
+    }
+
+    // Second priority: preferred contacts from skip tracing data
+    if (type === 'phone' && property.skip_tracing_data?.preferred_phones && property.skip_tracing_data.preferred_phones.length > 0) {
+      return property.skip_tracing_data.preferred_phones[0];
+    }
+    if (type === 'email' && property.skip_tracing_data?.preferred_emails && property.skip_tracing_data.preferred_emails.length > 0) {
+      return property.skip_tracing_data.preferred_emails[0];
+    }
+
+    // Third priority: primary column
     const primary = validateContact(property, type);
     if (primary) return primary;
-    
+
     if (!enableFallback) return null;
-    
-    // Try fallback columns
-    const fallbackColumns = type === 'email' 
+
+    // Fourth priority: fallback columns
+    const fallbackColumns = type === 'email'
       ? ['email1', 'email2', 'email3', 'owner_email']
       : ['phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'owner_phone'];
-    
+
     for (const col of fallbackColumns) {
       if (col !== (type === 'email' ? selectedEmailColumn : selectedPhoneColumn)) {
         const value = (property as any)[col];
         if (value) {
-          const validated = type === 'email' 
+          const validated = type === 'email'
             ? (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? value : null)
             : (value.replace(/\D/g, '').length >= 10 ? value.replace(/\D/g, '') : null);
           if (validated) return validated;
         }
       }
     }
-    
+
     return null;
   };
 

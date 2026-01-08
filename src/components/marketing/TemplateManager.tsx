@@ -54,6 +54,33 @@ import { useTemplates } from '@/hooks/useTemplates';
 import { Channel, SavedTemplate } from '@/types/marketing.types';
 import { TEMPLATE_CATEGORIES } from '@/constants/defaultTemplates';
 
+// Helper functions for template URLs and tracking
+const generatePropertyUrl = (propertyId: string, sourceChannel: string = 'email') => {
+  const baseUrl = `${window.location.origin}/property/${propertyId}`;
+  const trackingParams = new URLSearchParams({
+    utm_source: 'marketing_campaign',
+    utm_medium: sourceChannel.toLowerCase(),
+    utm_campaign: 'cash_offer',
+    source_channel: sourceChannel,
+    timestamp: Date.now().toString()
+  });
+  return `${baseUrl}?${trackingParams.toString()}`;
+};
+
+const generateQrCodeUrl = (propertyId: string, sourceChannel: string = 'email') => {
+  const propertyUrl = generatePropertyUrl(propertyId, sourceChannel);
+  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+};
+
+const generateTrackingPixel = (propertyId: string, sourceChannel: string = 'email') => {
+  const trackingUrl = `${window.location.origin}/api/track/email-open?property=${propertyId}&channel=${sourceChannel}&t=${Date.now()}`;
+  return `<img src="${trackingUrl}" width="1" height="1" style="display:none;" alt="" />`;
+};
+
+const generateUnsubscribeUrl = (propertyId: string) => {
+  return `${window.location.origin}/unsubscribe?property=${propertyId}`;
+};
+
 // Available variables for templates
 const TEMPLATE_VARIABLES = [
   { key: '{name}', description: 'Recipient name' },
@@ -66,6 +93,9 @@ const TEMPLATE_VARIABLES = [
   { key: '{seller_name}', description: 'Seller/Agent name' },
   { key: '{property_url}', description: 'Property landing page URL' },
   { key: '{qr_code_url}', description: 'QR code image URL for property page' },
+  { key: '{source_channel}', description: 'Source channel (SMS, Email, Call)' },
+  { key: '{tracking_pixel}', description: 'Tracking pixel for email opens' },
+  { key: '{unsubscribe_url}', description: 'Unsubscribe URL' },
 ];
 
 // Templates HTML pré-definidos
@@ -104,7 +134,9 @@ const HTML_TEMPLATES = {
           <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">Scan to view your personalized offer page:</p>
           <img src="{qr_code_url}" alt="QR Code" style="width: 200px; height: 200px; margin: 0 auto; display: block; border: 4px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
           <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or visit: <a href="{property_url}" style="color: #667eea;">{property_url}</a></p>
+          <p style="font-size: 11px; color: #999; margin: 5px 0 0 0;">Source: {source_channel}</p>
         </div>
+        {tracking_pixel}
       </td>
     </tr>
     <tr>
@@ -132,7 +164,9 @@ const HTML_TEMPLATES = {
       <p style="font-size: 13px; margin: 0 0 10px 0;">View your personalized offer page:</p>
       <img src="{qr_code_url}" alt="QR Code" style="width: 150px; height: 150px; margin: 0 auto; display: block;" />
       <p style="font-size: 11px; margin: 10px 0 0 0;"><a href="{property_url}" style="color: #333;">{property_url}</a></p>
+      <p style="font-size: 10px; color: #999; margin: 5px 0 0 0;">Source: {source_channel}</p>
     </div>
+    {tracking_pixel}
     <p>Best regards,<br><strong>{company_name}</strong></p>
   </div>
 </body>
@@ -173,13 +207,18 @@ const HTML_TEMPLATES = {
           <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;"><strong>View Full Details Online:</strong></p>
           <img src="{qr_code_url}" alt="QR Code" style="width: 180px; height: 180px; margin: 0 auto; display: block; border: 3px solid #1a365d;" />
           <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Scan or visit: <a href="{property_url}" style="color: #1a365d; text-decoration: none;">{property_url}</a></p>
+          <p style="font-size: 11px; color: #999; margin: 5px 0 0 0;">Source: {source_channel}</p>
         </div>
+        {tracking_pixel}
         <p style="font-size: 16px; color: #333; line-height: 1.8; margin-top: 30px;">Respectfully yours,<br><br><strong>{seller_name}</strong><br>{company_name}</p>
       </td>
     </tr>
     <tr>
       <td style="padding: 20px; background-color: #1a365d; text-align: center;">
         <p style="margin: 0; color: #fff; font-size: 12px;">© {company_name} | All Rights Reserved</p>
+        <p style="margin: 5px 0 0; color: #ccc; font-size: 11px;">
+          <a href="{unsubscribe_url}" style="color: #ccc; text-decoration: underline;">Unsubscribe</a> from future communications
+        </p>
       </td>
     </tr>
   </table>
@@ -755,14 +794,19 @@ export const TemplateManager = () => {
                           className="border rounded-lg overflow-hidden"
                           dangerouslySetInnerHTML={{
                             __html: formData.body
-                              .replace(/{name}/g, 'John Doe')
+                              .replace(/{name}/g, 'João Silva')
                               .replace(/{address}/g, '123 Main Street')
-                              .replace(/{city}/g, 'Miami')
+                              .replace(/{city}/g, 'Orlando')
                               .replace(/{state}/g, 'FL')
                               .replace(/{cash_offer}/g, '$250,000')
-                              .replace(/{company_name}/g, 'Your Company')
+                              .replace(/{company_name}/g, 'Your Real Estate Company')
                               .replace(/{phone}/g, '(555) 123-4567')
-                              .replace(/{seller_name}/g, 'Agent Name'),
+                              .replace(/{seller_name}/g, 'Maria Santos')
+                              .replace(/{property_url}/g, generatePropertyUrl('sample-property-id', formData.channel))
+                              .replace(/{qr_code_url}/g, generateQrCodeUrl('sample-property-id', formData.channel))
+                              .replace(/{source_channel}/g, formData.channel.toUpperCase())
+                              .replace(/{tracking_pixel}/g, generateTrackingPixel('sample-property-id', formData.channel))
+                              .replace(/{unsubscribe_url}/g, generateUnsubscribeUrl('sample-property-id')),
                           }}
                         />
                       </DialogContent>
@@ -843,7 +887,12 @@ export const TemplateManager = () => {
                             cash_offer: '$250,000',
                             company_name: 'Your Real Estate Company',
                             phone: '(555) 123-4567',
-                            seller_name: 'Maria Santos'
+                            seller_name: 'Maria Santos',
+                            property_url: generatePropertyUrl('sample-property-id', previewTemplate.channel),
+                            qr_code_url: generateQrCodeUrl('sample-property-id', previewTemplate.channel),
+                            source_channel: previewTemplate.channel.toUpperCase(),
+                            tracking_pixel: generateTrackingPixel('sample-property-id', previewTemplate.channel),
+                            unsubscribe_url: generateUnsubscribeUrl('sample-property-id')
                           };
                           return sampleValues[variable] || match;
                         })
@@ -860,13 +909,116 @@ export const TemplateManager = () => {
                           cash_offer: '$250,000',
                           company_name: 'Your Real Estate Company',
                           phone: '(555) 123-4567',
-                          seller_name: 'Maria Santos'
+                          seller_name: 'Maria Santos',
+                          property_url: generatePropertyUrl('sample-property-id', previewTemplate.channel),
+                          qr_code_url: generateQrCodeUrl('sample-property-id', previewTemplate.channel),
+                          source_channel: previewTemplate.channel.toUpperCase(),
+                          tracking_pixel: generateTrackingPixel('sample-property-id', previewTemplate.channel),
+                          unsubscribe_url: generateUnsubscribeUrl('sample-property-id')
                         };
                         return sampleValues[variable] || match;
                       })}
                     </pre>
                   )}
                 </div>
+              </div>
+
+              {/* Link da Oferta & QR Code Info */}
+              {previewTemplate.channel === 'email' && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Link da Oferta & QR Code:</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">URL da Propriedade:</Label>
+                      <div className="p-2 bg-muted rounded text-xs font-mono break-all">
+                        {generatePropertyUrl('sample-property-id', previewTemplate.channel)}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Este link inclui parâmetros de tracking UTM e identifica a origem ({previewTemplate.channel.toUpperCase()})
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">QR Code URL:</Label>
+                      <div className="p-2 bg-muted rounded text-xs font-mono break-all">
+                        {generateQrCodeUrl('sample-property-id', previewTemplate.channel)}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        QR code gerado dinamicamente para cada propriedade
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tracking & Analytics Info */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Tracking & Analytics:</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Pixel de Tracking (Email Opens):</Label>
+                    <div className="p-2 bg-muted rounded text-xs font-mono break-all">
+                      {generateTrackingPixel('sample-property-id', previewTemplate.channel)}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Pixel invisível que rastreia quando o email é aberto
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Link de Unsubscribe:</Label>
+                    <div className="p-2 bg-muted rounded text-xs font-mono break-all">
+                      {generateUnsubscribeUrl('sample-property-id')}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Link para usuários se descadastrarem da lista
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Origem da Mensagem */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Origem da Mensagem:</Label>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                  {previewTemplate.channel === 'sms' && <MessageSquare className="w-4 h-4 text-blue-500" />}
+                  {previewTemplate.channel === 'email' && <Mail className="w-4 h-4 text-green-500" />}
+                  {previewTemplate.channel === 'call' && <Phone className="w-4 h-4 text-purple-500" />}
+                  <span className="text-sm">
+                    Esta mensagem será identificada como originária do canal: <strong>{previewTemplate.channel.toUpperCase()}</strong>
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  A variável {'{source_channel}'} será substituída automaticamente pelo tipo de canal usado no envio.
+                </p>
+              </div>
+
+              {/* Analytics & Tracking */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Analytics & Tracking:</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Links de tracking UTM incluídos automaticamente</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Pixel de tracking para abertura de emails</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span>QR codes gerados dinamicamente por propriedade</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span>Links de unsubscribe para conformidade</span>
+                  </div>
+                </div>
+                <Alert>
+                  <Check className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Todas as métricas de engajamento (cliques, aberturas, conversões) serão automaticamente rastreadas
+                    e disponíveis no dashboard de analytics.
+                  </AlertDescription>
+                </Alert>
               </div>
 
               {/* Template Validation */}

@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
+import { useTemplates } from '@/hooks/useTemplates';
 
 // Colunas de telefone disponíveis na tabela properties
 const PHONE_COLUMNS = [
@@ -87,6 +88,7 @@ export const CampaignManager = () => {
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
   const settings = useMarketingStore((state) => state.settings);
+  const { getTemplatesByChannel, getDefaultTemplate } = useTemplates();
 
   // State
   const [loading, setLoading] = useState(false);
@@ -95,10 +97,90 @@ export const CampaignManager = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<Channel>('sms');
   const [filterStatus, setFilterStatus] = useState<string>('approved');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   
-  // Column selection state
-  const [selectedPhoneColumn, setSelectedPhoneColumn] = useState('phone1');
-  const [selectedEmailColumn, setSelectedEmailColumn] = useState('email1');
+  // Set default template when channel changes
+  useEffect(() => {
+    const defaultTemplate = getDefaultTemplate(selectedChannel);
+    if (defaultTemplate) {
+      setSelectedTemplateId(defaultTemplate.id);
+    }
+  }, [selectedChannel, getDefaultTemplate]);
+
+  // Get selected template
+  const selectedTemplate = selectedTemplateId 
+    ? templates.find(t => t.id === selectedTemplateId) 
+    : getDefaultTemplate(selectedChannel);
+
+  // Helper function to render template preview
+  const renderTemplatePreview = () => {
+    if (!selectedTemplate || selectedProps.length === 0) {
+      return (
+        <div className="text-sm text-muted-foreground">
+          {selectedTemplate ? 'Selecione uma propriedade para ver o preview' : 'Selecione um template para ver o preview'}
+        </div>
+      );
+    }
+
+    const prop = selectedProps[0];
+    const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
+    
+    // Replace template variables
+    let content = selectedTemplate.body;
+    content = content.replace(/\{\{owner_name\}\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{\{address\}\}/g, prop.address);
+    content = content.replace(/\{\{full_address\}\}/g, fullAddress);
+    content = content.replace(/\{\{cash_offer_amount\}\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{\{company_name\}\}/g, settings.company.company_name);
+
+    if (selectedChannel === 'sms') {
+      return (
+        <div className="text-sm bg-white p-2 rounded border text-gray-800">
+          {content}
+        </div>
+      );
+    }
+
+    if (selectedChannel === 'email') {
+      const subject = selectedTemplate.subject?.replace(/\{\{address\}\}/g, prop.address) || `Cash Offer for ${prop.address}`;
+      return (
+        <div className="text-sm bg-white p-3 rounded border space-y-2">
+          <div className="font-medium text-gray-900">
+            Subject: {subject}
+          </div>
+          <div className="text-gray-800 whitespace-pre-line">
+            {content}
+          </div>
+        </div>
+      );
+    }
+
+    if (selectedChannel === 'call') {
+      return (
+        <div className="text-sm bg-white p-2 rounded border text-gray-800">
+          {content}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  // Helper function to generate template content for sending
+  const generateTemplateContent = (template: SavedTemplate, prop: Property) => {
+    const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
+    
+    let content = template.body;
+    content = content.replace(/\{\{owner_name\}\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{\{address\}\}/g, prop.address);
+    content = content.replace(/\{\{full_address\}\}/g, fullAddress);
+    content = content.replace(/\{\{cash_offer_amount\}\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{\{company_name\}\}/g, settings.company.company_name);
+
+    const subject = template.subject?.replace(/\{\{address\}\}/g, prop.address) || `Cash Offer for ${prop.address}`;
+
+    return { content, subject };
+  };
   const [showContactInfo, setShowContactInfo] = useState(false);
 
   // Build select columns based on selected phone/email columns
@@ -254,12 +336,20 @@ export const CampaignManager = () => {
             continue;
           }
 
+          if (!selectedTemplate) {
+            console.warn(`No template selected for SMS`);
+            failCount++;
+            continue;
+          }
+
+          const { content } = generateTemplateContent(selectedTemplate, prop);
+
           // Try all phones until one succeeds
           for (const phone of allPhones) {
             try {
               await sendSMS({
                 phone_number: phone,
-                body: `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`,
+                body: content,
               });
               sent = true;
               break; // Success, stop trying other phones
@@ -282,13 +372,21 @@ export const CampaignManager = () => {
             continue;
           }
 
+          if (!selectedTemplate) {
+            console.warn(`No template selected for email`);
+            failCount++;
+            continue;
+          }
+
+          const { content, subject } = generateTemplateContent(selectedTemplate, prop);
+
           // Try all emails until one succeeds
           for (const email of allEmails) {
             try {
               await sendEmail({
                 receiver_email: email,
-                subject: `Cash Offer for ${prop.address}`,
-                message_body: `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`,
+                subject: subject,
+                message_body: content,
               });
               sent = true;
               break; // Success, stop trying other emails
@@ -311,6 +409,14 @@ export const CampaignManager = () => {
             continue;
           }
 
+          if (!selectedTemplate) {
+            console.warn(`No template selected for call`);
+            failCount++;
+            continue;
+          }
+
+          const { content } = generateTemplateContent(selectedTemplate, prop);
+
           // Try all phones until one succeeds
           for (const phone of allPhones) {
             try {
@@ -319,7 +425,7 @@ export const CampaignManager = () => {
                 address: fullAddress,
                 from_number: settings.company.contact_phone,
                 to_number: phone,
-                voicemail_drop: `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`,
+                voicemail_drop: content,
                 seller_name: settings.company.company_name,
               });
               sent = true;
@@ -579,6 +685,23 @@ export const CampaignManager = () => {
                 </Tabs>
               </div>
 
+              {/* Template Selection */}
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Template</Label>
+                <Select value={selectedTemplateId || ''} onValueChange={setSelectedTemplateId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getTemplatesByChannel(selectedChannel).map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name} {template.is_default ? '(Padrão)' : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Separator />
 
               {/* Column Selection */}
@@ -643,17 +766,7 @@ export const CampaignManager = () => {
                           <MessageSquare className="w-3 h-3" />
                           SMS Preview
                         </div>
-                        <div className="text-sm bg-white p-2 rounded border text-gray-800">
-                          {selectedProps.length > 0 ? (
-                            (() => {
-                              const prop = selectedProps[0];
-                              const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-                              return `Hi ${prop.owner_name || 'Owner'}, we have a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for ${fullAddress}. Interested? Reply YES.`;
-                            })()
-                          ) : (
-                            'Selecione uma propriedade para ver o preview'
-                          )}
-                        </div>
+                        {renderTemplatePreview()}
                       </div>
                     )}
 
@@ -663,22 +776,7 @@ export const CampaignManager = () => {
                           <Mail className="w-3 h-3" />
                           Email Preview
                         </div>
-                        <div className="text-sm bg-white p-3 rounded border space-y-2">
-                          <div className="font-medium text-gray-900">
-                            Subject: {selectedProps.length > 0 ? `Cash Offer for ${selectedProps[0].address}` : 'Subject'}
-                          </div>
-                          <div className="text-gray-800 whitespace-pre-line">
-                            {selectedProps.length > 0 ? (
-                              (() => {
-                                const prop = selectedProps[0];
-                                const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-                                return `Dear ${prop.owner_name || 'Owner'},\n\nWe would like to make a cash offer of $${prop.cash_offer_amount?.toLocaleString()} for your property at ${fullAddress}.\n\nBest regards,\n${settings.company.company_name}`;
-                              })()
-                            ) : (
-                              'Selecione uma propriedade para ver o preview do email'
-                            )}
-                          </div>
-                        </div>
+                        {renderTemplatePreview()}
                       </div>
                     )}
 
@@ -688,13 +786,7 @@ export const CampaignManager = () => {
                           <Phone className="w-3 h-3" />
                           Voicemail Preview
                         </div>
-                        <div className="text-sm bg-white p-2 rounded border text-gray-800">
-                          {selectedProps.length > 0 ? (
-                            `Hi, this is ${settings.company.company_name}. We have a cash offer for your property.`
-                          ) : (
-                            'Selecione uma propriedade para ver o preview do voicemail'
-                          )}
-                        </div>
+                        {renderTemplatePreview()}
                       </div>
                     )}
                   </div>

@@ -57,9 +57,13 @@ interface Property {
   owner_email?: string;
   approval_status?: string;
   lead_status?: string;
+  preferred_phones?: string[];
+  preferred_emails?: string[];
   skip_tracing_data?: {
     phones?: Array<{number: string; type: string}>;
     emails?: string[];
+    preferred_phones?: string[];
+    preferred_emails?: string[];
   };
 }
 
@@ -148,7 +152,7 @@ const renderTemplateContent = (content: string, property: any): string => {
     '{state}': property.state || 'FL',
     '{cash_offer}': `$${property.cash_offer_amount?.toLocaleString() || '250,000'}`,
     '{company_name}': 'Your Real Estate Company',
-    '{phone}': '(555) 123-4567',
+    '{phone}': property.preferred_phones?.[0] || property.owner_phone || '(555) 123-4567',
     '{seller_name}': 'Alex Johnson',
     '{estimated_value}': `$${property.estimated_value?.toLocaleString() || '300,000'}`,
     '{offer_percentage}': property.estimated_value && property.cash_offer_amount
@@ -176,8 +180,7 @@ export const CampaignWizard = () => {
     scheduledDate: '',
     budget: 50
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const [showOnlyWithPreferredContacts, setShowOnlyWithPreferredContacts] = useState(false);
   const { toast } = useToast();
 
   const steps = [
@@ -194,7 +197,7 @@ export const CampaignWizard = () => {
     if (currentStep === 'properties') {
       fetchAvailableProperties();
     }
-  }, [currentStep]);
+  }, [currentStep, showOnlyWithPreferredContacts]);
 
   const fetchAvailableProperties = async () => {
     setIsLoading(true);
@@ -213,7 +216,17 @@ export const CampaignWizard = () => {
       const { data, error } = await query.limit(100);
       if (error) throw error;
 
-      setAvailableProperties(data || []);
+      let filteredData = data || [];
+
+      // Filter for preferred contacts only (client-side filter)
+      if (showOnlyWithPreferredContacts) {
+        filteredData = filteredData.filter(property =>
+          (property.preferred_phones && property.preferred_phones.length > 0) ||
+          (property.preferred_emails && property.preferred_emails.length > 0)
+        );
+      }
+
+      setAvailableProperties(filteredData);
     } catch (error) {
       console.error('Error fetching properties:', error);
       toast({
@@ -375,13 +388,24 @@ export const CampaignWizard = () => {
                   {selectedProperties.length} selected
                 </Badge>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedProperties(availableProperties)}
-              >
-                Select All
-              </Button>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={showOnlyWithPreferredContacts}
+                    onChange={(e) => setShowOnlyWithPreferredContacts(e.target.checked)}
+                    className="rounded"
+                  />
+                  Only with preferred contacts
+                </label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedProperties(availableProperties)}
+                >
+                  Select All
+                </Button>
+              </div>
             </div>
 
             <ScrollArea className="h-96 border rounded-lg">
@@ -429,6 +453,40 @@ export const CampaignWizard = () => {
                                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                   <Mail className="h-3 w-3" />
                                   <span>{property.owner_email}</span>
+                                </div>
+                              )}
+
+                              {/* Preferred Phones */}
+                              {property.preferred_phones && property.preferred_phones.length > 0 && (
+                                <div className="space-y-1">
+                                  {property.preferred_phones.slice(0, 2).map((phone, idx) => (
+                                    <div key={idx} className="flex items-center gap-1 text-xs text-blue-600">
+                                      <Phone className="h-3 w-3" />
+                                      <span className="font-medium">{phone} (preferred)</span>
+                                    </div>
+                                  ))}
+                                  {property.preferred_phones.length > 2 && (
+                                    <div className="text-xs text-blue-600">
+                                      +{property.preferred_phones.length - 2} mais telefones preferidos
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Preferred Emails */}
+                              {property.preferred_emails && property.preferred_emails.length > 0 && (
+                                <div className="space-y-1">
+                                  {property.preferred_emails.slice(0, 2).map((email, idx) => (
+                                    <div key={idx} className="flex items-center gap-1 text-xs text-green-600">
+                                      <Mail className="h-3 w-3" />
+                                      <span className="font-medium">{email} (preferred)</span>
+                                    </div>
+                                  ))}
+                                  {property.preferred_emails.length > 2 && (
+                                    <div className="text-xs text-green-600">
+                                      +{property.preferred_emails.length - 2} mais emails preferidos
+                                    </div>
+                                  )}
                                 </div>
                               )}
                               
@@ -607,6 +665,12 @@ export const CampaignWizard = () => {
                       </span>
                     </div>
                     <div className="flex justify-between">
+                      <span>Preferred Phones:</span>
+                      <span className="font-semibold text-blue-600">
+                        {selectedProperties.filter(p => p.preferred_phones && p.preferred_phones.length > 0).length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
                       <span>Primary Phones:</span>
                       <span className="font-semibold text-blue-600">
                         {selectedProperties.filter(p => p.owner_phone).length}
@@ -623,11 +687,16 @@ export const CampaignWizard = () => {
                       <span className="font-semibold text-blue-600">
                         {selectedProperties.reduce((total, p) => {
                           let count = p.owner_phone ? 1 : 0;
-                          if (p.skip_tracing_data?.phones) {
-                            count += p.skip_tracing_data.phones.length;
-                          }
+                          if (p.preferred_phones) count += p.preferred_phones.length;
+                          if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
                           return total + count;
                         }, 0)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Preferred Emails:</span>
+                      <span className="font-semibold text-purple-600">
+                        {selectedProperties.filter(p => p.preferred_emails && p.preferred_emails.length > 0).length}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -647,9 +716,8 @@ export const CampaignWizard = () => {
                       <span className="font-semibold text-purple-600">
                         {selectedProperties.reduce((total, p) => {
                           let count = p.owner_email ? 1 : 0;
-                          if (p.skip_tracing_data?.emails) {
-                            count += p.skip_tracing_data.emails.length;
-                          }
+                          if (p.preferred_emails) count += p.preferred_emails.length;
+                          if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
                           return total + count;
                         }, 0)}
                       </span>
@@ -754,7 +822,7 @@ export const CampaignWizard = () => {
                         </div>
 
                         <div className="mt-2 text-xs text-muted-foreground">
-                          {channel === 'sms' && `~${renderTemplateContent(template.body, selectedProperties[0]).length} characters`}
+                          {channel === 'sms' && `~${renderTemplateContent(template.body, selectedProperties[0] || {}).length} characters`}
                           {channel === 'email' && 'HTML email with professional formatting'}
                           {channel === 'call' && 'Voicemail message for unanswered calls'}
                         </div>
