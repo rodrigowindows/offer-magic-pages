@@ -385,8 +385,14 @@ export const CampaignManager = () => {
     setSending(true);
     let successCount = 0;
     let failCount = 0;
+    let completedCount = 0;
 
-    for (const prop of selectedProps) {
+    // Inicializar progresso
+    updateProgress(0, selectedProps.length, 0, 0);
+
+    for (let i = 0; i < selectedProps.length; i++) {
+      const prop = selectedProps[i];
+
       try {
         const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
         const allPhones = getAllPhones(prop);
@@ -398,11 +404,15 @@ export const CampaignManager = () => {
         if (selectedChannel === 'sms') {
           if (allPhones.length === 0) {
             failCount++;
+            completedCount++;
+            updateProgress(completedCount, selectedProps.length, successCount, failCount);
             continue;
           }
 
           if (!selectedTemplate) {
             failCount++;
+            completedCount++;
+            updateProgress(completedCount, selectedProps.length, successCount, failCount);
             continue;
           }
 
@@ -547,22 +557,34 @@ export const CampaignManager = () => {
           }
         }
 
-        successCount++;
+        completedCount++;
+        updateProgress(completedCount, selectedProps.length, successCount, failCount);
       } catch (error: any) {
         console.error(`Error sending to ${prop.id}:`, error);
         failCount++;
+        completedCount++;
+        updateProgress(completedCount, selectedProps.length, successCount, failCount);
       }
     }
 
     setSending(false);
 
+    // Toast aprimorado com mais detalhes
     toast({
-      title: 'Campanha Finalizada',
-      description: `✅ ${successCount} enviados com sucesso, ❌ ${failCount} falharam`,
-      variant: successCount > 0 ? 'default' : 'destructive',
+      title: '🎉 Campanha Finalizada!',
+      description: `${successCount} mensagens enviadas com sucesso, ${failCount} falharam. Taxa de sucesso: ${Math.round((successCount / (successCount + failCount)) * 100)}%`,
+      action: {
+        altText: 'Ver relatório detalhado',
+        onClick: () => {
+          // Futuramente: abrir modal de relatório detalhado
+          console.log('Abrir relatório detalhado');
+        },
+      },
+      duration: 8000,
     });
 
     setSelectedIds([]);
+    setProgressStats({ completed: 0, total: 0, successCount: 0, failCount: 0, estimatedTimeRemaining: '0s' });
   };
 
   const selectedCount = selectedIds.length;
@@ -571,20 +593,33 @@ export const CampaignManager = () => {
   const propsWithEmail = selectedProps.filter((p) => getAllEmails(p).length > 0).length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Campaign Creator</h1>
-          <p className="text-muted-foreground">
-            Create and launch marketing campaigns step by step
-          </p>
+    <TooltipProvider>
+      <div className={`space-y-6 transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">🚀 Campaign Creator</h1>
+            <p className="text-muted-foreground">
+              Create and launch marketing campaigns step by step
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={toggleTheme}>
+                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle {theme === 'dark' ? 'light' : 'dark'} mode</p>
+              </TooltipContent>
+            </Tooltip>
+            <Button variant="outline" onClick={fetchProperties}>
+              <Filter className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
-        <Button variant="outline" onClick={fetchProperties}>
-          <Filter className="w-4 h-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
 
       {/* Test Mode Warning */}
       {testMode && (
@@ -696,79 +731,219 @@ export const CampaignManager = () => {
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="text-xl font-semibold mb-2">Select Properties</h2>
-                  <p className="text-muted-foreground">Choose the properties you want to target</p>
+                  <h2 className="text-xl font-semibold mb-2">🎯 Select Properties</h2>
+                  <p className="text-muted-foreground">Choose the properties you want to target with your campaign</p>
                 </div>
 
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    variant={filterStatus === 'approved' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterStatus('approved')}
-                  >
-                    Approved ({properties.filter(p => p.approval_status === 'approved').length})
-                  </Button>
-                  <Button
-                    variant={filterStatus === 'pending' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterStatus('pending')}
-                  >
-                    Pending ({properties.filter(p => p.approval_status === 'pending').length})
-                  </Button>
-                  <Button
-                    variant={filterStatus === 'all' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFilterStatus('all')}
-                  >
-                    All ({properties.length})
-                  </Button>
+                {/* Filtros e Busca Avançados */}
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        placeholder="Buscar propriedades por endereço, nome ou cidade..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                    >
+                      <Filter className="w-4 h-4 mr-2" />
+                      Filtros Avançados
+                    </Button>
+                  </div>
+
+                  {/* Filtros de Status */}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      variant={filterStatus === 'approved' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilterStatus('approved')}
+                    >
+                      ✅ Approved ({properties.filter(p => p.approval_status === 'approved').length})
+                    </Button>
+                    <Button
+                      variant={filterStatus === 'pending' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilterStatus('pending')}
+                    >
+                      ⏳ Pending ({properties.filter(p => p.approval_status === 'pending').length})
+                    </Button>
+                    <Button
+                      variant={filterStatus === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setFilterStatus('all')}
+                    >
+                      📋 All ({properties.length})
+                    </Button>
+                  </div>
+
+                  {/* Filtros Ativos */}
+                  {activeFilters.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {activeFilters.map(filter => (
+                        <Badge key={filter.id} variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors" onClick={() => removeFilter(filter.id)}>
+                          {filter.label} ×
+                        </Badge>
+                      ))}
+                      <Button variant="ghost" size="sm" onClick={() => setActiveFilters([])}>
+                        <X className="w-3 h-3 mr-1" />
+                        Limpar filtros
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card>
+                        <CardHeader>
+                          <Skeleton className="h-6 w-48" />
+                          <Skeleton className="h-4 w-32" />
+                        </CardHeader>
+                        <CardContent>
+                          <div className="space-y-3">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <div key={i} className="flex items-center space-x-3 p-3 border rounded-lg">
+                                <Skeleton className="h-10 w-10 rounded-full" />
+                                <div className="space-y-2 flex-1">
+                                  <Skeleton className="h-4 w-3/4" />
+                                  <Skeleton className="h-3 w-1/2" />
+                                </div>
+                                <Skeleton className="h-5 w-5" />
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <Skeleton className="h-6 w-32" />
+                          <Skeleton className="h-4 w-24" />
+                        </CardHeader>
+                        <CardContent>
+                          <Skeleton className="h-32 w-full" />
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ) : getFilteredProperties().length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Target className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {searchTerm ? 'Nenhuma propriedade encontrada' : 'Nenhuma propriedade disponível'}
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchTerm
+                        ? `Não encontramos propriedades que correspondam à sua busca "${searchTerm}".`
+                        : `Não há propriedades com status "${filterStatus}" disponíveis para campanhas.`
+                      }
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                      {searchTerm && (
+                        <Button variant="outline" onClick={() => setSearchTerm('')}>
+                          Limpar busca
+                        </Button>
+                      )}
+                      <Button onClick={() => setFilterStatus('all')}>
+                        Ver todas as propriedades
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card>
+                    <Card className="group hover:shadow-lg transition-all duration-300">
                       <CardHeader>
-                        <CardTitle className="text-lg">Available Properties</CardTitle>
+                        <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                          📋 Available Properties
+                        </CardTitle>
                         <CardDescription>
-                          {properties.filter(p =>
-                            filterStatus === 'all' ||
-                            p.approval_status === filterStatus
-                          ).length} properties found
+                          {getFilteredProperties().length} properties found
+                          {searchTerm && ` for "${searchTerm}"`}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ScrollArea className="h-[400px] pr-4">
                           <div className="space-y-2">
-                            {properties
-                              .filter(p =>
-                                filterStatus === 'all' ||
-                                p.approval_status === filterStatus
-                              )
-                              .map((property) => {
+                            {getFilteredProperties().map((property) => {
                                 const phones = getAllPhones(property);
                                 const emails = getAllEmails(property);
                                 return (
                                   <div
                                     key={property.id}
-                                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
-                                      selectedIds.includes(property.id)
-                                        ? 'bg-primary/5 border-primary'
-                                        : 'hover:bg-muted/50'
-                                    }`}
+                                    className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
                                     onClick={() => toggleSelection(property.id)}
                                   >
+                                    <Avatar className="h-10 w-10 flex-shrink-0">
+                                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                                        {property.owner_name?.charAt(0) || property.address.charAt(0) || 'P'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <p className="font-medium truncate group-hover:text-primary transition-colors">
+                                          {property.address}
+                                        </p>
+                                        <Badge
+                                          variant={property.approval_status === 'approved' ? 'default' : 'secondary'}
+                                          className="text-xs flex-shrink-0"
+                                        >
+                                          {property.approval_status}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span className="flex items-center gap-1 cursor-help">
+                                              <Phone className="w-3 h-3" />
+                                              {phones.length}
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>{phones.length} números de telefone disponíveis</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <span className="flex items-center gap-1 cursor-help">
+                                              <Mail className="w-3 h-3" />
+                                              {emails.length}
+                                            </span>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>{emails.length} endereços de email disponíveis</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                        {property.cash_offer_amount && (
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <span className="flex items-center gap-1 cursor-help">
+                                                <DollarSign className="w-3 h-3" />
+                                                {property.cash_offer_amount.toLocaleString()}
+                                              </span>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Oferta de cash: ${property.cash_offer_amount.toLocaleString()}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        )}
+                                      </div>
+                                    </div>
                                     <Checkbox
                                       checked={selectedIds.includes(property.id)}
                                       onChange={() => {}}
+                                      className="flex-shrink-0"
                                     />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium truncate">
-                                        {property.address}
-                                      </div>
+                                  </div>
+                                );
+                              })}
                                       <div className="text-sm text-muted-foreground">
                                         {property.city}, {property.state}
                                       </div>
@@ -1040,8 +1215,40 @@ export const CampaignManager = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Message Content Preview</CardTitle>
-                    <CardDescription>Preview of actual messages that will be sent to recipients</CardDescription>
+                    <CardTitle className="text-lg flex items-center justify-between">
+                      <span>📧 Message Content Preview</span>
+                      {selectedProps.length > 1 && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={prevPreview}
+                            disabled={previewIndex === 0}
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </Button>
+                          <span className="text-sm text-muted-foreground min-w-[60px] text-center">
+                            {previewIndex + 1} / {selectedProps.length}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={nextPreview}
+                            disabled={previewIndex === selectedProps.length - 1}
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </CardTitle>
+                    <CardDescription>
+                      Preview of actual messages that will be sent to recipients
+                      {selectedProps.length > 0 && (
+                        <span className="block text-sm font-medium text-foreground mt-1">
+                          Previewing: {selectedProps[previewIndex]?.address || 'N/A'}
+                        </span>
+                      )}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {selectedProps.length > 0 && selectedTemplate ? (
@@ -1144,10 +1351,29 @@ export const CampaignManager = () => {
                         ) : (
                           <>
                             <Send className="w-4 h-4 mr-2" />
-                            Send Campaign
+                            Send Campaign ({selectedIds.length} properties)
                           </>
                         )}
                       </Button>
+
+                      {/* Progress Bar */}
+                      {sending && (
+                        <div className="space-y-3 mt-6">
+                          <div className="flex justify-between text-sm">
+                            <span>Enviando campanha...</span>
+                            <span>{progressStats.completed}/{progressStats.total} ({Math.round((progressStats.completed/progressStats.total)*100) || 0}%)</span>
+                          </div>
+                          <Progress
+                            value={(progressStats.completed/progressStats.total)*100 || 0}
+                            className="h-3"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>✅ {progressStats.successCount} sucesso</span>
+                            <span>❌ {progressStats.failCount} falhas</span>
+                            <span>⏱️ {progressStats.estimatedTimeRemaining}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

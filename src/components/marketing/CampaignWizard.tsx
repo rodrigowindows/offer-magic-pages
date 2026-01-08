@@ -314,46 +314,113 @@ export const CampaignWizard = () => {
     switch (currentStep) {
       case 'template':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Choose Your Campaign Template</h2>
-              <p className="text-muted-foreground">Select a campaign type that fits your goals</p>
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 mb-4">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Choose Your Campaign Template
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Select a campaign type that fits your goals and target audience
+              </p>
+            </div>
+
+            {/* Quick Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <MetricCard
+                title="Available Templates"
+                value={CAMPAIGN_TEMPLATES.length}
+                icon={<Star className="h-5 w-5" />}
+                iconBgColor="bg-yellow-100"
+                iconColor="text-yellow-600"
+                description="Ready-to-use campaigns"
+              />
+              <MetricCard
+                title="Success Rate Range"
+                value="5-40%"
+                icon={<TrendingUp className="h-5 w-5" />}
+                iconBgColor="bg-green-100"
+                iconColor="text-green-600"
+                description="Average conversion rates"
+              />
+              <MetricCard
+                title="Cost Efficiency"
+                value="$0.10-2.50"
+                icon={<Zap className="h-5 w-5" />}
+                iconBgColor="bg-blue-100"
+                iconColor="text-blue-600"
+                description="Per contact cost range"
+              />
             </div>
 
             <Tabs defaultValue="quick" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="quick">⚡ Quick Start</TabsTrigger>
-                <TabsTrigger value="advanced">🎯 Advanced</TabsTrigger>
-                <TabsTrigger value="automated">🤖 Automated</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-3 h-12">
+                <TabsTrigger value="quick" className="flex items-center gap-2 text-sm font-medium">
+                  <Zap className="h-4 w-4" />
+                  ⚡ Quick Start
+                </TabsTrigger>
+                <TabsTrigger value="advanced" className="flex items-center gap-2 text-sm font-medium">
+                  <Target className="h-4 w-4" />
+                  🎯 Advanced
+                </TabsTrigger>
+                <TabsTrigger value="automated" className="flex items-center gap-2 text-sm font-medium">
+                  <Crown className="h-4 w-4" />
+                  🤖 Automated
+                </TabsTrigger>
               </TabsList>
 
               {(['quick', 'advanced', 'automated'] as const).map(category => (
-                <TabsContent key={category} value={category} className="mt-6">
-                  <div className="grid gap-4 md:grid-cols-2">
+                <TabsContent key={category} value={category} className="mt-8">
+                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {CAMPAIGN_TEMPLATES
                       .filter(template => template.category === category)
                       .map(template => (
                         <Card
                           key={template.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
-                            selectedTemplate?.id === template.id ? 'ring-2 ring-primary' : ''
+                          className={`group cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 bg-gradient-to-br from-white to-gray-50 ${
+                            selectedTemplate?.id === template.id
+                              ? 'ring-2 ring-blue-500 shadow-2xl shadow-blue-500/20 bg-gradient-to-br from-blue-50 to-purple-50'
+                              : 'hover:border-gray-200'
                           }`}
                           onClick={() => handleTemplateSelect(template)}
                         >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="text-2xl">{template.icon}</div>
+                          <CardHeader className="pb-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className={`p-3 rounded-xl transition-all duration-300 ${
+                                selectedTemplate?.id === template.id
+                                  ? 'bg-blue-100 scale-110'
+                                  : 'bg-gray-100 group-hover:bg-blue-50'
+                              }`}>
+                                <span className="text-2xl">{template.icon}</span>
+                              </div>
                               {selectedTemplate?.id === template.id && (
-                                <CheckCircle className="h-5 w-5 text-primary" />
+                                <div className="flex items-center gap-1 text-blue-600 font-medium text-sm">
+                                  <CheckCircle className="h-4 w-4" />
+                                  Selected
+                                </div>
                               )}
                             </div>
-                            <CardTitle className="text-lg">{template.name}</CardTitle>
-                            <CardDescription>{template.description}</CardDescription>
+                            <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                              {template.name}
+                            </CardTitle>
+                            <CardDescription className="text-gray-600 leading-relaxed">
+                              {template.description}
+                            </CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <div className="flex flex-wrap gap-2 mb-3">
+                          <CardContent className="space-y-4">
+                            <div className="flex flex-wrap gap-2">
                               {template.channels.map(channel => (
-                                <Badge key={channel} variant="secondary" className="text-xs">
+                                <Badge
+                                  key={channel}
+                                  variant="secondary"
+                                  className={`text-xs font-medium px-2 py-1 transition-all ${
+                                    selectedTemplate?.id === template.id
+                                      ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                  }`}
+                                >
                                   {channel === 'sms' && <MessageSquare className="h-3 w-3 mr-1" />}
                                   {channel === 'email' && <Mail className="h-3 w-3 mr-1" />}
                                   {channel === 'call' && <Phone className="h-3 w-3 mr-1" />}
@@ -361,10 +428,26 @@ export const CampaignWizard = () => {
                                 </Badge>
                               ))}
                             </div>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                              <span>Cost: {template.estimatedCost}</span>
-                              <span>Success: {template.successRate}</span>
+
+                            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                              <div className="text-center">
+                                <div className="text-sm font-semibold text-green-600">{template.estimatedCost}</div>
+                                <div className="text-xs text-gray-500">Est. Cost</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-sm font-semibold text-blue-600">{template.successRate}</div>
+                                <div className="text-xs text-gray-500">Success Rate</div>
+                              </div>
                             </div>
+
+                            {selectedTemplate?.id === template.id && (
+                              <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                                  <Heart className="h-4 w-4" />
+                                  Perfect for your campaign goals!
+                                </div>
+                              </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
@@ -377,178 +460,283 @@ export const CampaignWizard = () => {
 
       case 'properties':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Select Target Properties</h2>
-              <p className="text-muted-foreground">
-                Choose which properties to include in your campaign
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-blue-600 mb-4">
+                <Target className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                Select Target Properties
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Choose which properties to include in your campaign from the available database
               </p>
             </div>
 
-            <div className="flex items-center justify-between">
+            {/* Enhanced Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <MetricCard
+                title="Available Properties"
+                value={availableProperties.length}
+                icon={<Home className="h-5 w-5" />}
+                iconBgColor="bg-blue-100"
+                iconColor="text-blue-600"
+                description="Matching your criteria"
+              />
+              <MetricCard
+                title="Selected"
+                value={selectedProperties.length}
+                icon={<CheckCircle className="h-5 w-5" />}
+                iconBgColor="bg-green-100"
+                iconColor="text-green-600"
+                description="Ready for campaign"
+              />
+              <MetricCard
+                title="With Preferred Contacts"
+                value={availableProperties.filter(p =>
+                  (p.preferred_phones?.length || 0) > 0 || (p.preferred_emails?.length || 0) > 0
+                ).length}
+                icon={<Star className="h-5 w-5" />}
+                iconBgColor="bg-yellow-100"
+                iconColor="text-yellow-600"
+                description="High-quality contacts"
+              />
+              <MetricCard
+                title="Approved Properties"
+                value={availableProperties.filter(p => p.approval_status === 'approved').length}
+                icon={<Shield className="h-5 w-5" />}
+                iconBgColor="bg-purple-100"
+                iconColor="text-purple-600"
+                description="Ready to contact"
+              />
+            </div>
+
+            {/* Enhanced Controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border">
               <div className="flex items-center gap-4">
-                <Badge variant="outline">
+                <Badge variant="outline" className="px-3 py-1 text-sm font-medium">
                   {availableProperties.length} available
                 </Badge>
-                <Badge variant="default">
+                <Badge variant="default" className="px-3 py-1 text-sm font-medium bg-blue-600">
                   {selectedProperties.length} selected
                 </Badge>
+                {selectedProperties.length > 0 && (
+                  <Badge variant="secondary" className="px-3 py-1 text-sm font-medium bg-green-100 text-green-700">
+                    {Math.round((selectedProperties.length / availableProperties.length) * 100)}% coverage
+                  </Badge>
+                )}
               </div>
+
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-blue-600 transition-colors">
                   <input
                     type="checkbox"
                     checked={showOnlyWithPreferredContacts}
                     onChange={(e) => setShowOnlyWithPreferredContacts(e.target.checked)}
-                    className="rounded"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  Only with preferred contacts
+                  <Star className="h-4 w-4 text-yellow-500" />
+                  Only preferred contacts
                 </label>
+
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedProperties(availableProperties)}
+                  className="hover:bg-blue-50 hover:border-blue-300"
                 >
+                  <CheckCircle className="h-4 w-4 mr-2" />
                   Select All
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedProperties([])}
+                  className="hover:bg-red-50 hover:border-red-300"
+                >
+                  Clear All
                 </Button>
               </div>
             </div>
 
-            <ScrollArea className="h-96 border rounded-lg">
-              <div className="p-4 space-y-3">
-                {isLoading ? (
-                  <div className="text-center py-8">Loading properties...</div>
-                ) : availableProperties.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No properties match the selected template criteria
-                  </div>
-                ) : (
-                  availableProperties.map(property => (
-                    <Card
-                      key={property.id}
-                      className={`cursor-pointer transition-all ${
-                        selectedProperties.find(p => p.id === property.id)
-                          ? 'ring-2 ring-primary bg-primary/5'
-                          : 'hover:shadow-sm'
-                      }`}
-                      onClick={() => handlePropertyToggle(property)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <h4 className="font-medium">{property.address}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {property.city}, {property.state} {property.zip_code}
-                            </p>
-                            {property.owner_name && (
-                              <p className="text-sm">Owner: {property.owner_name}</p>
-                            )}
-                            
-                            {/* Contact Information */}
-                            <div className="mt-2 space-y-1">
-                              {/* Primary Phone */}
-                              {property.owner_phone && (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Phone className="h-3 w-3" />
-                                  <span>{property.owner_phone}</span>
-                                </div>
-                              )}
-                              
-                              {/* Primary Email */}
-                              {property.owner_email && (
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Mail className="h-3 w-3" />
-                                  <span>{property.owner_email}</span>
-                                </div>
-                              )}
+            {/* Enhanced Property Grid */}
+            <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+              <ScrollArea className="h-[600px]">
+                <div className="p-6 space-y-4">
+                  {isLoading ? (
+                    <div className="text-center py-12">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-4">
+                        <Loader2 className="h-6 w-6 text-blue-600 animate-spin" />
+                      </div>
+                      <div className="text-lg font-medium text-gray-900">Loading properties...</div>
+                      <div className="text-sm text-gray-600 mt-1">Searching your database</div>
+                    </div>
+                  ) : availableProperties.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 mb-4">
+                        <Target className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <div className="text-lg font-medium text-gray-900">No properties found</div>
+                      <div className="text-sm text-gray-600 mt-1">Try adjusting your template criteria</div>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {availableProperties.map(property => {
+                        const isSelected = selectedProperties.some(p => p.id === property.id);
+                        const totalContacts = (
+                          (property.preferred_phones?.length || 0) +
+                          (property.preferred_emails?.length || 0) +
+                          (property.owner_phone ? 1 : 0) +
+                          (property.owner_email ? 1 : 0) +
+                          (property.skip_tracing_data?.phones?.length || 0) +
+                          (property.skip_tracing_data?.emails?.length || 0)
+                        );
 
-                              {/* Preferred Phones */}
-                              {property.preferred_phones && property.preferred_phones.length > 0 && (
-                                <div className="space-y-1">
-                                  {property.preferred_phones.slice(0, 2).map((phone, idx) => (
-                                    <div key={idx} className="flex items-center gap-1 text-xs text-blue-600">
-                                      <Phone className="h-3 w-3" />
-                                      <span className="font-medium">{phone} (preferred)</span>
-                                    </div>
-                                  ))}
-                                  {property.preferred_phones.length > 2 && (
-                                    <div className="text-xs text-blue-600">
-                                      +{property.preferred_phones.length - 2} mais telefones preferidos
-                                    </div>
+                        return (
+                          <Card
+                            key={property.id}
+                            className={`group cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 border-0 bg-gradient-to-br from-white to-gray-50 ${
+                              isSelected
+                                ? 'ring-2 ring-blue-500 shadow-2xl shadow-blue-500/20 bg-gradient-to-br from-blue-50 to-green-50'
+                                : 'hover:border-gray-200'
+                            }`}
+                            onClick={() => handlePropertyToggle(property)}
+                          >
+                            <CardContent className="p-5">
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Home className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                    <h4 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                                      {property.address}
+                                    </h4>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-2">
+                                    {property.city}, {property.state} {property.zip_code}
+                                  </p>
+                                  {property.owner_name && (
+                                    <p className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      {property.owner_name}
+                                    </p>
                                   )}
                                 </div>
-                              )}
 
-                              {/* Preferred Emails */}
-                              {property.preferred_emails && property.preferred_emails.length > 0 && (
-                                <div className="space-y-1">
-                                  {property.preferred_emails.slice(0, 2).map((email, idx) => (
-                                    <div key={idx} className="flex items-center gap-1 text-xs text-green-600">
-                                      <Mail className="h-3 w-3" />
-                                      <span className="font-medium">{email} (preferred)</span>
-                                    </div>
-                                  ))}
-                                  {property.preferred_emails.length > 2 && (
-                                    <div className="text-xs text-green-600">
-                                      +{property.preferred_emails.length - 2} mais emails preferidos
-                                    </div>
+                                <div className="flex items-center gap-2 ml-4">
+                                  {property.approval_status && (
+                                    <Badge
+                                      variant={property.approval_status === 'approved' ? 'default' : 'secondary'}
+                                      className={`text-xs ${
+                                        property.approval_status === 'approved'
+                                          ? 'bg-green-100 text-green-700 border-green-200'
+                                          : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                                      }`}
+                                    >
+                                      {property.approval_status === 'approved' && <Shield className="h-3 w-3 mr-1" />}
+                                      {property.approval_status}
+                                    </Badge>
                                   )}
+
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    isSelected
+                                      ? 'bg-blue-600 border-blue-600'
+                                      : 'border-gray-300 group-hover:border-blue-400'
+                                  }`}>
+                                    {isSelected && <CheckCircle className="h-3 w-3 text-white" />}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Contact Summary */}
+                              <div className="grid grid-cols-3 gap-3 mb-4">
+                                <div className="text-center p-2 bg-blue-50 rounded-lg">
+                                  <div className="text-lg font-bold text-blue-600">
+                                    {property.preferred_phones?.length || 0}
+                                  </div>
+                                  <div className="text-xs text-blue-700 font-medium">Preferred Phones</div>
+                                </div>
+                                <div className="text-center p-2 bg-green-50 rounded-lg">
+                                  <div className="text-lg font-bold text-green-600">
+                                    {property.preferred_emails?.length || 0}
+                                  </div>
+                                  <div className="text-xs text-green-700 font-medium">Preferred Emails</div>
+                                </div>
+                                <div className="text-center p-2 bg-purple-50 rounded-lg">
+                                  <div className="text-lg font-bold text-purple-600">{totalContacts}</div>
+                                  <div className="text-xs text-purple-700 font-medium">Total Contacts</div>
+                                </div>
+                              </div>
+
+                              {/* Contact Details */}
+                              <div className="space-y-2">
+                                {/* Primary Contacts */}
+                                {(property.owner_phone || property.owner_email) && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {property.owner_phone && (
+                                      <Badge variant="outline" className="text-xs bg-gray-50">
+                                        <Phone className="h-3 w-3 mr-1" />
+                                        Primary Phone
+                                      </Badge>
+                                    )}
+                                    {property.owner_email && (
+                                      <Badge variant="outline" className="text-xs bg-gray-50">
+                                        <Mail className="h-3 w-3 mr-1" />
+                                        Primary Email
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Preferred Contacts Preview */}
+                                {property.preferred_phones && property.preferred_phones.length > 0 && (
+                                  <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                    <Star className="h-3 w-3" />
+                                    <span className="font-medium">
+                                      {property.preferred_phones.length} preferred phone{property.preferred_phones.length > 1 ? 's' : ''}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {property.preferred_emails && property.preferred_emails.length > 0 && (
+                                  <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                    <Star className="h-3 w-3" />
+                                    <span className="font-medium">
+                                      {property.preferred_emails.length} preferred email{property.preferred_emails.length > 1 ? 's' : ''}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Skip Tracing Preview */}
+                                {((property.skip_tracing_data?.phones?.length || 0) > 0 ||
+                                  (property.skip_tracing_data?.emails?.length || 0) > 0) && (
+                                  <div className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                                    <Activity className="h-3 w-3" />
+                                    <span className="font-medium">
+                                      Skip tracing data available
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Selection Indicator */}
+                              {isSelected && (
+                                <div className="mt-4 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                                  <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                                    <CheckCircle className="h-4 w-4" />
+                                    Selected for campaign
+                                  </div>
                                 </div>
                               )}
-                              
-                              {/* Skip Tracing Phones */}
-                              {property.skip_tracing_data?.phones && property.skip_tracing_data.phones.length > 0 && (
-                                <div className="space-y-1">
-                                  {property.skip_tracing_data.phones.slice(0, 2).map((phone, idx) => (
-                                    <div key={idx} className="flex items-center gap-1 text-xs text-muted-foreground">
-                                      <Phone className="h-3 w-3" />
-                                      <span>{phone.number} ({phone.type})</span>
-                                    </div>
-                                  ))}
-                                  {property.skip_tracing_data.phones.length > 2 && (
-                                    <div className="text-xs text-muted-foreground">
-                                      +{property.skip_tracing_data.phones.length - 2} mais telefones
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              
-                              {/* Skip Tracing Emails */}
-                              {property.skip_tracing_data?.emails && property.skip_tracing_data.emails.length > 0 && (
-                                <div className="space-y-1">
-                                  {property.skip_tracing_data.emails.slice(0, 2).map((email, idx) => (
-                                    <div key={idx} className="flex items-center gap-1 text-xs text-muted-foreground">
-                                      <Mail className="h-3 w-3" />
-                                      <span>{email}</span>
-                                    </div>
-                                  ))}
-                                  {property.skip_tracing_data.emails.length > 2 && (
-                                    <div className="text-xs text-muted-foreground">
-                                      +{property.skip_tracing_data.emails.length - 2} mais emails
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {property.approval_status && (
-                              <Badge variant={property.approval_status === 'approved' ? 'default' : 'secondary'}>
-                                {property.approval_status}
-                              </Badge>
-                            )}
-                            <Checkbox
-                              checked={selectedProperties.some(p => p.id === property.id)}
-                              onChange={() => handlePropertyToggle(property)}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
         );
 
@@ -644,193 +832,331 @@ export const CampaignWizard = () => {
 
       case 'preview':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Campaign Preview</h2>
-              <p className="text-muted-foreground">Review your campaign before sending</p>
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 mb-4">
+                <Eye className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Campaign Preview
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Review your campaign configuration and message content before launching
+              </p>
             </div>
 
+            {/* Enhanced Campaign Overview */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <MetricCard
+                title="Target Properties"
+                value={selectedProperties.length}
+                icon={<Target className="h-5 w-5" />}
+                iconBgColor="bg-blue-100"
+                iconColor="text-blue-600"
+                description="Properties selected"
+              />
+              <MetricCard
+                title="Total Contacts"
+                value={selectedProperties.reduce((total, p) => {
+                  let count = p.owner_phone ? 1 : 0;
+                  if (p.preferred_phones) count += p.preferred_phones.length;
+                  if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
+                  if (p.owner_email) count += 1;
+                  if (p.preferred_emails) count += p.preferred_emails.length;
+                  if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
+                  return total + count;
+                }, 0)}
+                icon={<Users className="h-5 w-5" />}
+                iconBgColor="bg-green-100"
+                iconColor="text-green-600"
+                description="Available contacts"
+              />
+              <MetricCard
+                title="Communication Channels"
+                value={selectedTemplate?.channels.length || 0}
+                icon={<MessageSquare className="h-5 w-5" />}
+                iconBgColor="bg-purple-100"
+                iconColor="text-purple-600"
+                description="SMS, Email, Call"
+              />
+              <MetricCard
+                title="Expected Success"
+                value={selectedTemplate?.successRate || 'N/A'}
+                icon={<TrendingUp className="h-5 w-5" />}
+                iconBgColor="bg-yellow-100"
+                iconColor="text-yellow-600"
+                description="Conversion rate"
+              />
+            </div>
+
+            {/* Detailed Contact Breakdown */}
             <div className="grid gap-6 md:grid-cols-2">
-              <Card>
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5" />
-                    Target Audience
+                  <CardTitle className="flex items-center gap-2 text-blue-700">
+                    <Phone className="h-5 w-5" />
+                    Phone Contact Breakdown
                   </CardTitle>
+                  <CardDescription>Distribution of phone numbers across contact sources</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Total Properties:</span>
-                      <span className="font-semibold">{selectedProperties.length}</span>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <span className="font-medium">Preferred Phones</span>
+                      </div>
+                      <Badge className="bg-blue-100 text-blue-700">
+                        {selectedProperties.reduce((total, p) => total + (p.preferred_phones?.length || 0), 0)}
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Approved:</span>
-                      <span className="font-semibold text-green-600">
-                        {selectedProperties.filter(p => p.approval_status === 'approved').length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Preferred Phones:</span>
-                      <span className="font-semibold text-blue-600">
-                        {selectedProperties.filter(p => p.preferred_phones && p.preferred_phones.length > 0).length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Primary Phones:</span>
-                      <span className="font-semibold text-blue-600">
+
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium">Primary Phones</span>
+                      </div>
+                      <Badge className="bg-gray-100 text-gray-700">
                         {selectedProperties.filter(p => p.owner_phone).length}
-                      </span>
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Skip Tracing Phones:</span>
-                      <span className="font-semibold text-blue-600">
-                        {selectedProperties.filter(p => p.skip_tracing_data?.phones && p.skip_tracing_data.phones.length > 0).length}
-                      </span>
+
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-purple-500" />
+                        <span className="font-medium">Skip Tracing Phones</span>
+                      </div>
+                      <Badge className="bg-purple-100 text-purple-700">
+                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.phones?.length || 0), 0)}
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Total Phone Contacts:</span>
-                      <span className="font-semibold text-blue-600">
+
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg border-2 border-blue-300">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-blue-600" />
+                        <span className="font-bold text-blue-700">Total Phone Contacts</span>
+                      </div>
+                      <Badge className="bg-blue-600 text-white font-bold">
                         {selectedProperties.reduce((total, p) => {
                           let count = p.owner_phone ? 1 : 0;
                           if (p.preferred_phones) count += p.preferred_phones.length;
                           if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
                           return total + count;
                         }, 0)}
-                      </span>
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Preferred Emails:</span>
-                      <span className="font-semibold text-purple-600">
-                        {selectedProperties.filter(p => p.preferred_emails && p.preferred_emails.length > 0).length}
-                      </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-green-700">
+                    <Mail className="h-5 w-5" />
+                    Email Contact Breakdown
+                  </CardTitle>
+                  <CardDescription>Distribution of email addresses across contact sources</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4 text-yellow-500" />
+                        <span className="font-medium">Preferred Emails</span>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">
+                        {selectedProperties.reduce((total, p) => total + (p.preferred_emails?.length || 0), 0)}
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Primary Emails:</span>
-                      <span className="font-semibold text-purple-600">
+
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium">Primary Emails</span>
+                      </div>
+                      <Badge className="bg-gray-100 text-gray-700">
                         {selectedProperties.filter(p => p.owner_email).length}
-                      </span>
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Skip Tracing Emails:</span>
-                      <span className="font-semibold text-purple-600">
-                        {selectedProperties.filter(p => p.skip_tracing_data?.emails && p.skip_tracing_data.emails.length > 0).length}
-                      </span>
+
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-purple-500" />
+                        <span className="font-medium">Skip Tracing Emails</span>
+                      </div>
+                      <Badge className="bg-purple-100 text-purple-700">
+                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.emails?.length || 0), 0)}
+                      </Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Total Email Contacts:</span>
-                      <span className="font-semibold text-purple-600">
+
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-100 to-green-200 rounded-lg border-2 border-green-300">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-green-600" />
+                        <span className="font-bold text-green-700">Total Email Contacts</span>
+                      </div>
+                      <Badge className="bg-green-600 text-white font-bold">
                         {selectedProperties.reduce((total, p) => {
                           let count = p.owner_email ? 1 : 0;
                           if (p.preferred_emails) count += p.preferred_emails.length;
                           if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
                           return total + count;
                         }, 0)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Campaign Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Template:</span>
-                      <span className="font-semibold">{selectedTemplate?.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Channels:</span>
-                      <span className="font-semibold">{selectedTemplate?.channels.join(', ')}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Expected Success:</span>
-                      <span className="font-semibold text-green-600">{selectedTemplate?.successRate}</span>
+                      </Badge>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Message Content Preview */}
-            <Card>
+            {/* Campaign Configuration Summary */}
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-purple-700">
+                  <BarChart3 className="h-5 w-5" />
+                  Campaign Configuration Summary
+                </CardTitle>
+                <CardDescription>Final overview of your campaign settings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="text-center p-4 bg-white rounded-xl border shadow-sm">
+                    <div className="text-2xl font-bold text-purple-600 mb-1">{selectedTemplate?.name}</div>
+                    <div className="text-sm text-gray-600 font-medium">Campaign Template</div>
+                    <div className="text-xs text-gray-500 mt-1">{selectedTemplate?.description}</div>
+                  </div>
+
+                  <div className="text-center p-4 bg-white rounded-xl border shadow-sm">
+                    <div className="text-2xl font-bold text-blue-600 mb-1">{selectedTemplate?.channels.join(', ')}</div>
+                    <div className="text-sm text-gray-600 font-medium">Communication Channels</div>
+                    <div className="text-xs text-gray-500 mt-1">Multi-channel approach</div>
+                  </div>
+
+                  <div className="text-center p-4 bg-white rounded-xl border shadow-sm">
+                    <div className="text-2xl font-bold text-green-600 mb-1">{selectedTemplate?.successRate}</div>
+                    <div className="text-sm text-gray-600 font-medium">Expected Success Rate</div>
+                    <div className="text-xs text-gray-500 mt-1">Based on historical data</div>
+                  </div>
+
+                  <div className="text-center p-4 bg-white rounded-xl border shadow-sm">
+                    <div className="text-2xl font-bold text-orange-600 mb-1">{selectedTemplate?.estimatedCost}</div>
+                    <div className="text-sm text-gray-600 font-medium">Estimated Cost Range</div>
+                    <div className="text-xs text-gray-500 mt-1">Per contact pricing</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Enhanced Message Content Preview */}
+            <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
+                  <Eye className="h-5 w-5 text-purple-600" />
                   Message Content Preview
                 </CardTitle>
-                <CardDescription>
-                  Preview of actual messages that will be sent to recipients
+                <CardDescription className="text-base">
+                  Live preview of messages that will be sent to your contacts
                   {selectedProperties.length === 0 && " (showing sample data)"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {selectedTemplate?.channels.map((channel) => {
                     const template = getDefaultTemplateForChannel(channel);
                     if (!template) {
                       return (
-                        <div key={channel} className="border rounded-lg p-4 border-dashed border-muted-foreground/30">
-                          <div className="flex items-center gap-2 mb-2">
-                            {channel === 'sms' && <MessageSquare className="h-4 w-4 text-muted-foreground" />}
-                            {channel === 'email' && <Mail className="h-4 w-4 text-muted-foreground" />}
-                            {channel === 'call' && <Phone className="h-4 w-4 text-muted-foreground" />}
-                            <span className="font-medium capitalize text-muted-foreground">{channel} Message</span>
-                            <Badge variant="outline" className="text-xs text-muted-foreground">
-                              No template available
+                        <div key={channel} className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50">
+                          <div className="flex items-center gap-3 mb-3">
+                            {channel === 'sms' && <MessageSquare className="h-5 w-5 text-gray-400" />}
+                            {channel === 'email' && <Mail className="h-5 w-5 text-gray-400" />}
+                            {channel === 'call' && <Phone className="h-5 w-5 text-gray-400" />}
+                            <span className="font-semibold text-gray-600 capitalize">{channel} Message</span>
+                            <Badge variant="outline" className="text-gray-500 border-gray-300">
+                              Template not configured
                             </Badge>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            Template for {channel} channel is not configured yet.
+                          <div className="text-sm text-gray-500">
+                            No template available for {channel} channel. Please configure templates first.
                           </div>
                         </div>
                       );
                     }
 
                     return (
-                      <div key={channel} className="border rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          {channel === 'sms' && <MessageSquare className="h-4 w-4 text-blue-500" />}
-                          {channel === 'email' && <Mail className="h-4 w-4 text-green-500" />}
-                          {channel === 'call' && <Phone className="h-4 w-4 text-purple-500" />}
-                          <span className="font-medium capitalize">{channel} Message</span>
-                          <Badge variant="outline" className="text-xs">
+                      <div key={channel} className="border rounded-xl p-6 bg-gradient-to-br from-white to-gray-50 shadow-sm">
+                        <div className="flex items-center gap-3 mb-4">
+                          {channel === 'sms' && <MessageSquare className="h-5 w-5 text-blue-500" />}
+                          {channel === 'email' && <Mail className="h-5 w-5 text-green-500" />}
+                          {channel === 'call' && <Phone className="h-5 w-5 text-purple-500" />}
+                          <span className="font-semibold text-lg capitalize">{channel} Message</span>
+                          <Badge variant="outline" className="bg-white border-gray-300">
                             {template.name}
                           </Badge>
+                          <div className="ml-auto flex items-center gap-2">
+                            <Badge className={`${
+                              channel === 'sms' ? 'bg-blue-100 text-blue-700' :
+                              channel === 'email' ? 'bg-green-100 text-green-700' :
+                              'bg-purple-100 text-purple-700'
+                            }`}>
+                              {channel.toUpperCase()}
+                            </Badge>
+                          </div>
                         </div>
 
                         {channel === 'email' && template.subject && (
-                          <div className="mb-2">
-                            <span className="text-sm font-medium text-muted-foreground">Subject: </span>
-                            <span className="text-sm">{renderTemplateContent(template.subject, selectedProperties[0] || {})}</span>
+                          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Mail className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-semibold text-blue-700">Email Subject:</span>
+                            </div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {renderTemplateContent(template.subject, selectedProperties[0] || {})}
+                            </div>
                           </div>
                         )}
 
-                        <div className="bg-muted/50 p-3 rounded text-sm">
-                          {channel === 'email' && template.body.includes('<!DOCTYPE') ? (
+                        <div className="bg-white p-4 rounded-lg border shadow-sm">
+                          {channel === 'email' && (template.body.includes('<!DOCTYPE') || template.body.includes('<html')) ? (
                             <div
                               dangerouslySetInnerHTML={{
                                 __html: renderTemplateContent(template.body, selectedProperties[0] || {})
                               }}
-                              className="max-h-32 overflow-y-auto"
+                              className="max-h-64 overflow-y-auto text-sm border rounded bg-gray-50 p-3"
+                              style={{ zoom: '0.8' }}
                             />
                           ) : (
-                            <div className="whitespace-pre-wrap">
+                            <div className="whitespace-pre-wrap text-sm leading-relaxed">
                               {renderTemplateContent(template.body, selectedProperties[0] || {})}
                             </div>
                           )}
                         </div>
 
-                        <div className="mt-2 text-xs text-muted-foreground">
-                          {channel === 'sms' && `~${renderTemplateContent(template.body, selectedProperties[0] || {}).length} characters`}
-                          {channel === 'email' && 'HTML email with professional formatting'}
-                          {channel === 'call' && 'Voicemail message for unanswered calls'}
+                        <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                          <div className="flex items-center gap-4">
+                            {channel === 'sms' && (
+                              <span className="flex items-center gap-1">
+                                <MessageSquare className="h-4 w-4" />
+                                ~{renderTemplateContent(template.body, selectedProperties[0] || {}).length} characters
+                              </span>
+                            )}
+                            {channel === 'email' && (
+                              <span className="flex items-center gap-1">
+                                <Mail className="h-4 w-4" />
+                                HTML email with professional formatting
+                              </span>
+                            )}
+                            {channel === 'call' && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="h-4 w-4" />
+                                Voicemail message for unanswered calls
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {selectedProperties.length > 0 ? 'Personalized' : 'Sample Data'}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
                     );
@@ -839,11 +1165,23 @@ export const CampaignWizard = () => {
               </CardContent>
             </Card>
 
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                This campaign will be sent to {selectedProperties.length} properties using {selectedTemplate?.channels.length} communication channels.
-                Make sure your marketing API is configured before proceeding.
+            {/* Enhanced Launch Alert */}
+            <Alert className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <Rocket className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-base">
+                <div className="space-y-2">
+                  <div className="font-semibold text-blue-900">
+                    Campaign Ready for Launch! 🚀
+                  </div>
+                  <div className="text-blue-800">
+                    This campaign will reach <strong>{selectedProperties.length} properties</strong> using{' '}
+                    <strong>{selectedTemplate?.channels.length} communication channels</strong>.
+                    Expected success rate: <strong className="text-green-600">{selectedTemplate?.successRate}</strong>.
+                  </div>
+                  <div className="text-sm text-blue-700 mt-2">
+                    💡 Tip: Make sure your marketing API is configured and you have sufficient credits before proceeding.
+                  </div>
+                </div>
               </AlertDescription>
             </Alert>
           </div>
@@ -851,45 +1189,187 @@ export const CampaignWizard = () => {
 
       case 'send':
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Ready to Launch! 🚀</h2>
-              <p className="text-muted-foreground">Your campaign is configured and ready to send</p>
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 mb-6 animate-pulse">
+                <Rocket className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Ready to Launch! 🚀
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Your campaign is fully configured and ready to reach your target audience
+              </p>
             </div>
 
-            <Card className="border-green-200 bg-green-50">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-4">
-                  <div className="text-6xl">🎯</div>
+            {/* Campaign Success Prediction */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 to-emerald-50 text-center">
+                <CardContent className="p-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-4">
+                    <TrendingUp className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="text-3xl font-bold text-green-600 mb-2">{selectedTemplate?.successRate}</div>
+                  <div className="text-sm font-medium text-green-700">Expected Success Rate</div>
+                  <div className="text-xs text-green-600 mt-1">Based on campaign type</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 text-center">
+                <CardContent className="p-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-4">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    {selectedProperties.reduce((total, p) => {
+                      let count = p.owner_phone ? 1 : 0;
+                      if (p.preferred_phones) count += p.preferred_phones.length;
+                      if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
+                      if (p.owner_email) count += 1;
+                      if (p.preferred_emails) count += p.preferred_emails.length;
+                      if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
+                      return total + count;
+                    }, 0)}
+                  </div>
+                  <div className="text-sm font-medium text-blue-700">Total Contacts</div>
+                  <div className="text-xs text-blue-600 mt-1">Across all channels</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-50 to-pink-50 text-center">
+                <CardContent className="p-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 mb-4">
+                    <Zap className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="text-3xl font-bold text-purple-600 mb-2">{selectedTemplate?.estimatedCost}</div>
+                  <div className="text-sm font-medium text-purple-700">Estimated Cost</div>
+                  <div className="text-xs text-purple-600 mt-1">Per contact pricing</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Campaign Summary Card */}
+            <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 shadow-2xl">
+              <CardContent className="p-8">
+                <div className="text-center space-y-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 mb-4">
+                    <Trophy className="h-8 w-8 text-white" />
+                  </div>
+
                   <div>
-                    <h3 className="text-xl font-semibold">Campaign Summary</h3>
-                    <p className="text-muted-foreground mt-2">
-                      {selectedTemplate?.name} targeting {selectedProperties.length} properties
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Campaign Summary</h3>
+                    <p className="text-gray-600 text-lg">
+                      <span className="font-semibold text-green-600">{selectedTemplate?.name}</span> targeting{' '}
+                      <span className="font-semibold text-blue-600">{selectedProperties.length} properties</span>
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4 mt-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">{selectedProperties.length}</div>
-                      <div className="text-sm text-muted-foreground">Properties</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <div className="bg-white p-6 rounded-xl border shadow-sm">
+                      <div className="text-3xl font-bold text-blue-600 mb-2">{selectedProperties.length}</div>
+                      <div className="text-sm font-medium text-gray-600 mb-1">Target Properties</div>
+                      <div className="text-xs text-gray-500">Properties selected for outreach</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">{selectedTemplate?.channels.length}</div>
-                      <div className="text-sm text-muted-foreground">Channels</div>
+
+                    <div className="bg-white p-6 rounded-xl border shadow-sm">
+                      <div className="text-3xl font-bold text-purple-600 mb-2">{selectedTemplate?.channels.length}</div>
+                      <div className="text-sm font-medium text-gray-600 mb-1">Communication Channels</div>
+                      <div className="text-xs text-gray-500">Multi-channel approach</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{selectedTemplate?.successRate}</div>
-                      <div className="text-sm text-muted-foreground">Success Rate</div>
+
+                    <div className="bg-white p-6 rounded-xl border shadow-sm">
+                      <div className="text-3xl font-bold text-green-600 mb-2">{selectedTemplate?.successRate}</div>
+                      <div className="text-sm font-medium text-gray-600 mb-1">Expected Success Rate</div>
+                      <div className="text-xs text-gray-500">Based on historical data</div>
+                    </div>
+                  </div>
+
+                  {/* Campaign Details */}
+                  <div className="bg-white p-6 rounded-xl border shadow-sm mt-6">
+                    <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-blue-600" />
+                      Campaign Details
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Template:</span>
+                        <span className="font-medium text-gray-900">{selectedTemplate?.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Channels:</span>
+                        <span className="font-medium text-gray-900">{selectedTemplate?.channels.join(', ')}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Approved Properties:</span>
+                        <span className="font-medium text-green-600">
+                          {selectedProperties.filter(p => p.approval_status === 'approved').length}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Contact Quality:</span>
+                        <span className="font-medium text-blue-600">
+                          {selectedProperties.filter(p =>
+                            (p.preferred_phones?.length || 0) > 0 || (p.preferred_emails?.length || 0) > 0
+                          ).length} high-quality
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription>
-                Campaign is ready to send. Click "Launch Campaign" to start reaching your target audience.
+            {/* Achievement Badges */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="border border-yellow-200 bg-gradient-to-r from-yellow-50 to-orange-50">
+                <CardContent className="p-4 text-center">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100 mb-3">
+                    <Star className="h-5 w-5 text-yellow-600" />
+                  </div>
+                  <div className="font-semibold text-yellow-800">Campaign Optimized</div>
+                  <div className="text-sm text-yellow-700">Using preferred contacts</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <CardContent className="p-4 text-center">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 mb-3">
+                    <Shield className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="font-semibold text-blue-800">Quality Assured</div>
+                  <div className="text-sm text-blue-700">Approved properties only</div>
+                </CardContent>
+              </Card>
+
+              <Card className="border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+                <CardContent className="p-4 text-center">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-100 mb-3">
+                    <Heart className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div className="font-semibold text-green-800">Personalized</div>
+                  <div className="text-sm text-green-700">Property-specific offers</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Final Launch Alert */}
+            <Alert className="border-2 border-green-300 bg-gradient-to-r from-green-50 to-emerald-50">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <AlertDescription className="text-base">
+                <div className="space-y-3">
+                  <div className="font-bold text-green-900 text-lg">
+                    🎯 Campaign Ready for Launch!
+                  </div>
+                  <div className="text-green-800">
+                    Everything looks perfect! Your campaign is configured with the best practices and ready to reach your target audience.
+                    Click "Launch Campaign" to start your outreach.
+                  </div>
+                  <div className="bg-white p-3 rounded-lg border border-green-200 mt-4">
+                    <div className="text-sm text-green-700">
+                      <strong>💡 Pro Tip:</strong> Monitor your campaign performance in the Analytics dashboard after launch to track opens, clicks, and conversions in real-time.
+                    </div>
+                  </div>
+                </div>
               </AlertDescription>
             </Alert>
           </div>
@@ -901,49 +1381,94 @@ export const CampaignWizard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Rocket className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Campaign Creator</h1>
-              <p className="text-muted-foreground">Create and launch marketing campaigns step by step</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* Enhanced Header */}
+        <div className="mb-12">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-lg opacity-30 animate-pulse"></div>
+              <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-full">
+                <Rocket className="h-8 w-8 text-white" />
+              </div>
+            </div>
+            <div className="text-center">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Campaign Creator
+              </h1>
+              <p className="text-gray-600 text-lg mt-2">
+                Create and launch marketing campaigns step by step
+              </p>
             </div>
           </div>
 
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm text-muted-foreground">
-              {steps.map((step, index) => (
-                <div key={step.id} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                    index <= currentStepIndex
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}>
-                    {index + 1}
+          {/* Enhanced Progress Bar */}
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <div className="flex items-center gap-2 bg-white p-4 rounded-2xl shadow-lg border">
+                {steps.map((step, index) => (
+                  <div key={step.id} className="flex items-center">
+                    <div className={`relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-500 ${
+                      index < currentStepIndex
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30'
+                        : index === currentStepIndex
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/30 animate-pulse'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {index < currentStepIndex ? (
+                        <CheckCircle className="h-6 w-6" />
+                      ) : (
+                        <step.icon className="h-6 w-6" />
+                      )}
+
+                      {/* Step number overlay for current step */}
+                      {index === currentStepIndex && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
+                          <span className="text-xs font-bold text-blue-600">{index + 1}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Connector line */}
+                    {index < steps.length - 1 && (
+                      <div className={`w-16 h-1 mx-4 rounded-full transition-all duration-500 ${
+                        index < currentStepIndex
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                          : 'bg-gray-200'
+                      }`} />
+                    )}
                   </div>
-                  <span className={index <= currentStepIndex ? 'text-foreground' : 'text-muted-foreground'}>
-                    {step.title}
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <Progress value={(currentStepIndex + 1) / steps.length * 100} className="h-2" />
+
+            {/* Progress text and percentage */}
+            <div className="text-center space-y-2">
+              <div className="text-sm font-medium text-gray-600">
+                Step {currentStepIndex + 1} of {steps.length}: {steps[currentStepIndex].title}
+              </div>
+              <div className="w-full max-w-md mx-auto">
+                <Progress
+                  value={(currentStepIndex + 1) / steps.length * 100}
+                  className="h-3 bg-gray-200"
+                />
+                <div className="text-xs text-gray-500 mt-1">
+                  {Math.round((currentStepIndex + 1) / steps.length * 100)}% Complete
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <Card className="min-h-[600px]">
+        <Card className="min-h-[700px] border-0 shadow-2xl bg-white/80 backdrop-blur-sm">
           <CardContent className="p-8">
             {renderStepContent()}
           </CardContent>
         </Card>
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-8">
+        {/* Enhanced Navigation */}
+        <div className="flex justify-between items-center mt-8">
           <Button
             variant="outline"
             onClick={() => {
@@ -951,54 +1476,85 @@ export const CampaignWizard = () => {
               setCurrentStep(steps[prevIndex].id as WizardStep);
             }}
             disabled={currentStepIndex === 0}
+            className="hover:bg-gray-50 hover:border-gray-300 transition-all duration-200"
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Previous
           </Button>
 
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                // Reset wizard
-                setCurrentStep('template');
-                setSelectedTemplate(null);
-                setSelectedProperties([]);
-              }}
-            >
-              Start Over
-            </Button>
+          <div className="flex items-center gap-4">
+            {/* Current step indicator */}
+            <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
+              <div className={`w-2 h-2 rounded-full ${
+                currentStepIndex === 0 ? 'bg-blue-500' :
+                currentStepIndex === 1 ? 'bg-green-500' :
+                currentStepIndex === 2 ? 'bg-purple-500' :
+                currentStepIndex === 3 ? 'bg-pink-500' : 'bg-gray-500'
+              }`} />
+              <span>{steps[currentStepIndex].title}</span>
+            </div>
 
-            {currentStep === 'send' ? (
+            <div className="flex gap-2">
               <Button
-                onClick={handleSendCampaign}
-                disabled={isSending}
-                className="gap-2"
-              >
-                {isSending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Launching...
-                  </>
-                ) : (
-                  <>
-                    <Rocket className="h-4 w-4" />
-                    Launch Campaign
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
+                variant="outline"
                 onClick={() => {
-                  const nextIndex = Math.min(steps.length - 1, currentStepIndex + 1);
-                  setCurrentStep(steps[nextIndex].id as WizardStep);
+                  // Reset wizard
+                  setCurrentStep('template');
+                  setSelectedTemplate(null);
+                  setSelectedProperties([]);
+                  setCampaignConfig({
+                    message: '',
+                    subject: '',
+                    channels: [],
+                    schedule: 'now',
+                    scheduledDate: '',
+                    budget: 50,
+                    selectedPhoneColumns: ['preferred_phones', 'owner_phone'],
+                    selectedEmailColumns: ['preferred_emails', 'owner_email'],
+                    useSkipTracingPhones: true,
+                    useSkipTracingEmails: true
+                  });
                 }}
-                disabled={!canProceedToNext()}
+                className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-200"
               >
-                Next
-                <ChevronRight className="h-4 w-4 ml-2" />
+                <Crown className="h-4 w-4 mr-2" />
+                Start Over
               </Button>
-            )}
+
+              {currentStep === 'send' ? (
+                <Button
+                  onClick={handleSendCampaign}
+                  disabled={isSending}
+                  className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 transform hover:scale-105"
+                  size="lg"
+                >
+                  {isSending ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Launching Campaign...
+                    </>
+                  ) : (
+                    <>
+                      <Rocket className="h-5 w-5" />
+                      Launch Campaign
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => {
+                    const nextIndex = Math.min(steps.length - 1, currentStepIndex + 1);
+                    setCurrentStep(steps[nextIndex].id as WizardStep);
+                  }}
+                  disabled={!canProceedToNext()}
+                  className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105"
+                  size="lg"
+                >
+                  Next Step
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

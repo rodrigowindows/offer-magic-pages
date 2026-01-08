@@ -1,7 +1,67 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, TrendingUp, Clock, Activity, Mail, MousePointer, Calendar, Target } from "lucide-react";
+import { Users, TrendingUp, Clock, Activity, Mail, MousePointer, Calendar, Target, Zap, BarChart3, MessageSquare, Phone } from "lucide-react";
+
+// Enhanced Metric Card Component
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  change?: string;
+  trend?: 'up' | 'down' | 'neutral';
+  icon: React.ReactNode;
+  iconBgColor: string;
+  iconColor: string;
+  description?: string;
+  subtitle?: string;
+}
+
+const MetricCard = ({
+  title,
+  value,
+  change,
+  trend = 'neutral',
+  icon,
+  iconBgColor,
+  iconColor,
+  description,
+  subtitle
+}: MetricCardProps) => {
+  const getTrendColor = () => {
+    if (trend === 'up') return 'text-green-600 bg-green-50 border-green-200';
+    if (trend === 'down') return 'text-red-600 bg-red-50 border-red-200';
+    return 'text-gray-600 bg-gray-50 border-gray-200';
+  };
+
+  return (
+    <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-0 shadow-md bg-gradient-to-br from-white to-gray-50">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className={`p-3 rounded-xl ${iconBgColor} group-hover:scale-110 transition-transform duration-300`}>
+            <div className={iconColor}>{icon}</div>
+          </div>
+          {change && (
+            <div className={`px-2 py-1 rounded-full text-xs font-medium border ${getTrendColor()}`}>
+              {change}
+            </div>
+          )}
+        </div>
+        <div className="space-y-1">
+          <div className="text-3xl font-bold text-gray-900 tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            {value}
+          </div>
+          <div className="text-sm font-medium text-gray-600">{title}</div>
+          {subtitle && (
+            <div className="text-xs text-gray-500">{subtitle}</div>
+          )}
+          {description && (
+            <div className="text-xs text-gray-500 mt-1">{description}</div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 interface DashboardMetrics {
   totalLeads: number;
