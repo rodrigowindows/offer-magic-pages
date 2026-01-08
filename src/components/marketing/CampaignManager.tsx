@@ -187,11 +187,42 @@ export const CampaignManager = () => {
     return null;
   };
 
-  // Helper function to generate template content for sending
+  // Validate template has required variables
+  const validateTemplate = (template: SavedTemplate): { isValid: boolean; missingVars: string[] } => {
+    const requiredVars = ['{name}', '{address}', '{cash_offer}', '{company_name}'];
+    const missingVars: string[] = [];
+
+    requiredVars.forEach(varName => {
+      if (!template.body.includes(varName)) {
+        missingVars.push(varName);
+      }
+    });
+
+    // For email templates, check subject too
+    if (selectedChannel === 'email' && template.subject) {
+      if (!template.subject.includes('{address}')) {
+        missingVars.push('{address} in subject');
+      }
+    }
+
+    return { isValid: missingVars.length === 0, missingVars };
+  };
+
+  const generateTrackingPixel = (propertyId: string, sourceChannel: string = 'email') => {
+    const trackingUrl = `${window.location.origin}/api/track/email-open?property=${propertyId}&channel=${sourceChannel}&t=${Date.now()}`;
+    return `<img src="${trackingUrl}" width="1" height="1" style="display:none;" alt="" />`;
+  };
+
+  const generateUnsubscribeUrl = (propertyId: string) => {
+    return `${window.location.origin}/unsubscribe?property=${propertyId}`;
+  };
+
   const generateTemplateContent = (template: SavedTemplate, prop: Property) => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+    const trackingPixel = generateTrackingPixel(prop.id, selectedChannel);
+    const unsubscribeUrl = generateUnsubscribeUrl(prop.id);
 
     let content = template.body;
     content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
@@ -205,6 +236,9 @@ export const CampaignManager = () => {
     content = content.replace(/\{full_address\}/g, fullAddress);
     content = content.replace(/\{property_url\}/g, propertyUrl);
     content = content.replace(/\{qr_code_url\}/g, qrCodeUrl);
+    content = content.replace(/\{source_channel\}/g, selectedChannel);
+    content = content.replace(/\{tracking_pixel\}/g, trackingPixel);
+    content = content.replace(/\{unsubscribe_url\}/g, unsubscribeUrl);
 
     const subject = template.subject?.replace(/\{address\}/g, prop.address) || `Cash Offer for ${prop.address}`;
 
@@ -730,13 +764,24 @@ export const CampaignManager = () => {
                     <SelectValue placeholder="Selecione um template" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getTemplatesByChannel(selectedChannel).map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name} {template.is_default ? '(Padrão)' : ''}
+                    {getTemplatesByChannel(selectedChannel).length > 0 ? (
+                      getTemplatesByChannel(selectedChannel).map((template) => (
+                        <SelectItem key={template.id} value={template.id}>
+                          {template.name} {template.is_default ? '(Padrão)' : ''}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        Nenhum template disponível para {selectedChannel}
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
+                {getTemplatesByChannel(selectedChannel).length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Crie templates na página de Templates primeiro
+                  </p>
+                )}
               </div>
 
               <Separator />
@@ -893,7 +938,7 @@ export const CampaignManager = () => {
                 className="w-full"
                 size="lg"
                 onClick={handleSendCampaign}
-                disabled={selectedCount === 0 || sending}
+                disabled={selectedCount === 0 || sending || !selectedTemplate}
               >
                 {sending ? (
                   <>
@@ -911,6 +956,11 @@ export const CampaignManager = () => {
               {selectedCount === 0 && (
                 <p className="text-xs text-center text-muted-foreground">
                   Selecione propriedades à esquerda
+                </p>
+              )}
+              {selectedCount > 0 && !selectedTemplate && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Selecione um template para enviar
                 </p>
               )}
             </CardContent>
@@ -932,8 +982,30 @@ export const CampaignManager = () => {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Campaign Summary */}
-            <Card>
+            {/* Template Validation Warning */}
+            {selectedTemplate && (() => {
+              const validation = validateTemplate(selectedTemplate);
+              return !validation.isValid && (
+                <Card className="border-orange-200 bg-orange-50">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg text-orange-800">Atenção: Template Incompleto</CardTitle>
+                    <CardDescription className="text-orange-700">
+                      O template selecionado está faltando algumas variáveis importantes
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p className="text-sm text-orange-800">
+                        Variáveis faltando: {validation.missingVars.join(', ')}
+                      </p>
+                      <p className="text-xs text-orange-700">
+                        O template ainda funcionará, mas algumas informações podem aparecer como "[variável]" no conteúdo enviado.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Resumo da Campanha</CardTitle>
               </CardHeader>
@@ -950,7 +1022,21 @@ export const CampaignManager = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Template:</span>
-                  <span className="text-sm">{selectedTemplate?.name || 'Nenhum'}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{selectedTemplate?.name || 'Nenhum'}</span>
+                    {selectedTemplate && (() => {
+                      const validation = validateTemplate(selectedTemplate);
+                      return !validation.isValid ? (
+                        <Badge variant="destructive" className="text-xs">
+                          Variáveis faltando
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" className="text-xs">
+                          ✓ Completo
+                        </Badge>
+                      );
+                    })()}
+                  </div>
                 </div>
               </CardContent>
             </Card>

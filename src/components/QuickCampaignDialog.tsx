@@ -476,6 +476,15 @@ export const QuickCampaignDialog = ({
     showResults(successCount, validProperties.length, errorCount);
   };
 
+  const generateTrackingPixel = (propertyId: string, sourceChannel: string = 'email') => {
+    const trackingUrl = `${window.location.origin}/api/track/email-open?property=${propertyId}&channel=${sourceChannel}&t=${Date.now()}`;
+    return `<img src="${trackingUrl}" width="1" height="1" style="display:none;" alt="" />`;
+  };
+
+  const generateUnsubscribeUrl = (propertyId: string) => {
+    return `${window.location.origin}/unsubscribe?property=${propertyId}`;
+  };
+
   const sendSingleMessage = async (property: Property, channel: 'sms' | 'email' | 'call', template: any) => {
     // Get best available contact
     const contact = getBestContact(property, channel === 'email' ? 'email' : 'phone');
@@ -485,6 +494,12 @@ export const QuickCampaignDialog = ({
     let message = template.body;
     let subject = template.subject || '';
 
+    const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${property.id}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+    const trackingPixel = generateTrackingPixel(property.id, channel);
+    const unsubscribeUrl = generateUnsubscribeUrl(property.id);
+
     const variables = {
       '{name}': property.owner_name || 'Valued Homeowner',
       '{address}': property.address,
@@ -493,7 +508,13 @@ export const QuickCampaignDialog = ({
       '{cash_offer}': property.cash_offer_amount ? `$${property.cash_offer_amount.toLocaleString()}` : '$XXX,XXX',
       '{company_name}': 'Your Real Estate Company',
       '{phone}': '(555) 123-4567',
-      '{seller_name}': 'Your Agent Name'
+      '{seller_name}': 'Your Agent Name',
+      '{full_address}': fullAddress,
+      '{property_url}': propertyUrl,
+      '{qr_code_url}': qrCodeUrl,
+      '{source_channel}': channel,
+      '{tracking_pixel}': trackingPixel,
+      '{unsubscribe_url}': unsubscribeUrl
     };
 
     Object.entries(variables).forEach(([key, value]) => {
