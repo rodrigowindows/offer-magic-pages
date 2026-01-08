@@ -12,7 +12,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Oferta Cash Padrão',
     channel: 'sms',
     subject: '',
-    body: 'Olá {name}! Oferta de ${cash_offer} pela sua casa em {address}. Válido por 7 dias. Ligue: {phone}',
+    body: 'Hi {name}! Cash offer of ${cash_offer} for your home at {address}. Valid for 7 days. View details: {property_url}?source=sms Call: {phone}',
     is_default: true,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -22,7 +22,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Follow-up SMS',
     channel: 'sms',
     subject: '',
-    body: 'Oi {name}, nossa oferta de ${cash_offer} pela {address} ainda está de pé. Podemos fechar rápido! {phone}',
+    body: 'Hi {name}, our ${cash_offer} offer for {address} is still valid. We can close fast! Details: {property_url}?source=sms&campaign=followup Call: {phone}',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -32,7 +32,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'SMS Urgente',
     channel: 'sms',
     subject: '',
-    body: '🚨 ÚLTIMA CHANCE: Oferta ${cash_offer} expira hoje! Ligue AGORA: {phone}',
+    body: '🚨 LAST CHANCE: ${cash_offer} offer expires today! See details: {property_url}?source=sms&campaign=urgent Call NOW: {phone}',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -74,6 +74,11 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
         <div style="text-align: center; margin: 30px 0;">
           <a href="tel:{phone}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Call Us: {phone}</a>
         </div>
+        <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
+          <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">Scan to view your personalized offer page:</p>
+          <img src="{qr_code_url}" alt="QR Code" style="width: 200px; height: 200px; margin: 0 auto; display: block; border: 4px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or visit: <a href="{property_url}?source=email" style="color: #667eea; text-decoration: none;">{property_url}?source=email</a></p>
+        </div>
       </td>
     </tr>
     <tr>
@@ -112,6 +117,11 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     <p>We're ready to move forward quickly and can close in as little as 7 days. Are you ready to sell?</p>
     <div style="text-align: center; margin: 30px 0;">
       <a href="tel:{phone}" style="background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Call Now: {phone}</a>
+    </div>
+    <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f0f8ff; border-radius: 8px;">
+      <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">View your complete offer details:</p>
+      <img src="{qr_code_url}" alt="QR Code" style="width: 180px; height: 180px; margin: 0 auto; display: block; border: 3px solid #4CAF50;" />
+      <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;"><a href="{property_url}?source=email&campaign=followup" style="color: #4CAF50; text-decoration: none;">Click here to view online</a></p>
     </div>
     <p>Best regards,<br><strong>{seller_name}</strong><br>{company_name}</p>
   </div>

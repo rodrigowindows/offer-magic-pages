@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ABTestWrapper } from "@/components/ABTestWrapper";
 interface PropertyData {
@@ -20,6 +20,7 @@ interface PropertyData {
 
 const Property = () => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,13 +32,38 @@ const Property = () => {
 
   const trackAnalytics = async (propertyId: string, eventType: string) => {
     try {
+      // Get tracking parameters from URL
+      const source = searchParams.get('source') || 'direct'; // email, sms, etc
+      const campaign = searchParams.get('campaign') || 'default'; // followup, urgent, etc
+      const utmSource = searchParams.get('utm_source');
+      const utmMedium = searchParams.get('utm_medium');
+      const utmCampaign = searchParams.get('utm_campaign');
+
+      // Track in analytics function
       await supabase.functions.invoke('track-analytics', {
         body: {
           propertyId,
           eventType,
+          source,
+          campaign,
+          utmSource,
+          utmMedium,
+          utmCampaign,
           referrer: document.referrer || 'direct',
           userAgent: navigator.userAgent,
         },
+      });
+
+      // Also save to property_visits table for permanent tracking
+      await supabase.from('property_visits').insert({
+        property_id: propertyId,
+        visit_source: source,
+        campaign_name: campaign,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        referrer: document.referrer || 'direct',
+        user_agent: navigator.userAgent,
       });
     } catch (error) {
       console.error('Error tracking analytics:', error);

@@ -95,7 +95,11 @@ export const CampaignManager = () => {
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
   const settings = useMarketingStore((state) => state.settings);
-  const { getTemplatesByChannel, getDefaultTemplate } = useTemplates();
+  const { 
+    templates,
+    getTemplatesByChannel, 
+    getDefaultTemplate 
+  } = useTemplates();
 
   // State
   const [loading, setLoading] = useState(false);
@@ -134,12 +138,21 @@ export const CampaignManager = () => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     
     // Replace template variables
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+
     let content = selectedTemplate.body;
-    content = content.replace(/\{\{owner_name\}\}/g, prop.owner_name || 'Owner');
-    content = content.replace(/\{\{address\}\}/g, prop.address);
-    content = content.replace(/\{\{full_address\}\}/g, fullAddress);
-    content = content.replace(/\{\{cash_offer_amount\}\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
-    content = content.replace(/\{\{company_name\}\}/g, settings.company.company_name);
+    content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{address\}/g, prop.address);
+    content = content.replace(/\{city\}/g, prop.city);
+    content = content.replace(/\{state\}/g, prop.state);
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{company_name\}/g, settings.company.company_name);
+    content = content.replace(/\{phone\}/g, settings.company.contact_phone);
+    content = content.replace(/\{seller_name\}/g, settings.company.company_name);
+    content = content.replace(/\{full_address\}/g, fullAddress);
+    content = content.replace(/\{property_url\}/g, propertyUrl);
+    content = content.replace(/\{qr_code_url\}/g, qrCodeUrl);
 
     if (selectedChannel === 'sms') {
       return (
@@ -150,7 +163,7 @@ export const CampaignManager = () => {
     }
 
     if (selectedChannel === 'email') {
-      const subject = selectedTemplate.subject?.replace(/\{\{address\}\}/g, prop.address) || `Cash Offer for ${prop.address}`;
+      const subject = selectedTemplate.subject?.replace(/\{address\}/g, prop.address) || `Cash Offer for ${prop.address}`;
       return (
         <div className="text-sm bg-white p-3 rounded border space-y-2">
           <div className="font-medium text-gray-900">
@@ -177,15 +190,23 @@ export const CampaignManager = () => {
   // Helper function to generate template content for sending
   const generateTemplateContent = (template: SavedTemplate, prop: Property) => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-    
-    let content = template.body;
-    content = content.replace(/\{\{owner_name\}\}/g, prop.owner_name || 'Owner');
-    content = content.replace(/\{\{address\}\}/g, prop.address);
-    content = content.replace(/\{\{full_address\}\}/g, fullAddress);
-    content = content.replace(/\{\{cash_offer_amount\}\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
-    content = content.replace(/\{\{company_name\}\}/g, settings.company.company_name);
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 
-    const subject = template.subject?.replace(/\{\{address\}\}/g, prop.address) || `Cash Offer for ${prop.address}`;
+    let content = template.body;
+    content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{address\}/g, prop.address);
+    content = content.replace(/\{city\}/g, prop.city);
+    content = content.replace(/\{state\}/g, prop.state);
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{company_name\}/g, settings.company.company_name);
+    content = content.replace(/\{phone\}/g, settings.company.contact_phone);
+    content = content.replace(/\{seller_name\}/g, settings.company.company_name);
+    content = content.replace(/\{full_address\}/g, fullAddress);
+    content = content.replace(/\{property_url\}/g, propertyUrl);
+    content = content.replace(/\{qr_code_url\}/g, qrCodeUrl);
+
+    const subject = template.subject?.replace(/\{address\}/g, prop.address) || `Cash Offer for ${prop.address}`;
 
     return { content, subject };
   };
