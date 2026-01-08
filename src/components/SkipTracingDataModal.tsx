@@ -5,22 +5,28 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  Phone, 
-  User, 
-  MapPin, 
-  AlertTriangle, 
-  Copy, 
+import {
+  Phone,
+  User,
+  MapPin,
+  AlertTriangle,
+  Copy,
   CheckCircle,
   Loader2,
   PhoneCall,
-  Database
+  Database,
+  Mail,
+  Send,
+  Save
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -86,7 +92,12 @@ export const SkipTracingDataModal = ({
 }: SkipTracingDataModalProps) => {
   const [data, setData] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
+
+  // Contact preferences
+  const [selectedPhones, setSelectedPhones] = useState<string[]>([]);
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
 
   useEffect(() => {
     if (open && propertyId) {
@@ -105,6 +116,14 @@ export const SkipTracingDataModal = ({
 
       if (error) throw error;
       setData(property);
+
+      // Load saved preferences
+      if (property.preferred_phones) {
+        setSelectedPhones(Array.isArray(property.preferred_phones) ? property.preferred_phones : []);
+      }
+      if (property.preferred_emails) {
+        setSelectedEmails(Array.isArray(property.preferred_emails) ? property.preferred_emails : []);
+      }
     } catch (error) {
       console.error("Error fetching skip tracing data:", error);
       toast.error("Erro ao carregar dados");
@@ -143,12 +162,12 @@ export const SkipTracingDataModal = ({
   const getPhones = () => {
     if (!data) return [];
     const phones: { number: string; type: string; formatted: string; label: string }[] = [];
-    
+
     // Add phone1-7
     for (let i = 1; i <= 7; i++) {
       const phone = data[`phone${i}`];
       const type = data[`phone${i}_type`] || 'Unknown';
-      
+
       if (phone) {
         const formatted = formatPhone(phone);
         if (formatted) {
@@ -166,6 +185,68 @@ export const SkipTracingDataModal = ({
     }
 
     return phones;
+  };
+
+  const getEmails = () => {
+    if (!data) return [];
+    const emails: { email: string; label: string }[] = [];
+
+    // Add email1-5
+    for (let i = 1; i <= 5; i++) {
+      const email = data[`email${i}`];
+      if (email && typeof email === 'string' && email.includes('@')) {
+        emails.push({ email, label: `Email ${i}` });
+      }
+    }
+
+    // Add legacy owner_email if exists
+    if (data.owner_email && typeof data.owner_email === 'string' && data.owner_email.includes('@')) {
+      if (!emails.find(e => e.email === data.owner_email)) {
+        emails.push({ email: data.owner_email, label: 'Principal' });
+      }
+    }
+
+    return emails;
+  };
+
+  const saveContactPreferences = async () => {
+    if (!propertyId) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({
+          preferred_phones: selectedPhones,
+          preferred_emails: selectedEmails,
+        })
+        .eq('id', propertyId);
+
+      if (error) throw error;
+
+      toast.success('Preferências de contato salvas!');
+    } catch (error) {
+      console.error('Error saving contact preferences:', error);
+      toast.error('Erro ao salvar preferências');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const togglePhone = (phone: string) => {
+    setSelectedPhones(prev =>
+      prev.includes(phone)
+        ? prev.filter(p => p !== phone)
+        : [...prev, phone]
+    );
+  };
+
+  const toggleEmail = (email: string) => {
+    setSelectedEmails(prev =>
+      prev.includes(email)
+        ? prev.filter(e => e !== email)
+        : [...prev, email]
+    );
   };
 
   // Obter campos extras (dinâmicos)
@@ -209,8 +290,9 @@ export const SkipTracingDataModal = ({
                      data?.owner_deceased === 'y';
 
   const phones = getPhones();
+  const emails = getEmails();
   const extraFields = getExtraFields();
-  const ownerName = data?.owner_name || 
+  const ownerName = data?.owner_name ||
     `${data?.owner_first_name || ''} ${data?.owner_last_name || ''}`.trim() ||
     'Não informado';
 
@@ -286,29 +368,43 @@ export const SkipTracingDataModal = ({
 
               {/* Phones */}
               <div className="space-y-2">
-                <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  TELEFONES ({phones.length})
-                </h4>
-                
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-1">
+                    <Phone className="h-4 w-4" />
+                    TELEFONES ({phones.length})
+                  </h4>
+                  {selectedPhones.length > 0 && (
+                    <Badge variant="default" className="gap-1">
+                      <Send className="h-3 w-3" />
+                      {selectedPhones.length} selecionado{selectedPhones.length > 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                </div>
+
                 {phones.length > 0 ? (
                   <div className="space-y-2">
                     {phones.map((phone, idx) => (
                       <div
                         key={idx}
-                        className={`flex items-center justify-between p-3 rounded-lg border ${
+                        className={`flex items-center gap-3 p-3 rounded-lg border ${
                           isDNC ? 'bg-red-50 border-red-200' : 'bg-muted'
-                        }`}
+                        } ${selectedPhones.includes(phone.formatted) ? 'ring-2 ring-primary' : ''}`}
                       >
-                        <div className="flex items-center gap-3">
+                        <Checkbox
+                          id={`phone-${idx}`}
+                          checked={selectedPhones.includes(phone.formatted)}
+                          onCheckedChange={() => togglePhone(phone.formatted)}
+                          disabled={isDNC}
+                        />
+                        <div className="flex items-center gap-3 flex-1">
                           <div className={`p-2 rounded-full ${
-                            phone.type.toLowerCase().includes('mobile') 
+                            phone.type.toLowerCase().includes('mobile')
                               ? 'bg-green-100 text-green-700'
                               : 'bg-blue-100 text-blue-700'
                           }`}>
                             <Phone className="h-4 w-4" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <p className="font-medium font-mono">{phone.formatted}</p>
                             <p className="text-xs text-muted-foreground">
                               <span className="font-semibold text-primary">{phone.label}</span> • {phone.type}
@@ -353,10 +449,78 @@ export const SkipTracingDataModal = ({
               {/* DNC Warning */}
               {isDNC && phones.length > 0 && (
                 <div className="bg-red-50 border border-red-200 p-3 rounded-lg text-sm text-red-800">
-                  <strong>⚠️ Atenção:</strong> Este contato está na lista DNC (Do Not Call). 
+                  <strong>⚠️ Atenção:</strong> Este contato está na lista DNC (Do Not Call).
                   Ligar pode resultar em penalidades legais.
                 </div>
               )}
+
+              <Separator />
+
+              {/* Emails */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-1">
+                    <Mail className="h-4 w-4" />
+                    EMAILS ({emails.length})
+                  </h4>
+                  {selectedEmails.length > 0 && (
+                    <Badge variant="default" className="gap-1">
+                      <Send className="h-3 w-3" />
+                      {selectedEmails.length} selecionado{selectedEmails.length > 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                </div>
+
+                {emails.length > 0 ? (
+                  <div className="space-y-2">
+                    {emails.map((emailObj, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex items-center gap-3 p-3 rounded-lg border bg-muted ${
+                          selectedEmails.includes(emailObj.email) ? 'ring-2 ring-primary' : ''
+                        }`}
+                      >
+                        <Checkbox
+                          id={`email-${idx}`}
+                          checked={selectedEmails.includes(emailObj.email)}
+                          onCheckedChange={() => toggleEmail(emailObj.email)}
+                        />
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="p-2 rounded-full bg-purple-100 text-purple-700">
+                            <Mail className="h-4 w-4" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium font-mono text-sm">{emailObj.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              <span className="font-semibold text-primary">{emailObj.label}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyToClipboard(emailObj.email)}
+                            className="h-8 w-8 p-0"
+                          >
+                            {copiedPhone === emailObj.email ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Mail className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Nenhum email encontrado</p>
+                    <p className="text-xs">Importe dados de skip tracing para ver emails</p>
+                  </div>
+                )}
+              </div>
 
               {/* Extra Dynamic Fields */}
               {extraFields.length > 0 && (
@@ -387,6 +551,38 @@ export const SkipTracingDataModal = ({
             </div>
           )}
         </ScrollArea>
+
+        <DialogFooter className="border-t pt-4">
+          <div className="flex items-center justify-between w-full">
+            <div className="text-sm text-muted-foreground">
+              {selectedPhones.length + selectedEmails.length > 0 ? (
+                <span className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  {selectedPhones.length + selectedEmails.length} contato{selectedPhones.length + selectedEmails.length > 1 ? 's' : ''} selecionado{selectedPhones.length + selectedEmails.length > 1 ? 's' : ''}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/70">Selecione telefones/emails para campanhas</span>
+              )}
+            </div>
+            <Button
+              onClick={saveContactPreferences}
+              disabled={saving || (selectedPhones.length === 0 && selectedEmails.length === 0)}
+              className="gap-2"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Salvar Preferências
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
