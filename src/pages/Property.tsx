@@ -33,8 +33,8 @@ const Property = () => {
   const trackAnalytics = async (propertyId: string, eventType: string) => {
     try {
       // Get tracking parameters from URL
-      const source = searchParams.get('source') || 'direct'; // email, sms, etc
-      const campaign = searchParams.get('campaign') || 'default'; // followup, urgent, etc
+      const source = searchParams.get('source') || 'direct';
+      const campaign = searchParams.get('campaign') || 'default';
       const utmSource = searchParams.get('utm_source');
       const utmMedium = searchParams.get('utm_medium');
       const utmCampaign = searchParams.get('utm_campaign');
@@ -54,14 +54,10 @@ const Property = () => {
         },
       });
 
-      // Also save to property_visits table for permanent tracking
-      await supabase.from('property_visits').insert({
+      // Save to property_analytics table
+      await supabase.from('property_analytics').insert({
         property_id: propertyId,
-        visit_source: source,
-        campaign_name: campaign,
-        utm_source: utmSource,
-        utm_medium: utmMedium,
-        utm_campaign: utmCampaign,
+        event_type: eventType,
         referrer: document.referrer || 'direct',
         user_agent: navigator.userAgent,
       });

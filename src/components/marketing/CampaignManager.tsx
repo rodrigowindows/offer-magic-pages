@@ -51,7 +51,7 @@ import {
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplates';
-import type { SavedTemplate, Property, Channel } from '@/types/marketing.types';
+import type { SavedTemplate, Channel } from '@/types/marketing.types';
 
 // Colunas de telefone disponíveis na tabela properties
 const PHONE_COLUMNS = [
@@ -78,7 +78,7 @@ const EMAIL_COLUMNS = [
   { value: 'person3_email2', label: 'Person 3 - Email 2' },
 ];
 
-interface Property {
+interface CampaignProperty {
   id: string;
   address: string;
   city: string;
@@ -87,17 +87,10 @@ interface Property {
   owner_name?: string;
   cash_offer_amount?: number;
   approval_status?: string;
-  preferred_phones?: string[];  // Root level - from properties table
-  preferred_emails?: string[];  // Root level - from properties table
-  skip_tracing_data?: {
-    preferred_phones?: string[];
-    preferred_emails?: string[];
-  };
+  tags?: string[];
   // Dynamic columns
-  [key: string]: string | number | boolean | null | undefined | object;
+  [key: string]: string | number | boolean | null | undefined | string[] | object;
 }
-
-type Channel = 'sms' | 'email' | 'call';
 
 export const CampaignManager = () => {
   const { toast } = useToast();
@@ -111,7 +104,7 @@ export const CampaignManager = () => {
   // State
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<CampaignProperty[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<Channel>('sms');
   const [filterStatus, setFilterStatus] = useState<string>('approved');
@@ -132,7 +125,7 @@ export const CampaignManager = () => {
     : getDefaultTemplate(selectedChannel);
 
   // Helper function to render template preview
-  const renderTemplatePreview = (prop: Property, type: 'body' | 'subject' = 'body') => {
+  const renderTemplatePreview = (prop: CampaignProperty, type: 'body' | 'subject' = 'body') => {
     if (!selectedTemplate) {
       return 'Selecione um template';
     }
@@ -169,7 +162,7 @@ export const CampaignManager = () => {
   };
 
   // Helper function to generate template content for sending
-  const generateTemplateContent = (template: any, prop: Property, trackingId?: string) => {
+  const generateTemplateContent = (template: any, prop: CampaignProperty, trackingId?: string) => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
@@ -210,7 +203,7 @@ export const CampaignManager = () => {
 
   // Build select columns based on selected phone/email columns
   const getSelectColumns = () => {
-    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'skip_tracing_data', 'preferred_phones', 'preferred_emails'];
+    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'tags'];
     const phoneCol = selectedPhoneColumn;
     const emailCol = selectedEmailColumn;
     
@@ -245,7 +238,7 @@ export const CampaignManager = () => {
 
       if (error) throw error;
       // Cast data to unknown first, then to Property[] to satisfy TypeScript
-      setProperties((data as unknown as Property[]) || []);
+      setProperties((data as unknown as CampaignProperty[]) || []);
     } catch (error: any) {
       console.error('Error fetching properties:', error);
       toast({
@@ -277,56 +270,44 @@ export const CampaignManager = () => {
   };
 
   // Get phone/email from property based on selected column
-  const getPhone = (prop: Property): string | undefined => {
-    // Priority 1: Root level preferred_phones (from properties table)
-    if (prop.preferred_phones && prop.preferred_phones.length > 0) {
-      return prop.preferred_phones[0];
+  const getPhone = (prop: CampaignProperty): string | undefined => {
+    // Priority 1: Get from tags (pref_phone:)
+    const prefPhones = (prop.tags || []).filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
+    if (prefPhones.length > 0) {
+      return prefPhones[0];
     }
-    // Priority 2: Skip tracing data preferred phones
-    if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
-      return prop.skip_tracing_data.preferred_phones[0];
-    }
-    // Priority 3: Fall back to selected column
+    // Priority 2: Fall back to selected column
     return prop[selectedPhoneColumn] as string | undefined;
   };
 
-  const getEmail = (prop: Property): string | undefined => {
-    // Priority 1: Root level preferred_emails (from properties table)
-    if (prop.preferred_emails && prop.preferred_emails.length > 0) {
-      return prop.preferred_emails[0];
+  const getEmail = (prop: CampaignProperty): string | undefined => {
+    // Priority 1: Get from tags (pref_email:)
+    const prefEmails = (prop.tags || []).filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
+    if (prefEmails.length > 0) {
+      return prefEmails[0];
     }
-    // Priority 2: Skip tracing data preferred emails
-    if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
-      return prop.skip_tracing_data.preferred_emails[0];
-    }
-    // Priority 3: Fall back to selected column
+    // Priority 2: Fall back to selected column
     return prop[selectedEmailColumn] as string | undefined;
   };
 
-  const getAllPhones = (prop: Property): string[] => {
-    // Priority 1: Root level preferred_phones
-    if (prop.preferred_phones && prop.preferred_phones.length > 0) {
-      return prop.preferred_phones;
+  const getAllPhones = (prop: CampaignProperty): string[] => {
+    // Priority 1: Get from tags
+    const prefPhones = (prop.tags || []).filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
+    if (prefPhones.length > 0) {
+      return prefPhones;
     }
-    // Priority 2: Skip tracing data
-    if (prop.skip_tracing_data?.preferred_phones && prop.skip_tracing_data.preferred_phones.length > 0) {
-      return prop.skip_tracing_data.preferred_phones;
-    }
-    // Priority 3: Selected column
+    // Priority 2: Selected column
     const phone = prop[selectedPhoneColumn] as string | undefined;
     return phone ? [phone] : [];
   };
 
-  const getAllEmails = (prop: Property): string[] => {
-    // Priority 1: Root level preferred_emails
-    if (prop.preferred_emails && prop.preferred_emails.length > 0) {
-      return prop.preferred_emails;
+  const getAllEmails = (prop: CampaignProperty): string[] => {
+    // Priority 1: Get from tags
+    const prefEmails = (prop.tags || []).filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
+    if (prefEmails.length > 0) {
+      return prefEmails;
     }
-    // Priority 2: Skip tracing data
-    if (prop.skip_tracing_data?.preferred_emails && prop.skip_tracing_data.preferred_emails.length > 0) {
-      return prop.skip_tracing_data.preferred_emails;
-    }
-    // Priority 3: Selected column
+    // Priority 2: Selected column
     const email = prop[selectedEmailColumn] as string | undefined;
     return email ? [email] : [];
   };
