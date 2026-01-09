@@ -70,6 +70,7 @@ import {
   Activity,
   BarChart3,
   RotateCcw,
+  Code,
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall, checkHealth } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
@@ -138,7 +139,8 @@ export const CampaignManager = () => {
   const [activeFilters, setActiveFilters] = useState<{id: string; label: string}[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [previewIndex, setPreviewIndex] = useState(0);
-  const [progressStats, setProgressStats] = useState({ 
+  const [showHtmlCode, setShowHtmlCode] = useState(false);
+  const [progressStats, setProgressStats] = useState({
     completed: 0, 
     total: 0, 
     success: 0, 
@@ -1641,20 +1643,65 @@ export const CampaignManager = () => {
 
                         {selectedChannel === 'email' && selectedProps[previewIndex] && (
                           <div className="border rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Mail className="w-4 h-4" />
-                              <span className="font-medium">Email Message</span>
-                            </div>
-                            <div className="bg-gray-50 p-3 rounded border text-sm">
-                              <div className="font-medium mb-2">
-                                Subject: {renderTemplatePreview(selectedProps[previewIndex], 'subject')}
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4" />
+                                <span className="font-medium">Email Message</span>
                               </div>
-                              <div className="whitespace-pre-line">
-                                {renderTemplatePreview(selectedProps[previewIndex])}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowHtmlCode(!showHtmlCode)}
+                                className="gap-2"
+                              >
+                                {showHtmlCode ? (
+                                  <>
+                                    <Eye className="w-4 h-4" />
+                                    Show Preview
+                                  </>
+                                ) : (
+                                  <>
+                                    <Code className="w-4 h-4" />
+                                    Show HTML
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+
+                            {/* Subject */}
+                            <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
+                              <span className="text-xs text-blue-600 font-medium">Subject:</span>
+                              <div className="text-sm font-medium text-gray-900 mt-1">
+                                {renderTemplatePreview(selectedProps[previewIndex], 'subject')}
                               </div>
                             </div>
-                            <div className="text-xs text-muted-foreground mt-2">
-                              HTML email with professional formatting
+
+                            {/* Email Body */}
+                            <div className="bg-white border rounded">
+                              {showHtmlCode ? (
+                                // Show HTML Code
+                                <pre className="p-3 text-xs overflow-auto max-h-[500px] whitespace-pre-wrap font-mono">
+                                  {renderTemplatePreview(selectedProps[previewIndex])}
+                                </pre>
+                              ) : (
+                                // Show Rendered HTML
+                                <iframe
+                                  srcDoc={renderTemplatePreview(selectedProps[previewIndex])}
+                                  className="w-full border-0 rounded"
+                                  style={{ height: '500px', minHeight: '400px' }}
+                                  title="Email Preview"
+                                  sandbox="allow-same-origin"
+                                />
+                              )}
+                            </div>
+
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="text-xs text-muted-foreground">
+                                {showHtmlCode ? 'HTML Source Code' : 'Rendered Preview'}
+                              </div>
+                              <div className="text-xs text-green-600 font-medium">
+                                ✓ HTML email with professional formatting
+                              </div>
                             </div>
                           </div>
                         )}

@@ -70,6 +70,8 @@ interface Property {
   lead_status?: string;
   preferred_phones?: string[];
   preferred_emails?: string[];
+  estimated_value?: number;
+  cash_offer_amount?: number;
   skip_tracing_data?: {
     phones?: Array<{number: string; type: string}>;
     emails?: string[];
@@ -304,7 +306,23 @@ export const CampaignWizard = () => {
   const fetchAvailableProperties = async () => {
     setIsLoading(true);
     try {
-      let query = supabase.from('properties').select('*');
+      let query = supabase.from('properties').select(`
+        id,
+        address,
+        city,
+        state,
+        zip_code,
+        owner_name,
+        owner_phone,
+        owner_email,
+        approval_status,
+        lead_status,
+        preferred_phones,
+        preferred_emails,
+        estimated_value,
+        cash_offer_amount,
+        skip_tracing_data
+      `);
 
       // Filter based on template
       if (selectedTemplate?.id === 'approved-blast') {
@@ -746,6 +764,22 @@ export const CampaignWizard = () => {
                                   </div>
                                 </div>
 
+                                {/* Property Values */}
+                                <div className="grid grid-cols-2 gap-3 mb-4">
+                                  <div className="text-center p-2 bg-orange-50 rounded-lg">
+                                    <div className="text-sm font-bold text-orange-600">
+                                      ${property.estimated_value?.toLocaleString() || 'N/A'}
+                                    </div>
+                                    <div className="text-xs text-orange-700 font-medium">Est. Value</div>
+                                  </div>
+                                  <div className="text-center p-2 bg-red-50 rounded-lg">
+                                    <div className="text-sm font-bold text-red-600">
+                                      ${property.cash_offer_amount?.toLocaleString() || 'N/A'}
+                                    </div>
+                                    <div className="text-xs text-red-700 font-medium">Cash Offer</div>
+                                  </div>
+                                </div>
+
                                 {/* Contact Summary */}
                                 <div className="grid grid-cols-3 gap-3 mb-4">
                                   <div className="text-center p-2 bg-blue-50 rounded-lg">
@@ -768,6 +802,30 @@ export const CampaignWizard = () => {
 
                                 {/* Contact Details */}
                                 <div className="space-y-2">
+                                  {/* Primary Owner Contacts */}
+                                  {(property.owner_phone || property.owner_email) && (
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-1 text-xs font-semibold text-gray-700">
+                                        <Users className="h-3 w-3" />
+                                        Owner Contacts:
+                                      </div>
+                                      <div className="space-y-1">
+                                        {property.owner_phone && (
+                                          <div className="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-mono text-gray-700 mr-1">
+                                            <Phone className="h-3 w-3 mr-1" />
+                                            {property.owner_phone}
+                                          </div>
+                                        )}
+                                        {property.owner_email && (
+                                          <div className="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-mono text-gray-700">
+                                            <Mail className="h-3 w-3 mr-1" />
+                                            {property.owner_email}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {/* Preferred Phones with Values */}
                                   {property.preferred_phones && property.preferred_phones.length > 0 && (
                                     <div className="space-y-1">
@@ -850,29 +908,94 @@ export const CampaignWizard = () => {
                       </div>
                     ) : (
                       selectedProperties.map((property) => (
-                        <div key={property.id} className="border rounded p-2 bg-gray-50">
-                          <div className="font-semibold">{property.address}</div>
-                          <div className="text-xs text-gray-600">{property.city}, {property.state} {property.zip_code}</div>
-                          <div className="text-xs text-gray-700">Proprietário: {property.owner_name}</div>
-                          <div className="mt-1">
-                            <div className="text-xs font-medium text-blue-700">Telefones:</div>
-                            {(property.preferred_phones || []).map((phone, idx) => (
-                              <div key={idx} className="text-xs text-blue-700">{phone}</div>
-                            ))}
-                            {property.owner_phone && <div className="text-xs text-blue-700">{property.owner_phone}</div>}
-                            {(property.skip_tracing_data?.phones || []).map((p, idx) => (
-                              <div key={idx} className="text-xs text-blue-700">{p.number}</div>
-                            ))}
+                        <div key={property.id} className="border rounded p-3 bg-gray-50">
+                          <div className="font-semibold text-sm mb-1">{property.address}</div>
+                          <div className="text-xs text-gray-600 mb-2">{property.city}, {property.state} {property.zip_code}</div>
+                          
+                          {/* Property Values */}
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div className="text-xs">
+                              <span className="font-medium text-orange-700">Est. Value:</span>
+                              <div className="font-semibold">${property.estimated_value?.toLocaleString() || 'N/A'}</div>
+                            </div>
+                            <div className="text-xs">
+                              <span className="font-medium text-red-700">Cash Offer:</span>
+                              <div className="font-semibold">${property.cash_offer_amount?.toLocaleString() || 'N/A'}</div>
+                            </div>
                           </div>
-                          <div className="mt-1">
-                            <div className="text-xs font-medium text-green-700">E-mails:</div>
-                            {(property.preferred_emails || []).map((email, idx) => (
-                              <div key={idx} className="text-xs text-green-700">{email}</div>
-                            ))}
-                            {property.owner_email && <div className="text-xs text-green-700">{property.owner_email}</div>}
-                            {(property.skip_tracing_data?.emails || []).map((email, idx) => (
-                              <div key={idx} className="text-xs text-green-700">{email}</div>
-                            ))}
+                          
+                          {/* Owner Info */}
+                          {property.owner_name && (
+                            <div className="text-xs text-gray-700 mb-1">
+                              <span className="font-medium">Owner:</span> {property.owner_name}
+                            </div>
+                          )}
+                          
+                          {/* Contact Information */}
+                          <div className="space-y-1">
+                            {/* Owner Contacts */}
+                            {(property.owner_phone || property.owner_email) && (
+                              <div>
+                                <div className="text-xs font-medium text-gray-700 mb-1">Owner Contacts:</div>
+                                <div className="space-y-0.5">
+                                  {property.owner_phone && (
+                                    <div className="text-xs text-blue-700 flex items-center gap-1">
+                                      <Phone className="h-3 w-3" />
+                                      {property.owner_phone}
+                                    </div>
+                                  )}
+                                  {property.owner_email && (
+                                    <div className="text-xs text-green-700 flex items-center gap-1">
+                                      <Mail className="h-3 w-3" />
+                                      {property.owner_email}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Preferred Contacts */}
+                            {((property.preferred_phones && property.preferred_phones.length > 0) || 
+                              (property.preferred_emails && property.preferred_emails.length > 0)) && (
+                              <div>
+                                <div className="text-xs font-medium text-purple-700 mb-1">Preferred Contacts:</div>
+                                <div className="space-y-0.5">
+                                  {property.preferred_phones?.map((phone, idx) => (
+                                    <div key={idx} className="text-xs text-blue-700 flex items-center gap-1">
+                                      <Phone className="h-3 w-3" />
+                                      {phone}
+                                    </div>
+                                  ))}
+                                  {property.preferred_emails?.map((email, idx) => (
+                                    <div key={idx} className="text-xs text-green-700 flex items-center gap-1">
+                                      <Mail className="h-3 w-3" />
+                                      {email}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Skip Tracing Data */}
+                            {property.skip_tracing_data && (
+                              <div>
+                                <div className="text-xs font-medium text-indigo-700 mb-1">Skip Trace Data:</div>
+                                <div className="space-y-0.5">
+                                  {property.skip_tracing_data.phones?.map((p, idx) => (
+                                    <div key={idx} className="text-xs text-blue-600 flex items-center gap-1">
+                                      <Phone className="h-3 w-3" />
+                                      {p.number} ({p.type})
+                                    </div>
+                                  ))}
+                                  {property.skip_tracing_data.emails?.map((email, idx) => (
+                                    <div key={idx} className="text-xs text-green-600 flex items-center gap-1">
+                                      <Mail className="h-3 w-3" />
+                                      {email}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))
