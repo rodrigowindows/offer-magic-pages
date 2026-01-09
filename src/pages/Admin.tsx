@@ -1305,8 +1305,9 @@ const Admin = () => {
                 })}
                 propertiesWithPreferredContacts={selectedProperties.filter(id => {
                   const prop = properties.find(p => p.id === id);
-                  return (prop?.preferred_phones && (prop.preferred_phones as any[]).length > 0) ||
-                         (prop?.preferred_emails && (prop.preferred_emails as any[]).length > 0);
+                  const prefPhones = (prop?.tags || []).filter((t: string) => t.startsWith('pref_phone:'));
+                  const prefEmails = (prop?.tags || []).filter((t: string) => t.startsWith('pref_email:'));
+                  return prefPhones.length > 0 || prefEmails.length > 0;
                 }).length}
               />
             )}
@@ -2273,8 +2274,9 @@ const Admin = () => {
         })}
         propertiesWithPreferredContacts={selectedProperties.filter(id => {
           const prop = properties.find(p => p.id === id);
-          return (prop?.preferred_phones && (prop.preferred_phones as any[]).length > 0) ||
-                 (prop?.preferred_emails && (prop.preferred_emails as any[]).length > 0);
+          const prefPhones = (prop?.tags || []).filter((t: string) => t.startsWith('pref_phone:'));
+          const prefEmails = (prop?.tags || []).filter((t: string) => t.startsWith('pref_email:'));
+          return prefPhones.length > 0 || prefEmails.length > 0;
         }).length}
       />
       
