@@ -38,53 +38,22 @@ export const ABTestAnalytics = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Load data from ab_tests table and compute metrics locally
-      const { data: abTests, error: abError } = await supabase
-        .from('ab_tests')
+      // Load funnel data from ab_test_funnel view
+      const { data: funnelData, error: funnelError } = await supabase
+        .from('ab_test_funnel')
         .select('*');
 
-      if (abError) {
-        console.error('Error loading ab_tests data:', abError);
+      if (funnelError) {
+        console.error('Error loading funnel data:', funnelError);
+      } else {
+        setFunnelData(funnelData || []);
       }
 
-      // Compute funnel metrics from ab_tests data
-      if (abTests && abTests.length > 0) {
-        const variantMap = new Map<string, {
-          page_views: number;
-          email_submits: number;
-          form_submits: number;
-          viewed_offer: number;
-        }>();
-
-        abTests.forEach((test) => {
-          const variant = test.variant as ABVariant;
-          if (!variantMap.has(variant)) {
-            variantMap.set(variant, { page_views: 0, email_submits: 0, form_submits: 0, viewed_offer: 0 });
-          }
-          const stats = variantMap.get(variant)!;
-          stats.page_views += 1;
-          if (test.viewed_form) stats.email_submits += 1;
-          if (test.submitted_form) stats.form_submits += 1;
-          if (test.viewed_offer) stats.viewed_offer += 1;
-        });
-
-        const computedFunnel: FunnelMetrics[] = Array.from(variantMap.entries()).map(([variant, stats]) => ({
-          variant: variant as ABVariant,
-          page_views: stats.page_views,
-          email_submits: stats.email_submits,
-          offer_reveals: stats.viewed_offer,
-          clicked_accept: 0,
-          clicked_interested: 0,
-          form_submits: stats.form_submits,
-          phone_collected: stats.form_submits,
-          email_conversion_rate: stats.page_views > 0 ? Math.round((stats.email_submits / stats.page_views) * 100) : 0,
-          final_conversion_rate: stats.page_views > 0 ? Math.round((stats.form_submits / stats.page_views) * 100) : 0,
-          phone_conversion_rate: stats.page_views > 0 ? Math.round((stats.form_submits / stats.page_views) * 100) : 0,
-        }));
-
-        const computedWinner: WinnerData[] = computedFunnel
-          .map((f, index) => ({
-            variant: f.variant,
+      // Load winner data by computing from funnel data
+      if (funnelData && funnelData.length > 0) {
+        const computedWinner: WinnerData[] = funnelData
+          .map((f) => ({
+            variant: f.variant as ABVariant,
             visitors: f.page_views,
             conversions: f.form_submits,
             conversion_rate: f.final_conversion_rate,
@@ -94,10 +63,8 @@ export const ABTestAnalytics = () => {
           .sort((a, b) => b.conversion_rate - a.conversion_rate)
           .map((w, i) => ({ ...w, rank: i + 1 }));
 
-        setFunnelData(computedFunnel);
         setWinnerData(computedWinner);
       } else {
-        setFunnelData([]);
         setWinnerData([]);
       }
 

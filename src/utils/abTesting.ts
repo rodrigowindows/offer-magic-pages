@@ -3,6 +3,8 @@
  * Dynamically assigns and tracks different variants
  */
 
+import { supabase } from "@/integrations/supabase/client";
+
 export type ABVariant =
   | 'ultra-simple'    // Shows offer immediately, no gate
   | 'email-first'     // Email gate, then reveal
@@ -100,20 +102,32 @@ export async function trackABEvent(
   event: ABEventType,
   metadata?: Record<string, any>
 ) {
-  const eventData: ABTestEvent = {
+  const eventData = {
     property_id: propertyId,
     variant: variant,
     event: event,
-    metadata: metadata,
-    timestamp: new Date().toISOString(),
+    metadata: metadata || {},
     session_id: getSessionId(),
   };
 
-  // Save to localStorage for offline tracking
-  saveEventLocally(eventData);
+  try {
+    // Send to database
+    const { error } = await supabase
+      .from('ab_test_events')
+      .insert(eventData);
 
-  // Log event for debugging (no database table for ab_test_events yet)
-  console.log('AB Test Event:', eventData);
+    if (error) {
+      console.error('Error tracking AB event:', error);
+      // Fallback to local storage
+      saveEventLocally(eventData);
+    } else {
+      console.log('AB Test Event tracked:', eventData);
+    }
+  } catch (error) {
+    console.error('Error tracking AB event:', error);
+    // Fallback to local storage
+    saveEventLocally(eventData);
+  }
 }
 
 /**
@@ -137,7 +151,6 @@ export interface ABTestEvent {
   variant: ABVariant;
   event: ABEventType;
   metadata?: Record<string, any>;
-  timestamp: string;
   session_id: string;
 }
 

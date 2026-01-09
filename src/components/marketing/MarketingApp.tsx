@@ -20,6 +20,7 @@ import CampaignManager from './CampaignManager';
 // Note: PredictiveAnalyticsDashboard and IntelligentFollowUps removed - need database tables
 import { AdvancedWebhookManager } from './AdvancedWebhookManager';
 import { AutomatedABTesting } from './AutomatedABTesting';
+import { ABTestAnalytics } from '@/components/ABTestAnalytics';
 import TemplateManager from './TemplateManager';
 import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 
@@ -91,7 +92,7 @@ const MarketingAppContent = () => {
             <Route path="/quick" element={<SimpleCampaignDashboard />} />
             <Route path="/campaigns" element={<CampaignManager />} />
             <Route path="/analytics" element={<Dashboard />} />
-            <Route path="/ab-testing" element={<AutomatedABTesting />} />
+            <Route path="/ab-testing" element={<ABTestAnalytics />} />
             <Route path="/follow-ups" element={<Dashboard />} />
             <Route path="/webhooks" element={<AdvancedWebhookManager />} />
             <Route path="/send" element={<WizardLayout />} />
