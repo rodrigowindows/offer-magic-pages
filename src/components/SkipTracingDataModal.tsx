@@ -193,8 +193,10 @@ export const SkipTracingDataModal = ({
     const formatted = formatPhone(newPhone.trim());
     if (formatted && !manualPhones.includes(formatted)) {
       setManualPhones(prev => [...prev, formatted]);
+      // Auto-select the newly added phone
+      setSelectedPhones(prev => prev.includes(formatted) ? prev : [...prev, formatted]);
       setNewPhone('');
-      toast.success("Telefone adicionado!");
+      toast.success("Telefone adicionado e selecionado!");
     } else {
       toast.error("Telefone inválido ou já existe");
     }
@@ -205,8 +207,10 @@ export const SkipTracingDataModal = ({
     const email = newEmail.trim().toLowerCase();
     if (email.includes('@') && !manualEmails.includes(email)) {
       setManualEmails(prev => [...prev, email]);
+      // Auto-select the newly added email
+      setSelectedEmails(prev => prev.includes(email) ? prev : [...prev, email]);
       setNewEmail('');
-      toast.success("Email adicionado!");
+      toast.success("Email adicionado e selecionado!");
     } else {
       toast.error("Email inválido ou já existe");
     }

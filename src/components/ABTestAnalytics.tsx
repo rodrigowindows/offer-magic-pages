@@ -38,22 +38,62 @@ export const ABTestAnalytics = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Load funnel data from ab_test_funnel view
-      const { data: funnelData, error: funnelError } = await supabase
-        .from('ab_test_funnel')
+      // Load raw ab_tests data and compute funnel metrics
+      const { data: abTestsData, error: abTestsError } = await supabase
+        .from('ab_tests')
         .select('*');
 
-      if (funnelError) {
-        console.error('Error loading funnel data:', funnelError);
-      } else {
-        setFunnelData(funnelData || []);
+      if (abTestsError) {
+        console.error('Error loading ab_tests data:', abTestsError);
+        setFunnelData([]);
+        setWinnerData([]);
+        setLastUpdated(new Date());
+        setIsLoading(false);
+        return;
       }
 
-      // Load winner data by computing from funnel data
-      if (funnelData && funnelData.length > 0) {
-        const computedWinner: WinnerData[] = funnelData
+      // Compute funnel metrics by variant
+      const variantMetrics: Record<string, FunnelMetrics> = {};
+      
+      (abTestsData || []).forEach((test) => {
+        const variant = test.variant as ABVariant;
+        if (!variantMetrics[variant]) {
+          variantMetrics[variant] = {
+            variant,
+            page_views: 0,
+            email_submits: 0,
+            offer_reveals: 0,
+            clicked_accept: 0,
+            clicked_interested: 0,
+            form_submits: 0,
+            phone_collected: 0,
+            email_conversion_rate: 0,
+            final_conversion_rate: 0,
+            phone_conversion_rate: 0,
+          };
+        }
+        
+        variantMetrics[variant].page_views += 1;
+        if (test.submitted_form) variantMetrics[variant].form_submits += 1;
+        if (test.viewed_form) variantMetrics[variant].email_submits += 1;
+        if (test.viewed_offer) variantMetrics[variant].offer_reveals += 1;
+      });
+
+      // Calculate rates
+      Object.values(variantMetrics).forEach((m) => {
+        m.email_conversion_rate = m.page_views > 0 ? Math.round((m.email_submits / m.page_views) * 100) : 0;
+        m.final_conversion_rate = m.page_views > 0 ? Math.round((m.form_submits / m.page_views) * 100) : 0;
+        m.phone_conversion_rate = m.page_views > 0 ? Math.round((m.phone_collected / m.page_views) * 100) : 0;
+      });
+
+      const computedFunnelData = Object.values(variantMetrics);
+      setFunnelData(computedFunnelData);
+
+      // Compute winner data
+      if (computedFunnelData.length > 0) {
+        const computedWinner: WinnerData[] = computedFunnelData
           .map((f) => ({
-            variant: f.variant as ABVariant,
+            variant: f.variant,
             visitors: f.page_views,
             conversions: f.form_submits,
             conversion_rate: f.final_conversion_rate,
