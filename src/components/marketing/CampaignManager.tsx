@@ -66,6 +66,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  Trophy,
+  Activity,
+  BarChart3,
+  RotateCcw,
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall, checkHealth } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
@@ -348,6 +352,11 @@ export const CampaignManager = () => {
     return properties.filter((p) => selectedIds.includes(p.id));
   };
 
+  // Derived states for use across component
+  const selectedProps = getSelectedProperties();
+  const propsWithEmail = selectedProps.filter(p => getAllEmails(p).length > 0).length;
+  const propsWithPhone = selectedProps.filter(p => getAllPhones(p).length > 0).length;
+
   // Get phone/email from property based on selected column
   const getPhone = (prop: CampaignProperty): string | undefined => {
     // Priority 1: Get from tags (pref_phone:)
@@ -612,81 +621,22 @@ export const CampaignManager = () => {
     const totalSent = successCount + failCount;
     const successRate = totalSent > 0 ? Math.round((successCount / totalSent) * 100) : 0;
 
-    const resultToast = {
-      title: (
-        <div className="flex items-center gap-2">
-          {successRate === 100 ? (
-            <Trophy className="w-5 h-5 text-yellow-500" />
-          ) : successRate >= 80 ? (
-            <CheckCircle className="w-5 h-5 text-green-500" />
-          ) : successRate >= 50 ? (
-            <Activity className="w-5 h-5 text-blue-500" />
-          ) : (
-            <AlertCircle className="w-5 h-5 text-orange-500" />
-          )}
-          Campanha {successRate === 100 ? 'Perfeita!' : successRate >= 80 ? 'Concluída!' : 'Concluída'}
-        </div>
-      ),
+    const resultTitle = successRate === 100 ? '🏆 Campanha Perfeita!' : successRate >= 80 ? '✅ Campanha Concluída!' : '📊 Campanha Concluída';
+
+    toast({
+      title: resultTitle,
       description: `${successCount} enviados com sucesso, ${failCount} falharam. Taxa de sucesso: ${successRate}%`,
-      duration: 15000,
-    };
+    });
 
-    // Adicionar ações baseadas no resultado
+    // If there were failures, offer to retry
     if (successRate < 100 && failedProperties.length > 0) {
-      resultToast.action = (
-        <div className="flex gap-2 mt-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // Tentar novamente apenas os que falharam
-              setSelectedIds(failedProperties.map(p => p.id));
-              setCurrentStep(4);
-              toast({
-                title: 'Propriedades falharam selecionadas',
-                description: 'Vá para o passo 4 para tentar novamente apenas os envios que falharam.',
-              });
-            }}
-            className="hover:bg-primary hover:text-primary-foreground"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Tentar Novamente ({failCount})
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // Ver logs detalhados
-              toast({
-                title: 'Logs de campanha',
-                description: 'Verifique os logs detalhados no painel de administração.',
-              });
-            }}
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Ver Logs
-          </Button>
-        </div>
-      );
-    } else if (successRate === 100) {
-      resultToast.action = (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setCurrentStep(1);
-            setSelectedIds([]);
-            setSelectedTemplateId('');
-          }}
-          className="hover:bg-primary hover:text-primary-foreground"
-        >
-          <Rocket className="w-4 h-4 mr-2" />
-          Nova Campanha
-        </Button>
-      );
+      setTimeout(() => {
+        toast({
+          title: '💡 Dica',
+          description: `${failCount} envios falharam. Selecione as propriedades novamente para tentar.`,
+        });
+      }, 2000);
     }
-
-    toast(resultToast);
 
     // Limpar seleção após envio
     setSelectedIds([]);
@@ -1821,6 +1771,8 @@ export const CampaignManager = () => {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            )}
 
             {currentStep === 5 && (
               <div className="space-y-6">
@@ -2279,9 +2231,6 @@ export const CampaignManager = () => {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* ===== MODAL DE PREVIEW DE ENVIO ===== */}
-      <SendPreviewModal />
     </div>
     </TooltipProvider>
   );
