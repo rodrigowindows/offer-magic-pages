@@ -99,6 +99,12 @@ export const SkipTracingDataModal = ({
   const [selectedPhones, setSelectedPhones] = useState<string[]>([]);
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
 
+  // Manual contact addition
+  const [newPhone, setNewPhone] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [manualPhones, setManualPhones] = useState<string[]>([]);
+  const [manualEmails, setManualEmails] = useState<string[]>([]);
+
   useEffect(() => {
     if (open && propertyId) {
       fetchSkipTracingData();
@@ -118,9 +124,12 @@ export const SkipTracingDataModal = ({
       setData(property);
 
       // Load saved preferences from tags column (prefixed with pref_phone: and pref_email:)
+      // Also load manual contacts (prefixed with manual_phone: and manual_email:)
       const tags = property.tags || [];
       const savedPhones = tags.filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
       const savedEmails = tags.filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
+      const savedManualPhones = tags.filter((t: string) => t.startsWith('manual_phone:')).map((t: string) => t.replace('manual_phone:', ''));
+      const savedManualEmails = tags.filter((t: string) => t.startsWith('manual_email:')).map((t: string) => t.replace('manual_email:', ''));
 
       if (savedPhones.length > 0) {
         setSelectedPhones(savedPhones);
@@ -145,6 +154,10 @@ export const SkipTracingDataModal = ({
         }
         setSelectedPhones(phones);
       }
+
+      // Load manual contacts
+      setManualPhones(savedManualPhones);
+      setManualEmails(savedManualEmails);
 
       if (savedEmails.length > 0) {
         setSelectedEmails(savedEmails);
@@ -173,6 +186,40 @@ export const SkipTracingDataModal = ({
     setCopiedPhone(text);
     toast.success("Copiado!");
     setTimeout(() => setCopiedPhone(null), 2000);
+  };
+
+  const addManualPhone = () => {
+    if (!newPhone.trim()) return;
+    const formatted = formatPhone(newPhone.trim());
+    if (formatted && !manualPhones.includes(formatted)) {
+      setManualPhones(prev => [...prev, formatted]);
+      setNewPhone('');
+      toast.success("Telefone adicionado!");
+    } else {
+      toast.error("Telefone inválido ou já existe");
+    }
+  };
+
+  const addManualEmail = () => {
+    if (!newEmail.trim()) return;
+    const email = newEmail.trim().toLowerCase();
+    if (email.includes('@') && !manualEmails.includes(email)) {
+      setManualEmails(prev => [...prev, email]);
+      setNewEmail('');
+      toast.success("Email adicionado!");
+    } else {
+      toast.error("Email inválido ou já existe");
+    }
+  };
+
+  const removeManualPhone = (phone: string) => {
+    setManualPhones(prev => prev.filter(p => p !== phone));
+    setSelectedPhones(prev => prev.filter(p => p !== phone));
+  };
+
+  const removeManualEmail = (email: string) => {
+    setManualEmails(prev => prev.filter(e => e !== email));
+    setSelectedEmails(prev => prev.filter(e => e !== email));
   };
 
   const formatPhone = (phone?: string) => {
@@ -261,11 +308,13 @@ export const SkipTracingDataModal = ({
 
       // Remove old phone/email preferences and add new ones
       const existingTags = (property?.tags || []).filter(
-        (t: string) => !t.startsWith('pref_phone:') && !t.startsWith('pref_email:')
+        (t: string) => !t.startsWith('pref_phone:') && !t.startsWith('pref_email:') && !t.startsWith('manual_phone:') && !t.startsWith('manual_email:')
       );
       const phoneTags = selectedPhones.map(p => `pref_phone:${p}`);
       const emailTags = selectedEmails.map(e => `pref_email:${e}`);
-      const newTags = [...existingTags, ...phoneTags, ...emailTags];
+      const manualPhoneTags = manualPhones.map(p => `manual_phone:${p}`);
+      const manualEmailTags = manualEmails.map(e => `manual_email:${e}`);
+      const newTags = [...existingTags, ...phoneTags, ...emailTags, ...manualPhoneTags, ...manualEmailTags];
 
       const { error } = await supabase
         .from('properties')
@@ -495,6 +544,67 @@ export const SkipTracingDataModal = ({
                     <p className="text-xs">Importe dados de skip tracing para ver telefones</p>
                   </div>
                 )}
+
+                {/* Add Manual Phone */}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      placeholder="Adicionar telefone (ex: (555) 123-4567)"
+                      value={newPhone}
+                      onChange={(e) => setNewPhone(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addManualPhone()}
+                      className="flex-1 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={addManualPhone}
+                      disabled={!newPhone.trim()}
+                      className="gap-1"
+                    >
+                      <Phone className="h-3 w-3" />
+                      Adicionar
+                    </Button>
+                  </div>
+                  {manualPhones.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Telefones Adicionados Manualmente:</p>
+                      {manualPhones.map((phone, idx) => (
+                        <div
+                          key={`manual-${idx}`}
+                          className={`flex items-center gap-3 p-3 rounded-lg border bg-green-50 border-green-200 ${
+                            selectedPhones.includes(phone) ? 'ring-2 ring-primary' : ''
+                          }`}
+                        >
+                          <Checkbox
+                            id={`manual-phone-${idx}`}
+                            checked={selectedPhones.includes(phone)}
+                            onCheckedChange={() => togglePhone(phone)}
+                          />
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="p-2 rounded-full bg-green-100 text-green-700">
+                              <Phone className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium font-mono">{phone}</p>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-semibold text-green-600">Manual</span>
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeManualPhone(phone)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* DNC Warning */}
@@ -571,6 +681,67 @@ export const SkipTracingDataModal = ({
                     <p className="text-xs">Importe dados de skip tracing para ver emails</p>
                   </div>
                 )}
+
+                {/* Add Manual Email */}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      placeholder="Adicionar email (ex: nome@email.com)"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addManualEmail()}
+                      className="flex-1 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={addManualEmail}
+                      disabled={!newEmail.trim()}
+                      className="gap-1"
+                    >
+                      <Mail className="h-3 w-3" />
+                      Adicionar
+                    </Button>
+                  </div>
+                  {manualEmails.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Emails Adicionados Manualmente:</p>
+                      {manualEmails.map((email, idx) => (
+                        <div
+                          key={`manual-email-${idx}`}
+                          className={`flex items-center gap-3 p-3 rounded-lg border bg-green-50 border-green-200 ${
+                            selectedEmails.includes(email) ? 'ring-2 ring-primary' : ''
+                          }`}
+                        >
+                          <Checkbox
+                            id={`manual-email-${idx}`}
+                            checked={selectedEmails.includes(email)}
+                            onCheckedChange={() => toggleEmail(email)}
+                          />
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="p-2 rounded-full bg-green-100 text-green-700">
+                              <Mail className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium font-mono text-sm">{email}</p>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-semibold text-green-600">Manual</span>
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeManualEmail(email)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Extra Dynamic Fields */}
