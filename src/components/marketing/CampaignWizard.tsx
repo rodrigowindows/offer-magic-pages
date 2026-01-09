@@ -284,7 +284,9 @@ export const CampaignWizard = () => {
   });
   const [showOnlyWithPreferredContacts, setShowOnlyWithPreferredContacts] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+  const { toast } = useToast();
 
   const steps = [
     { id: 'template', title: 'Choose Template', icon: Sparkles },
@@ -313,14 +315,12 @@ export const CampaignWizard = () => {
         zip_code,
         owner_name,
         owner_phone,
-        owner_email,
+        email1,
         approval_status,
         lead_status,
-        preferred_phones,
-        preferred_emails,
+        tags,
         estimated_value,
-        cash_offer_amount,
-        skip_tracing_data
+        cash_offer_amount
       `);
 
       // Filter based on template
@@ -2270,11 +2270,7 @@ export const CampaignWizard = () => {
                     channels: [],
                     schedule: 'now',
                     scheduledDate: '',
-                    budget: 50,
-                    selectedPhoneColumns: ['preferred_phones', 'owner_phone'],
-                    selectedEmailColumns: ['preferred_emails', 'owner_email'],
-                    useSkipTracingPhones: true,
-                    useSkipTracingEmails: true
+                    budget: 50
                   });
                 }}
                 className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-200"
