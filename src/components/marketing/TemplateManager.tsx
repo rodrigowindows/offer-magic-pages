@@ -54,31 +54,47 @@ import { useTemplates } from '@/hooks/useTemplates';
 import { Channel, SavedTemplate } from '@/types/marketing.types';
 import { TEMPLATE_CATEGORIES } from '@/constants/defaultTemplates';
 
-// Helper functions for template URLs and tracking
-const generatePropertyUrl = (propertyId: string, sourceChannel: string = 'email') => {
-  const baseUrl = `${window.location.origin}/property/${propertyId}`;
-  const trackingParams = new URLSearchParams({
-    utm_source: 'marketing_campaign',
-    utm_medium: sourceChannel.toLowerCase(),
-    utm_campaign: 'cash_offer',
-    source_channel: sourceChannel,
-    timestamp: Date.now().toString()
-  });
-  return `${baseUrl}?${trackingParams.toString()}`;
+// Helper function to create SEO-friendly URL slug from address
+const createPropertySlug = (address: string, city: string, zip: string): string => {
+  // Convert "25217 MATHEW ST" -> "25217-mathew-st"
+  const addressSlug = address
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-')     // Replace spaces with hyphens
+    .replace(/-+/g, '-')      // Remove duplicate hyphens
+    .trim();
+
+  // Convert "UNINCORPORATED" -> "unincorporated"
+  const citySlug = city
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .trim();
+
+  // Result: "25217-mathew-st-unincorporated-32709"
+  return `${addressSlug}-${citySlug}-${zip}`;
 };
 
-const generateQrCodeUrl = (propertyId: string, sourceChannel: string = 'email') => {
-  const propertyUrl = generatePropertyUrl(propertyId, sourceChannel);
+// Helper functions for template URLs and tracking
+const generatePropertyUrl = (address: string = '25217 MATHEW ST', city: string = 'UNINCORPORATED', zip: string = '32709', sourceChannel: string = 'email') => {
+  // Create SEO-friendly slug: "25217-mathew-st-unincorporated-32709"
+  const propertySlug = createPropertySlug(address, city, zip);
+
+  // Build URL with source tracking: https://offer.mylocalinvest.com/property/25217-mathew-st-unincorporated-32709?src=email
+  return `https://offer.mylocalinvest.com/property/${propertySlug}?src=${sourceChannel.toLowerCase()}`;
+};
+
+const generateQrCodeUrl = (address: string = '25217 MATHEW ST', city: string = 'UNINCORPORATED', zip: string = '32709', sourceChannel: string = 'email') => {
+  const propertyUrl = generatePropertyUrl(address, city, zip, sourceChannel);
   return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 };
 
-const generateTrackingPixel = (propertyId: string, sourceChannel: string = 'email') => {
-  const trackingUrl = `${window.location.origin}/api/track/email-open?property=${propertyId}&channel=${sourceChannel}&t=${Date.now()}`;
-  return `<img src="${trackingUrl}" width="1" height="1" style="display:none;" alt="" />`;
+const generateTrackingPixel = (propertyId: string = 'sample', sourceChannel: string = 'email') => {
+  return `<img src="https://offer.mylocalinvest.com/track/open/${propertyId}?src=${sourceChannel}&t=${Date.now()}" width="1" height="1" style="display:none;" alt="" />`;
 };
 
-const generateUnsubscribeUrl = (propertyId: string) => {
-  return `${window.location.origin}/unsubscribe?property=${propertyId}`;
+const generateUnsubscribeUrl = (email: string = 'example@email.com') => {
+  return `https://offer.mylocalinvest.com/unsubscribe?email=${encodeURIComponent(email)}`;
 };
 
 // Available variables for templates
@@ -880,19 +896,22 @@ export const TemplateManager = () => {
                       dangerouslySetInnerHTML={{
                         __html: previewTemplate.body.replace(/{([^}]+)}/g, (match, variable) => {
                           const sampleValues: Record<string, string> = {
-                            name: 'João Silva',
-                            address: '123 Main Street',
-                            city: 'Orlando',
+                            name: 'BURROWS MARGARET',
+                            address: '25217 MATHEW ST',
+                            city: 'UNINCORPORATED',
                             state: 'FL',
-                            cash_offer: '$250,000',
-                            company_name: 'Your Real Estate Company',
-                            phone: '(555) 123-4567',
-                            seller_name: 'Maria Santos',
-                            property_url: generatePropertyUrl('sample-property-id', previewTemplate.channel),
-                            qr_code_url: generateQrCodeUrl('sample-property-id', previewTemplate.channel),
+                            zip_code: '32709',
+                            cash_offer: '$70,000',
+                            company_name: 'MyLocalInvest',
+                            phone: '(786) 882-8251',
+                            seller_name: 'Alex Johnson',
+                            estimated_value: '$100,000',
+                            offer_percentage: '70',
+                            property_url: generatePropertyUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
+                            qr_code_url: generateQrCodeUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
                             source_channel: previewTemplate.channel.toUpperCase(),
                             tracking_pixel: generateTrackingPixel('sample-property-id', previewTemplate.channel),
-                            unsubscribe_url: generateUnsubscribeUrl('sample-property-id')
+                            unsubscribe_url: generateUnsubscribeUrl('example@email.com')
                           };
                           return sampleValues[variable] || match;
                         })
@@ -902,19 +921,22 @@ export const TemplateManager = () => {
                     <pre className="whitespace-pre-wrap font-sans text-sm">
                       {previewTemplate.body.replace(/{([^}]+)}/g, (match, variable) => {
                         const sampleValues: Record<string, string> = {
-                          name: 'João Silva',
-                          address: '123 Main Street',
-                          city: 'Orlando',
+                          name: 'BURROWS MARGARET',
+                          address: '25217 MATHEW ST',
+                          city: 'UNINCORPORATED',
                           state: 'FL',
-                          cash_offer: '$250,000',
-                          company_name: 'Your Real Estate Company',
-                          phone: '(555) 123-4567',
-                          seller_name: 'Maria Santos',
-                          property_url: generatePropertyUrl('sample-property-id', previewTemplate.channel),
-                          qr_code_url: generateQrCodeUrl('sample-property-id', previewTemplate.channel),
+                          zip_code: '32709',
+                          cash_offer: '$70,000',
+                          company_name: 'MyLocalInvest',
+                          phone: '(786) 882-8251',
+                          seller_name: 'Alex Johnson',
+                          estimated_value: '$100,000',
+                          offer_percentage: '70',
+                          property_url: generatePropertyUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
+                          qr_code_url: generateQrCodeUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
                           source_channel: previewTemplate.channel.toUpperCase(),
                           tracking_pixel: generateTrackingPixel('sample-property-id', previewTemplate.channel),
-                          unsubscribe_url: generateUnsubscribeUrl('sample-property-id')
+                          unsubscribe_url: generateUnsubscribeUrl('example@email.com')
                         };
                         return sampleValues[variable] || match;
                       })}
@@ -924,31 +946,41 @@ export const TemplateManager = () => {
               </div>
 
               {/* Link da Oferta & QR Code Info */}
-              {previewTemplate.channel === 'email' && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Link da Oferta & QR Code:</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">URL da Propriedade:</Label>
-                      <div className="p-2 bg-muted rounded text-xs font-mono break-all">
-                        {generatePropertyUrl('sample-property-id', previewTemplate.channel)}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Este link inclui parâmetros de tracking UTM e identifica a origem ({previewTemplate.channel.toUpperCase()})
-                      </p>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Link da Oferta & QR Code:</Label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">URL da Propriedade (Exemplo):</Label>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm font-mono break-all">
+                      {generatePropertyUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel)}
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs text-muted-foreground">QR Code URL:</Label>
-                      <div className="p-2 bg-muted rounded text-xs font-mono break-all">
-                        {generateQrCodeUrl('sample-property-id', previewTemplate.channel)}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        QR code gerado dinamicamente para cada propriedade
-                      </p>
-                    </div>
+                    <p className="text-xs text-muted-foreground flex items-start gap-2">
+                      <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span>
+                        Este link é gerado automaticamente para cada propriedade usando o formato:{' '}
+                        <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
+                          https://offer.mylocalinvest.com/property/[endereço-cidade-zip]?src={previewTemplate.channel}
+                        </code>
+                      </span>
+                    </p>
                   </div>
+                  {previewTemplate.channel === 'email' && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">QR Code Preview:</Label>
+                      <div className="p-4 bg-gray-50 rounded border flex items-center justify-center">
+                        <img
+                          src={generateQrCodeUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel)}
+                          alt="QR Code Preview"
+                          className="w-32 h-32 border-2 border-white shadow-md"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        QR code gerado dinamicamente para cada propriedade, direcionando para a página de oferta personalizada
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Tracking & Analytics Info */}
               <div className="space-y-3">

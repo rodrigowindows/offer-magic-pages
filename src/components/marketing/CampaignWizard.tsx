@@ -1324,7 +1324,7 @@ export const CampaignWizard = () => {
                         )}
 
                         <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                          {channel === 'email' && (template.body.includes('<!DOCTYPE') || template.body.includes('<html')) ? (
+                          {channel === 'email' && /<([a-z][\s\S]*?)>/i.test(template.body) ? (
                             <div className="relative w-full" style={{ minHeight: '500px' }}>
                               <iframe
                                 srcDoc={renderTemplateContent(template.body, selectedProperties[0] || {}, channel)}

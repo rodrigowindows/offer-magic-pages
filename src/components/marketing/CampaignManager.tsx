@@ -65,8 +65,9 @@ import {
   Moon,
   ChevronLeft,
   ChevronRight,
+  Shield,
 } from 'lucide-react';
-import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
+import { sendSMS, sendEmail, initiateCall, checkHealth } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplates';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
@@ -453,202 +454,347 @@ export const CampaignManager = () => {
     const selectedProps = getSelectedProperties();
     setShowSendPreview(false);
 
+    // ===== PRÉ-VALIDAÇÃO AVANÇADA =====
+    const validationErrors = [];
+
+    // 1. Verificar serviço disponível
+    try {
+      await checkHealth();
+    } catch (error) {
+      validationErrors.push('Serviço de comunicação indisponível. Tente novamente em alguns minutos.');
+    }
+
+    // 2. Validações básicas
+    if (selectedProps.length === 0) {
+      validationErrors.push('Nenhuma propriedade selecionada');
+    }
+
+    if (!selectedTemplate) {
+      validationErrors.push('Nenhum template selecionado');
+    }
+
+    // 3. Verificar contatos compatíveis
+    const incompatibleProps = selectedProps.filter(prop => {
+      if (selectedChannel === 'sms' || selectedChannel === 'call') {
+        return getAllPhones(prop).length === 0;
+      } else if (selectedChannel === 'email') {
+        return getAllEmails(prop).length === 0;
+      }
+      return false;
+    });
+
+    if (incompatibleProps.length > 0) {
+      validationErrors.push(`${incompatibleProps.length} propriedades não têm ${selectedChannel === 'email' ? 'email' : 'telefone'} válido`);
+    }
+
+    // 4. Verificar limite de envio (evitar sobrecarga)
+    if (selectedProps.length > 100) {
+      validationErrors.push('Máximo de 100 propriedades por campanha. Divida em campanhas menores.');
+    }
+
+    if (validationErrors.length > 0) {
+      toast({
+        title: 'Erro de validação',
+        description: validationErrors.join('. '),
+        variant: 'destructive',
+        duration: 8000,
+      });
+      return;
+    }
+
+    // ===== CONFIRMAÇÃO DETALHADA =====
+    const contactSummary = selectedChannel === 'email'
+      ? `${propsWithEmail}/${selectedProps.length} propriedades com email`
+      : `${propsWithPhone}/${selectedProps.length} propriedades com telefone`;
+
+    const confirmed = window.confirm(
+      `🚀 CONFIRMAR ENVIO DE CAMPANHA\n\n` +
+      `📧 Template: ${selectedTemplate.name}\n` +
+      `📡 Canal: ${selectedChannel.toUpperCase()}\n` +
+      `🏠 Propriedades: ${selectedProps.length}\n` +
+      `📞 Contatos válidos: ${contactSummary}\n\n` +
+      `⚠️  Esta ação irá enviar ${selectedProps.length} comunicações\n` +
+      `💰 Custo estimado: ${selectedChannel === 'sms' ? `$${(selectedProps.length * 0.05).toFixed(2)}` : selectedChannel === 'call' ? `$${(selectedProps.length * 0.10).toFixed(2)}` : '$0.00'}\n\n` +
+      `❓ Tem certeza que deseja continuar?`
+    );
+
+    if (!confirmed) return;
+
+    // ===== INÍCIO DO ENVIO CONTROLADO =====
     setSending(true);
     let successCount = 0;
     let failCount = 0;
     let completedCount = 0;
+    const failedProperties: any[] = [];
+    const batchSize = 5; // Processar em lotes para evitar sobrecarga
 
-    // Inicializar progresso
     updateProgress(0, selectedProps.length, 0, 0);
 
-    for (let i = 0; i < selectedProps.length; i++) {
-      const prop = selectedProps[i];
+    // Processar em lotes
+    for (let batchStart = 0; batchStart < selectedProps.length; batchStart += batchSize) {
+      const batchEnd = Math.min(batchStart + batchSize, selectedProps.length);
+      const batch = selectedProps.slice(batchStart, batchEnd);
 
-      try {
-        const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-        const allPhones = getAllPhones(prop);
-        const allEmails = getAllEmails(prop);
+      // Processar lote em paralelo (até 3 simultâneos)
+      const batchPromises = batch.map(async (prop, indexInBatch) => {
+        const globalIndex = batchStart + indexInBatch;
+        return processPropertySend(prop, globalIndex);
+      });
 
-        let sent = false;
-        let lastError: any = null;
+      // Aguardar conclusão do lote
+      const batchResults = await Promise.allSettled(batchPromises);
 
-        if (selectedChannel === 'sms') {
-          if (allPhones.length === 0) {
+      // Atualizar progresso e contadores
+      batchResults.forEach((result, indexInBatch) => {
+        const globalIndex = batchStart + indexInBatch;
+        completedCount++;
+
+        if (result.status === 'fulfilled') {
+          if (result.value.success) {
+            successCount++;
+          } else {
             failCount++;
-            completedCount++;
-            updateProgress(completedCount, selectedProps.length, successCount, failCount);
-            continue;
+            failedProperties.push(result.value.property);
           }
-
-          if (!selectedTemplate) {
-            failCount++;
-            completedCount++;
-            updateProgress(completedCount, selectedProps.length, successCount, failCount);
-            continue;
-          }
-
-          const trackingId = crypto.randomUUID();
-          const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
-
-          for (const phone of allPhones) {
-            try {
-              await sendSMS({
-                phone_number: phone,
-                body: content,
-              });
-
-              // Log successful SMS send
-              await supabase.from('campaign_logs').insert({
-                tracking_id: trackingId,
-                campaign_type: 'manual',
-                channel: 'sms',
-                property_id: prop.id,
-                recipient_phone: phone,
-                sent_at: new Date().toISOString(),
-                metadata: {
-                  template_id: selectedTemplate.id,
-                  template_name: selectedTemplate.name,
-                  contact_index: allPhones.indexOf(phone),
-                  total_contacts: allPhones.length
-                }
-              });
-
-              sent = true;
-              break;
-            } catch (error) {
-              lastError = error;
-            }
-          }
-
-          if (!sent) {
-            failCount++;
-            continue;
-          }
-        } else if (selectedChannel === 'email') {
-          if (allEmails.length === 0) {
-            failCount++;
-            continue;
-          }
-
-          if (!selectedTemplate) {
-            failCount++;
-            continue;
-          }
-
-          const trackingId = crypto.randomUUID();
-          const { content, subject } = generateTemplateContent(selectedTemplate, prop, trackingId);
-
-          for (const email of allEmails) {
-            try {
-              await sendEmail({
-                receiver_email: email,
-                subject: subject,
-                message_body: content,
-              });
-
-              // Log successful email send
-              await supabase.from('campaign_logs').insert({
-                tracking_id: trackingId,
-                campaign_type: 'manual',
-                channel: 'email',
-                property_id: prop.id,
-                recipient_email: email,
-                sent_at: new Date().toISOString(),
-                metadata: {
-                  template_id: selectedTemplate.id,
-                  template_name: selectedTemplate.name,
-                  contact_index: allEmails.indexOf(email),
-                  total_contacts: allEmails.length,
-                  subject: subject
-                }
-              });
-
-              sent = true;
-              break;
-            } catch (error) {
-              lastError = error;
-            }
-          }
-
-          if (!sent) {
-            failCount++;
-            continue;
-          }
-        } else if (selectedChannel === 'call') {
-          if (allPhones.length === 0) {
-            failCount++;
-            continue;
-          }
-
-          if (!selectedTemplate) {
-            failCount++;
-            continue;
-          }
-
-          const trackingId = crypto.randomUUID();
-          const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
-
-          for (const phone of allPhones) {
-            try {
-              await initiateCall({
-                name: prop.owner_name || 'Owner',
-                address: fullAddress,
-                from_number: settings.company.contact_phone,
-                to_number: phone,
-                voicemail_drop: content,
-                seller_name: settings.company.company_name,
-              });
-
-              // Log successful call initiation
-              await supabase.from('campaign_logs').insert({
-                tracking_id: trackingId,
-                campaign_type: 'manual',
-                channel: 'call',
-                property_id: prop.id,
-                recipient_phone: phone,
-                sent_at: new Date().toISOString(),
-                metadata: {
-                  template_id: selectedTemplate.id,
-                  template_name: selectedTemplate.name,
-                  contact_index: allPhones.indexOf(phone),
-                  total_contacts: allPhones.length
-                }
-              });
-
-              sent = true;
-              break;
-            } catch (error) {
-              lastError = error;
-            }
-          }
-
-          if (!sent) {
-            failCount++;
-            continue;
-          }
+        } else {
+          failCount++;
+          failedProperties.push(selectedProps[globalIndex]);
         }
 
-        completedCount++;
         updateProgress(completedCount, selectedProps.length, successCount, failCount);
-      } catch (error: any) {
-        console.error(`Error sending to ${prop.id}:`, error);
-        failCount++;
-        completedCount++;
-        updateProgress(completedCount, selectedProps.length, successCount, failCount);
+      });
+
+      // Pequena pausa entre lotes para não sobrecarregar
+      if (batchEnd < selectedProps.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
     setSending(false);
 
-    // Toast aprimorado com mais detalhes
-    toast({
-      title: '🎉 Campanha Finalizada!',
-      description: `${successCount} mensagens enviadas com sucesso, ${failCount} falharam. Taxa de sucesso: ${Math.round((successCount / (successCount + failCount)) * 100)}%`,
-      duration: 8000,
-    });
+    // ===== RESULTADO FINAL COM AÇÕES =====
+    const totalSent = successCount + failCount;
+    const successRate = totalSent > 0 ? Math.round((successCount / totalSent) * 100) : 0;
 
+    const resultToast = {
+      title: (
+        <div className="flex items-center gap-2">
+          {successRate === 100 ? (
+            <Trophy className="w-5 h-5 text-yellow-500" />
+          ) : successRate >= 80 ? (
+            <CheckCircle className="w-5 h-5 text-green-500" />
+          ) : successRate >= 50 ? (
+            <Activity className="w-5 h-5 text-blue-500" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-orange-500" />
+          )}
+          Campanha {successRate === 100 ? 'Perfeita!' : successRate >= 80 ? 'Concluída!' : 'Concluída'}
+        </div>
+      ),
+      description: `${successCount} enviados com sucesso, ${failCount} falharam. Taxa de sucesso: ${successRate}%`,
+      duration: 15000,
+    };
+
+    // Adicionar ações baseadas no resultado
+    if (successRate < 100 && failedProperties.length > 0) {
+      resultToast.action = (
+        <div className="flex gap-2 mt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Tentar novamente apenas os que falharam
+              setSelectedIds(failedProperties.map(p => p.id));
+              setCurrentStep(4);
+              toast({
+                title: 'Propriedades falharam selecionadas',
+                description: 'Vá para o passo 4 para tentar novamente apenas os envios que falharam.',
+              });
+            }}
+            className="hover:bg-primary hover:text-primary-foreground"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Tentar Novamente ({failCount})
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Ver logs detalhados
+              toast({
+                title: 'Logs de campanha',
+                description: 'Verifique os logs detalhados no painel de administração.',
+              });
+            }}
+          >
+            <BarChart3 className="w-4 h-4 mr-2" />
+            Ver Logs
+          </Button>
+        </div>
+      );
+    } else if (successRate === 100) {
+      resultToast.action = (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setCurrentStep(1);
+            setSelectedIds([]);
+            setSelectedTemplateId('');
+          }}
+          className="hover:bg-primary hover:text-primary-foreground"
+        >
+          <Rocket className="w-4 h-4 mr-2" />
+          Nova Campanha
+        </Button>
+      );
+    }
+
+    toast(resultToast);
+
+    // Limpar seleção após envio
     setSelectedIds([]);
     setProgressStats({ completed: 0, total: 0, success: 0, fail: 0, successCount: 0, failCount: 0, estimatedTimeRemaining: '0s' });
+  };
+
+  // ===== FUNÇÃO AUXILIAR PARA PROCESSAR PROPRIEDADE =====
+  const processPropertySend = async (prop: any, globalIndex: number) => {
+    try {
+      const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
+      const allPhones = getAllPhones(prop);
+      const allEmails = getAllEmails(prop);
+
+      let sent = false;
+      let lastError: any = null;
+      const trackingId = crypto.randomUUID();
+
+      if (selectedChannel === 'sms') {
+        if (allPhones.length === 0) {
+          return { success: false, property: prop, error: 'No phone available' };
+        }
+
+        const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
+
+        for (const phone of allPhones) {
+          try {
+            await sendSMS({
+              phone_number: phone,
+              body: content,
+            });
+
+            // Log successful SMS send
+            await supabase.from('campaign_logs').insert({
+              tracking_id: trackingId,
+              campaign_type: 'manual',
+              channel: 'sms',
+              property_id: prop.id,
+              recipient_phone: phone,
+              sent_at: new Date().toISOString(),
+              metadata: {
+                template_id: selectedTemplate.id,
+                template_name: selectedTemplate.name,
+                contact_index: allPhones.indexOf(phone),
+                total_contacts: allPhones.length,
+                batch_index: globalIndex
+              }
+            });
+
+            sent = true;
+            break;
+          } catch (error) {
+            lastError = error;
+            console.error(`SMS failed for ${phone}:`, error);
+          }
+        }
+      } else if (selectedChannel === 'email') {
+        if (allEmails.length === 0) {
+          return { success: false, property: prop, error: 'No email available' };
+        }
+
+        const { content, subject } = generateTemplateContent(selectedTemplate, prop, trackingId);
+
+        for (const email of allEmails) {
+          try {
+            await sendEmail({
+              receiver_email: email,
+              subject: subject,
+              message_body: content,
+            });
+
+            // Log successful email send
+            await supabase.from('campaign_logs').insert({
+              tracking_id: trackingId,
+              campaign_type: 'manual',
+              channel: 'email',
+              property_id: prop.id,
+              recipient_email: email,
+              sent_at: new Date().toISOString(),
+              metadata: {
+                template_id: selectedTemplate.id,
+                template_name: selectedTemplate.name,
+                contact_index: allEmails.indexOf(email),
+                total_contacts: allEmails.length,
+                subject: subject,
+                batch_index: globalIndex
+              }
+            });
+
+            sent = true;
+            break;
+          } catch (error) {
+            lastError = error;
+            console.error(`Email failed for ${email}:`, error);
+          }
+        }
+      } else if (selectedChannel === 'call') {
+        if (allPhones.length === 0) {
+          return { success: false, property: prop, error: 'No phone available' };
+        }
+
+        const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
+
+        for (const phone of allPhones) {
+          try {
+            await initiateCall({
+              name: prop.owner_name || 'Owner',
+              address: fullAddress,
+              from_number: settings.company.contact_phone,
+              to_number: phone,
+              voicemail_drop: content,
+              seller_name: settings.company.company_name,
+            });
+
+            // Log successful call initiation
+            await supabase.from('campaign_logs').insert({
+              tracking_id: trackingId,
+              campaign_type: 'manual',
+              channel: 'call',
+              property_id: prop.id,
+              recipient_phone: phone,
+              sent_at: new Date().toISOString(),
+              metadata: {
+                template_id: selectedTemplate.id,
+                template_name: selectedTemplate.name,
+                contact_index: allPhones.indexOf(phone),
+                total_contacts: allPhones.length,
+                batch_index: globalIndex
+              }
+            });
+
+            sent = true;
+            break;
+          } catch (error) {
+            lastError = error;
+            console.error(`Call failed for ${phone}:`, error);
+          }
+        }
+      }
+
+      return { success: sent, property: prop, error: sent ? null : lastError };
+    } catch (error: any) {
+      console.error(`Error sending to ${prop.id}:`, error);
+      return { success: false, property: prop, error };
+    }
   };
 
   const selectedCount = selectedIds.length;
@@ -1343,8 +1489,106 @@ export const CampaignManager = () => {
                     )}
                   </CardContent>
                 </Card>
-              </div>
-            )}
+
+                {/* Campaign Summary & Validation */}
+                <Card className="border-green-200 dark:border-green-800">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-green-600" />
+                      Campaign Summary & Validation
+                    </CardTitle>
+                    <CardDescription>
+                      Final checklist before sending your campaign
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Template Info */}
+                      <div className="space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4" />
+                          Template
+                        </h4>
+                        <div className="pl-6 space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>Name:</span>
+                            <span className="font-medium">{selectedTemplate?.name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Channel:</span>
+                            <span className="font-medium capitalize">{selectedChannel}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Properties Info */}
+                      <div className="space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <Users className="w-4 h-4" />
+                          Recipients
+                        </h4>
+                        <div className="pl-6 space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>Total Selected:</span>
+                            <span className="font-medium">{selectedIds.length}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>With Contact:</span>
+                            <span className={`font-medium ${(selectedChannel === 'email' ? propsWithEmail : propsWithPhone) === selectedIds.length ? 'text-green-600' : 'text-red-600'}`}>
+                              {selectedChannel === 'email' ? propsWithEmail : propsWithPhone} / {selectedIds.length}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Validation Checklist */}
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        Pre-Send Validation
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          {selectedTemplate ? (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-600" />
+                          )}
+                          <span className={selectedTemplate ? 'text-green-700' : 'text-red-700'}>
+                            Template selected
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          {selectedIds.length > 0 ? (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-600" />
+                          )}
+                          <span className={selectedIds.length > 0 ? 'text-green-700' : 'text-red-700'}>
+                            Properties selected ({selectedIds.length})
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          {(selectedChannel === 'email' ? propsWithEmail : propsWithPhone) === selectedIds.length ? (
+                            <CheckCircle className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-600" />
+                          )}
+                          <span className={(selectedChannel === 'email' ? propsWithEmail : propsWithPhone) === selectedIds.length ? 'text-green-700' : 'text-red-700'}>
+                            All properties have valid {selectedChannel === 'email' ? 'email' : 'phone'} contact
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-green-700">
+                            Campaign ready to send
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
             {currentStep === 5 && (
               <div className="space-y-6">
