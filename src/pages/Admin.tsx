@@ -1303,6 +1303,11 @@ const Admin = () => {
                   const prop = properties.find(p => p.id === id);
                   return prop?.approval_status === 'approved';
                 })}
+                propertiesWithPreferredContacts={selectedProperties.filter(id => {
+                  const prop = properties.find(p => p.id === id);
+                  return (prop?.preferred_phones && (prop.preferred_phones as any[]).length > 0) ||
+                         (prop?.preferred_emails && (prop.preferred_emails as any[]).length > 0);
+                }).length}
               />
             )}
             <KanbanBoard
@@ -2266,6 +2271,11 @@ const Admin = () => {
           const prop = properties.find(p => p.id === id);
           return prop?.approval_status === 'approved';
         })}
+        propertiesWithPreferredContacts={selectedProperties.filter(id => {
+          const prop = properties.find(p => p.id === id);
+          return (prop?.preferred_phones && (prop.preferred_phones as any[]).length > 0) ||
+                 (prop?.preferred_emails && (prop.preferred_emails as any[]).length > 0);
+        }).length}
       />
       
       <AdminChatBot />

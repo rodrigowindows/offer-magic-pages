@@ -12,7 +12,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Oferta Cash Padrão',
     channel: 'sms',
     subject: '',
-    body: 'Hi {name}! Cash offer of ${cash_offer} for your home at {address}. Valid for 7 days. View details: {property_url}?source=sms Call: {phone}',
+    body: 'Hi {name}! {cash_offer} cash for {address} {city} {zip_code}. No repairs, close in 7 days. Reply YES → {property_url}',
     is_default: true,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -22,7 +22,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Follow-up SMS',
     channel: 'sms',
     subject: '',
-    body: 'Hi {name}, our ${cash_offer} offer for {address} is still valid. We can close fast! Details: {property_url}?source=sms&campaign=followup Call: {phone}',
+    body: 'Hi {name}, our {cash_offer} offer for {address} is still available! No fees, fast close. View offer: {property_url} Call: {phone}',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -32,7 +32,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'SMS Urgente',
     channel: 'sms',
     subject: '',
-    body: '🚨 LAST CHANCE: ${cash_offer} offer expires today! See details: {property_url}?source=sms&campaign=urgent Call NOW: {phone}',
+    body: '🚨 LAST CHANCE: {cash_offer} cash offer expires soon! View now: {property_url} Reply YES or call: {phone}',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -77,17 +77,23 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
         <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
           <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">Scan to view your personalized offer page:</p>
           <img src="{qr_code_url}" alt="QR Code" style="width: 200px; height: 200px; margin: 0 auto; display: block; border: 4px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
-          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or visit: <a href="{property_url}?source=email" style="color: #667eea; text-decoration: none;">{property_url}?source=email</a></p>
+          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or click here: <a href="{property_url}" style="color: #667eea; text-decoration: none; font-weight: bold;">View Full Offer Details</a></p>
         </div>
       </td>
     </tr>
     <tr>
       <td style="padding: 20px 30px; background-color: #f8f9fa; text-align: center; border-top: 1px solid #eee;">
-        <p style="margin: 0; color: #666; font-size: 14px;">{company_name}</p>
-        <p style="margin: 5px 0 0; color: #999; font-size: 12px;">This email was sent regarding your property inquiry.</p>
+        <p style="margin: 0; color: #666; font-size: 14px; font-weight: bold;">{company_name}</p>
+        <p style="margin: 5px 0; color: #999; font-size: 12px;">Trusted Miami Investors Since 2015</p>
+        <p style="margin: 10px 0 5px; color: #999; font-size: 11px;">
+          <a href="{unsubscribe_url}" style="color: #999; text-decoration: underline;">Unsubscribe</a> |
+          <a href="mailto:info@mylocalinvest.com" style="color: #999; text-decoration: underline;">Contact Us</a>
+        </p>
+        <p style="margin: 5px 0 0; color: #ccc; font-size: 10px;">Zero commissions • Zero closing costs • 100% confidential</p>
       </td>
     </tr>
   </table>
+  {tracking_pixel}
 </body>
 </html>`,
     is_default: true,
@@ -121,10 +127,17 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f0f8ff; border-radius: 8px;">
       <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">View your complete offer details:</p>
       <img src="{qr_code_url}" alt="QR Code" style="width: 180px; height: 180px; margin: 0 auto; display: block; border: 3px solid #4CAF50;" />
-      <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;"><a href="{property_url}?source=email&campaign=followup" style="color: #4CAF50; text-decoration: none;">Click here to view online</a></p>
+      <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;"><a href="{property_url}" style="color: #4CAF50; text-decoration: none; font-weight: bold;">Click here to view online</a></p>
     </div>
     <p>Best regards,<br><strong>{seller_name}</strong><br>{company_name}</p>
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+      <p style="margin: 5px 0; color: #999; font-size: 11px;">
+        <a href="{unsubscribe_url}" style="color: #999; text-decoration: underline;">Unsubscribe</a> |
+        <a href="mailto:info@mylocalinvest.com" style="color: #999; text-decoration: underline;">Contact Us</a>
+      </p>
+    </div>
   </div>
+  {tracking_pixel}
 </body>
 </html>`,
     is_default: false,
@@ -138,7 +151,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Voicemail Default',
     channel: 'call',
     subject: '',
-    body: 'Hi {name}, this is {seller_name} from {company_name}. We have a cash offer of {cash_offer} for your property at {address}. We can close in as little as 7 days. View full details at {property_url}?source=voicemail or call us back at {phone}. Thank you!',
+    body: 'Hi {name}, this is {seller_name} from {company_name}. We have a cash offer of {cash_offer} for your property at {address}. We can close in as little as 7 days with no repairs needed. View your complete offer details at {property_url} or call us back at {phone}. Thank you!',
     is_default: true,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -148,7 +161,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Voicemail Urgent',
     channel: 'call',
     subject: '',
-    body: 'Hi {name}, {seller_name} from {company_name}. URGENT: Our cash offer of {cash_offer} for your home expires in 24 hours. This is a unique opportunity - check {property_url}?source=voicemail&campaign=urgent or call immediately at {phone}!',
+    body: 'Hi {name}, {seller_name} from {company_name}. URGENT: Our cash offer of {cash_offer} for {address} expires in 24 hours. This is a unique opportunity - view full details at {property_url} or call immediately at {phone}. Don\'t miss out!',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -158,7 +171,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Voicemail Follow-up',
     channel: 'call',
     subject: '',
-    body: 'Hi {name}, {seller_name} again. Just confirming our offer of {cash_offer} for your property is still valid. We can make the entire process easy. See details at {property_url}?source=voicemail&campaign=followup or call when you can: {phone}.',
+    body: 'Hi {name}, {seller_name} from {company_name} following up. Our {cash_offer} cash offer for your property at {address} is still available. No fees, no hassle. See all details at {property_url} or call when you can: {phone}.',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
