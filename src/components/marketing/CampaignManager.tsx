@@ -1607,22 +1607,22 @@ export const CampaignManager = () => {
                   <CardContent>
                     {selectedProps.length > 0 && selectedTemplate ? (
                       <div className="space-y-6">
-                        {selectedChannel === 'sms' && (
+                    {selectedChannel === 'sms' && selectedProps[previewIndex] && (
                           <div className="border rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <MessageSquare className="w-4 h-4" />
                               <span className="font-medium">SMS Message</span>
                             </div>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
-                              {renderTemplatePreview(selectedProps[0])}
+                              {renderTemplatePreview(selectedProps[previewIndex])}
                             </div>
                             <div className="text-xs text-muted-foreground mt-2">
-                              ~{renderTemplatePreview(selectedProps[0]).length} characters
+                              ~{renderTemplatePreview(selectedProps[previewIndex]).length} characters
                             </div>
                           </div>
                         )}
 
-                        {selectedChannel === 'email' && (
+                        {selectedChannel === 'email' && selectedProps[previewIndex] && (
                           <div className="border rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <Mail className="w-4 h-4" />
@@ -1630,10 +1630,10 @@ export const CampaignManager = () => {
                             </div>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
                               <div className="font-medium mb-2">
-                                Subject: {renderTemplatePreview(selectedProps[0], 'subject')}
+                                Subject: {renderTemplatePreview(selectedProps[previewIndex], 'subject')}
                               </div>
                               <div className="whitespace-pre-line">
-                                {renderTemplatePreview(selectedProps[0])}
+                                {renderTemplatePreview(selectedProps[previewIndex])}
                               </div>
                             </div>
                             <div className="text-xs text-muted-foreground mt-2">
@@ -1642,14 +1642,14 @@ export const CampaignManager = () => {
                           </div>
                         )}
 
-                        {selectedChannel === 'call' && (
+                        {selectedChannel === 'call' && selectedProps[previewIndex] && (
                           <div className="border rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
                               <Phone className="w-4 h-4" />
                               <span className="font-medium">Call Message</span>
                             </div>
                             <div className="bg-gray-50 p-3 rounded border text-sm">
-                              {renderTemplatePreview(selectedProps[0])}
+                              {renderTemplatePreview(selectedProps[previewIndex])}
                             </div>
                             <div className="text-xs text-muted-foreground mt-2">
                               Voicemail message for unanswered calls
@@ -2034,7 +2034,7 @@ export const CampaignManager = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {selectedChannel === 'email' && selectedTemplate?.subject && (
+                  {selectedChannel === 'email' && selectedTemplate?.subject && selectedProps[0] && (
                     <div>
                       <Label className="text-sm font-medium">Assunto</Label>
                       <p className="text-sm bg-muted p-2 rounded">
@@ -2042,12 +2042,14 @@ export const CampaignManager = () => {
                       </p>
                     </div>
                   )}
-                  <div>
-                    <Label className="text-sm font-medium">Mensagem</Label>
-                    <div className="text-sm bg-muted p-3 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
-                      {renderTemplatePreview(selectedProps[0], 'body')}
+                  {selectedProps[0] && (
+                    <div>
+                      <Label className="text-sm font-medium">Mensagem</Label>
+                      <div className="text-sm bg-muted p-3 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                        {renderTemplatePreview(selectedProps[0], 'body')}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
