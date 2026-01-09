@@ -371,23 +371,53 @@ export const CampaignManager = () => {
   };
 
   const getAllPhones = (prop: CampaignProperty): string[] => {
-    // Priority 1: Get from tags
-    const prefPhones = (prop.tags || []).filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
-    if (prefPhones.length > 0) {
-      return prefPhones;
+    // Ensure tags is an array
+    const tags = Array.isArray(prop.tags) ? prop.tags : [];
+
+    // Priority 1: Get preferred phones from tags
+    const prefPhones = tags
+      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
+      .map((t: string) => t.replace('pref_phone:', ''));
+
+    // Priority 2: Get manual phones from tags
+    const manualPhones = tags
+      .filter((t: string) => typeof t === 'string' && t.startsWith('manual_phone:'))
+      .map((t: string) => t.replace('manual_phone:', ''));
+
+    // Combine both preferred and manual phones
+    const allPhones = [...prefPhones, ...manualPhones];
+
+    if (allPhones.length > 0) {
+      return allPhones;
     }
-    // Priority 2: Selected column
+
+    // Priority 3: Selected column as fallback
     const phone = prop[selectedPhoneColumn] as string | undefined;
     return phone ? [phone] : [];
   };
 
   const getAllEmails = (prop: CampaignProperty): string[] => {
-    // Priority 1: Get from tags
-    const prefEmails = (prop.tags || []).filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
-    if (prefEmails.length > 0) {
-      return prefEmails;
+    // Ensure tags is an array
+    const tags = Array.isArray(prop.tags) ? prop.tags : [];
+
+    // Priority 1: Get preferred emails from tags
+    const prefEmails = tags
+      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_email:'))
+      .map((t: string) => t.replace('pref_email:', ''));
+
+    // Priority 2: Get manual emails from tags
+    const manualEmails = tags
+      .filter((t: string) => typeof t === 'string' && t.startsWith('manual_email:'))
+      .map((t: string) => t.replace('manual_email:', ''));
+
+    // Combine both preferred and manual emails
+    const allEmails = [...prefEmails, ...manualEmails];
+
+    if (allEmails.length > 0) {
+      return allEmails;
     }
-    // Priority 2: Selected column
+
+    // Priority 3: Selected column as fallback
     const email = prop[selectedEmailColumn] as string | undefined;
     return email ? [email] : [];
   };

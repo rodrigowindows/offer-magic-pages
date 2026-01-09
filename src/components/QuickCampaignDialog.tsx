@@ -156,7 +156,7 @@ const CAMPAIGN_SEQUENCES: CampaignSequence[] = [
 ];
 
 export const QuickCampaignDialog = ({
-  properties,
+  properties = [],
   open,
   onOpenChange,
   onSuccess
@@ -166,6 +166,9 @@ export const QuickCampaignDialog = ({
   const addToHistory = useMarketingStore((state) => state.addToHistory);
   const { templates } = useTemplates();
   const { sendIndividualCommunication } = useMarketing();
+
+  // Ensure properties is always an array
+  const safeProperties = Array.isArray(properties) ? properties : [];
 
   const [selectedTemplate, setSelectedTemplate] = useState<QuickTemplate | null>(null);
   const [selectedSequence, setSelectedSequence] = useState<CampaignSequence | null>(null);
@@ -189,7 +192,7 @@ export const QuickCampaignDialog = ({
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
-      console.log('QuickCampaignDialog opened with properties:', properties.length);
+      console.log('QuickCampaignDialog opened with properties:', safeProperties.length);
       setSelectedTemplate(null);
       setSelectedSequence(null);
       setCampaignMode('single');
@@ -200,7 +203,7 @@ export const QuickCampaignDialog = ({
       setAbTestVariantB('');
       setAbTestSplit(50);
     }
-  }, [open]);
+  }, [open, safeProperties]);
 
   // Get default template for channel
   const getDefaultTemplate = (channel: 'sms' | 'email' | 'call') => {
@@ -226,20 +229,48 @@ export const QuickCampaignDialog = ({
 
   // Get best available contact with fallback
   const getBestContact = (property: Property, type: 'email' | 'phone') => {
+    if (!property) return null;
+
+    // Helper to safely get array from potentially JSON string
+    const getArray = (value: any): string[] | null => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : null;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    };
+
     // First priority: preferred contacts
-    if (type === 'phone' && property.preferred_phones && property.preferred_phones.length > 0) {
-      return property.preferred_phones[0]; // Use first preferred phone
+    if (type === 'phone') {
+      const phones = getArray(property.preferred_phones);
+      if (phones && phones.length > 0) {
+        return phones[0]; // Use first preferred phone
+      }
     }
-    if (type === 'email' && property.preferred_emails && property.preferred_emails.length > 0) {
-      return property.preferred_emails[0]; // Use first preferred email
+    if (type === 'email') {
+      const emails = getArray(property.preferred_emails);
+      if (emails && emails.length > 0) {
+        return emails[0]; // Use first preferred email
+      }
     }
 
     // Second priority: preferred contacts from skip tracing data
-    if (type === 'phone' && property.skip_tracing_data?.preferred_phones && property.skip_tracing_data.preferred_phones.length > 0) {
-      return property.skip_tracing_data.preferred_phones[0];
+    if (type === 'phone' && property.skip_tracing_data?.preferred_phones) {
+      const phones = getArray(property.skip_tracing_data.preferred_phones);
+      if (phones && phones.length > 0) {
+        return phones[0];
+      }
     }
-    if (type === 'email' && property.skip_tracing_data?.preferred_emails && property.skip_tracing_data.preferred_emails.length > 0) {
-      return property.skip_tracing_data.preferred_emails[0];
+    if (type === 'email' && property.skip_tracing_data?.preferred_emails) {
+      const emails = getArray(property.skip_tracing_data.preferred_emails);
+      if (emails && emails.length > 0) {
+        return emails[0];
+      }
     }
 
     // Third priority: primary column
@@ -270,8 +301,12 @@ export const QuickCampaignDialog = ({
 
   // Remove duplicates based on contact
   const removeDuplicateContacts = (properties: Property[], type: 'email' | 'phone') => {
+    if (!Array.isArray(properties)) return [];
+
     const seen = new Set<string>();
     return properties.filter(property => {
+      if (!property) return false;
+
       const contact = getBestContact(property, type);
       if (!contact || seen.has(contact)) return false;
       seen.add(contact);
@@ -333,7 +368,7 @@ export const QuickCampaignDialog = ({
 
   const handleSendSingle = async () => {
     // Filter and deduplicate properties based on contact availability
-    const validProperties = removeDuplicateContacts(properties, selectedTemplate!.channel === 'email' ? 'email' : 'phone');
+    const validProperties = removeDuplicateContacts(safeProperties, selectedTemplate!.channel === 'email' ? 'email' : 'phone');
 
     if (validProperties.length === 0) {
       toast({
@@ -396,7 +431,7 @@ export const QuickCampaignDialog = ({
       const template = getDefaultTemplate(step.channel);
       if (!template) continue;
 
-      const validProperties = removeDuplicateContacts(properties, step.channel === 'email' ? 'email' : 'phone');
+      const validProperties = removeDuplicateContacts(safeProperties, step.channel === 'email' ? 'email' : 'phone');
 
       for (let i = 0; i < validProperties.length; i++) {
         const property = validProperties[i];
@@ -437,7 +472,7 @@ export const QuickCampaignDialog = ({
   const handleSendABTest = async () => {
     if (!selectedTemplate) return;
 
-    const validProperties = removeDuplicateContacts(properties, selectedTemplate.channel === 'email' ? 'email' : 'phone');
+    const validProperties = removeDuplicateContacts(safeProperties, selectedTemplate.channel === 'email' ? 'email' : 'phone');
     const template = getDefaultTemplate(selectedTemplate.channel);
 
     if (!template || validProperties.length === 0) return;
@@ -708,14 +743,14 @@ export const QuickCampaignDialog = ({
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-blue-700">Email ({selectedEmailColumn}):</span>
-                      <Badge variant={properties.filter(p => (p as any)[selectedEmailColumn]).length > 0 ? "default" : "secondary"}>
-                        {properties.filter(p => (p as any)[selectedEmailColumn]).length} / {properties.length}
+                      <Badge variant={safeProperties.filter(p => (p as any)[selectedEmailColumn]).length > 0 ? "default" : "secondary"}>
+                        {safeProperties.filter(p => (p as any)[selectedEmailColumn]).length} / {safeProperties.length}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-blue-700">Phone ({selectedPhoneColumn}):</span>
-                      <Badge variant={properties.filter(p => (p as any)[selectedPhoneColumn]).length > 0 ? "default" : "secondary"}>
-                        {properties.filter(p => (p as any)[selectedPhoneColumn]).length} / {properties.length}
+                      <Badge variant={safeProperties.filter(p => (p as any)[selectedPhoneColumn]).length > 0 ? "default" : "secondary"}>
+                        {safeProperties.filter(p => (p as any)[selectedPhoneColumn]).length} / {safeProperties.length}
                       </Badge>
                     </div>
                   </div>
@@ -739,14 +774,30 @@ export const QuickCampaignDialog = ({
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-green-700">Preferred Emails:</span>
-                      <Badge variant={properties.filter(p => p.preferred_emails && p.preferred_emails.length > 0).length > 0 ? "default" : "outline"}>
-                        {properties.filter(p => p.preferred_emails && p.preferred_emails.length > 0).length} / {properties.length}
+                      <Badge variant={safeProperties.filter(p => {
+                        const emails = Array.isArray(p.preferred_emails) ? p.preferred_emails :
+                          (typeof p.preferred_emails === 'string' ? (() => { try { return JSON.parse(p.preferred_emails); } catch { return []; } })() : []);
+                        return emails && emails.length > 0;
+                      }).length > 0 ? "default" : "outline"}>
+                        {safeProperties.filter(p => {
+                          const emails = Array.isArray(p.preferred_emails) ? p.preferred_emails :
+                            (typeof p.preferred_emails === 'string' ? (() => { try { return JSON.parse(p.preferred_emails); } catch { return []; } })() : []);
+                          return emails && emails.length > 0;
+                        }).length} / {safeProperties.length}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-green-700">Preferred Phones:</span>
-                      <Badge variant={properties.filter(p => p.preferred_phones && p.preferred_phones.length > 0).length > 0 ? "default" : "outline"}>
-                        {properties.filter(p => p.preferred_phones && p.preferred_phones.length > 0).length} / {properties.length}
+                      <Badge variant={safeProperties.filter(p => {
+                        const phones = Array.isArray(p.preferred_phones) ? p.preferred_phones :
+                          (typeof p.preferred_phones === 'string' ? (() => { try { return JSON.parse(p.preferred_phones); } catch { return []; } })() : []);
+                        return phones && phones.length > 0;
+                      }).length > 0 ? "default" : "outline"}>
+                        {safeProperties.filter(p => {
+                          const phones = Array.isArray(p.preferred_phones) ? p.preferred_phones :
+                            (typeof p.preferred_phones === 'string' ? (() => { try { return JSON.parse(p.preferred_phones); } catch { return []; } })() : []);
+                          return phones && phones.length > 0;
+                        }).length} / {safeProperties.length}
                       </Badge>
                     </div>
                   </div>
@@ -863,8 +914,8 @@ export const QuickCampaignDialog = ({
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <h4 className="text-sm font-medium text-blue-900 mb-2">Resumo da Validação:</h4>
                   <div className="text-xs text-blue-800 space-y-1">
-                    <p>• {removeDuplicateContacts(properties, selectedTemplate!.channel === 'email' ? 'email' : 'phone').length}
-                      de {properties.length} propriedades têm {selectedTemplate!.channel === 'email' ? 'email' : 'telefone'} válido</p>
+                    <p>• {removeDuplicateContacts(safeProperties, selectedTemplate!.channel === 'email' ? 'email' : 'phone').length}
+                      de {safeProperties.length} propriedades têm {selectedTemplate!.channel === 'email' ? 'email' : 'telefone'} válido</p>
                     {enableFallback && <p>• Fallback ativado para colunas alternativas</p>}
                     <p>• Delay de {rateLimitDelay}ms entre envios</p>
                     {campaignMode === 'ab-test' && (
