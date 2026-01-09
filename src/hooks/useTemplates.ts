@@ -8,15 +8,42 @@ export const useTemplates = () => {
   const store = useMarketingStore();
   const templates = store.templates;
 
-  // Inicializar templates padrão se nenhum existir
+  // Inicializar e atualizar templates padrão
   useEffect(() => {
     // Small delay to ensure store is hydrated
     const timer = setTimeout(() => {
       if (templates.length === 0) {
+        // Carregar templates padrão se nenhum existir
         DEFAULT_TEMPLATES.forEach(template => {
           store.addTemplate(template);
         });
         toast.info('Templates padrão foram carregados automaticamente');
+      } else {
+        // Verificar se templates padrão precisam ser atualizados
+        let updatedCount = 0;
+        DEFAULT_TEMPLATES.forEach(defaultTemplate => {
+          const existingTemplate = templates.find(t => t.id === defaultTemplate.id);
+          if (existingTemplate && existingTemplate.is_default) {
+            // Verificar se o conteúdo mudou
+            const contentChanged = existingTemplate.body !== defaultTemplate.body ||
+                                 existingTemplate.subject !== defaultTemplate.subject ||
+                                 existingTemplate.name !== defaultTemplate.name;
+
+            if (contentChanged) {
+              store.updateTemplate(existingTemplate.id, {
+                body: defaultTemplate.body,
+                subject: defaultTemplate.subject,
+                name: defaultTemplate.name,
+                updated_at: new Date(),
+              });
+              updatedCount++;
+            }
+          }
+        });
+
+        if (updatedCount > 0) {
+          toast.info(`${updatedCount} template(s) padrão foram atualizados`);
+        }
       }
     }, 100);
 

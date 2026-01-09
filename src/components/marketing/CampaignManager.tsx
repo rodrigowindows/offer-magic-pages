@@ -1381,101 +1381,118 @@ export const CampaignManager = () => {
 
             {currentStep === 3 && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold mb-2">Configure Campaign</h2>
-                  <p className="text-muted-foreground">Set up your campaign settings</p>
+                <div className="text-center">
+                  <h2 className="text-2xl font-bold mb-2">Campaign Summary</h2>
+                  <p className="text-muted-foreground">Review your campaign configuration</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Channel Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Communication Channel</Label>
-                        <Tabs value={selectedChannel} onValueChange={(v) => setSelectedChannel(v as Channel)}>
-                          <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="sms" className="gap-1">
-                              <MessageSquare className="w-4 h-4" />
-                              SMS
-                            </TabsTrigger>
-                            <TabsTrigger value="email" className="gap-1">
-                              <Mail className="w-4 h-4" />
-                              Email
-                            </TabsTrigger>
-                            <TabsTrigger value="call" className="gap-1">
-                              <Phone className="w-4 h-4" />
-                              Call
-                            </TabsTrigger>
-                          </TabsList>
-                        </Tabs>
+                {/* Campaign Overview Cards */}
+                <div className="grid gap-6 md:grid-cols-3">
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 mb-4">
+                          <Target className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div className="text-3xl font-bold text-blue-600 mb-2">{selectedIds.length}</div>
+                        <div className="text-sm font-medium text-blue-700">Target Properties</div>
+                        <div className="text-xs text-blue-600 mt-1">Selected for outreach</div>
                       </div>
-
-                      {(selectedChannel === 'sms' || selectedChannel === 'call') && (
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Phone Column</Label>
-                          <Select value={selectedPhoneColumn} onValueChange={setSelectedPhoneColumn}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {PHONE_COLUMNS.map((col) => (
-                                <SelectItem key={col.value} value={col.value}>
-                                  {col.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {selectedChannel === 'email' && (
-                        <div>
-                          <Label className="text-sm font-medium mb-2 block">Email Column</Label>
-                          <Select value={selectedEmailColumn} onValueChange={setSelectedEmailColumn}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {EMAIL_COLUMNS.map((col) => (
-                                <SelectItem key={col.value} value={col.value}>
-                                  {col.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Campaign Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Template:</span>
-                          <span className="font-medium">{selectedTemplate?.name}</span>
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50">
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 mb-4">
+                          {selectedChannel === 'sms' && <MessageSquare className="h-6 w-6 text-purple-600" />}
+                          {selectedChannel === 'email' && <Mail className="h-6 w-6 text-purple-600" />}
+                          {selectedChannel === 'call' && <Phone className="h-6 w-6 text-purple-600" />}
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Channel:</span>
-                          <span className="font-medium capitalize">{selectedChannel}</span>
+                        <div className="text-3xl font-bold text-purple-600 mb-2 capitalize">{selectedChannel}</div>
+                        <div className="text-sm font-medium text-purple-700">Communication Channel</div>
+                        <div className="text-xs text-purple-600 mt-1">From template selection</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50">
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 mb-4">
+                          {testMode ? <Activity className="h-6 w-6 text-green-600" /> : <Rocket className="h-6 w-6 text-green-600" />}
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Properties:</span>
-                          <span className="font-medium">{selectedIds.length}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Mode:</span>
-                          <span className="font-medium">{testMode ? '🧪 Test' : '🚀 Live'}</span>
-                        </div>
+                        <div className="text-3xl font-bold text-green-600 mb-2">{testMode ? 'TEST' : 'LIVE'}</div>
+                        <div className="text-sm font-medium text-green-700">Campaign Mode</div>
+                        <div className="text-xs text-green-600 mt-1">{testMode ? 'Safe testing mode' : 'Production mode'}</div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Campaign Details */}
+                <Card className="border-0 shadow-lg">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-purple-600" />
+                      Campaign Configuration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <div className="text-sm text-gray-600">Template</div>
+                        <div className="text-lg font-semibold text-gray-900">{selectedTemplate?.name}</div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm text-gray-600">Channel</div>
+                        <div className="flex items-center gap-2">
+                          {selectedChannel === 'sms' && <MessageSquare className="h-5 w-5 text-blue-600" />}
+                          {selectedChannel === 'email' && <Mail className="h-5 w-5 text-green-600" />}
+                          {selectedChannel === 'call' && <Phone className="h-5 w-5 text-purple-600" />}
+                          <span className="text-lg font-semibold text-gray-900 capitalize">{selectedChannel}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm text-gray-600">Total Properties</div>
+                        <div className="text-lg font-semibold text-gray-900">{selectedIds.length}</div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-sm text-gray-600">Estimated Cost</div>
+                        <div className="text-lg font-semibold text-green-600">
+                          ${(selectedIds.length * 0.75).toFixed(2)} - ${(selectedIds.length * 2.50).toFixed(2)}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Contact Method Info */}
+                <Alert className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
+                  <AlertDescription className="text-base">
+                    <div className="font-semibold text-blue-900 mb-1">
+                      Contacts from Skip Tracing ✓
+                    </div>
+                    <div className="text-blue-800">
+                      This campaign will use the <strong>preferred {selectedChannel === 'sms' || selectedChannel === 'call' ? 'phones' : 'emails'}</strong> you selected during skip tracing.
+                      No need to select contact columns again!
+                    </div>
+                  </AlertDescription>
+                </Alert>
+
+                {/* Ready Alert */}
+                <Alert className="border-2 border-green-200 bg-gradient-to-r from-green-50 to-emerald-50">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <AlertDescription className="text-base">
+                    <div className="font-semibold text-green-900 mb-1">
+                      Ready to Preview! ✓
+                    </div>
+                    <div className="text-green-800">
+                      Your campaign is configured. Click "Next Step" to see a detailed preview of messages that will be sent.
+                    </div>
+                  </AlertDescription>
+                </Alert>
               </div>
             )}
 
