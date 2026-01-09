@@ -138,7 +138,6 @@ export const CampaignManager = () => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<{id: string; label: string}[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [previewIndex, setPreviewIndex] = useState(0);
   const [showHtmlCode, setShowHtmlCode] = useState(false);
   const [progressStats, setProgressStats] = useState({
     completed: 0, 
@@ -164,23 +163,19 @@ export const CampaignManager = () => {
     const remaining = total - completed;
     const avgTime = 0.5; // seconds per message
     const estimatedSeconds = Math.round(remaining * avgTime);
-    const estimatedTimeRemaining = estimatedSeconds > 60 
-      ? `${Math.round(estimatedSeconds / 60)}m` 
+    const estimatedTimeRemaining = estimatedSeconds > 60
+      ? `${Math.round(estimatedSeconds / 60)}m`
       : `${estimatedSeconds}s`;
-    setProgressStats({ 
-      completed, 
-      total, 
-      success, 
-      fail, 
-      successCount: success, 
+    setProgressStats({
+      completed,
+      total,
+      success,
+      fail,
+      successCount: success,
       failCount: fail,
-      estimatedTimeRemaining 
+      estimatedTimeRemaining
     });
   };
-
-  // Preview navigation
-  const prevPreview = () => setPreviewIndex(prev => Math.max(0, prev - 1));
-  const nextPreview = () => setPreviewIndex(prev => Math.min(getSelectedProperties().length - 1, prev + 1));
 
   // Remove filter
   const removeFilter = (id: string) => setActiveFilters(prev => prev.filter(f => f.id !== id));
@@ -1297,41 +1292,39 @@ export const CampaignManager = () => {
                                           {property.approval_status}
                                         </Badge>
                                       </div>
-                                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <span className="flex items-center gap-1 cursor-help">
-                                              <Phone className="w-3 h-3" />
-                                              {phones.length}
+
+                                      {/* Display actual contact information */}
+                                      <div className="space-y-1 text-sm">
+                                        {/* Show preferred phones */}
+                                        {phones.length > 0 && (
+                                          <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Phone className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate font-mono text-xs">
+                                              {phones.slice(0, 2).join(', ')}
+                                              {phones.length > 2 && ` +${phones.length - 2} more`}
                                             </span>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p>{phones.length} números de telefone disponíveis</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <span className="flex items-center gap-1 cursor-help">
-                                              <Mail className="w-3 h-3" />
-                                              {emails.length}
+                                          </div>
+                                        )}
+
+                                        {/* Show preferred emails */}
+                                        {emails.length > 0 && (
+                                          <div className="flex items-center gap-2 text-muted-foreground">
+                                            <Mail className="w-3 h-3 flex-shrink-0" />
+                                            <span className="truncate font-mono text-xs">
+                                              {emails.slice(0, 1).join(', ')}
+                                              {emails.length > 1 && ` +${emails.length - 1} more`}
                                             </span>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p>{emails.length} endereços de email disponíveis</p>
-                                          </TooltipContent>
-                                        </Tooltip>
+                                          </div>
+                                        )}
+
+                                        {/* Cash offer */}
                                         {property.cash_offer_amount && (
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <span className="flex items-center gap-1 cursor-help">
-                                                <DollarSign className="w-3 h-3" />
-                                                {property.cash_offer_amount.toLocaleString()}
-                                              </span>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                              <p>Oferta de cash: ${property.cash_offer_amount.toLocaleString()}</p>
-                                            </TooltipContent>
-                                          </Tooltip>
+                                          <div className="flex items-center gap-2 text-green-600 font-semibold">
+                                            <DollarSign className="w-3 h-3 flex-shrink-0" />
+                                            <span className="text-xs">
+                                              {property.cash_offer_amount.toLocaleString()}
+                                            </span>
+                                          </div>
                                         )}
                                       </div>
                                     </div>
@@ -1588,138 +1581,142 @@ export const CampaignManager = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      <span>📧 Message Content Preview</span>
-                      {selectedProps.length > 1 && (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={prevPreview}
-                            disabled={previewIndex === 0}
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </Button>
-                          <span className="text-sm text-muted-foreground min-w-[60px] text-center">
-                            {previewIndex + 1} / {selectedProps.length}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={nextPreview}
-                            disabled={previewIndex === selectedProps.length - 1}
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      )}
+                    <CardTitle className="text-lg">
+                      📧 Message Content Preview
+                      <span className="text-sm text-muted-foreground font-normal ml-2">
+                        ({selectedProps.length} {selectedProps.length === 1 ? 'property' : 'properties'})
+                      </span>
                     </CardTitle>
                     <CardDescription>
-                      Preview of actual messages that will be sent to recipients
-                      {selectedProps.length > 0 && (
-                        <span className="block text-sm font-medium text-foreground mt-1">
-                          Previewing: {selectedProps[previewIndex]?.address || 'N/A'}
-                        </span>
-                      )}
+                      Preview of actual messages that will be sent to all recipients
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {selectedProps.length > 0 && selectedTemplate ? (
                       <div className="space-y-6">
-                    {selectedChannel === 'sms' && selectedProps[previewIndex] && (
-                          <div className="border rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <MessageSquare className="w-4 h-4" />
-                              <span className="font-medium">SMS Message</span>
+                        {/* Render preview for EACH property */}
+                        {selectedProps.map((property, index) => (
+                          <div key={property.id || index} className="border-2 border-gray-200 rounded-lg p-4 bg-gradient-to-br from-white to-gray-50">
+                            {/* Property Header */}
+                            <div className="flex items-start justify-between mb-4 pb-3 border-b-2 border-gray-200">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                                    {index + 1}
+                                  </div>
+                                  <h4 className="font-bold text-base text-gray-900">{property.address || 'N/A'}</h4>
+                                </div>
+                                <div className="text-sm text-gray-600 ml-8">
+                                  {property.city || 'N/A'}, {property.state || 'FL'} {property.zip_code || 'N/A'}
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-lg font-bold text-green-600">
+                                  ${property.cash_offer?.toLocaleString() || '0'}
+                                </div>
+                                <div className="text-xs text-gray-500">Cash Offer</div>
+                              </div>
                             </div>
-                            <div className="bg-gray-50 p-3 rounded border text-sm">
-                              {renderTemplatePreview(selectedProps[previewIndex])}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-2">
-                              ~{renderTemplatePreview(selectedProps[previewIndex]).length} characters
-                            </div>
+
+                            {/* SMS Preview */}
+                            {selectedChannel === 'sms' && (
+                              <div className="border rounded-lg p-4 bg-white">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <MessageSquare className="w-4 h-4 text-blue-600" />
+                                  <span className="font-medium">SMS Message</span>
+                                </div>
+                                <div className="bg-gray-50 p-3 rounded border text-sm">
+                                  {renderTemplatePreview(property)}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-2">
+                                  ~{renderTemplatePreview(property).length} characters
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Email Preview */}
+                            {selectedChannel === 'email' && (
+                              <div className="border rounded-lg p-4 bg-white">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Mail className="w-4 h-4 text-blue-600" />
+                                    <span className="font-medium">Email Message</span>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowHtmlCode(!showHtmlCode)}
+                                    className="gap-2"
+                                  >
+                                    {showHtmlCode ? (
+                                      <>
+                                        <Eye className="w-4 h-4" />
+                                        Show Preview
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Code className="w-4 h-4" />
+                                        Show HTML
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+
+                                {/* Subject */}
+                                <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
+                                  <span className="text-xs text-blue-600 font-medium">Subject:</span>
+                                  <div className="text-sm font-medium text-gray-900 mt-1">
+                                    {renderTemplatePreview(property, 'subject')}
+                                  </div>
+                                </div>
+
+                                {/* Email Body */}
+                                <div className="bg-white border rounded">
+                                  {showHtmlCode ? (
+                                    // Show HTML Code
+                                    <pre className="p-3 text-xs overflow-auto max-h-[400px] whitespace-pre-wrap font-mono">
+                                      {renderTemplatePreview(property)}
+                                    </pre>
+                                  ) : (
+                                    // Show Rendered HTML
+                                    <iframe
+                                      srcDoc={renderTemplatePreview(property)}
+                                      className="w-full border-0 rounded"
+                                      style={{ height: '400px', minHeight: '300px' }}
+                                      title={`Email Preview - ${property.address}`}
+                                      sandbox="allow-same-origin"
+                                    />
+                                  )}
+                                </div>
+
+                                <div className="flex items-center justify-between mt-2">
+                                  <div className="text-xs text-muted-foreground">
+                                    {showHtmlCode ? 'HTML Source Code' : 'Rendered Preview'}
+                                  </div>
+                                  <div className="text-xs text-green-600 font-medium">
+                                    ✓ HTML email with professional formatting
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Call/Voicemail Preview */}
+                            {selectedChannel === 'call' && (
+                              <div className="border rounded-lg p-4 bg-white">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Phone className="w-4 h-4 text-blue-600" />
+                                  <span className="font-medium">Voicemail Message</span>
+                                </div>
+                                <div className="bg-gray-50 p-3 rounded border text-sm">
+                                  {renderTemplatePreview(property)}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-2">
+                                  Voicemail message for unanswered calls
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-
-                        {selectedChannel === 'email' && selectedProps[previewIndex] && (
-                          <div className="border rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                <span className="font-medium">Email Message</span>
-                              </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowHtmlCode(!showHtmlCode)}
-                                className="gap-2"
-                              >
-                                {showHtmlCode ? (
-                                  <>
-                                    <Eye className="w-4 h-4" />
-                                    Show Preview
-                                  </>
-                                ) : (
-                                  <>
-                                    <Code className="w-4 h-4" />
-                                    Show HTML
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-
-                            {/* Subject */}
-                            <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
-                              <span className="text-xs text-blue-600 font-medium">Subject:</span>
-                              <div className="text-sm font-medium text-gray-900 mt-1">
-                                {renderTemplatePreview(selectedProps[previewIndex], 'subject')}
-                              </div>
-                            </div>
-
-                            {/* Email Body */}
-                            <div className="bg-white border rounded">
-                              {showHtmlCode ? (
-                                // Show HTML Code
-                                <pre className="p-3 text-xs overflow-auto max-h-[500px] whitespace-pre-wrap font-mono">
-                                  {renderTemplatePreview(selectedProps[previewIndex])}
-                                </pre>
-                              ) : (
-                                // Show Rendered HTML
-                                <iframe
-                                  srcDoc={renderTemplatePreview(selectedProps[previewIndex])}
-                                  className="w-full border-0 rounded"
-                                  style={{ height: '500px', minHeight: '400px' }}
-                                  title="Email Preview"
-                                  sandbox="allow-same-origin"
-                                />
-                              )}
-                            </div>
-
-                            <div className="flex items-center justify-between mt-2">
-                              <div className="text-xs text-muted-foreground">
-                                {showHtmlCode ? 'HTML Source Code' : 'Rendered Preview'}
-                              </div>
-                              <div className="text-xs text-green-600 font-medium">
-                                ✓ HTML email with professional formatting
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {selectedChannel === 'call' && selectedProps[previewIndex] && (
-                          <div className="border rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Phone className="w-4 h-4" />
-                              <span className="font-medium">Call Message</span>
-                            </div>
-                            <div className="bg-gray-50 p-3 rounded border text-sm">
-                              {renderTemplatePreview(selectedProps[previewIndex])}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-2">
-                              Voicemail message for unanswered calls
-                            </div>
-                          </div>
-                        )}
+                        ))}
                       </div>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">

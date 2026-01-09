@@ -284,8 +284,7 @@ export const CampaignWizard = () => {
   });
   const [showOnlyWithPreferredContacts, setShowOnlyWithPreferredContacts] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const { toast } = useToast();
+  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
 
   const steps = [
     { id: 'template', title: 'Choose Template', icon: Sparkles },
@@ -298,10 +297,10 @@ export const CampaignWizard = () => {
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
 
   useEffect(() => {
-    if (currentStep === 'properties') {
-      fetchAvailableProperties();
+    if (currentStep === 'preview') {
+      setCurrentPreviewIndex(0);
     }
-  }, [currentStep, showOnlyWithPreferredContacts]);
+  }, [currentStep]);
 
   const fetchAvailableProperties = async () => {
     setIsLoading(true);
@@ -1570,6 +1569,383 @@ export const CampaignWizard = () => {
                 </div>
               </AlertDescription>
             </Alert>
+          </div>
+        );
+
+      case 'preview':
+        return (
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 mb-4">
+                <Eye className="h-8 w-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Campaign Preview
+              </h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Review your campaign before sending
+              </p>
+            </div>
+
+            {/* Target Audience Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <Card className="border-0 shadow-md">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">{selectedProperties.length}</div>
+                  <div className="text-sm text-gray-600">Total Properties</div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {selectedProperties.filter(p => p.approval_status === 'approved').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Approved</div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {selectedProperties.reduce((total, p) => total + (p.preferred_phones?.length || 0), 0)}
+                  </div>
+                  <div className="text-sm text-gray-600">Preferred Phones</div>
+                </CardContent>
+              </Card>
+              <Card className="border-0 shadow-md">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {selectedProperties.reduce((total, p) => total + (p.preferred_emails?.length || 0), 0)}
+                  </div>
+                  <div className="text-sm text-gray-600">Preferred Emails</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Contact Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="h-5 w-5 text-blue-600" />
+                    Phone Contact Breakdown
+                  </CardTitle>
+                  <CardDescription>Distribution of phone numbers across contact sources</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                      <span className="font-medium">Primary Phones</span>
+                      <Badge className="bg-blue-100 text-blue-700">
+                        {selectedProperties.filter(p => p.owner_phone).length}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <span className="font-medium">Preferred Phones</span>
+                      <Badge className="bg-green-100 text-green-700">
+                        {selectedProperties.reduce((total, p) => total + (p.preferred_phones?.length || 0), 0)}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                      <span className="font-medium">Skip Tracing Phones</span>
+                      <Badge className="bg-purple-100 text-purple-700">
+                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.phones?.length || 0), 0)}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg border-2 border-blue-300">
+                      <span className="font-bold text-blue-700">Total Phone Contacts</span>
+                      <Badge className="bg-blue-600 text-white font-bold">
+                        {selectedProperties.reduce((total, p) => {
+                          let count = p.owner_phone ? 1 : 0;
+                          if (p.preferred_phones) count += p.preferred_phones.length;
+                          if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
+                          return total + count;
+                        }, 0)}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-green-600" />
+                    Email Contact Breakdown
+                  </CardTitle>
+                  <CardDescription>Distribution of email addresses across contact sources</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                      <span className="font-medium">Primary Emails</span>
+                      <Badge className="bg-green-100 text-green-700">
+                        {selectedProperties.filter(p => p.owner_email).length}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                      <span className="font-medium">Preferred Emails</span>
+                      <Badge className="bg-yellow-100 text-yellow-700">
+                        {selectedProperties.reduce((total, p) => total + (p.preferred_emails?.length || 0), 0)}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
+                      <span className="font-medium">Skip Tracing Emails</span>
+                      <Badge className="bg-purple-100 text-purple-700">
+                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.emails?.length || 0), 0)}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-100 to-green-200 rounded-lg border-2 border-green-300">
+                      <span className="font-bold text-green-700">Total Email Contacts</span>
+                      <Badge className="bg-green-600 text-white font-bold">
+                        {selectedProperties.reduce((total, p) => {
+                          let count = p.owner_email ? 1 : 0;
+                          if (p.preferred_emails) count += p.preferred_emails.length;
+                          if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
+                          return total + count;
+                        }, 0)}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Campaign Stats */}
+            <Card className="border-0 shadow-lg bg-gradient-to-r from-gray-50 to-blue-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                  Campaign Stats
+                </CardTitle>
+                <CardDescription>Template: {selectedTemplate?.name} | Channels: {selectedTemplate?.channels.join(', ')} | Expected Success: {selectedTemplate?.successRate}</CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* Message Content Preview */}
+            <Card className="border-0 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-purple-600" />
+                  Message Content Preview
+                </CardTitle>
+                <CardDescription>
+                  Preview of actual messages that will be sent to recipients
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* Pagination Controls */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      {selectedProperties.length > 0 ? `${currentPreviewIndex + 1} / ${selectedProperties.length}` : 'No properties selected'}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPreviewIndex === 0}
+                        onClick={() => setCurrentPreviewIndex(prev => Math.max(0, prev - 1))}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPreviewIndex >= selectedProperties.length - 1}
+                        onClick={() => setCurrentPreviewIndex(prev => Math.min(selectedProperties.length - 1, prev + 1))}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Current Property Preview */}
+                  {selectedProperties.length > 0 && (
+                    <div className="space-y-4">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="font-semibold text-blue-900">
+                          Previewing: {selectedProperties[currentPreviewIndex].address}
+                        </div>
+                        <div className="text-sm text-blue-700 mt-1">
+                          {selectedProperties[currentPreviewIndex].city}, {selectedProperties[currentPreviewIndex].state} {selectedProperties[currentPreviewIndex].zip_code}
+                        </div>
+                      </div>
+
+                      {/* Message Previews by Channel */}
+                      <div className="grid gap-6">
+                        {selectedTemplate?.channels.map((channel) => {
+                          const template = getDefaultTemplateForChannel(channel);
+                          if (!template) return null;
+
+                          const currentProperty = selectedProperties[currentPreviewIndex];
+
+                          return (
+                            <div key={channel} className="border rounded-lg p-6 bg-gradient-to-br from-white to-gray-50">
+                              <div className="flex items-center gap-2 mb-4">
+                                {channel === 'sms' && <MessageSquare className="h-5 w-5 text-blue-500" />}
+                                {channel === 'email' && <Mail className="h-5 w-5 text-green-500" />}
+                                {channel === 'call' && <Phone className="h-5 w-5 text-purple-500" />}
+                                <span className="text-lg font-semibold capitalize">{channel} Message</span>
+                                <Badge variant="outline" className="ml-auto">{template.name}</Badge>
+                              </div>
+
+                              <div className="bg-white p-4 rounded-lg border shadow-sm">
+                                {channel === 'email' && template.subject && (
+                                  <div className="font-medium text-gray-900 mb-3 border-b pb-2">
+                                    📧 Subject: {renderTemplateContent(template.subject, currentProperty, channel)}
+                                  </div>
+                                )}
+                                <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                                  {renderTemplateContent(template.body, currentProperty, channel)}
+                                </div>
+                              </div>
+
+                              <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
+                                <div className="flex items-center gap-4">
+                                  {channel === 'sms' && (
+                                    <span className="flex items-center gap-1">
+                                      <MessageSquare className="h-4 w-4" />
+                                      ~{renderTemplateContent(template.body, currentProperty, channel).length} characters
+                                    </span>
+                                  )}
+                                  {channel === 'email' && (
+                                    <span className="flex items-center gap-1">
+                                      <Mail className="h-4 w-4" />
+                                      HTML email with professional formatting
+                                    </span>
+                                  )}
+                                  {channel === 'call' && (
+                                    <span className="flex items-center gap-1">
+                                      <Phone className="h-4 w-4" />
+                                      Voicemail message for unanswered calls
+                                    </span>
+                                  )}
+                                </div>
+                                <Badge variant="secondary" className="text-xs">
+                                  Personalized for this property
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Campaign Summary & Validation */}
+            <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-emerald-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-700">
+                  <CheckCircle className="h-5 w-5" />
+                  Campaign Summary & Validation
+                </CardTitle>
+                <CardDescription>Final checklist before sending your campaign</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <div className="font-medium">Template</div>
+                          <div className="text-sm text-gray-600">Name: {selectedTemplate?.name}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <div className="font-medium">Channel</div>
+                          <div className="text-sm text-gray-600">{selectedTemplate?.channels.join(', ')}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 p-3 bg-white rounded-lg border">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <div className="font-medium">Recipients</div>
+                          <div className="text-sm text-gray-600">Total Selected: {selectedProperties.length}</div>
+                        </div>
+                      </div>
+                      <div className={`flex items-center gap-3 p-3 bg-white rounded-lg border ${
+                        selectedProperties.some(p =>
+                          (p.preferred_phones?.length || 0) > 0 ||
+                          (p.preferred_emails?.length || 0) > 0 ||
+                          p.owner_phone ||
+                          p.owner_email
+                        ) ? 'border-green-200' : 'border-amber-200'
+                      }`}>
+                        {selectedProperties.some(p =>
+                          (p.preferred_phones?.length || 0) > 0 ||
+                          (p.preferred_emails?.length || 0) > 0 ||
+                          p.owner_phone ||
+                          p.owner_email
+                        ) ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <AlertCircle className="h-5 w-5 text-amber-600" />
+                        )}
+                        <div>
+                          <div className="font-medium">With Contact</div>
+                          <div className="text-sm text-gray-600">
+                            {selectedProperties.filter(p =>
+                              (p.preferred_phones?.length || 0) > 0 ||
+                              (p.preferred_emails?.length || 0) > 0 ||
+                              p.owner_phone ||
+                              p.owner_email
+                            ).length} / {selectedProperties.length}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedProperties.some(p =>
+                    !((p.preferred_phones?.length || 0) > 0 ||
+                      (p.preferred_emails?.length || 0) > 0 ||
+                      p.owner_phone ||
+                      p.owner_email)
+                  ) && (
+                    <Alert className="border-amber-200 bg-amber-50">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription className="text-amber-800">
+                        <strong>Warning:</strong> {selectedProperties.filter(p =>
+                          !((p.preferred_phones?.length || 0) > 0 ||
+                            (p.preferred_emails?.length || 0) > 0 ||
+                            p.owner_phone ||
+                            p.owner_email)
+                        ).length} propriedades sem contato
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="text-center pt-4">
+                    <div className="text-sm text-gray-600 mb-4">
+                      Campaign ready to send
+                    </div>
+                    <div className="flex justify-center gap-4">
+                      <Button variant="outline" onClick={() => setCurrentStep('configure')}>
+                        <ChevronLeft className="h-4 w-4 mr-2" />
+                        Voltar
+                      </Button>
+                      <Button onClick={() => setCurrentStep('send')} className="bg-green-600 hover:bg-green-700">
+                        Próximo
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      Passo 4 de 5
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         );
 
