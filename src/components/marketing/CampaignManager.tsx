@@ -144,6 +144,12 @@ export const CampaignManager = () => {
     estimatedTimeRemaining: '0s'
   });
 
+  // Simulation states
+  const [simulating, setSimulating] = useState(false);
+  const [showSimulationModal, setShowSimulationModal] = useState(false);
+  const [simulationResults, setSimulationResults] = useState<any>(null);
+  const [healthStatus, setHealthStatus] = useState<any>(null);
+
   // Toggle theme
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
@@ -428,25 +434,55 @@ export const CampaignManager = () => {
 
   const handleSendCampaign = async () => {
     const selectedProps = getSelectedProperties();
-    if (selectedProps.length === 0) {
+
+    // ===== VALIDAÇÕES PRÉ-ENVIO =====
+    const validationIssues = validateCampaignReadiness();
+
+    // Separar erros críticos de avisos
+    const criticalErrors = validationIssues.filter(issue => issue.type === 'error');
+    const warnings = validationIssues.filter(issue => issue.type === 'warning');
+
+    // Mostrar erros críticos
+    if (criticalErrors.length > 0) {
       toast({
-        title: 'Nenhuma propriedade selecionada',
-        description: 'Selecione pelo menos uma propriedade',
+        title: 'Campanha não pode ser enviada',
+        description: criticalErrors.map(err => err.message).join('. '),
+        variant: 'destructive',
+        duration: 8000,
+      });
+      return;
+    }
+
+    // Mostrar avisos importantes
+    if (warnings.length > 0) {
+      const proceedAnyway = window.confirm(
+        `⚠️ AVISOS IMPORTANTES\n\n${warnings.map(w => w.message).join('\n')}\n\nDeseja continuar mesmo assim?`
+      );
+      if (!proceedAnyway) return;
+    }
+
+    // ===== VERIFICAÇÃO DE SAÚDE DO SISTEMA =====
+    try {
+      const health = await performSystemHealthCheck();
+      if (!health.api) {
+        toast({
+          title: 'Sistema indisponível',
+          description: 'A API de comunicação não está respondendo. Tente novamente em alguns minutos.',
+          variant: 'destructive',
+          duration: 6000,
+        });
+        return;
+      }
+    } catch (error) {
+      toast({
+        title: 'Erro de conectividade',
+        description: 'Não foi possível verificar o status do sistema.',
         variant: 'destructive',
       });
       return;
     }
 
-    if (!selectedTemplate) {
-      toast({
-        title: 'Nenhum template selecionado',
-        description: 'Selecione um template antes de enviar',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Show preview modal instead of sending directly
+    // Se tudo estiver OK, mostrar preview
     setShowSendPreview(true);
   };
 
@@ -797,10 +833,200 @@ export const CampaignManager = () => {
     }
   };
 
-  const selectedCount = selectedIds.length;
-  const selectedProps = getSelectedProperties();
-  const propsWithPhone = selectedProps.filter((p) => getAllPhones(p).length > 0).length;
-  const propsWithEmail = selectedProps.filter((p) => getAllEmails(p).length > 0).length;
+  // ===== SISTEMA DE VALIDAÇÃO PRÉ-ENVIO =====
+  const validateCampaignReadiness = () => {
+    const selectedProps = getSelectedProperties();
+    const issues: Array<{type: 'error' | 'warning', message: string, action?: string}> = [];
+
+    // 1. Validações críticas (bloqueiam envio)
+    if (selectedProps.length === 0) {
+      issues.push({type: 'error', message: 'Nenhuma propriedade selecionada'});
+    }
+
+    if (!selectedTemplate) {
+      issues.push({type: 'error', message: 'Nenhum template selecionado'});
+    }
+
+    // 2. Validação de contatos por canal
+    const contactValidation = validateContactsForChannel(selectedProps, selectedChannel);
+    issues.push(...contactValidation.errors);
+
+    // 3. Avisos importantes (não bloqueiam, mas alertam)
+    issues.push(...contactValidation.warnings);
+
+    // 4. Validações de limite e performance
+    if (selectedProps.length > 50) {
+      issues.push({
+        type: 'warning',
+        message: `${selectedProps.length} propriedades selecionadas. Considere dividir em campanhas menores para melhor controle.`
+      });
+    }
+
+    // 5. Validação de template
+    const templateValidation = validateTemplateContent(selectedTemplate, selectedChannel);
+    issues.push(...templateValidation);
+
+    return issues;
+  };
+
+  // ===== VALIDAÇÃO DE CONTATOS =====
+  const validateContactsForChannel = (properties: any[], channel: Channel) => {
+    const errors: Array<{type: 'error' | 'warning', message: string}> = [];
+    const warnings: Array<{type: 'error' | 'warning', message: string}> = [];
+
+    let totalContacts = 0;
+    let propertiesWithContacts = 0;
+    let propertiesWithoutContacts = 0;
+
+    properties.forEach(prop => {
+      const phones = getAllPhones(prop);
+      const emails = getAllEmails(prop);
+
+      if (channel === 'sms' || channel === 'call') {
+        if (phones.length === 0) {
+          propertiesWithoutContacts++;
+        } else {
+          propertiesWithContacts++;
+          totalContacts += phones.length;
+        }
+      } else if (channel === 'email') {
+        if (emails.length === 0) {
+          propertiesWithoutContacts++;
+        } else {
+          propertiesWithContacts++;
+          totalContacts += emails.length;
+        }
+      }
+    });
+
+    if (propertiesWithoutContacts > 0) {
+      errors.push({
+        type: 'error',
+        message: `${propertiesWithoutContacts} propriedades não têm ${channel === 'email' ? 'email' : 'telefone'} válido`
+      });
+    }
+
+    if (propertiesWithContacts > 0 && totalContacts > propertiesWithContacts * 2) {
+      warnings.push({
+        type: 'warning',
+        message: `Algumas propriedades têm múltiplos contatos (${totalContacts} total). O sistema tentará todos sequencialmente.`
+      });
+    }
+
+    return { errors, warnings, stats: { totalContacts, propertiesWithContacts, propertiesWithoutContacts } };
+  };
+
+  // ===== VALIDAÇÃO DE TEMPLATE =====
+  const validateTemplateContent = (template: any, channel: Channel) => {
+    const issues: Array<{type: 'error' | 'warning', message: string}> = [];
+
+    if (!template) return issues;
+
+    // Verificar variáveis obrigatórias
+    const requiredVars = ['name', 'address'];
+    const templateContent = channel === 'email' ? template.content : template.content;
+
+    requiredVars.forEach(varName => {
+      if (!templateContent.includes(`{${varName}}`)) {
+        issues.push({
+          type: 'warning',
+          message: `Template não contém variável obrigatória: {${varName}}`
+        });
+      }
+    });
+
+    // Verificar comprimento por canal
+    if (channel === 'sms' && templateContent.length > 160) {
+      issues.push({
+        type: 'warning',
+        message: `SMS muito longo (${templateContent.length} chars). Pode ser dividido em múltiplas mensagens.`
+      });
+    }
+
+    return issues;
+  };
+
+  // ===== VERIFICAÇÃO DE SAÚDE DO SISTEMA =====
+  const performSystemHealthCheck = async () => {
+    const healthResults = {
+      api: false,
+      database: false,
+      services: [] as string[],
+      warnings: [] as string[]
+    };
+
+    try {
+      // 1. Verificar API
+      await checkHealth();
+      healthResults.api = true;
+      healthResults.services.push('API de comunicação');
+    } catch (error) {
+      healthResults.warnings.push('API de comunicação indisponível');
+    }
+
+    try {
+      // 2. Verificar conexão com banco
+      const { data, error } = await supabase.from('campaign_logs').select('count').limit(1);
+      if (!error) {
+        healthResults.database = true;
+        healthResults.services.push('Banco de dados');
+      }
+    } catch (error) {
+      healthResults.warnings.push('Erro de conexão com banco de dados');
+    }
+
+    return healthResults;
+  };
+
+  // ===== SIMULAÇÃO DE ENVIO =====
+  const simulateCampaignSend = async () => {
+    const selectedProps = getSelectedProperties();
+    const simulationResults = {
+      total: selectedProps.length,
+      wouldSend: 0,
+      wouldFail: 0,
+      contactBreakdown: [] as Array<{property: string, contacts: string[], channel: string}>,
+      estimatedCost: 0,
+      estimatedTime: 0
+    };
+
+    selectedProps.forEach(prop => {
+      const phones = getAllPhones(prop);
+      const emails = getAllEmails(prop);
+
+      if (selectedChannel === 'sms' && phones.length > 0) {
+        simulationResults.wouldSend++;
+        simulationResults.contactBreakdown.push({
+          property: prop.address,
+          contacts: phones,
+          channel: 'SMS'
+        });
+        simulationResults.estimatedCost += phones.length * 0.05;
+      } else if (selectedChannel === 'email' && emails.length > 0) {
+        simulationResults.wouldSend++;
+        simulationResults.contactBreakdown.push({
+          property: prop.address,
+          contacts: emails,
+          channel: 'Email'
+        });
+      } else if (selectedChannel === 'call' && phones.length > 0) {
+        simulationResults.wouldSend++;
+        simulationResults.contactBreakdown.push({
+          property: prop.address,
+          contacts: phones,
+          channel: 'Call'
+        });
+        simulationResults.estimatedCost += phones.length * 0.10;
+      } else {
+        simulationResults.wouldFail++;
+      }
+    });
+
+    // Estimativa de tempo (5 props por lote, 1s entre lotes)
+    simulationResults.estimatedTime = Math.ceil(selectedProps.length / 5) * 1;
+
+    return simulationResults;
+  };
 
   return (
     <TooltipProvider>
@@ -824,9 +1050,18 @@ export const CampaignManager = () => {
                 <p>Toggle {theme === 'dark' ? 'light' : 'dark'} mode</p>
               </TooltipContent>
             </Tooltip>
-            <Button variant="outline" onClick={fetchProperties}>
-              <Filter className="w-4 h-4 mr-2" />
-              Refresh
+            <Button variant="outline" onClick={fetchProperties} disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Carregando...
+                </>
+              ) : (
+                <>
+                  <Filter className="w-4 h-4 mr-2" />
+                  Atualizar
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -927,8 +1162,10 @@ export const CampaignManager = () => {
                           </div>
                         ))}
                         {getTemplatesByChannel(channel as Channel).length === 0 && (
-                          <div className="p-3 border rounded-lg text-center text-muted-foreground">
-                            No templates available for {channel}
+                          <div className="p-4 border rounded-lg text-center text-muted-foreground bg-muted/20">
+                            <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm font-medium">Nenhum template disponível</p>
+                            <p className="text-xs">Crie templates primeiro para usar este canal</p>
                           </div>
                         )}
                       </div>
@@ -1075,8 +1312,8 @@ export const CampaignManager = () => {
                           📋 Available Properties
                         </CardTitle>
                         <CardDescription>
-                          {getFilteredProperties().length} properties found
-                          {searchTerm && ` for "${searchTerm}"`}
+                          {getFilteredProperties().length} propriedades encontradas
+                          {searchTerm && ` para "${searchTerm}"`}
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -1156,6 +1393,13 @@ export const CampaignManager = () => {
                               })}
                           </div>
                         </ScrollArea>
+                        {getFilteredProperties().length === 0 && !loading && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                            <p className="font-medium">Nenhuma propriedade encontrada</p>
+                            <p className="text-sm">Tente ajustar os filtros ou termo de busca</p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -1172,30 +1416,11 @@ export const CampaignManager = () => {
                             No properties selected
                           </div>
                         ) : (
-                          <ScrollArea className="h-[400px] pr-4">
-                            <div className="space-y-2">
-                              {selectedProps.map((property) => (
-                                <div
-                                  key={property.id}
-                                  className="flex items-center justify-between p-3 border rounded-lg"
-                                >
-                                  <div className="flex-1">
-                                    <div className="font-medium">{property.address}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {property.owner_name || 'No Owner'}
-                                    </div>
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => toggleSelection(property.id)}
-                                  >
-                                    Remove
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          </ScrollArea>
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                            <p className="font-medium">Nenhuma propriedade selecionada</p>
+                            <p className="text-sm">Selecione propriedades na lista ao lado para continuar</p>
+                          </div>
                         )}
                       </CardContent>
                     </Card>
@@ -1571,13 +1796,20 @@ export const CampaignManager = () => {
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           {(selectedChannel === 'email' ? propsWithEmail : propsWithPhone) === selectedIds.length ? (
-                            <CheckCircle className="w-4 h-4 text-green-600" />
+                            <>
+                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <span className="text-green-700">
+                                Todas as propriedades têm contato válido
+                              </span>
+                            </>
                           ) : (
-                            <AlertCircle className="w-4 h-4 text-red-600" />
+                            <>
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                              <span className="text-red-700">
+                                {selectedIds.length - (selectedChannel === 'email' ? propsWithEmail : propsWithPhone)} propriedades sem contato
+                              </span>
+                            </>
                           )}
-                          <span className={(selectedChannel === 'email' ? propsWithEmail : propsWithPhone) === selectedIds.length ? 'text-green-700' : 'text-red-700'}>
-                            All properties have valid {selectedChannel === 'email' ? 'email' : 'phone'} contact
-                          </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm">
                           <CheckCircle className="w-4 h-4 text-green-600" />
@@ -1614,24 +1846,65 @@ export const CampaignManager = () => {
                           Make sure your marketing API is configured before proceeding.
                         </p>
                       </div>
-                      <Button
-                        size="lg"
-                        onClick={handleSendCampaign}
-                        disabled={sending || selectedIds.length === 0}
-                        className="w-full max-w-xs"
-                      >
-                        {sending ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-4 h-4 mr-2" />
-                            Send Campaign ({selectedIds.length} properties)
-                          </>
-                        )}
-                      </Button>
+
+                      {/* Simulation Button */}
+                      <div className="flex gap-3 justify-center">
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          onClick={async () => {
+                            setSimulating(true);
+                            try {
+                              const simulation = await simulateCampaignSend();
+                              const health = await performSystemHealthCheck();
+
+                              setSimulationResults(simulation);
+                              setHealthStatus(health);
+                              setShowSimulationModal(true);
+                            } catch (error) {
+                              toast({
+                                title: 'Erro na simulação',
+                                description: 'Verifique se a API de marketing está configurada.',
+                                variant: 'destructive'
+                              });
+                            }
+                            setSimulating(false);
+                          }}
+                          disabled={simulating || sending || selectedIds.length === 0}
+                          className="flex-1 max-w-xs"
+                        >
+                          {simulating ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Simulando...
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4 mr-2" />
+                              Testar Campanha
+                            </>
+                          )}
+                        </Button>
+
+                        <Button
+                          size="lg"
+                          onClick={handleSendCampaign}
+                          disabled={sending || simulating || selectedIds.length === 0}
+                          className="flex-1 max-w-xs"
+                        >
+                          {sending ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Enviando...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4 mr-2" />
+                              Enviar ({selectedIds.length})
+                            </>
+                          )}
+                        </Button>
+                      </div>
 
                       {/* Progress Bar */}
                       {sending && (
@@ -1663,148 +1936,352 @@ export const CampaignManager = () => {
             <Button
               variant="outline"
               onClick={prevStep}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 || loading || sending}
+              className="min-w-[100px]"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Previous
+              Voltar
             </Button>
 
-            <div className="text-sm text-muted-foreground">
-              Step {currentStep} of 5
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground mb-1">
+                Passo {currentStep} de 5
+              </div>
+              {loading && (
+                <div className="flex items-center gap-2 text-xs text-blue-600">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Carregando...
+                </div>
+              )}
             </div>
 
             {currentStep < 5 ? (
               <Button
                 onClick={nextStep}
-                disabled={!canProceedToNext()}
+                disabled={!canProceedToNext() || loading || sending}
+                className="min-w-[100px]"
               >
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" />
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Aguarde
+                  </>
+                ) : (
+                  <>
+                    Próximo
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
             ) : (
-              <div></div>
+              <div className="min-w-[100px]"></div>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Send Preview Modal */}
+      {/* ===== MODAL DE PREVIEW DE ENVIO ===== */}
       <Dialog open={showSendPreview} onOpenChange={setShowSendPreview}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Confirmar Envio da Campanha</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="h-5 w-5" />
+              Confirmar Envio da Campanha
+            </DialogTitle>
             <DialogDescription>
-              Revise os detalhes antes de enviar a campanha para {selectedProps.length} propriedades via {selectedChannel.toUpperCase()}
+              Revise os detalhes abaixo antes de enviar a campanha.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Campaign Summary */}
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">Resumo da Campanha</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Template:</span>
-                  <p className="font-medium">{selectedTemplate?.name}</p>
+            {/* Resumo da Campanha */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Resumo da Campanha</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium">Template</Label>
+                    <p className="text-sm text-muted-foreground">{selectedTemplate?.name}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium">Canal</Label>
+                    <p className="text-sm text-muted-foreground">{selectedChannel.toUpperCase()}</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Canal:</span>
-                  <p className="font-medium">{selectedChannel.toUpperCase()}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Propriedades:</span>
-                  <p className="font-medium">{selectedProps.length}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Contatos válidos:</span>
-                  <p className="font-medium">
-                    {selectedProps.filter(p => 
-                      selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
-                    ).length}
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* Contact Details */}
-            <div>
-              <h3 className="font-semibold mb-3">Contatos que receberão a mensagem</h3>
-              <ScrollArea className="h-64 border rounded-lg">
-                <div className="p-4 space-y-3">
-                  {selectedProps.map((prop) => {
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{selectedProps.length}</div>
+                    <div className="text-sm text-muted-foreground">Propriedades</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {selectedProps.filter(p =>
+                        selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
+                      ).length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Contatos Válidos</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {selectedProps.filter(p =>
+                        selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
+                      ).length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Mensagens</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lista de Propriedades */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Propriedades Selecionadas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-48 overflow-y-auto space-y-2">
+                  {selectedProps.slice(0, 10).map((prop, index) => {
                     const phones = getAllPhones(prop);
                     const emails = getAllEmails(prop);
                     const contacts = selectedChannel === 'email' ? emails : phones;
-                    
-                    if (contacts.length === 0) return null;
-                    
+
                     return (
-                      <div key={prop.id} className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                        <div>
+                      <div key={prop.id} className="flex items-center justify-between p-2 border rounded">
+                        <div className="flex-1">
                           <div className="font-medium text-sm">{prop.address}</div>
-                          <div className="text-xs text-muted-foreground">{prop.owner_name || 'No Owner'}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {prop.owner_name || 'Proprietário não informado'}
+                          </div>
                         </div>
-                        <div className="text-right">
+                        <div className="flex gap-1">
                           {contacts.map((contact, idx) => (
-                            <div key={idx} className="text-xs font-mono">{contact}</div>
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {selectedChannel === 'email' ? '✉️' : '📱'} {contact}
+                            </Badge>
                           ))}
                         </div>
                       </div>
                     );
                   })}
+                  {selectedProps.length > 10 && (
+                    <div className="text-center text-sm text-muted-foreground py-2">
+                      ... e mais {selectedProps.length - 10} propriedades
+                    </div>
+                  )}
                 </div>
-              </ScrollArea>
-            </div>
+              </CardContent>
+            </Card>
 
-            {/* Template Preview */}
-            {selectedTemplate && selectedProps.length > 0 && (
-              <div>
-                <h3 className="font-semibold mb-3">Preview do Template</h3>
-                <div className="bg-muted/50 p-4 rounded-lg border">
-                  <div className="text-sm">
-                    {selectedChannel === 'email' && selectedTemplate.subject && (
-                      <div className="mb-2">
-                        <span className="font-medium">Assunto:</span> {renderTemplatePreview(selectedProps[0], 'subject')}
-                      </div>
-                    )}
+            {/* Preview do Conteúdo */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Preview do Conteúdo</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {selectedChannel === 'email' && selectedTemplate?.subject && (
                     <div>
-                      <span className="font-medium">Mensagem:</span>
-                      <div className="mt-2 p-3 bg-white rounded border text-sm whitespace-pre-wrap">
-                        {renderTemplatePreview(selectedProps[0], 'body')}
-                      </div>
+                      <Label className="text-sm font-medium">Assunto</Label>
+                      <p className="text-sm bg-muted p-2 rounded">
+                        {renderTemplatePreview(selectedProps[0], 'subject')}
+                      </p>
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-sm font-medium">Mensagem</Label>
+                    <div className="text-sm bg-muted p-3 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      {renderTemplatePreview(selectedProps[0], 'body')}
                     </div>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+
+            {/* Barra de Progresso durante envio */}
+            {sending && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Enviando campanha...</span>
+                      <span>{Math.round(progressStats.completed / progressStats.total * 100)}%</span>
+                    </div>
+                    <Progress value={progressStats.completed / progressStats.total * 100} className="w-full" />
+                    <div className="text-xs text-muted-foreground text-center">
+                      {progressStats.successCount} sucesso • {progressStats.failCount} falhas • {progressStats.estimatedTimeRemaining} restantes
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSendPreview(false)}>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowSendPreview(false)}
+              disabled={sending}
+            >
               Cancelar
             </Button>
-            <Button 
-              onClick={handleConfirmSendCampaign} 
+            <Button
+              onClick={handleConfirmSendCampaign}
               disabled={sending}
-              className="bg-green-600 hover:bg-green-700"
+              className="min-w-32 bg-green-600 hover:bg-green-700"
             >
               {sending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Enviando...
                 </>
               ) : (
                 <>
-                  <Rocket className="w-4 h-4 mr-2" />
-                  Confirmar Envio ({selectedProps.filter(p => 
-                    selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
-                  ).length} mensagens)
+                  <Send className="mr-2 h-4 w-4" />
+                  Confirmar Envio
                 </>
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Simulation Results Modal */}
+      <Dialog open={showSimulationModal} onOpenChange={setShowSimulationModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Simulação de Envio - Resultados
+            </DialogTitle>
+            <DialogDescription>
+              Análise completa do que seria enviado nesta campanha
+            </DialogDescription>
+          </DialogHeader>
+
+          {simulationResults && healthStatus && (
+            <div className="space-y-6">
+              {/* System Health Status */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    Status do Sistema
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      {healthStatus.api ? (
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                      )}
+                      <span className="text-sm">API de Comunicação</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {healthStatus.database ? (
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                      )}
+                      <span className="text-sm">Banco de Dados</span>
+                    </div>
+                  </div>
+                  {healthStatus.warnings.length > 0 && (
+                    <Alert className="mt-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        <strong>Avisos:</strong> {healthStatus.warnings.join(', ')}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Campaign Summary */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5" />
+                    Resumo da Campanha
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600">{simulationResults.total}</p>
+                      <p className="text-xs text-muted-foreground">Total Propriedades</p>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600">{simulationResults.wouldSend}</p>
+                      <p className="text-xs text-muted-foreground">Seriam Enviadas</p>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                      <p className="text-2xl font-bold text-red-600">{simulationResults.wouldFail}</p>
+                      <p className="text-xs text-muted-foreground">Sem Contato</p>
+                    </div>
+                    <div className="text-center p-3 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-600">${simulationResults.estimatedCost.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">Custo Estimado</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Contact Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Detalhamento por Propriedade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-64">
+                    <div className="space-y-2">
+                      {simulationResults.contactBreakdown.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <p className="font-medium text-sm truncate">{item.property}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.contacts.length} contato(s) • {item.channel}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="ml-2">
+                            {item.contacts.length}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Action Buttons */}
+              <DialogFooter className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowSimulationModal(false)}>
+                  Fechar
+                </Button>
+                {simulationResults.wouldSend > 0 && (
+                  <Button onClick={() => {
+                    setShowSimulationModal(false);
+                    handleSendCampaign();
+                  }}>
+                    <Send className="w-4 h-4 mr-2" />
+                    Confirmar Envio ({simulationResults.wouldSend} mensagens)
+                  </Button>
+                )}
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== MODAL DE PREVIEW DE ENVIO ===== */}
+      <SendPreviewModal />
     </div>
     </TooltipProvider>
   );
