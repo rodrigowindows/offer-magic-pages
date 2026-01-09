@@ -352,11 +352,6 @@ export const CampaignManager = () => {
     return properties.filter((p) => selectedIds.includes(p.id));
   };
 
-  // Derived states for use across component
-  const selectedProps = getSelectedProperties();
-  const propsWithEmail = selectedProps.filter(p => getAllEmails(p).length > 0).length;
-  const propsWithPhone = selectedProps.filter(p => getAllPhones(p).length > 0).length;
-
   // Get phone/email from property based on selected column
   const getPhone = (prop: CampaignProperty): string | undefined => {
     // Priority 1: Get from tags (pref_phone:)
@@ -399,6 +394,11 @@ export const CampaignManager = () => {
     const email = prop[selectedEmailColumn] as string | undefined;
     return email ? [email] : [];
   };
+
+  // Derived states for use across component (MUST be after helper functions)
+  const selectedProps = getSelectedProperties();
+  const propsWithEmail = selectedProps.filter(p => getAllEmails(p).length > 0).length;
+  const propsWithPhone = selectedProps.filter(p => getAllPhones(p).length > 0).length;
 
   // Wizard navigation functions
   const nextStep = () => {
