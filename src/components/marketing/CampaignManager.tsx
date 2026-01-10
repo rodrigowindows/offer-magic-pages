@@ -909,10 +909,10 @@ export const CampaignManager = () => {
 
     // Verificar variáveis obrigatórias
     const requiredVars = ['name', 'address'];
-    const templateContent = channel === 'email' ? template.content : template.content;
+    const templateContent = template.body || '';
 
     requiredVars.forEach(varName => {
-      if (!templateContent.includes(`{${varName}}`)) {
+      if (typeof templateContent === 'string' && !templateContent.includes(`{${varName}}`)) {
         issues.push({
           type: 'warning',
           message: `Template não contém variável obrigatória: {${varName}}`
