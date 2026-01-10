@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.ai-column-mapper]
 verify_jwt = false
+
+[functions.get-skip-trace-data]
+verify_jwt = false

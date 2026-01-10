@@ -1,4 +1,5 @@
 import { getApiInstance, createFormData } from './api';
+import { supabase } from '@/integrations/supabase/client';
 import type {
   CommunicationPayload,
   CommunicationResponse,
@@ -7,6 +8,117 @@ import type {
   InitiateCallRequest,
   HealthCheckResponse,
 } from '@/types/marketing.types';
+
+import { getApiInstance, createFormData } from './api';
+import { supabase } from '@/integrations/supabase/client';
+import type {
+  CommunicationPayload,
+  CommunicationResponse,
+  SendSMSRequest,
+  SendEmailRequest,
+  InitiateCallRequest,
+  HealthCheckResponse,
+} from '@/types/marketing.types';
+
+// ===== SKIP TRACE DATA TYPES =====
+export interface SkipTracePhone {
+  number: string;
+  type: string;
+  formatted: string;
+}
+
+export interface SkipTraceEmail {
+  email: string;
+  type: string;
+}
+
+export interface SkipTracePropertyData {
+  id: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  owner_name?: string;
+  owner_phone?: string;
+  owner_email?: string;
+  // All other property columns are included dynamically
+  [key: string]: any;
+  skip_trace_summary: {
+    total_phones: number;
+    total_emails: number;
+    has_owner_info: boolean;
+    phones: SkipTracePhone[];
+    emails: SkipTraceEmail[];
+    preferred_phones: string[];
+    preferred_emails: string[];
+    dnc_status: 'DNC' | 'Clear';
+    deceased_status: 'Deceased' | 'Active';
+  };
+}
+
+export interface SkipTraceResponse {
+  success: boolean;
+  data: SkipTracePropertyData[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    has_more: boolean;
+  };
+  summary: {
+    total_properties: number;
+    properties_with_phones: number;
+    properties_with_emails: number;
+    properties_with_owner_info: number;
+  };
+}
+
+// ===== SKIP TRACE API =====
+export const getSkipTracePhones = async (options?: {
+  propertyId?: string;
+  limit?: number;
+  offset?: number;
+  hasSkipTraceData?: boolean;
+  search?: string;
+}): Promise<SkipTraceResponse> => {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+
+    if (options?.propertyId) params.append('propertyId', options.propertyId);
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.offset !== undefined) params.append('offset', options.offset.toString());
+    if (options?.hasSkipTraceData) params.append('hasSkipTraceData', 'true');
+    if (options?.search) params.append('search', options.search);
+
+    // Call the Supabase Edge Function
+    const queryString = params.toString();
+    const functionUrl = `${supabase.supabaseUrl}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(functionUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${supabase.supabaseKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: SkipTraceResponse = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to fetch skip trace data');
+    }
+
+    return result;
+  } catch (error: any) {
+    console.error('Error fetching skip trace phones:', error);
+    throw new Error(error.message || 'Failed to fetch skip trace data');
+  }
+};
 
 // ===== HEALTH CHECK (mantém endpoint antigo) =====
 export const checkHealth = async (): Promise<HealthCheckResponse> => {
@@ -207,4 +319,5 @@ export default {
   sendBatchCommunication,
   replaceVariables,
   generateMessagePreview,
+  getSkipTracePhones,
 };

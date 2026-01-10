@@ -1,0 +1,112 @@
+Hi! Please review these changes to the Campaign Manager system:
+
+## 1. Fixed Critical Bug - Campaign Send Crash
+**File:** src/components/marketing/CampaignManager.tsx (lines 373-423)
+
+Error: `TypeError: Cannot read properties of undefined (reading 'includes')`
+
+**Fix:**
+```typescript
+// BEFORE (crashed):
+const prefPhones = (prop.tags || []).filter((t: string) => t.startsWith('pref_phone:'))
+
+// AFTER (safe):
+const tags = Array.isArray(prop.tags) ? prop.tags : [];
+const prefPhones = tags
+  .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
+  .map((t: string) => t.replace('pref_phone:', ''));
+```
+
+Also added support for manual contacts (manual_phone: and manual_email: tags).
+
+**Question:** Is Array.isArray() check sufficient? Any other edge cases?
+
+---
+
+## 2. Show All Property Previews (Step 4)
+**File:** src/components/marketing/CampaignManager.tsx (lines 1589-1734)
+
+Changed from carousel (1 / 2 navigation) to showing ALL selected properties at once:
+
+```typescript
+{selectedProps.map((property, index) => (
+  <div key={property.id} className="border-2 rounded-lg p-4">
+    <h4>{index + 1}. {property.address}</h4>
+    {selectedChannel === 'email' && (
+      <iframe srcDoc={renderTemplatePreview(property)} sandbox="allow-same-origin" />
+    )}
+  </div>
+))}
+```
+
+**Concern:** If user selects 50+ properties, we render 50 iframes. Performance issue? Should we add pagination/virtualization?
+
+---
+
+## 3. Show Contact Details in Step 2
+**File:** src/components/marketing/CampaignManager.tsx (lines 1283-1330)
+
+Changed from showing counts (2 📞) to showing actual numbers:
+
+```typescript
+<span className="font-mono text-xs">
+  {phones.slice(0, 2).join(', ')}
+  {phones.length > 2 && ` +${phones.length - 2} more`}
+</span>
+```
+
+---
+
+## 4. Skip Trace API Updates
+**File:** supabase/functions/get-skip-trace-data/index.ts (lines 124-162)
+
+Added manual contacts to API response:
+
+```typescript
+const manualPhones = tags
+  .filter((t: string) => t.startsWith('manual_phone:'))
+  .map((t: string) => t.replace('manual_phone:', ''));
+
+// Return:
+skip_trace_summary: {
+  manual_phones: manualPhones,
+  manual_emails: manualEmails,
+  all_available_phones: [...preferredPhones, ...manualPhones]
+}
+```
+
+**Question:** Should this Edge Function have `verify_jwt = true` for security?
+
+---
+
+## 5. New Client Service
+**File:** src/services/marketingService.ts (+113 lines)
+
+Added TypeScript types and function to call Skip Trace API:
+
+```typescript
+export const getSkipTracePhones = async (options?: {
+  propertyId?: string;
+  limit?: number;
+  hasSkipTraceData?: boolean;
+}) => { /* ... */ }
+```
+
+**Issue:** File has duplicate imports at top (lines 1-11). Need cleanup.
+
+---
+
+## Questions:
+
+1. **Performance:** 50+ iframes in Step 4 - add pagination or keep as-is?
+2. **Security:** Edge function has `verify_jwt = false` - should enable auth?
+3. **Bug fix:** Is the Array.isArray() check robust enough?
+4. **Code cleanup:** Remove duplicate imports in marketingService.ts?
+
+## Test Cases:
+
+- [ ] Send campaign with property that has `tags: null` (should not crash)
+- [ ] Send campaign with manual contacts (should work)
+- [ ] Preview with 10+ properties (check performance)
+
+Please let me know what looks good and what needs fixing. Thanks!
