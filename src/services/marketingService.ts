@@ -9,16 +9,9 @@ import type {
   HealthCheckResponse,
 } from '@/types/marketing.types';
 
-import { getApiInstance, createFormData } from './api';
-import { supabase } from '@/integrations/supabase/client';
-import type {
-  CommunicationPayload,
-  CommunicationResponse,
-  SendSMSRequest,
-  SendEmailRequest,
-  InitiateCallRequest,
-  HealthCheckResponse,
-} from '@/types/marketing.types';
+// Get Supabase URL from environment
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // ===== SKIP TRACE DATA TYPES =====
 export interface SkipTracePhone {
@@ -71,6 +64,7 @@ export interface SkipTraceResponse {
     properties_with_emails: number;
     properties_with_owner_info: number;
   };
+  error?: string;
 }
 
 // ===== SKIP TRACE API =====
@@ -91,14 +85,14 @@ export const getSkipTracePhones = async (options?: {
     if (options?.hasSkipTraceData) params.append('hasSkipTraceData', 'true');
     if (options?.search) params.append('search', options.search);
 
-    // Call the Supabase Edge Function
+    // Call the Supabase Edge Function using environment variables
     const queryString = params.toString();
-    const functionUrl = `${supabase.supabaseUrl}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
+    const functionUrl = `${SUPABASE_URL}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
 
     const response = await fetch(functionUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${supabase.supabaseKey}`,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
     });
