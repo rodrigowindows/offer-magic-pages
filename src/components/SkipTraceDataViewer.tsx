@@ -250,7 +250,7 @@ const PropertySkipTraceCard: React.FC<PropertySkipTraceCardProps> = ({ property 
                       <div className="font-mono text-sm">{phone.formatted}</div>
                       <div className="text-xs text-gray-600">{phone.type}</div>
                     </div>
-                    {skip_trace_summary.preferred_phones.includes(phone.number) && (
+                    {Array.isArray(skip_trace_summary.preferred_phones) && skip_trace_summary.preferred_phones.includes(phone.number) && (
                       <CheckCircle className="h-4 w-4 text-green-600" />
                     )}
                   </div>
@@ -273,7 +273,7 @@ const PropertySkipTraceCard: React.FC<PropertySkipTraceCardProps> = ({ property 
                       <div className="font-mono text-sm break-all">{email.email}</div>
                       <div className="text-xs text-gray-600">{email.type}</div>
                     </div>
-                    {skip_trace_summary.preferred_emails.includes(email.email) && (
+                    {Array.isArray(skip_trace_summary.preferred_emails) && skip_trace_summary.preferred_emails.includes(email.email) && (
                       <CheckCircle className="h-4 w-4 text-purple-600" />
                     )}
                   </div>

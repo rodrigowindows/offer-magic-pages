@@ -8,16 +8,6 @@ import type {
   InitiateCallRequest,
   HealthCheckResponse,
 } from '@/types/marketing.types';
-
-import { getApiInstance, createFormData } from './api';
-import { supabase } from '@/integrations/supabase/client';
-import type {
-  CommunicationPayload,
-  CommunicationResponse,
-  SendSMSRequest,
-  SendEmailRequest,
-  InitiateCallRequest,
-  HealthCheckResponse,
 } from '@/types/marketing.types';
 
 // ===== SKIP TRACE DATA TYPES =====

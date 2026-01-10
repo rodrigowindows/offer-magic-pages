@@ -36,6 +36,8 @@ import {
   Settings,
   TestTube2,
   ChevronRight,
+  Search,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +75,12 @@ const adminPages: NavigationItem[] = [
     href: '/admin/import',
     description: 'Bulk import from CSV',
     icon: Upload,
+  },
+  {
+    title: 'Skip Trace Data',
+    href: '/skip-trace',
+    description: 'View skip tracing results',
+    icon: Users,
   },
   {
     title: 'MCP Tester',
@@ -147,47 +155,10 @@ export const MainNavigation = () => {
               <NavigationMenuList>
                 {/* Public Pages */}
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger>Public Pages</NavigationMenuTrigger>
+                  <NavigationMenuTrigger>Public</NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4">
                       {publicPages.map((item) => (
-                        <NavigationItem
-                          key={item.href}
-                          item={item}
-                          isActive={isActive(item.href)}
-                          onClick={() => navigate(item.href)}
-                        />
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                {/* Marketing System */}
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-gradient-to-r from-orange-500/10 to-purple-500/10">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Marketing System
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4">
-                      {marketingPages.map((item) => (
-                        <NavigationItem
-                          key={item.href}
-                          item={item}
-                          isActive={isActive(item.href)}
-                          onClick={() => navigate(item.href)}
-                        />
-                      ))}
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                {/* Admin Pages */}
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4">
-                      {adminPages.map((item) => (
                         <NavigationItem
                           key={item.href}
                           item={item}

@@ -891,7 +891,7 @@ export const TemplateManager = () => {
                   {previewTemplate.channel === 'email' ? 'Conteúdo:' : 'Mensagem:'}
                 </Label>
                 <div className="border rounded-lg p-4 bg-white min-h-[200px]">
-                  {previewTemplate.channel === 'email' && previewTemplate.body.includes('<!DOCTYPE') ? (
+                  {previewTemplate.channel === 'email' && previewTemplate.body && previewTemplate.body.includes('<!DOCTYPE') ? (
                     <div
                       dangerouslySetInnerHTML={{
                         __html: previewTemplate.body.replace(/{([^}]+)}/g, (match, variable) => {
@@ -919,7 +919,7 @@ export const TemplateManager = () => {
                     />
                   ) : (
                     <pre className="whitespace-pre-wrap font-sans text-sm">
-                      {previewTemplate.body.replace(/{([^}]+)}/g, (match, variable) => {
+                      {previewTemplate.body || 'No content available'}
                         const sampleValues: Record<string, string> = {
                           name: 'BURROWS MARGARET',
                           address: '25217 MATHEW ST',

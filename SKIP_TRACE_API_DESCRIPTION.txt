@@ -1,0 +1,204 @@
+Hi! I need to create a public API endpoint to expose skip tracing data from our properties database.
+
+## Requirements
+
+### Endpoint
+GET /functions/v1/get-skip-trace-data
+
+### What It Should Return
+For each property, return:
+1. **All property columns** from the database (address, city, state, owner_name, cash_offer, etc.)
+2. **Skip trace data summary** with:
+   - All phones (phone1-phone7, owner_phone) formatted as (XXX) XXX-XXXX
+   - All emails (email1-email5, owner_email) validated
+   - Preferred contacts extracted from `tags` array (tags starting with `pref_phone:` and `pref_email:`)
+   - Manual contacts extracted from `tags` array (tags starting with `manual_phone:` and `manual_email:`)
+   - DNC status (from dnc_litigator column)
+   - Deceased status (from owner_deceased column)
+
+### Query Parameters
+- `propertyId` (optional) - Get specific property by ID
+- `limit` (optional, default: 50) - Max number of properties to return
+- `offset` (optional, default: 0) - For pagination
+- `hasSkipTraceData` (optional, boolean) - Filter only properties with phones/emails
+- `search` (optional) - Search by address, city, owner name, or zip code
+
+### Example Response Structure
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "address": "25217 MATHEW ST",
+      "city": "UNINCORPORATED",
+      "state": "FL",
+      "zip_code": "32709",
+      "owner_name": "BURROWS MARGARET",
+      "cash_offer_amount": 70000,
+      // ... all other property columns ...
+
+      "skip_trace_summary": {
+        "total_phones": 3,
+        "total_emails": 2,
+        "total_manual_phones": 1,
+        "total_manual_emails": 1,
+        "has_owner_info": true,
+
+        "phones": [
+          {
+            "number": "4075551234",
+            "type": "Mobile",
+            "formatted": "(407) 555-1234"
+          },
+          {
+            "number": "4075555678",
+            "type": "Landline",
+            "formatted": "(407) 555-5678"
+          }
+        ],
+
+        "emails": [
+          {
+            "email": "owner@example.com",
+            "type": "Email 1"
+          }
+        ],
+
+        "preferred_phones": ["(407) 555-1234"],
+        "preferred_emails": ["owner@example.com"],
+        "manual_phones": ["(407) 555-9999"],
+        "manual_emails": ["manual@example.com"],
+        "all_available_phones": ["(407) 555-1234", "(407) 555-9999"],
+        "all_available_emails": ["owner@example.com", "manual@example.com"],
+
+        "dnc_status": "Clear",
+        "deceased_status": "Active"
+      }
+    }
+  ],
+
+  "pagination": {
+    "limit": 50,
+    "offset": 0,
+    "total": 150,
+    "has_more": true
+  },
+
+  "summary": {
+    "total_properties": 150,
+    "properties_with_phones": 120,
+    "properties_with_emails": 95,
+    "properties_with_owner_info": 110
+  }
+}
+```
+
+### Phone Formatting Rules
+- 10 digits (4075551234) → (407) 555-1234
+- 11 digits starting with 1 (14075551234) → +1 (407) 555-1234
+- Handle scientific notation (4.08E+09) by converting to number first
+
+### Email Validation
+- Use regex: `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
+- Only include valid emails
+
+### Tags Extraction
+The `tags` column is a PostgreSQL array that stores contact preferences as strings:
+- `pref_phone:(407) 555-1234` - Preferred phone from skip trace
+- `pref_email:owner@example.com` - Preferred email from skip trace
+- `manual_phone:(407) 555-9999` - Manually added phone
+- `manual_email:manual@example.com` - Manually added email
+
+Extract these by:
+```typescript
+const tags = Array.isArray(property.tags) ? property.tags : [];
+
+const preferredPhones = tags
+  .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
+  .map((t: string) => t.replace('pref_phone:', ''));
+
+const manualPhones = tags
+  .filter((t: string) => typeof t === 'string' && t.startsWith('manual_phone:'))
+  .map((t: string) => t.replace('manual_phone:', ''));
+```
+
+### Database Query
+```typescript
+let query = supabaseClient
+  .from('properties')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+// Filter by property ID
+if (propertyId) {
+  query = query.eq('id', propertyId);
+}
+
+// Filter properties with skip trace data
+if (hasSkipTraceData) {
+  query = query.or('phone1.neq.null,phone2.neq.null,phone3.neq.null,email1.neq.null,email2.neq.null');
+}
+
+// Search
+if (search) {
+  query = query.or(`address.ilike.%${search}%,city.ilike.%${search}%,owner_name.ilike.%${search}%`);
+}
+
+// Pagination
+query = query.range(offset, offset + limit - 1);
+```
+
+### CORS Headers
+```typescript
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+```
+
+### Authentication
+- Use `verify_jwt = false` in config.toml for now (public access)
+- Can enable JWT verification later if needed
+
+### Error Handling
+Return proper HTTP status codes:
+- 200 - Success
+- 500 - Database error or internal error
+
+Example error response:
+```json
+{
+  "error": "Failed to fetch properties",
+  "details": "Detailed error message"
+}
+```
+
+## Implementation Location
+Create as Supabase Edge Function:
+- Path: `supabase/functions/get-skip-trace-data/index.ts`
+- Config: Add to `supabase/config.toml`
+
+## Usage Example
+```bash
+# Get all properties with skip trace data
+curl "https://your-project.supabase.co/functions/v1/get-skip-trace-data?hasSkipTraceData=true&limit=10" \
+  -H "Authorization: Bearer YOUR_ANON_KEY"
+
+# Get specific property
+curl "https://your-project.supabase.co/functions/v1/get-skip-trace-data?propertyId=123-456-789" \
+  -H "Authorization: Bearer YOUR_ANON_KEY"
+
+# Search and paginate
+curl "https://your-project.supabase.co/functions/v1/get-skip-trace-data?search=Orlando&limit=20&offset=0" \
+  -H "Authorization: Bearer YOUR_ANON_KEY"
+```
+
+## Notes
+- This API already exists and has been enhanced to include manual contacts
+- Returns ALL columns from properties table plus computed skip_trace_summary
+- Phone formatting handles edge cases (scientific notation, various lengths)
+- Tags are safely extracted with Array.isArray() checks
+- Pagination included for large datasets
+
+Please create this Edge Function with the structure and logic described above. Let me know if you need any clarification!

@@ -1,0 +1,184 @@
+Hi! Please review the bug fixes for `TypeError: Cannot read properties of undefined (reading 'includes')`:
+
+## Root Cause
+Multiple components were calling `.includes()` on properties that could be `undefined` or non-array values.
+
+## Files Fixed
+
+### 1. Dashboard.tsx & History.tsx
+**Issue:** `h.channels.includes('sms')` - channels can be undefined
+
+**Fix:**
+```typescript
+// BEFORE:
+{h.channels.includes('sms') && <Badge>SMS</Badge>}
+
+// AFTER:
+{Array.isArray(h.channels) && h.channels.includes('sms') && <Badge>SMS</Badge>}
+```
+
+---
+
+### 2. QuickCampaignDialog.tsx
+**Issue:** Accessing `property.preferred_phones` and `property.preferred_emails` which **don't exist as database columns**. Preferred contacts are stored in `tags` array as strings like `pref_phone:(407) 555-1234`.
+
+**Fix:**
+```typescript
+// BEFORE (wrong - these columns don't exist):
+const phones = property.preferred_phones || [];
+const emails = property.preferred_emails || [];
+
+// AFTER (correct - extract from tags):
+const tags = Array.isArray(property.tags) ? property.tags : [];
+
+const phones = tags
+  .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_phone:'))
+  .map(t => t.replace('pref_phone:', ''));
+
+const manualPhones = tags
+  .filter((t): t is string => typeof t === 'string' && t.startsWith('manual_phone:'))
+  .map(t => t.replace('manual_phone:', ''));
+
+const allPhones = [...phones, ...manualPhones];
+```
+
+---
+
+### 3. CampaignManager.tsx
+**Issue:** `prop.tags.filter()` without checking if tags is an array
+
+**Fix:**
+```typescript
+const getAllPhones = (prop: CampaignProperty): string[] => {
+  // Ensure tags is an array
+  const tags = Array.isArray(prop.tags) ? prop.tags : [];
+
+  const prefPhones = tags
+    .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
+    .map((t: string) => t.replace('pref_phone:', ''));
+
+  const manualPhones = tags
+    .filter((t: string) => typeof t === 'string' && t.startsWith('manual_phone:'))
+    .map((t: string) => t.replace('manual_phone:', ''));
+
+  return [...prefPhones, ...manualPhones];
+};
+```
+
+---
+
+### 4. CampaignWizard.tsx
+**Issue:** Same tags issue
+
+**Fix:** Applied same pattern as CampaignManager.tsx
+
+---
+
+### 5. SkipTracingDataModal.tsx
+**Issue:** `tags.filter()` and `tags.includes()` without array check
+
+**Fix:**
+```typescript
+const tags = property.tags || [];
+const savedPhones = tags.filter((t: string) => t.startsWith('pref_phone:'))
+  .map((t: string) => t.replace('pref_phone:', ''));
+
+// Changed to:
+const tags = Array.isArray(property.tags) ? property.tags : [];
+const savedPhones = tags
+  .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
+  .map((t: string) => t.replace('pref_phone:', ''));
+```
+
+---
+
+## Additional Changes
+
+### Step 4 - Show All Property Previews
+Changed from carousel navigation to showing all selected properties at once:
+
+```typescript
+{selectedProps.map((property, index) => (
+  <div key={property.id} className="border-2 rounded-lg p-4">
+    <div className="bg-blue-600 text-white rounded-full w-6 h-6">
+      {index + 1}
+    </div>
+    <h4>{property.address}</h4>
+    {/* Preview for each property */}
+  </div>
+))}
+```
+
+**Concern:** If 50+ properties selected, we render 50+ iframes. Performance issue?
+
+---
+
+### Step 2 - Show Contact Details
+Changed from showing counts to actual phone numbers/emails:
+
+```typescript
+// BEFORE: "2 📞"
+// AFTER: "(407) 555-1234, (407) 555-5678 +1 more"
+
+<span className="font-mono text-xs">
+  {phones.slice(0, 2).join(', ')}
+  {phones.length > 2 && ` +${phones.length - 2} more`}
+</span>
+```
+
+---
+
+## Data Architecture Note
+
+**Important:** Preferred and manual contacts are NOT stored in separate columns. They're stored in the `tags` array:
+
+- `pref_phone:(407) 555-1234` - Preferred phone from skip trace
+- `pref_email:owner@example.com` - Preferred email from skip trace
+- `manual_phone:(407) 555-9999` - Manually added phone
+- `manual_email:manual@example.com` - Manually added email
+
+All components now correctly extract these from `tags` array.
+
+---
+
+## Questions
+
+1. **Array validation:** Is `Array.isArray(prop.tags) ? prop.tags : []` sufficient everywhere?
+
+2. **Performance:** Step 4 renders all property previews (potentially 50+ iframes). Should we add:
+   - Pagination?
+   - Virtualization (react-window)?
+   - Lazy loading?
+
+3. **Type safety:** Should we add a type guard for tags?
+```typescript
+type PropertyTag = string;
+function isPropertyTag(value: unknown): value is PropertyTag {
+  return typeof value === 'string';
+}
+```
+
+4. **Code cleanup:** marketingService.ts has duplicate imports at top
+
+---
+
+## Test Cases Needed
+
+- [x] Send campaign with `tags: null` - should not crash
+- [x] Send campaign with `tags: []` - should work
+- [x] Send campaign with manual contacts - should include them
+- [ ] Preview with 50+ properties - check performance
+- [x] Dashboard/History with undefined channels - should not crash
+- [x] QuickCampaignDialog extracts contacts correctly from tags
+
+---
+
+## Summary
+
+**Main Fix:** Added `Array.isArray()` checks before calling array methods (.includes, .filter, .map)
+
+**Secondary Fix:** Changed incorrect column access (`property.preferred_phones`) to correct tag extraction
+
+**Side Benefit:** Manual contacts now work throughout the system
+
+Please review and let me know if the fixes look good or if you see any edge cases I missed. Thanks!

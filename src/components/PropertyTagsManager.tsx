@@ -35,21 +35,22 @@ export const PropertyTagsManager = ({
   currentTags = [],
   onTagsUpdated,
 }: PropertyTagsManagerProps) => {
-  const [tags, setTags] = useState<string[]>(currentTags || []);
+  const [tags, setTags] = useState<string[]>(Array.isArray(currentTags) ? currentTags : []);
   const [newTag, setNewTag] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   // Update tags when currentTags changes
   useEffect(() => {
-    setTags(currentTags || []);
+    setTags(Array.isArray(currentTags) ? currentTags : []);
   }, [currentTags]);
 
   const addTag = (tag: string) => {
     const normalizedTag = tag.toLowerCase().trim();
     if (!normalizedTag) return;
 
-    if (tags.includes(normalizedTag)) {
+    const tagsArray = Array.isArray(tags) ? tags : [];
+    if (tagsArray.includes(normalizedTag)) {
       toast({
         title: "Tag already exists",
         description: `"${normalizedTag}" is already added`,
@@ -58,12 +59,13 @@ export const PropertyTagsManager = ({
       return;
     }
 
-    setTags([...tags, normalizedTag]);
+    setTags([...tagsArray, normalizedTag]);
     setNewTag("");
   };
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((t) => t !== tagToRemove));
+    const tagsArray = Array.isArray(tags) ? tags : [];
+    setTags(tagsArray.filter((t) => t !== tagToRemove));
   };
 
   const handleSave = async () => {
@@ -154,7 +156,10 @@ export const PropertyTagsManager = ({
       <div>
         <label className="text-sm font-medium">Quick Add:</label>
         <div className="mt-2 flex flex-wrap gap-2">
-          {SUGGESTED_TAGS.filter((tag) => !tags.includes(tag)).map(
+          {SUGGESTED_TAGS.filter((tag) => {
+            const tagsArray = Array.isArray(tags) ? tags : [];
+            return !tagsArray.includes(tag);
+          }).map(
             (tag) => (
               <Badge
                 key={tag}

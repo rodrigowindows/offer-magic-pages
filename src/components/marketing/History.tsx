@@ -42,14 +42,14 @@ export const History = () => {
 
   // Filtros aplicados
   const filteredHistory = useMemo(() => {
-    return history.filter((item) => {
+    return (Array.isArray(history) ? history : []).filter((item) => {
       // Search
       const matchesSearch =
         searchTerm === '' ||
-        item.recipient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.recipient.phone_number.includes(searchTerm) ||
-        item.recipient.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.recipient.address?.toLowerCase().includes(searchTerm.toLowerCase());
+        (typeof item.recipient.name === 'string' && item.recipient.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (typeof item.recipient.phone_number === 'string' && item.recipient.phone_number.includes(searchTerm)) ||
+        (typeof item.recipient.email === 'string' && item.recipient.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (typeof item.recipient.address === 'string' && item.recipient.address.toLowerCase().includes(searchTerm.toLowerCase()));
 
       // Status filter
       const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
