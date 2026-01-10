@@ -241,20 +241,12 @@ export const CSVImporter = () => {
     const mappedColumns = columnMappings
       .filter(m => m.dbColumn)
       .map(m => m.dbColumn);
-    
-    console.log('=== COLUMN CREATION DEBUG ===');
-    console.log('All mapped columns:', mappedColumns);
-    console.log('Existing column names in AVAILABLE_DB_COLUMNS:', existingColumnNames);
-    console.log('New columns from state:', newColumns);
-    
+
     const columnsToCreate = [...new Set(mappedColumns)]
       .filter(col => !existingColumnNames.includes(col) || newColumns.includes(col));
 
-    console.log('Columns to create:', columnsToCreate);
-
     // Always create new columns dynamically
     if (columnsToCreate.length > 0) {
-      console.log('Starting column creation process for:', columnsToCreate);
       for (const columnName of columnsToCreate) {
         try {
           // Determine column type based on naming convention
@@ -267,34 +259,24 @@ export const CSVImporter = () => {
             columnType = 'boolean';
           }
 
-          console.log(`Calling add_column_if_not_exists for: ${columnName} with type: ${columnType}`);
-          
+          }
+
           const { data, error } = await supabase.rpc('add_column_if_not_exists', {
             p_table_name: 'properties',
             p_column_name: columnName,
             p_column_type: columnType,
           });
 
-          console.log(`RPC response for ${columnName}:`, { data, error });
-
           if (error) {
-            console.error(`Failed to create column ${columnName}:`, error);
             importErrors.push(`Failed to create column ${columnName}: ${error.message}`);
           } else if (data === true) {
             createdCols.push(columnName);
-            console.log(`✅ Successfully created column: ${columnName} (${columnType})`);
-          } else {
-            console.log(`Column ${columnName} already exists (data returned: ${data})`);
           }
         } catch (error) {
-          console.error(`Error creating column ${columnName}:`, error);
           importErrors.push(`Error creating column ${columnName}: ${error}`);
         }
       }
       setColumnsCreated(createdCols);
-      console.log('Created columns:', createdCols);
-    } else {
-      console.log('No new columns to create - all mapped columns already exist in AVAILABLE_DB_COLUMNS');
     }
 
     // Import data row by row

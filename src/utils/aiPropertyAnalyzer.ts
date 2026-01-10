@@ -40,7 +40,7 @@ const analyzeWithGemini = async (
     }
 
     if (!geminiApiKey) {
-      console.log("No Gemini API key configured - using rule-based analysis");
+      // No Gemini API key configured - using rule-based analysis
       return null;
     }
 
@@ -104,8 +104,6 @@ Format your response as a structured analysis with clear sections.`;
       console.error("No AI response text");
       return null;
     }
-
-    console.log("✅ Gemini AI analysis successful");
 
     // Parse AI response and structure it
     return parseGeminiResponse(
@@ -226,7 +224,6 @@ export const analyzePropertyWithAI = async (
     }
 
     // Fallback to rule-based analysis
-    console.log("⚠️ Gemini unavailable, using rule-based analysis");
     return generateRuleBasedAnalysis(
       address,
       city,

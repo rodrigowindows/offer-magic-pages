@@ -71,7 +71,9 @@ export const AdaptivePropertyCard = ({
         onReject={onReject}
         onViewDetails={onViewPage || (() => {})}
         onCall={(phone) => window.open(`tel:${phone}`, '_self')}
-        onEmail={(id) => console.log('Email:', id)}
+        onEmail={(id) => {
+          // Email functionality to be implemented
+        }}
       />
     );
   }

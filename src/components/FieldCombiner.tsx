@@ -233,7 +233,7 @@ export const FieldCombiner = ({ availableColumns, sampleData, onFieldsChange }: 
         availableColumns,
         sampleData,
         (status) => {
-          console.log(status);
+          // Status callback for progress updates
         }
       );
 

@@ -64,14 +64,12 @@ export const InteractivePropertyMap = ({
       const data = await response.json();
 
       if (data.features && data.features.length > 0) {
-        const [lng, lat] = data.features[0].center;
-        console.log(`✓ Geocoded: ${property.address} -> [${lng}, ${lat}]`);
-        return [lng, lat];
+      const [lng, lat] = data.features[0].center;
+      return [lng, lat];
       }
 
       return null;
     } catch (error) {
-      console.error(`✗ Error geocoding ${fullAddress}:`, error);
       return null;
     }
   };
@@ -89,8 +87,6 @@ export const InteractivePropertyMap = ({
 
     mapboxgl.accessToken = mapboxToken;
 
-    console.log("Initializing map...");
-
     // Create map
     const newMap = new mapboxgl.Map({
       container: mapContainer.current,
@@ -105,7 +101,6 @@ export const InteractivePropertyMap = ({
 
     // Wait for map to load
     newMap.on("load", async () => {
-      console.log("Map loaded, adding markers...");
       setIsLoading(true);
       setGeocodingProgress({ current: 0, total: properties.length });
 
@@ -124,11 +119,8 @@ export const InteractivePropertyMap = ({
 
           // Validate
           if (isNaN(lng) || isNaN(lat)) {
-            console.error(`Invalid coordinates: [${lng}, ${lat}]`);
             continue;
           }
-
-          console.log(`Adding marker at [${lng}, ${lat}] for ${property.address}`);
 
           // Color based on status
           const color =
@@ -274,8 +266,6 @@ export const InteractivePropertyMap = ({
         }
       }
 
-      console.log(`Added ${addedCount} markers`);
-
       // Fit to bounds
       if (addedCount > 0) {
         newMap.fitBounds(bounds, {
@@ -340,7 +330,7 @@ export const InteractivePropertyMap = ({
           });
         },
         (error) => {
-          console.error("Error getting location:", error);
+          // Location access denied or unavailable
         }
       );
     }

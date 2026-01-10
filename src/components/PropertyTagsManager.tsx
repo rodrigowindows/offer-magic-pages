@@ -105,10 +105,10 @@ export const PropertyTagsManager = ({
       <div>
         <label className="text-sm font-medium">Current Tags:</label>
         <div className="mt-2 flex flex-wrap gap-2">
-          {tags.length === 0 ? (
+          {Array.isArray(tags) && tags.length === 0 ? (
             <p className="text-sm text-muted-foreground">No tags yet</p>
           ) : (
-            tags.map((tag) => (
+            Array.isArray(tags) && tags.map((tag) => (
               <Badge
                 key={tag}
                 variant="secondary"

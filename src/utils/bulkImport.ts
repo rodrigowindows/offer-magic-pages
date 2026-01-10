@@ -184,8 +184,7 @@ export const bulkImportOrlandoLeads = async (
             result.imagesUploaded++;
           }
         } catch (error) {
-          // Image upload errors are non-critical, just log
-          console.log(`Image upload skipped for ${lead.address}`);
+          // Image upload errors are non-critical, just continue
         }
       }
 
