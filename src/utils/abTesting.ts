@@ -121,7 +121,7 @@ export async function trackABEvent(
       // Fallback to local storage
       saveEventLocally(eventData);
     } else {
-      console.log('AB Test Event tracked:', eventData);
+      // Event tracked successfully
     }
   } catch (error) {
     console.error('Error tracking AB event:', error);
