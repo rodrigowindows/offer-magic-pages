@@ -54,9 +54,9 @@ export const History = () => {
       // Status filter
       const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
 
-      // Channel filter
+      // Channel filter - safely check if channels is an array
       const matchesChannel =
-        channelFilter === 'all' || item.channels.includes(channelFilter as any);
+        channelFilter === 'all' || (Array.isArray(item.channels) && item.channels.includes(channelFilter as any));
 
       // Mode filter (test/production)
       const matchesMode =
@@ -88,7 +88,7 @@ export const History = () => {
       item.recipient.phone_number,
       item.recipient.email || '',
       item.recipient.address || '',
-      item.channels.join('; '),
+      Array.isArray(item.channels) ? item.channels.join('; ') : '',
       item.status,
       item.test_mode ? 'Test' : 'Production',
       JSON.stringify(item.response),
@@ -289,7 +289,7 @@ const HistoryItem = ({ item }: { item: CommunicationHistory }) => {
 
           {/* Channels */}
           <div className="flex gap-2 mb-3">
-            {item.channels.map((channel) => {
+            {(Array.isArray(item.channels) ? item.channels : []).map((channel) => {
               const Icon = channelIcons[channel];
               return (
                 <Badge key={channel} variant="secondary" className="flex items-center gap-1">
