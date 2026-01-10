@@ -74,27 +74,33 @@ interface Property {
   tags?: string[];
 }
 
-// Helper functions to extract preferred contacts from tags
+// Helper functions to extract preferred contacts from JSONB columns
 const getPreferredPhones = (property: Property): string[] => {
+  // Priority: preferred_phones JSONB column > tags (legacy)
+  if (property.preferred_phones && Array.isArray(property.preferred_phones)) {
+    return property.preferred_phones as string[];
+  }
+
+  // Fallback to tags for backward compatibility
   const tags = Array.isArray(property.tags) ? property.tags : [];
   const prefPhones = tags
     .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_phone:'))
     .map(t => t.replace('pref_phone:', ''));
-  const manualPhones = tags
-    .filter((t): t is string => typeof t === 'string' && t.startsWith('manual_phone:'))
-    .map(t => t.replace('manual_phone:', ''));
-  return [...prefPhones, ...manualPhones];
+  return prefPhones;
 };
 
 const getPreferredEmails = (property: Property): string[] => {
+  // Priority: preferred_emails JSONB column > tags (legacy)
+  if (property.preferred_emails && Array.isArray(property.preferred_emails)) {
+    return property.preferred_emails as string[];
+  }
+
+  // Fallback to tags for backward compatibility
   const tags = Array.isArray(property.tags) ? property.tags : [];
   const prefEmails = tags
     .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_email:'))
     .map(t => t.replace('pref_email:', ''));
-  const manualEmails = tags
-    .filter((t): t is string => typeof t === 'string' && t.startsWith('manual_email:'))
-    .map(t => t.replace('manual_email:', ''));
-  return [...prefEmails, ...manualEmails];
+  return prefEmails;
 };
 
 const hasPreferredContacts = (property: Property): boolean => {
