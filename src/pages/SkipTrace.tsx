@@ -134,3 +134,7 @@ export const SkipTrace = () => {
     </div>
   );
 };
+
+export default SkipTrace;
+
+export default SkipTrace;
