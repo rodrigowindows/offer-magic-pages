@@ -42,13 +42,10 @@ interface Property {
   cash_offer_amount?: number;
   owner_phone?: string;
   owner_email?: string;
-  preferred_phones?: string[];
-  preferred_emails?: string[];
+  tags?: string[];
   skip_tracing_data?: {
     phones?: string[];
     emails?: string[];
-    preferred_phones?: string[];
-    preferred_emails?: string[];
   };
 }
 
@@ -245,29 +242,41 @@ export const QuickCampaignDialog = ({
       return null;
     };
 
-    // First priority: preferred contacts
+    // Helper to get preferred contacts from tags
+    const getPreferredFromTags = (prefix: string): string[] => {
+      const tags = Array.isArray(property.tags) ? property.tags : [];
+      return tags
+        .filter((t): t is string => typeof t === 'string' && t.startsWith(prefix))
+        .map(t => t.replace(prefix, ''));
+    };
+
+    // First priority: preferred contacts from tags (pref_phone: / pref_email:)
     if (type === 'phone') {
-      const phones = getArray(property.preferred_phones);
-      if (phones && phones.length > 0) {
-        return phones[0]; // Use first preferred phone
+      const prefPhones = getPreferredFromTags('pref_phone:');
+      const manualPhones = getPreferredFromTags('manual_phone:');
+      const allPhones = [...prefPhones, ...manualPhones];
+      if (allPhones.length > 0) {
+        return allPhones[0]; // Use first preferred phone
       }
     }
     if (type === 'email') {
-      const emails = getArray(property.preferred_emails);
-      if (emails && emails.length > 0) {
-        return emails[0]; // Use first preferred email
+      const prefEmails = getPreferredFromTags('pref_email:');
+      const manualEmails = getPreferredFromTags('manual_email:');
+      const allEmails = [...prefEmails, ...manualEmails];
+      if (allEmails.length > 0) {
+        return allEmails[0]; // Use first preferred email
       }
     }
 
-    // Second priority: preferred contacts from skip tracing data
-    if (type === 'phone' && property.skip_tracing_data?.preferred_phones) {
-      const phones = getArray(property.skip_tracing_data.preferred_phones);
+    // Second priority: skip tracing data phones/emails
+    if (type === 'phone' && property.skip_tracing_data?.phones) {
+      const phones = getArray(property.skip_tracing_data.phones);
       if (phones && phones.length > 0) {
         return phones[0];
       }
     }
-    if (type === 'email' && property.skip_tracing_data?.preferred_emails) {
-      const emails = getArray(property.skip_tracing_data.preferred_emails);
+    if (type === 'email' && property.skip_tracing_data?.emails) {
+      const emails = getArray(property.skip_tracing_data.emails);
       if (emails && emails.length > 0) {
         return emails[0];
       }
@@ -775,28 +784,28 @@ export const QuickCampaignDialog = ({
                     <div className="flex items-center justify-between">
                       <span className="text-green-700">Preferred Emails:</span>
                       <Badge variant={safeProperties.filter(p => {
-                        const emails = Array.isArray(p.preferred_emails) ? p.preferred_emails :
-                          (typeof p.preferred_emails === 'string' ? (() => { try { return JSON.parse(p.preferred_emails); } catch { return []; } })() : []);
-                        return emails && emails.length > 0;
+                        const tags = Array.isArray(p.tags) ? p.tags : [];
+                        const emails = tags.filter((t): t is string => typeof t === 'string' && (t.startsWith('pref_email:') || t.startsWith('manual_email:')));
+                        return emails.length > 0;
                       }).length > 0 ? "default" : "outline"}>
                         {safeProperties.filter(p => {
-                          const emails = Array.isArray(p.preferred_emails) ? p.preferred_emails :
-                            (typeof p.preferred_emails === 'string' ? (() => { try { return JSON.parse(p.preferred_emails); } catch { return []; } })() : []);
-                          return emails && emails.length > 0;
+                          const tags = Array.isArray(p.tags) ? p.tags : [];
+                          const emails = tags.filter((t): t is string => typeof t === 'string' && (t.startsWith('pref_email:') || t.startsWith('manual_email:')));
+                          return emails.length > 0;
                         }).length} / {safeProperties.length}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-green-700">Preferred Phones:</span>
                       <Badge variant={safeProperties.filter(p => {
-                        const phones = Array.isArray(p.preferred_phones) ? p.preferred_phones :
-                          (typeof p.preferred_phones === 'string' ? (() => { try { return JSON.parse(p.preferred_phones); } catch { return []; } })() : []);
-                        return phones && phones.length > 0;
+                        const tags = Array.isArray(p.tags) ? p.tags : [];
+                        const phones = tags.filter((t): t is string => typeof t === 'string' && (t.startsWith('pref_phone:') || t.startsWith('manual_phone:')));
+                        return phones.length > 0;
                       }).length > 0 ? "default" : "outline"}>
                         {safeProperties.filter(p => {
-                          const phones = Array.isArray(p.preferred_phones) ? p.preferred_phones :
-                            (typeof p.preferred_phones === 'string' ? (() => { try { return JSON.parse(p.preferred_phones); } catch { return []; } })() : []);
-                          return phones && phones.length > 0;
+                          const tags = Array.isArray(p.tags) ? p.tags : [];
+                          const phones = tags.filter((t): t is string => typeof t === 'string' && (t.startsWith('pref_phone:') || t.startsWith('manual_phone:')));
+                          return phones.length > 0;
                         }).length} / {safeProperties.length}
                       </Badge>
                     </div>
