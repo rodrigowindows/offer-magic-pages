@@ -37,7 +37,6 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/import" element={<ImportProperties />} />
           <Route path="/skip-trace" element={<SkipTrace />} />
-          <Route path="/skip-trace" element={<SkipTrace />} />
           <Route path="/property/:slug" element={<Property />} />
           {/* Marketing Communication System Routes */}
           <Route path="/marketing/*" element={<MarketingApp />} />

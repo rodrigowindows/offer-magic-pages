@@ -303,12 +303,7 @@ export function testMapping(csvColumnName: string): void {
   const normalized = normalizeColumnName(csvColumnName);
   const detected = autoDetectDatabaseField(csvColumnName);
 
-  console.log('📊 CSV Column Mapping Test');
-  console.log('Input:', csvColumnName);
-  console.log('Normalized:', normalized);
-  console.log('Detected DB Field:', detected || '(no match)');
-
   if (detected) {
-    console.log('All variations for', detected + ':', getCSVVariations(detected));
+    // Mapping successful
   }
 }

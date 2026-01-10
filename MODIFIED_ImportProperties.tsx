@@ -228,13 +228,6 @@ const ImportProperties = () => {
       // Parse headers
       const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
 
-      console.log('=== CSV DEBUG ===');
-      console.log('Total lines:', lines.length);
-      console.log('Headers found:', headers.length);
-      console.log('First 10 headers:', headers.slice(0, 10));
-      console.log('Has account_number?', headers.includes('account_number'));
-      console.log('Has property_address?', headers.includes('property_address'));
-
       setCsvHeaders(headers);
       setTotalRows(lines.length - 1);
 
@@ -257,12 +250,8 @@ const ImportProperties = () => {
       // Store preview (first 5 rows)
       setCsvPreview(allData.slice(0, 5));
 
-      console.log('Preview first row:', allData[0]);
-      console.log(`Loaded ${allData.length} rows for analysis`);
-
       // No strict validation - allow any CSV structure
       // User will map columns in the mapping dialog
-      console.log('CSV loaded - proceeding to column mapping dialog');
       setCsvErrors([]);
       setShowMappingDialog(true);
 
@@ -338,7 +327,6 @@ const ImportProperties = () => {
 
     // Prevent concurrent calculations
     if (isCalculatingRef.current) {
-      console.log('Preview calculation already in progress, skipping...');
       return;
     }
     isCalculatingRef.current = true;
@@ -369,7 +357,6 @@ const ImportProperties = () => {
 
     // If no matchable fields are mapped, all are new inserts
     if (!origemMapping && !addressMapping && !ownerNameMapping && !ownerAddressMapping) {
-      console.log('Nenhum campo de match mapeado - todos serão inseridos como novos');
       setImportPreview({
         toInsert: totalRows,
         toUpdate: 0,
@@ -405,7 +392,6 @@ const ImportProperties = () => {
         setImportPreview(prev => prev ? { ...prev, progress: 10 } : prev);
 
         // Fetch ALL existing properties for matching (only once)
-        console.log('Buscando propriedades existentes para matching...');
         const { data: existingProperties, error } = await supabase
           .from('properties')
           .select('id, origem, address, owner_name, owner_address');
@@ -425,8 +411,6 @@ const ImportProperties = () => {
           isCalculatingRef.current = false;
           return;
         }
-
-        console.log(`Encontradas ${existingProperties?.length || 0} propriedades no banco`);
 
         // Count fields in DB for display
         const dbFieldsCount = {
@@ -464,8 +448,6 @@ const ImportProperties = () => {
             matchMaps.byOwnerAddress.set(normalizeForMatch(prop.owner_address).replace(/\s/g, ''), prop.id);
           }
         });
-
-        console.log(`Índices criados: ${matchMaps.byAddressKey.size} endereços únicos`);
 
         // Process each CSV row and check for matches
         const matchedIds = new Set<string>();
@@ -509,10 +491,6 @@ const ImportProperties = () => {
         }
 
         const matchCount = matchedIds.size;
-        console.log(`✓ Encontradas ${matchCount} correspondências únicas!`);
-        if (matchDetails.length > 0) {
-          console.log('Primeiros matches por endereço:', matchDetails.slice(0, 5));
-        }
 
         const toUpdate = updateExisting ? matchCount : 0;
         const toInsert = totalRows - matchCount;
@@ -634,8 +612,6 @@ const ImportProperties = () => {
         existingProperties?.map(p => p.origem) || []
       );
 
-      console.log(`Found ${existingAccountNumbers.size} existing properties in database`);
-
       for (let i = 1; i < lines.length; i++) {
         try {
           const values = parseCSVLine(lines[i]);
@@ -726,7 +702,6 @@ const ImportProperties = () => {
             const zipMatch = propertyAddress.match(/\b(\d{5})(?:-\d{4})?\b/);
             if (zipMatch) {
               propertyData.zip_code = zipMatch[1];
-              console.log(`Extracted ZIP ${zipMatch[1]} from address: ${propertyAddress}`);
             }
           }
 
@@ -735,7 +710,6 @@ const ImportProperties = () => {
           if (!propertyData.state) propertyData.state = 'FL';
           if (!propertyData.zip_code) {
             propertyData.zip_code = '32801'; // Default Orlando ZIP
-            console.log('Using default ZIP code 32801');
           }
 
           // Handle estimated_value
@@ -752,8 +726,6 @@ const ImportProperties = () => {
               propertyData.cash_offer_amount = 70000; // Default reasonable cash offer
             }
           }
-
-          console.log(`Property: ${propertyAddress} - estimated_value: ${propertyData.estimated_value}, cash_offer: ${propertyData.cash_offer_amount}`);
 
           // Find matching image
           if (!propertyData.property_image_url && accountNumber) {
@@ -834,17 +806,11 @@ const ImportProperties = () => {
 
       // Log skipped rows
       if (skippedRows.length > 0) {
-        console.log('\n=== SKIPPED ROWS (Already Imported) ===');
-        console.log(`Total skipped: ${skippedRows.length}`);
-        console.table(skippedRows);
+        // Create CSV content for skipped rows if needed
       }
 
       // Log all failed rows
       if (failedRows.length > 0) {
-        console.log('\n=== FAILED ROWS ===');
-        console.log(`Total failed: ${failedRows.length}`);
-        console.table(failedRows);
-
         // Create CSV content for failed rows
         const failedCsvHeaders = headers.join(',');
         const failedCsvRows = failedRows.map(f => {
@@ -853,9 +819,6 @@ const ImportProperties = () => {
         }).join('\n');
 
         const failedCsv = failedCsvHeaders + '\n' + failedCsvRows;
-        console.log('\n=== FAILED ROWS CSV ===');
-        console.log('Copy the content below and save as CSV:');
-        console.log(failedCsv);
 
         // Download failed rows as CSV
         const blob = new Blob([failedCsv], { type: 'text/csv' });
@@ -865,18 +828,9 @@ const ImportProperties = () => {
         a.download = `failed_imports_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-
-        console.log('✓ Failed rows CSV downloaded automatically');
       }
 
       // Final summary
-      console.log('\n=== IMPORT SUMMARY ===');
-      console.log(`Total processed: ${lines.length - 1}`);
-      console.log(`✓ Imported (new): ${imported}`);
-      console.log(`✓ Updated (existing): ${updated}`);
-      console.log(`⏭ Skipped (already exists): ${skipped}`);
-      console.log(`✗ Failed (errors): ${errors}`);
-
       setImportResult({ imported, updated, errors });
       setIsImporting(false);
       setImportStatus("");

@@ -85,7 +85,6 @@ function parseAIResponse(responseText: string): AIColumnMapping[] {
     }));
   } catch (error) {
     console.error('Error parsing AI response:', error);
-    console.log('Raw response:', responseText);
     throw new Error('Failed to parse AI response. Response may not be valid JSON.');
   }
 }

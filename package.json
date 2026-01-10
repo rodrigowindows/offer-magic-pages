@@ -8,7 +8,9 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:errors": "node scripts/check-errors.cjs",
+    "prebuild": "npm run check:errors"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

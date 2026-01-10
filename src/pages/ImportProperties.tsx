@@ -228,13 +228,6 @@ const ImportProperties = () => {
       // Parse headers
       const headers = parseCSVLine(lines[0]).map(h => h.replace(/"/g, '').trim());
 
-      console.log('=== CSV DEBUG ===');
-      console.log('Total lines:', lines.length);
-      console.log('Headers found:', headers.length);
-      console.log('First 10 headers:', headers.slice(0, 10));
-      console.log('Has account_number?', headers.includes('account_number'));
-      console.log('Has property_address?', headers.includes('property_address'));
-
       setCsvHeaders(headers);
       setTotalRows(lines.length - 1);
 
@@ -250,11 +243,8 @@ const ImportProperties = () => {
       }
       setCsvPreview(preview);
 
-      console.log('Preview first row:', preview[0]);
-
       // No strict validation - allow any CSV structure
       // User will map columns in the mapping dialog
-      console.log('CSV loaded - proceeding to column mapping dialog');
       setCsvErrors([]);
       setShowMappingDialog(true);
 
@@ -338,7 +328,6 @@ const ImportProperties = () => {
     
     // Prevent concurrent calculations
     if (isCalculatingRef.current) {
-      console.log('Preview calculation already in progress, skipping...');
       return;
     }
     isCalculatingRef.current = true;
@@ -369,7 +358,6 @@ const ImportProperties = () => {
 
     // If no matchable fields are mapped, all are new inserts
     if (!origemMapping && !addressMapping && !ownerNameMapping && !ownerAddressMapping) {
-      console.log('Nenhum campo de match mapeado - todos serão inseridos como novos');
       setImportPreview({
         toInsert: totalRows,
         toUpdate: 0,
@@ -405,7 +393,6 @@ const ImportProperties = () => {
         setImportPreview(prev => prev ? { ...prev, progress: 10 } : prev);
 
         // Fetch ALL existing properties for matching (only once)
-        console.log('Buscando propriedades existentes para matching...');
         const { data: existingProperties, error } = await supabase
           .from('properties')
           .select('id, origem, address, owner_name, owner_address');
@@ -425,8 +412,6 @@ const ImportProperties = () => {
           isCalculatingRef.current = false;
           return;
         }
-
-        console.log(`Encontradas ${existingProperties?.length || 0} propriedades no banco`);
 
         // Count fields in DB for display
         const dbFieldsCount = {
@@ -465,21 +450,10 @@ const ImportProperties = () => {
           }
         });
 
-        console.log(`Índices criados: ${matchMaps.byAddressKey.size} endereços únicos`);
-
-        // DEBUG: Show sample of DB address keys
-        console.log('=== DEBUG: Amostras de chaves de endereço do BANCO ===');
-        const dbAddrSamples = Array.from(matchMaps.byAddressKey.entries()).slice(0, 10);
-        dbAddrSamples.forEach(([key, id]) => {
-          console.log(`  DB Key: "${key}" -> ID: ${id.substring(0, 8)}...`);
-        });
-
         // Process each CSV row and check for matches
         const matchedIds = new Set<string>();
         const matchDetails: { row: number; csvAddr: string; csvKey: string; dbKey: string }[] = [];
         const noMatchDetails: { row: number; csvAddr: string; csvKey: string }[] = [];
-
-        console.log('=== DEBUG: Processando linhas do CSV ===');
 
         for (let i = 1; i < lines.length; i++) {
           const values = parseCSVLine(lines[i]);
@@ -491,31 +465,6 @@ const ImportProperties = () => {
           const csvAddressKey = createAddressKey(csvAddress);
           const csvOwnerName = normalizeForMatch(getValue(ownerNameIdx)).replace(/\s/g, '');
           const csvOwnerAddress = normalizeForMatch(getValue(ownerAddressIdx)).replace(/\s/g, '');
-
-          // DEBUG: Log first 5 CSV rows being processed
-          if (i <= 5) {
-            console.log(`\n--- CSV Row ${i} ---`);
-            console.log(`  CSV Address Raw: "${csvAddress}"`);
-            console.log(`  CSV Address Key: "${csvAddressKey}"`);
-            console.log(`  CSV Origem: "${csvOrigem}"`);
-            console.log(`  CSV Owner Name: "${csvOwnerName}"`);
-            
-            // Check if key exists in DB
-            const dbMatch = matchMaps.byAddressKey.get(csvAddressKey);
-            if (dbMatch) {
-              console.log(`  ✓ MATCH FOUND in DB!`);
-            } else {
-              // Find similar keys in DB for debugging
-              const similarKeys = Array.from(matchMaps.byAddressKey.keys())
-                .filter(k => k.includes(csvAddressKey.substring(0, 10)) || csvAddressKey.includes(k.substring(0, 10)))
-                .slice(0, 3);
-              if (similarKeys.length > 0) {
-                console.log(`  ✗ No match. Similar DB keys: ${similarKeys.join(', ')}`);
-              } else {
-                console.log(`  ✗ No match found`);
-              }
-            }
-          }
 
           // Try to find a match using any of the fields
           let matchedId: string | undefined;
@@ -539,9 +488,6 @@ const ImportProperties = () => {
 
           if (matchedId) {
             matchedIds.add(matchedId);
-            if (i <= 10) {
-              console.log(`  ✓ Row ${i} matched by ${matchedBy}`);
-            }
           } else if (csvAddressKey && noMatchDetails.length < 10) {
             noMatchDetails.push({ row: i, csvAddr: csvAddress, csvKey: csvAddressKey });
           }
@@ -554,20 +500,9 @@ const ImportProperties = () => {
         }
 
         const matchCount = matchedIds.size;
-        console.log(`\n=== RESULTADO FINAL ===`);
-        console.log(`✓ Encontradas ${matchCount} correspondências únicas!`);
-        
-        if (matchDetails.length > 0) {
-          console.log('\nMatches encontrados:');
-          matchDetails.slice(0, 5).forEach(m => {
-            console.log(`  Row ${m.row}: "${m.csvAddr}" -> Key: "${m.csvKey}"`);
-          });
-        }
         
         if (noMatchDetails.length > 0) {
-          console.log('\nEndereços SEM match (primeiros 10):');
           noMatchDetails.forEach(m => {
-            console.log(`  Row ${m.row}: "${m.csvAddr}" -> Key: "${m.csvKey}"`);
           });
         }
 
@@ -678,8 +613,6 @@ const ImportProperties = () => {
       });
 
       // === AUTOMATIC DYNAMIC COLUMN CREATION FOR ALL CSV FIELDS ===
-      console.log('=== DYNAMIC COLUMN CREATION DEBUG ===');
-      console.log('Total CSV headers:', headers.length);
       
       // List of known database columns (will skip these)
       const knownColumns = [
@@ -749,8 +682,6 @@ const ImportProperties = () => {
         }
       });
       
-      console.log('CSV to DB column mapping:', Object.fromEntries(csvToDbColumnMap));
-      console.log('Columns to create:', columnsToCreate.length);
       
       if (columnsToCreate.length > 0) {
         setImportStatus(`Criando ${columnsToCreate.length} novas colunas automaticamente...`);
@@ -760,7 +691,6 @@ const ImportProperties = () => {
         let errorCount = 0;
         
         for (const col of columnsToCreate) {
-          console.log(`Creating column: ${col.normalized} (${col.type}) from "${col.original}"`);
           
           try {
             const { data, error } = await supabase.rpc('add_column_if_not_exists', {
@@ -773,10 +703,8 @@ const ImportProperties = () => {
               console.error(`❌ Failed to create column ${col.normalized}:`, error);
               errorCount++;
             } else if (data === true) {
-              console.log(`✅ Created: ${col.normalized} (${col.type})`);
               createdCount++;
             } else {
-              console.log(`⏭️ Already exists: ${col.normalized}`);
               existedCount++;
             }
           } catch (err) {
@@ -785,10 +713,8 @@ const ImportProperties = () => {
           }
         }
         
-        console.log(`Column creation summary: ${createdCount} created, ${existedCount} existed, ${errorCount} errors`);
         setImportStatus(`Colunas: ${createdCount} criadas, ${existedCount} existentes`);
       } else {
-        console.log('No new columns to create - all headers map to known columns');
       }
       // === END DYNAMIC COLUMN CREATION ===
 
@@ -824,10 +750,6 @@ const ImportProperties = () => {
         }
       });
 
-      console.log(`Found ${existingProperties?.length || 0} existing properties:`);
-      console.log(`  - ${existingByOrigem.size} with origem`);
-      console.log(`  - ${existingByAddressKey.size} with address key`);
-      console.log(`  - ${existingByOwnerName.size} with owner name`);
 
       for (let i = 1; i < lines.length; i++) {
         try {
@@ -932,7 +854,6 @@ const ImportProperties = () => {
               if (match) {
                 existingPropId = match.id;
                 matchedBy = 'address';
-                console.log(`Matched by address: "${propertyAddress}" -> "${match.address}"`);
               }
             }
           }
@@ -969,7 +890,6 @@ const ImportProperties = () => {
             const zipMatch = propertyAddress.match(/\b(\d{5})(?:-\d{4})?\b/);
             if (zipMatch) {
               propertyData.zip_code = zipMatch[1];
-              console.log(`Extracted ZIP ${zipMatch[1]} from address: ${propertyAddress}`);
             }
           }
 
@@ -978,7 +898,6 @@ const ImportProperties = () => {
           if (!propertyData.state) propertyData.state = 'FL';
           if (!propertyData.zip_code) {
             propertyData.zip_code = '32801'; // Default Orlando ZIP
-            console.log('Using default ZIP code 32801');
           }
 
           // Handle estimated_value
@@ -996,7 +915,6 @@ const ImportProperties = () => {
             }
           }
 
-          console.log(`Property: ${propertyAddress} - estimated_value: ${propertyData.estimated_value}, cash_offer: ${propertyData.cash_offer_amount}`);
 
           // Find matching image
           if (!propertyData.property_image_url && accountNumber) {
@@ -1079,15 +997,11 @@ const ImportProperties = () => {
 
       // Log skipped rows
       if (skippedRows.length > 0) {
-        console.log('\n=== SKIPPED ROWS (Already Imported) ===');
-        console.log(`Total skipped: ${skippedRows.length}`);
         console.table(skippedRows);
       }
 
       // Log all failed rows
       if (failedRows.length > 0) {
-        console.log('\n=== FAILED ROWS ===');
-        console.log(`Total failed: ${failedRows.length}`);
         console.table(failedRows);
 
         // Create CSV content for failed rows
@@ -1098,9 +1012,6 @@ const ImportProperties = () => {
         }).join('\n');
 
         const failedCsv = failedCsvHeaders + '\n' + failedCsvRows;
-        console.log('\n=== FAILED ROWS CSV ===');
-        console.log('Copy the content below and save as CSV:');
-        console.log(failedCsv);
 
         // Download failed rows as CSV
         const blob = new Blob([failedCsv], { type: 'text/csv' });
@@ -1111,16 +1022,9 @@ const ImportProperties = () => {
         a.click();
         URL.revokeObjectURL(url);
 
-        console.log('✓ Failed rows CSV downloaded automatically');
       }
 
       // Final summary
-      console.log('\n=== IMPORT SUMMARY ===');
-      console.log(`Total processed: ${lines.length - 1}`);
-      console.log(`✓ Imported (new): ${imported}`);
-      console.log(`✓ Updated (existing): ${updated}`);
-      console.log(`⏭ Skipped (already exists): ${skipped}`);
-      console.log(`✗ Failed (errors): ${errors}`);
 
       setImportResult({ imported, updated, errors });
       setIsImporting(false);
