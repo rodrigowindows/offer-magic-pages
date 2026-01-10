@@ -125,11 +125,11 @@ export const SkipTracingDataModal = ({
 
       // Load saved preferences from tags column (prefixed with pref_phone: and pref_email:)
       // Also load manual contacts (prefixed with manual_phone: and manual_email:)
-      const tags = property.tags || [];
-      const savedPhones = tags.filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
-      const savedEmails = tags.filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
-      const savedManualPhones = tags.filter((t: string) => t.startsWith('manual_phone:')).map((t: string) => t.replace('manual_phone:', ''));
-      const savedManualEmails = tags.filter((t: string) => t.startsWith('manual_email:')).map((t: string) => t.replace('manual_email:', ''));
+      const tags = Array.isArray(property.tags) ? property.tags : [];
+      const savedPhones = tags.filter((t: unknown) => typeof t === 'string' && t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
+      const savedEmails = tags.filter((t: unknown) => typeof t === 'string' && t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
+      const savedManualPhones = tags.filter((t: unknown) => typeof t === 'string' && t.startsWith('manual_phone:')).map((t: string) => t.replace('manual_phone:', ''));
+      const savedManualEmails = tags.filter((t: unknown) => typeof t === 'string' && t.startsWith('manual_email:')).map((t: string) => t.replace('manual_email:', ''));
 
       if (savedPhones.length > 0) {
         setSelectedPhones(savedPhones);
@@ -311,8 +311,9 @@ export const SkipTracingDataModal = ({
       if (fetchError) throw fetchError;
 
       // Remove old phone/email preferences and add new ones
-      const existingTags = (property?.tags || []).filter(
-        (t: string) => !t.startsWith('pref_phone:') && !t.startsWith('pref_email:') && !t.startsWith('manual_phone:') && !t.startsWith('manual_email:')
+      const rawTags = Array.isArray(property?.tags) ? property.tags : [];
+      const existingTags = rawTags.filter(
+        (t: unknown) => typeof t === 'string' && !t.startsWith('pref_phone:') && !t.startsWith('pref_email:') && !t.startsWith('manual_phone:') && !t.startsWith('manual_email:')
       );
       const phoneTags = selectedPhones.map(p => `pref_phone:${p}`);
       const emailTags = selectedEmails.map(e => `pref_email:${e}`);
