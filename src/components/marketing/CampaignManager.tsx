@@ -351,8 +351,12 @@ export const CampaignManager = () => {
 
   // Get phone/email from property based on selected column
   const getPhone = (prop: CampaignProperty): string | undefined => {
+    // Ensure tags is an array
+    const tags = Array.isArray(prop.tags) ? prop.tags : [];
     // Priority 1: Get from tags (pref_phone:)
-    const prefPhones = (prop.tags || []).filter((t: string) => t.startsWith('pref_phone:')).map((t: string) => t.replace('pref_phone:', ''));
+    const prefPhones = tags
+      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
+      .map((t: string) => t.replace('pref_phone:', ''));
     if (prefPhones.length > 0) {
       return prefPhones[0];
     }
@@ -361,8 +365,12 @@ export const CampaignManager = () => {
   };
 
   const getEmail = (prop: CampaignProperty): string | undefined => {
+    // Ensure tags is an array
+    const tags = Array.isArray(prop.tags) ? prop.tags : [];
     // Priority 1: Get from tags (pref_email:)
-    const prefEmails = (prop.tags || []).filter((t: string) => t.startsWith('pref_email:')).map((t: string) => t.replace('pref_email:', ''));
+    const prefEmails = tags
+      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_email:'))
+      .map((t: string) => t.replace('pref_email:', ''));
     if (prefEmails.length > 0) {
       return prefEmails[0];
     }
