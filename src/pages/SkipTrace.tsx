@@ -11,7 +11,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-export const SkipTrace = () => {
+const SkipTrace = () => {
   // Get summary data for statistics cards
   const { summary, loading: summaryLoading } = useSkipTraceData({
     limit: 1,
@@ -134,7 +134,5 @@ export const SkipTrace = () => {
     </div>
   );
 };
-
-export default SkipTrace;
 
 export default SkipTrace;

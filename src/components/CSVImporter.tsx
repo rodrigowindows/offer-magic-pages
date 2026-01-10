@@ -259,8 +259,6 @@ export const CSVImporter = () => {
             columnType = 'boolean';
           }
 
-          }
-
           const { data, error } = await supabase.rpc('add_column_if_not_exists', {
             p_table_name: 'properties',
             p_column_name: columnName,
@@ -398,32 +396,52 @@ export const CSVImporter = () => {
     URL.revokeObjectURL(url);
   };
 
-  const resetImporter = () => {
-    setStep('upload');
-    setCSVData(null);
-    setColumnMappings([]);
-    setNewColumns([]);
-    setErrors([]);
-    setImportProgress({ current: 0, total: 0 });
-    setImportResults({ success: 0, errors: 0 });
-    setColumnsCreated([]);
+  const createColumnsIfNeeded = async (columns: string[]) => {
+    const createdCols: string[] = [];
+    const importErrors: string[] = [];
+
+    for (const columnName of columns) {
+      try {
+        // Determine column type based on naming convention
+        let columnType = 'text';
+        if (columnName.includes('age') || columnName.includes('beds') || columnName.includes('sqft') || columnName.includes('year')) {
+          columnType = 'integer';
+        } else if (columnName.includes('baths') || columnName.includes('value') || columnName.includes('size')) {
+          columnType = 'numeric';
+        } else if (columnName.includes('deceased') || columnName.includes('is_') || columnName.includes('has_')) {
+          columnType = 'boolean';
+        }
+
+        const { data, error } = await supabase.rpc('add_column_if_not_exists', {
+          p_table_name: 'properties',
+          p_column_name: columnName,
+          p_column_type: columnType,
+        });
+
+        if (error) {
+          importErrors.push(`Failed to create column ${columnName}: ${error.message}`);
+        } else if (data === true) {
+          createdCols.push(columnName);
+        }
+      } catch (error) {
+        importErrors.push(`Error creating column ${columnName}: ${error}`);
+      }
+    }
+    setColumnsCreated(createdCols);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-6 w-6" />
-            CSV Property Importer
-          </CardTitle>
+          <CardTitle>CSV Property Import</CardTitle>
           <CardDescription>
-            Import property data from CSV files with automatic column mapping
+            Import property data from CSV files into your database
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Progress Indicator */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between">
             <StepIndicator step="upload" currentStep={step} label="Upload" />
             <div className="flex-1 border-t" />
             <StepIndicator step="mapping" currentStep={step} label="Map Columns" />
