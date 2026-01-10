@@ -66,19 +66,49 @@ interface Property {
   owner_name?: string;
   owner_phone?: string;
   owner_email?: string;
+  email1?: string;
   approval_status?: string;
   lead_status?: string;
-  preferred_phones?: string[];
-  preferred_emails?: string[];
   estimated_value?: number;
   cash_offer_amount?: number;
-  skip_tracing_data?: {
-    phones?: Array<{number: string; type: string}>;
-    emails?: string[];
-    preferred_phones?: string[];
-    preferred_emails?: string[];
-  };
+  tags?: string[];
 }
+
+// Helper functions to extract preferred contacts from tags
+const getPreferredPhones = (property: Property): string[] => {
+  const tags = Array.isArray(property.tags) ? property.tags : [];
+  const prefPhones = tags
+    .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_phone:'))
+    .map(t => t.replace('pref_phone:', ''));
+  const manualPhones = tags
+    .filter((t): t is string => typeof t === 'string' && t.startsWith('manual_phone:'))
+    .map(t => t.replace('manual_phone:', ''));
+  return [...prefPhones, ...manualPhones];
+};
+
+const getPreferredEmails = (property: Property): string[] => {
+  const tags = Array.isArray(property.tags) ? property.tags : [];
+  const prefEmails = tags
+    .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_email:'))
+    .map(t => t.replace('pref_email:', ''));
+  const manualEmails = tags
+    .filter((t): t is string => typeof t === 'string' && t.startsWith('manual_email:'))
+    .map(t => t.replace('manual_email:', ''));
+  return [...prefEmails, ...manualEmails];
+};
+
+const hasPreferredContacts = (property: Property): boolean => {
+  return getPreferredPhones(property).length > 0 || getPreferredEmails(property).length > 0;
+};
+
+const getTotalContacts = (property: Property): number => {
+  return (
+    getPreferredPhones(property).length +
+    getPreferredEmails(property).length +
+    (property.owner_phone ? 1 : 0) +
+    (property.owner_email || property.email1 ? 1 : 0)
+  );
+};
 
 const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
   {
@@ -340,9 +370,7 @@ export const CampaignWizard = () => {
       // Filter for preferred contacts only (client-side filter)
       if (showOnlyWithPreferredContacts) {
         filteredData = filteredData.filter(property => {
-          const phones = (property as any).preferred_phones || [];
-          const emails = (property as any).preferred_emails || [];
-          return phones.length > 0 || emails.length > 0;
+          return hasPreferredContacts(property as Property);
         });
       }
 
@@ -607,9 +635,7 @@ export const CampaignWizard = () => {
               />
               <MetricCard
                 title="With Preferred Contacts"
-                value={availableProperties.filter(p =>
-                  (p.preferred_phones?.length || 0) > 0 || (p.preferred_emails?.length || 0) > 0
-                ).length}
+                value={availableProperties.filter(p => hasPreferredContacts(p)).length}
                 icon={<Star className="h-5 w-5" />}
                 iconBgColor="bg-yellow-100"
                 iconColor="text-yellow-600"
@@ -699,14 +725,9 @@ export const CampaignWizard = () => {
                       <div className="grid gap-4 md:grid-cols-2">
                         {availableProperties.map(property => {
                           const isSelected = selectedProperties.some(p => p.id === property.id);
-                          const totalContacts = (
-                            (property.preferred_phones?.length || 0) +
-                            (property.preferred_emails?.length || 0) +
-                            (property.owner_phone ? 1 : 0) +
-                            (property.owner_email ? 1 : 0) +
-                            (property.skip_tracing_data?.phones?.length || 0) +
-                            (property.skip_tracing_data?.emails?.length || 0)
-                          );
+                          const prefPhones = getPreferredPhones(property);
+                          const prefEmails = getPreferredEmails(property);
+                          const totalContacts = getTotalContacts(property);
 
                           return (
                             <Card
@@ -783,13 +804,13 @@ export const CampaignWizard = () => {
                                 <div className="grid grid-cols-3 gap-3 mb-4">
                                   <div className="text-center p-2 bg-blue-50 rounded-lg">
                                     <div className="text-lg font-bold text-blue-600">
-                                      {property.preferred_phones?.length || 0}
+                                      {prefPhones.length}
                                     </div>
                                     <div className="text-xs text-blue-700 font-medium">Preferred Phones</div>
                                   </div>
                                   <div className="text-center p-2 bg-green-50 rounded-lg">
                                     <div className="text-lg font-bold text-green-600">
-                                      {property.preferred_emails?.length || 0}
+                                      {prefEmails.length}
                                     </div>
                                     <div className="text-xs text-green-700 font-medium">Preferred Emails</div>
                                   </div>
@@ -802,7 +823,7 @@ export const CampaignWizard = () => {
                                 {/* Contact Details */}
                                 <div className="space-y-2">
                                   {/* Primary Owner Contacts */}
-                                  {(property.owner_phone || property.owner_email) && (
+                                  {(property.owner_phone || property.owner_email || property.email1) && (
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-1 text-xs font-semibold text-gray-700">
                                         <Users className="h-3 w-3" />
@@ -815,10 +836,10 @@ export const CampaignWizard = () => {
                                             {property.owner_phone}
                                           </div>
                                         )}
-                                        {property.owner_email && (
+                                        {(property.owner_email || property.email1) && (
                                           <div className="inline-flex items-center rounded-md border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-mono text-gray-700">
                                             <Mail className="h-3 w-3 mr-1" />
-                                            {property.owner_email}
+                                            {property.owner_email || property.email1}
                                           </div>
                                         )}
                                       </div>
@@ -826,14 +847,14 @@ export const CampaignWizard = () => {
                                   )}
 
                                   {/* Preferred Phones with Values */}
-                                  {property.preferred_phones && property.preferred_phones.length > 0 && (
+                                  {prefPhones.length > 0 && (
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-1 text-xs font-semibold text-blue-700">
                                         <Phone className="h-3 w-3" />
                                         Preferred Phones:
                                       </div>
                                       <div className="flex flex-wrap gap-1">
-                                        {property.preferred_phones.map((phone: string, idx: number) => (
+                                        {prefPhones.map((phone: string, idx: number) => (
                                           <div key={idx} className="inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-mono text-blue-700">
                                             {phone}
                                           </div>
@@ -843,14 +864,14 @@ export const CampaignWizard = () => {
                                   )}
 
                                   {/* Preferred Emails with Values */}
-                                  {property.preferred_emails && property.preferred_emails.length > 0 && (
+                                  {prefEmails.length > 0 && (
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-1 text-xs font-semibold text-green-700">
                                         <Mail className="h-3 w-3" />
                                         Preferred Emails:
                                       </div>
                                       <div className="flex flex-wrap gap-1">
-                                        {property.preferred_emails.map((email: string, idx: number) => (
+                                        {prefEmails.map((email: string, idx: number) => (
                                           <div key={idx} className="inline-flex items-center rounded-md border border-green-200 bg-green-50 px-2 py-0.5 text-xs font-mono text-green-700">
                                             {email}
                                           </div>
@@ -860,8 +881,7 @@ export const CampaignWizard = () => {
                                   )}
 
                                   {/* Fallback message if no preferred contacts */}
-                                  {(!property.preferred_phones || property.preferred_phones.length === 0) &&
-                                   (!property.preferred_emails || property.preferred_emails.length === 0) && (
+                                  {prefPhones.length === 0 && prefEmails.length === 0 && (
                                     <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded border border-amber-200">
                                       <AlertCircle className="h-3 w-3 inline mr-1" />
                                       No preferred contacts selected. Open Skip Trace to select.
@@ -954,47 +974,30 @@ export const CampaignWizard = () => {
                             )}
                             
                             {/* Preferred Contacts */}
-                            {((property.preferred_phones && property.preferred_phones.length > 0) || 
-                              (property.preferred_emails && property.preferred_emails.length > 0)) && (
-                              <div>
-                                <div className="text-xs font-medium text-purple-700 mb-1">Preferred Contacts:</div>
-                                <div className="space-y-0.5">
-                                  {property.preferred_phones?.map((phone, idx) => (
-                                    <div key={idx} className="text-xs text-blue-700 flex items-center gap-1">
-                                      <Phone className="h-3 w-3" />
-                                      {phone}
-                                    </div>
-                                  ))}
-                                  {property.preferred_emails?.map((email, idx) => (
-                                    <div key={idx} className="text-xs text-green-700 flex items-center gap-1">
-                                      <Mail className="h-3 w-3" />
-                                      {email}
-                                    </div>
-                                  ))}
+                            {(() => {
+                              const propPhones = getPreferredPhones(property);
+                              const propEmails = getPreferredEmails(property);
+                              if (propPhones.length === 0 && propEmails.length === 0) return null;
+                              return (
+                                <div>
+                                  <div className="text-xs font-medium text-purple-700 mb-1">Preferred Contacts:</div>
+                                  <div className="space-y-0.5">
+                                    {propPhones.map((phone, idx) => (
+                                      <div key={idx} className="text-xs text-blue-700 flex items-center gap-1">
+                                        <Phone className="h-3 w-3" />
+                                        {phone}
+                                      </div>
+                                    ))}
+                                    {propEmails.map((email, idx) => (
+                                      <div key={idx} className="text-xs text-green-700 flex items-center gap-1">
+                                        <Mail className="h-3 w-3" />
+                                        {email}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                            
-                            {/* Skip Tracing Data */}
-                            {property.skip_tracing_data && (
-                              <div>
-                                <div className="text-xs font-medium text-indigo-700 mb-1">Skip Trace Data:</div>
-                                <div className="space-y-0.5">
-                                  {property.skip_tracing_data.phones?.map((p, idx) => (
-                                    <div key={idx} className="text-xs text-blue-600 flex items-center gap-1">
-                                      <Phone className="h-3 w-3" />
-                                      {p.number} ({p.type})
-                                    </div>
-                                  ))}
-                                  {property.skip_tracing_data.emails?.map((email, idx) => (
-                                    <div key={idx} className="text-xs text-green-600 flex items-center gap-1">
-                                      <Mail className="h-3 w-3" />
-                                      {email}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         </div>
                       ))
@@ -1138,13 +1141,7 @@ export const CampaignWizard = () => {
                         <div className="text-sm font-medium text-gray-600">Total Contacts</div>
                         <div className="text-lg font-semibold text-gray-900">
                           {selectedProperties.reduce((total, p) => {
-                            let count = p.owner_phone ? 1 : 0;
-                            if (p.preferred_phones) count += p.preferred_phones.length;
-                            if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
-                            if (p.owner_email) count += 1;
-                            if (p.preferred_emails) count += p.preferred_emails.length;
-                            if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
-                            return total + count;
+                            return total + getTotalContacts(p);
                           }, 0)}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">Across all channels</div>
@@ -1241,13 +1238,7 @@ export const CampaignWizard = () => {
               <MetricCard
                 title="Total Contacts"
                 value={selectedProperties.reduce((total, p) => {
-                  let count = p.owner_phone ? 1 : 0;
-                  if (p.preferred_phones) count += p.preferred_phones.length;
-                  if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
-                  if (p.owner_email) count += 1;
-                  if (p.preferred_emails) count += p.preferred_emails.length;
-                  if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
-                  return total + count;
+                  return total + getTotalContacts(p);
                 }, 0)}
                 icon={<Users className="h-5 w-5" />}
                 iconBgColor="bg-green-100"
@@ -1290,7 +1281,7 @@ export const CampaignWizard = () => {
                         <span className="font-medium">Preferred Phones</span>
                       </div>
                       <Badge className="bg-blue-100 text-blue-700">
-                        {selectedProperties.reduce((total, p) => total + (p.preferred_phones?.length || 0), 0)}
+                        {selectedProperties.reduce((total, p) => total + getPreferredPhones(p).length, 0)}
                       </Badge>
                     </div>
 
@@ -1310,7 +1301,7 @@ export const CampaignWizard = () => {
                         <span className="font-medium">Skip Tracing Phones</span>
                       </div>
                       <Badge className="bg-purple-100 text-purple-700">
-                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.phones?.length || 0), 0)}
+                        0
                       </Badge>
                     </div>
 
@@ -1322,8 +1313,7 @@ export const CampaignWizard = () => {
                       <Badge className="bg-blue-600 text-white font-bold">
                         {selectedProperties.reduce((total, p) => {
                           let count = p.owner_phone ? 1 : 0;
-                          if (p.preferred_phones) count += p.preferred_phones.length;
-                          if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
+                          count += getPreferredPhones(p).length;
                           return total + count;
                         }, 0)}
                       </Badge>
@@ -1348,7 +1338,7 @@ export const CampaignWizard = () => {
                         <span className="font-medium">Preferred Emails</span>
                       </div>
                       <Badge className="bg-green-100 text-green-700">
-                        {selectedProperties.reduce((total, p) => total + (p.preferred_emails?.length || 0), 0)}
+                        {selectedProperties.reduce((total, p) => total + getPreferredEmails(p).length, 0)}
                       </Badge>
                     </div>
 
@@ -1368,7 +1358,7 @@ export const CampaignWizard = () => {
                         <span className="font-medium">Skip Tracing Emails</span>
                       </div>
                       <Badge className="bg-purple-100 text-purple-700">
-                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.emails?.length || 0), 0)}
+                        0
                       </Badge>
                     </div>
 
@@ -1379,9 +1369,8 @@ export const CampaignWizard = () => {
                       </div>
                       <Badge className="bg-green-600 text-white font-bold">
                         {selectedProperties.reduce((total, p) => {
-                          let count = p.owner_email ? 1 : 0;
-                          if (p.preferred_emails) count += p.preferred_emails.length;
-                          if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
+                          let count = (p.owner_email || p.email1) ? 1 : 0;
+                          count += getPreferredEmails(p).length;
                           return total + count;
                         }, 0)}
                       </Badge>
@@ -1606,7 +1595,7 @@ export const CampaignWizard = () => {
               <Card className="border-0 shadow-md">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-yellow-600">
-                    {selectedProperties.reduce((total, p) => total + (p.preferred_phones?.length || 0), 0)}
+                    {selectedProperties.reduce((total, p) => total + getPreferredPhones(p).length, 0)}
                   </div>
                   <div className="text-sm text-gray-600">Preferred Phones</div>
                 </CardContent>
@@ -1614,7 +1603,7 @@ export const CampaignWizard = () => {
               <Card className="border-0 shadow-md">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-purple-600">
-                    {selectedProperties.reduce((total, p) => total + (p.preferred_emails?.length || 0), 0)}
+                    {selectedProperties.reduce((total, p) => total + getPreferredEmails(p).length, 0)}
                   </div>
                   <div className="text-sm text-gray-600">Preferred Emails</div>
                 </CardContent>
@@ -1642,13 +1631,13 @@ export const CampaignWizard = () => {
                     <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                       <span className="font-medium">Preferred Phones</span>
                       <Badge className="bg-green-100 text-green-700">
-                        {selectedProperties.reduce((total, p) => total + (p.preferred_phones?.length || 0), 0)}
+                        {selectedProperties.reduce((total, p) => total + getPreferredPhones(p).length, 0)}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
                       <span className="font-medium">Skip Tracing Phones</span>
                       <Badge className="bg-purple-100 text-purple-700">
-                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.phones?.length || 0), 0)}
+                        0
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gradient-to-r from-blue-100 to-blue-200 rounded-lg border-2 border-blue-300">
@@ -1656,8 +1645,7 @@ export const CampaignWizard = () => {
                       <Badge className="bg-blue-600 text-white font-bold">
                         {selectedProperties.reduce((total, p) => {
                           let count = p.owner_phone ? 1 : 0;
-                          if (p.preferred_phones) count += p.preferred_phones.length;
-                          if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
+                          count += getPreferredPhones(p).length;
                           return total + count;
                         }, 0)}
                       </Badge>
@@ -1685,22 +1673,21 @@ export const CampaignWizard = () => {
                     <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
                       <span className="font-medium">Preferred Emails</span>
                       <Badge className="bg-yellow-100 text-yellow-700">
-                        {selectedProperties.reduce((total, p) => total + (p.preferred_emails?.length || 0), 0)}
+                        {selectedProperties.reduce((total, p) => total + getPreferredEmails(p).length, 0)}
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
                       <span className="font-medium">Skip Tracing Emails</span>
                       <Badge className="bg-purple-100 text-purple-700">
-                        {selectedProperties.reduce((total, p) => total + (p.skip_tracing_data?.emails?.length || 0), 0)}
+                        0
                       </Badge>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gradient-to-r from-green-100 to-green-200 rounded-lg border-2 border-green-300">
                       <span className="font-bold text-green-700">Total Email Contacts</span>
                       <Badge className="bg-green-600 text-white font-bold">
                         {selectedProperties.reduce((total, p) => {
-                          let count = p.owner_email ? 1 : 0;
-                          if (p.preferred_emails) count += p.preferred_emails.length;
-                          if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
+                          let count = (p.owner_email || p.email1) ? 1 : 0;
+                          count += getPreferredEmails(p).length;
                           return total + count;
                         }, 0)}
                       </Badge>
@@ -1875,17 +1862,17 @@ export const CampaignWizard = () => {
                       </div>
                       <div className={`flex items-center gap-3 p-3 bg-white rounded-lg border ${
                         selectedProperties.some(p =>
-                          (p.preferred_phones?.length || 0) > 0 ||
-                          (p.preferred_emails?.length || 0) > 0 ||
+                          hasPreferredContacts(p) ||
                           p.owner_phone ||
-                          p.owner_email
+                          p.owner_email ||
+                          p.email1
                         ) ? 'border-green-200' : 'border-amber-200'
                       }`}>
                         {selectedProperties.some(p =>
-                          (p.preferred_phones?.length || 0) > 0 ||
-                          (p.preferred_emails?.length || 0) > 0 ||
+                          hasPreferredContacts(p) ||
                           p.owner_phone ||
-                          p.owner_email
+                          p.owner_email ||
+                          p.email1
                         ) ? (
                           <CheckCircle className="h-5 w-5 text-green-600" />
                         ) : (
@@ -1895,10 +1882,10 @@ export const CampaignWizard = () => {
                           <div className="font-medium">With Contact</div>
                           <div className="text-sm text-gray-600">
                             {selectedProperties.filter(p =>
-                              (p.preferred_phones?.length || 0) > 0 ||
-                              (p.preferred_emails?.length || 0) > 0 ||
+                              hasPreferredContacts(p) ||
                               p.owner_phone ||
-                              p.owner_email
+                              p.owner_email ||
+                              p.email1
                             ).length} / {selectedProperties.length}
                           </div>
                         </div>
@@ -1907,19 +1894,19 @@ export const CampaignWizard = () => {
                   </div>
 
                   {selectedProperties.some(p =>
-                    !((p.preferred_phones?.length || 0) > 0 ||
-                      (p.preferred_emails?.length || 0) > 0 ||
+                    !(hasPreferredContacts(p) ||
                       p.owner_phone ||
-                      p.owner_email)
+                      p.owner_email ||
+                      p.email1)
                   ) && (
                     <Alert className="border-amber-200 bg-amber-50">
                       <AlertCircle className="h-4 w-4 text-amber-600" />
                       <AlertDescription className="text-amber-800">
                         <strong>Warning:</strong> {selectedProperties.filter(p =>
-                          !((p.preferred_phones?.length || 0) > 0 ||
-                            (p.preferred_emails?.length || 0) > 0 ||
+                          !(hasPreferredContacts(p) ||
                             p.owner_phone ||
-                            p.owner_email)
+                            p.owner_email ||
+                            p.email1)
                         ).length} propriedades sem contato
                       </AlertDescription>
                     </Alert>
@@ -1984,13 +1971,7 @@ export const CampaignWizard = () => {
                   </div>
                   <div className="text-3xl font-bold text-blue-600 mb-2">
                     {selectedProperties.reduce((total, p) => {
-                      let count = p.owner_phone ? 1 : 0;
-                      if (p.preferred_phones) count += p.preferred_phones.length;
-                      if (p.skip_tracing_data?.phones) count += p.skip_tracing_data.phones.length;
-                      if (p.owner_email) count += 1;
-                      if (p.preferred_emails) count += p.preferred_emails.length;
-                      if (p.skip_tracing_data?.emails) count += p.skip_tracing_data.emails.length;
-                      return total + count;
+                      return total + getTotalContacts(p);
                     }, 0)}
                   </div>
                   <div className="text-sm font-medium text-blue-700">Total Contacts</div>
@@ -2070,9 +2051,7 @@ export const CampaignWizard = () => {
                       <div className="flex justify-between">
                         <span className="text-gray-600">Contact Quality:</span>
                         <span className="font-medium text-blue-600">
-                          {selectedProperties.filter(p =>
-                            (p.preferred_phones?.length || 0) > 0 || (p.preferred_emails?.length || 0) > 0
-                          ).length} high-quality
+                          {selectedProperties.filter(p => hasPreferredContacts(p)).length} high-quality
                         </span>
                       </div>
                     </div>
