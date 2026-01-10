@@ -52,8 +52,6 @@ export const PropertyAnalytics = ({ propertyId }: PropertyAnalyticsProps) => {
           filter: `property_id=eq.${propertyId}`,
         },
         (payload: any) => {
-          console.log('New analytics event:', payload);
-          
           // Show toast notification
           const eventType = payload.new.event_type;
           const city = payload.new.city || 'Unknown';

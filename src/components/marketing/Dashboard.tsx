@@ -34,11 +34,6 @@ export const Dashboard = () => {
 
   // Console de debug - mostra estado atual
   useEffect(() => {
-    console.log('🎯 Marketing Dashboard - Estado Atual:');
-    console.log('  📊 Total de comunicações:', history.length);
-    console.log('  🧪 Test Mode:', testMode ? 'ATIVO ✅' : 'DESATIVADO ❌');
-    console.log('  ⚙️ Settings:', settings);
-    console.log('  📝 Histórico completo:', history);
   }, [history, testMode, settings]);
 
   // Estatísticas computadas
@@ -392,3 +387,4 @@ export const Dashboard = () => {
 };
 
 export default Dashboard;
+

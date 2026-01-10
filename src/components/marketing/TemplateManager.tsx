@@ -364,6 +364,31 @@ export const TemplateManager = () => {
     }));
   };
 
+  const replaceTemplateVariables = (text: string, channel: string) => {
+    const sampleValues: Record<string, string> = {
+      name: 'BURROWS MARGARET',
+      address: '25217 MATHEW ST',
+      city: 'UNINCORPORATED',
+      state: 'FL',
+      zip_code: '32709',
+      cash_offer: '$70,000',
+      company_name: 'MyLocalInvest',
+      phone: '(786) 882-8251',
+      seller_name: 'Alex Johnson',
+      estimated_value: '$100,000',
+      offer_percentage: '70',
+      property_url: generatePropertyUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', channel),
+      qr_code_url: generateQrCodeUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', channel),
+      source_channel: channel.toUpperCase(),
+      tracking_pixel: generateTrackingPixel('sample-property-id', channel),
+      unsubscribe_url: generateUnsubscribeUrl('example@email.com')
+    };
+
+    return text.replace(/{([^}]+)}/g, (match, variable) => {
+      return sampleValues[variable] || match;
+    });
+  };
+
   // Load HTML template
   const loadHtmlTemplate = (templateKey: keyof typeof HTML_TEMPLATES) => {
     setFormData((prev) => ({
@@ -894,52 +919,12 @@ export const TemplateManager = () => {
                   {previewTemplate.channel === 'email' && previewTemplate.body && previewTemplate.body.includes('<!DOCTYPE') ? (
                     <div
                       dangerouslySetInnerHTML={{
-                        __html: previewTemplate.body.replace(/{([^}]+)}/g, (match, variable) => {
-                          const sampleValues: Record<string, string> = {
-                            name: 'BURROWS MARGARET',
-                            address: '25217 MATHEW ST',
-                            city: 'UNINCORPORATED',
-                            state: 'FL',
-                            zip_code: '32709',
-                            cash_offer: '$70,000',
-                            company_name: 'MyLocalInvest',
-                            phone: '(786) 882-8251',
-                            seller_name: 'Alex Johnson',
-                            estimated_value: '$100,000',
-                            offer_percentage: '70',
-                            property_url: generatePropertyUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
-                            qr_code_url: generateQrCodeUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
-                            source_channel: previewTemplate.channel.toUpperCase(),
-                            tracking_pixel: generateTrackingPixel('sample-property-id', previewTemplate.channel),
-                            unsubscribe_url: generateUnsubscribeUrl('example@email.com')
-                          };
-                          return sampleValues[variable] || match;
-                        })
+                        __html: replaceTemplateVariables(previewTemplate.body, previewTemplate.channel)
                       }}
                     />
                   ) : (
                     <pre className="whitespace-pre-wrap font-sans text-sm">
-                      {previewTemplate.body || 'No content available'}
-                        const sampleValues: Record<string, string> = {
-                          name: 'BURROWS MARGARET',
-                          address: '25217 MATHEW ST',
-                          city: 'UNINCORPORATED',
-                          state: 'FL',
-                          zip_code: '32709',
-                          cash_offer: '$70,000',
-                          company_name: 'MyLocalInvest',
-                          phone: '(786) 882-8251',
-                          seller_name: 'Alex Johnson',
-                          estimated_value: '$100,000',
-                          offer_percentage: '70',
-                          property_url: generatePropertyUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
-                          qr_code_url: generateQrCodeUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', previewTemplate.channel),
-                          source_channel: previewTemplate.channel.toUpperCase(),
-                          tracking_pixel: generateTrackingPixel('sample-property-id', previewTemplate.channel),
-                          unsubscribe_url: generateUnsubscribeUrl('example@email.com')
-                        };
-                        return sampleValues[variable] || match;
-                      })}
+                      {replaceTemplateVariables(previewTemplate.body || 'No content available', previewTemplate.channel)}
                     </pre>
                   )}
                 </div>

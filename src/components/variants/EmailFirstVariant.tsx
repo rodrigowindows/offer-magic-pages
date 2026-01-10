@@ -28,7 +28,6 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
     phone: string;
     sellingTimeline: string;
   }) => {
-    console.log('Interest submitted:', { email, ...data });
     setStep('interested');
   };
 
@@ -74,3 +73,4 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
     </div>
   );
 };
+

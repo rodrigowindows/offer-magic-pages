@@ -17,20 +17,15 @@ const PropertyHero = ({
 
   // Reset states when imageUrl changes
   useEffect(() => {
-    console.log("🖼️ PropertyHero - Image URL received:", imageUrl);
-    console.log("🏠 PropertyHero - Address:", address);
     setImageError(false);
     setImageLoaded(false);
   }, [imageUrl, address]);
 
   const handleImageLoad = () => {
-    console.log("✅ Image loaded successfully:", imageUrl);
     setImageLoaded(true);
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error("❌ Image failed to load:", imageUrl);
-    console.error("❌ Error event:", e);
     setImageError(true);
   };
   return (

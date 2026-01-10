@@ -69,10 +69,8 @@ export const CreateTestProperty = () => {
     setResult({ status: 'idle' });
 
     try {
-      console.log('🧪 Creating test property...');
 
       const testProperty = generateTestProperty();
-      console.log('📝 Generated test property:', testProperty);
 
       const { data, error } = await supabase
         .from('properties')
@@ -82,7 +80,6 @@ export const CreateTestProperty = () => {
 
       if (error) throw error;
 
-      console.log('✅ Test property created:', data);
       setResult({
         status: 'success',
         message: 'Test property created successfully!',

@@ -14,9 +14,6 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
 
   const toggleTestMode = () => {
     const newMode = !testMode;
-    console.log('🔧 Test Mode Toggle clicked!');
-    console.log('  Current mode:', testMode ? 'TEST' : 'PRODUCTION');
-    console.log('  Switching to:', newMode ? 'TEST' : 'PRODUCTION');
 
     updateSettings({
       defaults: {
@@ -28,7 +25,6 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
 
     // Force re-render confirmation
     setTimeout(() => {
-      console.log('✅ Mode changed to:', newMode ? '🧪 TEST MODE' : '🚀 PRODUCTION MODE');
     }, 100);
   };
 
@@ -107,3 +103,4 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
 }
 
 export default TestModeToggle;
+

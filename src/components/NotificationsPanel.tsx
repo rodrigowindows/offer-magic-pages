@@ -50,7 +50,6 @@ export const NotificationsPanel = () => {
           table: 'notifications',
         },
         (payload: any) => {
-          console.log('New notification:', payload);
           setNotifications(prev => [payload.new, ...prev]);
           setUnreadCount(prev => prev + 1);
         }

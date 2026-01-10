@@ -35,16 +35,11 @@ export const QuickApiTest = () => {
     setResult({ status: 'idle' });
 
     try {
-      console.log('🧪 Starting Quick API Test...');
-      console.log('📡 API URL:', apiUrl);
 
       // Test 1: Health Check
-      console.log('🏥 Testing /health endpoint...');
       const healthResponse = await checkHealth();
-      console.log('✅ Health check passed:', healthResponse);
 
       // Test 2: Simple communication test
-      console.log('📨 Testing /start endpoint...');
       const testPayload = {
         name: "Test User",
         phone: "+1 (407) 555-0123",
@@ -59,7 +54,6 @@ export const QuickApiTest = () => {
       };
 
       const response = await sendCommunication(testPayload);
-      console.log('✅ Communication test passed:', response);
 
       setResult({
         status: 'success',
