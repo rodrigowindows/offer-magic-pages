@@ -49,10 +49,10 @@ export const Dashboard = () => {
     const testCommunications = history.filter((h) => h.test_mode).length;
     const prodCommunications = history.filter((h) => !h.test_mode).length;
 
-    // Por canal
-    const smsCount = history.filter((h) => h.channels.includes('sms')).length;
-    const emailCount = history.filter((h) => h.channels.includes('email')).length;
-    const callCount = history.filter((h) => h.channels.includes('call')).length;
+    // Por canal - safely check if channels is an array
+    const smsCount = history.filter((h) => Array.isArray(h.channels) && h.channels.includes('sms')).length;
+    const emailCount = history.filter((h) => Array.isArray(h.channels) && h.channels.includes('email')).length;
+    const callCount = history.filter((h) => Array.isArray(h.channels) && h.channels.includes('call')).length;
 
     // Últimos 7 dias
     const sevenDaysAgo = new Date();
