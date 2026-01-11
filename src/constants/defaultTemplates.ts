@@ -1,6 +1,6 @@
 /**
- * Default Templates - Templates padrão pré-configurados para cada canal
- * Estes templates são carregados automaticamente quando nenhum template existe
+ * Default Templates - Pre-configured templates for each channel
+ * These templates are loaded automatically when no template exists
  */
 
 import type { SavedTemplate } from '@/types/marketing.types';
@@ -192,24 +192,24 @@ export const initializeDefaultTemplates = (existingTemplates: SavedTemplate[]): 
 };
 
 /**
- * Categorias de templates para melhor organização
+ * Template categories for better organization
  */
 export const TEMPLATE_CATEGORIES = {
   sms: {
     label: 'SMS Templates',
-    description: 'Mensagens de texto rápidas e diretas',
+    description: 'Quick and direct text messages',
     icon: '💬',
     templates: DEFAULT_TEMPLATES.filter(t => t.channel === 'sms')
   },
   email: {
     label: 'Email Templates',
-    description: 'Emails profissionais com HTML',
+    description: 'Professional emails with HTML',
     icon: '📧',
     templates: DEFAULT_TEMPLATES.filter(t => t.channel === 'email')
   },
   call: {
     label: 'Voicemail Templates',
-    description: 'Mensagens para correio de voz',
+    description: 'Messages for voicemail',
     icon: '📞',
     templates: DEFAULT_TEMPLATES.filter(t => t.channel === 'call')
   }

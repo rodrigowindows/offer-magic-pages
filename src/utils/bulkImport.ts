@@ -3,6 +3,48 @@ import { analyzePropertyWithAI, savePropertyAnalysis } from "./aiPropertyAnalyze
 import { checkAndSaveAirbnbEligibility } from "./airbnbChecker";
 import { autoTagProperty } from "./autoTagger";
 
+/**
+ * Calculate smart cash offer based on property characteristics
+ */
+const calculateSmartCashOffer = (lead: any): number => {
+  const basePercentage = 0.70; // Base 70%
+  let adjustment = 0;
+
+  // Property type adjustments
+  if (lead.property_type?.toLowerCase().includes('single')) {
+    adjustment += 0.02; // Single family homes sell faster
+  } else if (lead.property_type?.toLowerCase().includes('multi')) {
+    adjustment -= 0.03; // Multi-family harder to sell
+  } else if (lead.property_type?.toLowerCase().includes('condo')) {
+    adjustment -= 0.02; // Condos have HOA fees
+  }
+
+  // Size adjustments
+  if (lead.bedrooms && lead.bedrooms >= 4) {
+    adjustment += 0.01; // Larger homes more desirable
+  } else if (lead.bedrooms && lead.bedrooms <= 2) {
+    adjustment -= 0.01; // Smaller homes harder to finance
+  }
+
+  // Location adjustments for Orlando area
+  const city = lead.city?.toLowerCase();
+  if (city?.includes('orlando')) {
+    adjustment += 0.01; // Prime location
+  } else if (city?.includes('kissimmee') || city?.includes('ocoee')) {
+    adjustment -= 0.01; // Secondary markets
+  }
+
+  // Value-based adjustments
+  if (lead.estimated_value > 500000) {
+    adjustment -= 0.02; // High-value properties harder to sell quickly
+  } else if (lead.estimated_value < 150000) {
+    adjustment += 0.02; // Lower-value properties sell faster
+  }
+
+  const finalPercentage = Math.max(0.60, Math.min(0.80, basePercentage + adjustment));
+  return Math.round(lead.estimated_value * finalPercentage);
+};
+
 export interface OrlandoLead {
   PID: string;
   address: string;
@@ -332,9 +374,9 @@ export const parseOrlandoLeadsCSV = (csvContent: string): OrlandoLead[] => {
 
     // Validate required fields
     if (lead.address && lead.city && lead.estimated_value > 0) {
-      // Calculate cash offer if not provided (70% of estimated value)
+      // Calculate cash offer if not provided (sophisticated calculation)
       if (!lead.cash_offer_amount) {
-        lead.cash_offer_amount = Math.round(lead.estimated_value * 0.70);
+        lead.cash_offer_amount = calculateSmartCashOffer(lead);
       }
 
       leads.push(lead as OrlandoLead);

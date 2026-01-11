@@ -115,8 +115,8 @@ const handler = async (req: Request): Promise<Response> => {
             const scheduledAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
             const addr = `${property.property_address || ''} ${property.city || ''} ${property.state || ''}`.trim();
-            const smsMsg = `Olá! Seguimos interessados na sua propriedade em ${addr}. Podemos conversar sobre uma oferta em dinheiro?`;
-            const emailMsg = `Olá! Seguimos interessados na sua propriedade em ${addr}. Veja sua oferta completa aqui.`;
+            const smsMsg = `Hi! We're still interested in your property at ${addr}. Can we discuss a cash offer?`;
+            const emailMsg = `Hi! We're still interested in your property at ${addr}. View your complete offer here.`;
             const callMsg = `Hi, this is a follow up regarding your property at ${addr}. Please call us back to discuss a cash offer.`;
 
             const channels = [

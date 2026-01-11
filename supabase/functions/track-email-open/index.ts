@@ -124,8 +124,8 @@ const handler = async (req: Request): Promise<Response> => {
           if (uniqueContacts.length > 0) {
             const scheduledAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
             const addr = `${prop.property_address || ''} ${prop.city || ''} ${prop.state || ''}`.trim();
-            const smsMsg = `Oi, seguimento sobre sua propriedade em ${addr}. Podemos conversar sobre uma oferta em dinheiro?`;
-            const emailMsg = `Olá, seguimos interessados na sua propriedade em ${addr}. Veja sua oferta completa.`;
+            const smsMsg = `Hi, following up on your property at ${addr}. Can we discuss a cash offer?`;
+            const emailMsg = `Hi, we're still interested in your property at ${addr}. View your complete offer.`;
             const callMsg = `Hi, this is a follow up regarding your property at ${addr}. Please call us back to discuss a cash offer.`;
 
             const channels = [

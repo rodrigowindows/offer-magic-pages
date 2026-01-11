@@ -32,7 +32,8 @@ import { SmartScheduling } from '../SmartScheduling';
 import { RealTimeNotifications } from '../RealTimeNotifications';
 import { ROIAnalytics } from '../ROIAnalytics';
 import { ExternalToolsIntegration } from '../ExternalToolsIntegration';
-import { BackupRecoverySystem } from '../BackupRecoverySystem';
+import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
+import { RealTimeClickNotifications } from './RealTimeClickNotifications';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -166,128 +167,13 @@ export const Dashboard = () => {
         </Button>
       </div>
 
-      {/* Statistics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Communications */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Communications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold">{stats.total}</div>
-              <Users className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats.last7Days} in last 7 days
-            </p>
-          </CardContent>
-        </Card>
+      {/* Campaign Performance Dashboard - Main Analytics */}
+      <CampaignPerformanceDashboard />
 
-        {/* Success Rate */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Success Rate
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold">{stats.successRate}%</div>
-              <TrendingUp className="w-8 h-8 text-green-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              {stats.successful} successful, {stats.failed} failed
-            </p>
-          </CardContent>
-        </Card>
+      {/* Real-time Click Notifications */}
+      <RealTimeClickNotifications />
 
-        {/* Test vs Prod */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Test / Production
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold">
-                {stats.testCommunications} / {stats.prodCommunications}
-              </div>
-              <TestTube2 className="w-8 h-8 text-orange-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Test mode simulations vs real sends
-            </p>
-          </CardContent>
-        </Card>
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="text-3xl font-bold">{stats.last7Days}</div>
-              <History className="w-8 h-8 text-blue-500" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Last 7 days
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Channels Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Channels Overview</CardTitle>
-          <CardDescription>
-            Distribution of communications by channel
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* SMS */}
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <MessageSquare className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.smsCount}</div>
-                <div className="text-sm text-muted-foreground">SMS Sent</div>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="p-3 bg-purple-100 rounded-full">
-                <Mail className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.emailCount}</div>
-                <div className="text-sm text-muted-foreground">Emails Sent</div>
-              </div>
-            </div>
-
-            {/* Calls */}
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="p-3 bg-green-100 rounded-full">
-                <Phone className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.callCount}</div>
-                <div className="text-sm text-muted-foreground">Calls Made</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Recent Communications */}
       <Card>
@@ -360,6 +246,9 @@ export const Dashboard = () => {
 
       {/* Real-time Notifications */}
       <RealTimeNotifications />
+
+      {/* Real-time Click Notifications */}
+      <RealTimeClickNotifications />
 
       {/* ROI Analytics & Reports */}
       <ROIAnalytics />
