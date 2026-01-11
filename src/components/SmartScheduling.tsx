@@ -23,7 +23,9 @@ import {
   Sun,
   Moon,
   RefreshCw,
-  Lightbulb
+  Lightbulb,
+  Mail,
+  Phone
 } from 'lucide-react';
 
 interface EngagementData {

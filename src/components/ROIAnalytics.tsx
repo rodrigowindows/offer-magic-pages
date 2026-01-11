@@ -38,6 +38,7 @@ interface CampaignROI {
   campaign_name: string;
   total_investment: number;
   total_responses: number;
+  conversions: number;
   conversion_rate: number;
   estimated_revenue: number;
   actual_roi: number;

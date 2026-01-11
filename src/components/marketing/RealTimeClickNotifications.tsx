@@ -317,5 +317,3 @@ export const RealTimeClickNotifications = () => {
     </Card>
   );
 };
-
-export { RealTimeClickNotifications };

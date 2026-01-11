@@ -173,7 +173,7 @@ export const StartCampaignDialog = ({
         });
       }
 
-      onCampaignStarted?.(campaign.id);
+      onCampaignStarted?.(campaign.id.toString());
       onOpenChange(false);
 
       // Reset form

@@ -82,7 +82,7 @@ const handler = async (req: Request): Promise<Response> => {
           .from("scheduled_campaigns")
           .update({
             status: "failed",
-            error_message: campaignError.message,
+            error_message: campaignError instanceof Error ? campaignError.message : String(campaignError),
           })
           .eq("id", campaign.id);
       }
@@ -97,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error("Error in process-scheduled-campaigns:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), {
       status: 500,
       headers: corsHeaders,
     });

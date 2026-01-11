@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '@/integrations/supabase/client';
 
 const TEMPLATE_A = "Hi {name}! Cash offer for your property at {address}. Click to see your offer.";
 const TEMPLATE_B = "🏠 {name}, we want your house at {address}! Get your cash offer now.";
