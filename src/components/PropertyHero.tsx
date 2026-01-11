@@ -89,25 +89,62 @@ const PropertyHero = ({
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
-                        {/* Offer Value (Dynamic) */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-4xl md:text-5xl font-bold text-green-700">{typeof offerValue === 'number' ? `$${offerValue.toLocaleString()}` : offerValue}</span>
-                        </div>
-                        {/* Details List */}
-                        <ul className="space-y-2 mt-4 text-base md:text-lg text-muted-foreground">
-                          <li><strong>Close in 7-14 Days</strong></li>
-                          <li>Fast closing guaranteed</li>
-                          <li>No Repairs Needed</li>
-                          <li>We buy as-is</li>
-                          <li>No Realtor Fees</li>
-                          <li>Save thousands</li>
-                        </ul>
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-4 mt-6">
-                          <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow">Accept This Offer</button>
-                          <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow">I Have Questions</button>
-                          <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg shadow border">Download PDF</button>
-                        </div>
+            </div>
+            
+            {/* Offer Section - Moved outside the image */}
+            <div className="mt-6 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
+              <div className="text-center">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Your Fair Cash Offer</h2>
+                <div className="text-5xl md:text-6xl font-bold text-green-600 mb-4">{typeof offerValue === 'number' ? `$${offerValue.toLocaleString()}` : offerValue}</div>
+                <p className="text-lg text-gray-600 mb-6">For {address}</p>
+                
+                {/* Details List */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-left max-w-md mx-auto">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    <span className="text-sm">Close in 7-14 Days</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    <span className="text-sm">Fast closing guaranteed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    <span className="text-sm">No Repairs Needed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    <span className="text-sm">We buy as-is</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    <span className="text-sm">No Realtor Fees</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-500">✓</span>
+                    <span className="text-sm">Save thousands</span>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow">Accept This Offer</button>
+                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow">I Have Questions</button>
+                  <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg shadow border">Download PDF</button>
+                </div>
+                
+                {/* Property Link */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <a
+                    href={`https://offer.mylocalinvest.com/property/${address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}?src=sms`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-sm"
+                  >
+                    View Full Offer Details
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>

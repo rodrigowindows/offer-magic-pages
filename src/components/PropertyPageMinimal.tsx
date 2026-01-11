@@ -52,6 +52,7 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
         address={fullAddress}
         imageUrl={imageUrl}
         qrCodeUrl={qrCodeUrl}
+        offerValue={property.cash_offer_amount}
       />
 
       <CashOfferSectionB 
