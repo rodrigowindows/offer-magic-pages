@@ -30,6 +30,20 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Extract click source from redirect URL if present
+    let clickSource = 'direct';
+    if (redirectUrl) {
+      try {
+        const redirectUrlObj = new URL(redirectUrl);
+        const srcParam = redirectUrlObj.searchParams.get('src');
+        if (srcParam) {
+          clickSource = srcParam;
+        }
+      } catch (urlError) {
+        console.log('Could not parse redirect URL for source:', urlError);
+      }
+    }
+
     // Find the campaign log
     const { data: campaign, error: findError } = await supabase
       .from("campaign_logs")
@@ -44,6 +58,7 @@ const handler = async (req: Request): Promise<Response> => {
       const updateData: Record<string, unknown> = {
         click_count: (campaign.click_count || 0) + 1,
         link_clicked: true,
+        click_source: clickSource,
       };
 
       // Set clicked_at only on first click
