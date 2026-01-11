@@ -67,17 +67,37 @@ interface RecoveryPoint {
 
 const BackupRecoverySystem = () => {
   const [backups, setBackups] = useState<BackupJob[]>([]);
-  const [schedules, setSchedules] = useState<BackupSchedule[]>([]);
-  const [recoveryPoints, setRecoveryPoints] = useState<RecoveryPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [backupInProgress, setBackupInProgress] = useState<string | null>(null);
-  const [restoreInProgress, setRestoreInProgress] = useState(false);
-  const [autoBackupEnabled, setAutoBackupEnabled] = useState(true);
-  const { toast } = useToast();
+  // const { toast } = useToast(); // Temporarily commented out to test
 
   useEffect(() => {
-    loadBackupData();
+    // Simplified load function
+    setLoading(false);
   }, []);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Backup & Recovery System</CardTitle>
+          <CardDescription>Loading...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Backup & Recovery System</CardTitle>
+        <CardDescription>System temporarily simplified for testing</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p>Backup system is available but simplified.</p>
+      </CardContent>
+    </Card>
+  );
+};
 
   const loadBackupData = async () => {
     try {
