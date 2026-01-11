@@ -74,7 +74,7 @@ export const PropertyCardView = ({
   const [showSkipTracing, setShowSkipTracing] = useState(false);
   
   const offerDisplay = formatOfferForTemplate(property);
-  const offerPercentage = property.estimated_value ? (((property.cash_offer_amount ?? property.cash_offer_min ?? 0) / property.estimated_value) * 100).toFixed(1) : '';
+  const offerPercentage = property.estimated_value ? ((property.cash_offer_amount / property.estimated_value) * 100).toFixed(1) : '';
   const score = property.focar ? parseInt(property.focar) : 0;
 
   // Determine approval status color

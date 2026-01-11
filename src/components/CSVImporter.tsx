@@ -739,7 +739,7 @@ export const CSVImporter = () => {
                 </div>
               )}
 
-              <Button onClick={resetImporter} className="w-full">
+              <Button onClick={() => setStep('upload')} className="w-full">
                 Import Another File
               </Button>
             </div>

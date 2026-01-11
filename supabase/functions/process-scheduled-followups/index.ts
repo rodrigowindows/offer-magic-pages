@@ -78,9 +78,10 @@ const handler = async (req: Request): Promise<Response> => {
               const callResult = await makeCall(contact.phone, followUp.follow_up_message);
               results.push({ type: 'call', contact: contact.phone, success: callResult.success, error: callResult.error });
             }
-          } catch (contactError) {
+          } catch (contactError: unknown) {
             console.error(`Error sending to contact ${JSON.stringify(contact)}:`, contactError);
-            results.push({ type: followUp.message_type, contact: contact.phone || contact.email, success: false, error: contactError.message });
+            const errorMessage = contactError instanceof Error ? contactError.message : 'Unknown error';
+            results.push({ type: followUp.message_type, contact: contact.phone || contact.email, success: false, error: errorMessage });
           }
         }
 
@@ -123,8 +124,9 @@ const handler = async (req: Request): Promise<Response> => {
 
         processed++;
 
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(`Error processing follow-up ${followUp.id}:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
         // Mark as failed
         await supabase
@@ -132,7 +134,7 @@ const handler = async (req: Request): Promise<Response> => {
           .update({
             status: "failed",
             processed_at: new Date().toISOString(),
-            error_message: error.message
+            error_message: errorMessage
           })
           .eq("id", followUp.id);
 
