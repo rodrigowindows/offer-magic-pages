@@ -205,13 +205,31 @@ export const CampaignManager = () => {
     : getDefaultTemplate(selectedChannel);
 
   // Helper function to render template preview
+  // Helper to create SEO-friendly slug from property address
+  const createPropertySlug = (address: string, city: string, zip: string): string => {
+    const addressSlug = address
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+    const citySlug = city
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .trim();
+    return `${addressSlug}-${citySlug}-${zip}`;
+  };
+
   const renderTemplatePreview = (prop: CampaignProperty, type: 'body' | 'subject' = 'body') => {
     if (!selectedTemplate) {
       return 'Selecione um template';
     }
 
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-    const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
+    // Use SEO-friendly slug: "1025-s-washington-ave-orlando-32801"
+    const propertySlug = createPropertySlug(prop.address, prop.city, prop.zip_code);
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
     
     if (type === 'subject' && selectedTemplate.subject) {
@@ -226,10 +244,13 @@ export const CampaignManager = () => {
     // Replace template variables for body
     let content = selectedTemplate.body;
     content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{owner_name\}/g, prop.owner_name || 'Owner');
     content = content.replace(/\{address\}/g, prop.address);
     content = content.replace(/\{city\}/g, prop.city);
     content = content.replace(/\{state\}/g, prop.state);
-    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{zip_code\}/g, prop.zip_code);
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
+    content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
     content = content.replace(/\{company_name\}/g, settings.company.company_name);
     content = content.replace(/\{phone\}/g, settings.company.contact_phone);
     content = content.replace(/\{seller_name\}/g, settings.company.company_name);
@@ -244,7 +265,9 @@ export const CampaignManager = () => {
   // Helper function to generate template content for sending
   const generateTemplateContent = (template: any, prop: CampaignProperty, trackingId?: string) => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-    const propertyUrl = `https://offer.mylocalinvest.com/property/${prop.id}`;
+    // Use SEO-friendly slug for property URL
+    const propertySlug = createPropertySlug(prop.address, prop.city, prop.zip_code);
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 
     // Generate trackable link if tracking ID is provided
@@ -257,10 +280,13 @@ export const CampaignManager = () => {
 
     let content = template.body;
     content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
+    content = content.replace(/\{owner_name\}/g, prop.owner_name || 'Owner');
     content = content.replace(/\{address\}/g, prop.address);
     content = content.replace(/\{city\}/g, prop.city);
     content = content.replace(/\{state\}/g, prop.state);
-    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount?.toLocaleString() || '0');
+    content = content.replace(/\{zip_code\}/g, prop.zip_code);
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
+    content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
     content = content.replace(/\{company_name\}/g, settings.company.company_name);
     content = content.replace(/\{phone\}/g, settings.company.contact_phone);
     content = content.replace(/\{seller_name\}/g, settings.company.company_name);

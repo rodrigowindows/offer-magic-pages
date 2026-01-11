@@ -10,11 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
-import { Calendar, Clock, AlertTriangle, Zap, Shield, TestTube, Copy, Info } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Select,
@@ -39,36 +36,46 @@ import {
   Mail,
   Phone,
   AlertCircle,
-  Filter,
   Send,
   Loader2,
   Eye,
-  EyeOff,
   CheckCircle,
   ArrowRight,
   ArrowLeft,
+  Users,
   Target,
   Settings,
-  RefreshCw,
   FileText,
   Play,
-  QrCode,
   Link,
   BarChart3,
+  Zap,
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplates';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
-import type { Property } from '@/integrations/supabase/types';
-import { toast } from 'sonner';
-import { Label } from '@/components/ui/label';
+
+interface CampaignProperty {
+  id: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  owner_name?: string | null;
+  cash_offer_amount?: number | null;
+  estimated_value?: number | null;
+  approval_status?: string | null;
+  phone1?: string | null;
+  phone2?: string | null;
+  email1?: string | null;
+  email2?: string | null;
+}
 
 type WizardStep = 'template' | 'properties' | 'configure' | 'preview' | 'send';
 
 interface CampaignConfig {
   template: SavedTemplate | null;
-  properties: Property[];
   channels: Channel[];
   trackingId: string;
   phoneColumns: string[];
@@ -80,15 +87,36 @@ interface CampaignConfig {
   complianceCheck: boolean;
 }
 
+interface SendResults {
+  success: number;
+  failed: number;
+}
+
+// Helper to create SEO-friendly slug from property address
+const createPropertySlug = (address: string, city: string, zip: string): string => {
+  const addressSlug = address
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim();
+  const citySlug = city
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .trim();
+  return `${addressSlug}-${citySlug}-${zip}`;
+};
+
 export default function CampaignCreator() {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<WizardStep>('template');
   const [campaignConfig, setCampaignConfig] = useState<CampaignConfig>({
     template: null,
-    properties: [],
     channels: [],
     trackingId: '',
-    phoneColumns: ['preferred_phones', 'phone1', 'phone2', 'skip_tracing_phones'],
-    emailColumns: ['preferred_emails', 'email1', 'email2', 'skip_tracing_emails'],
+    phoneColumns: ['phone1', 'phone2'],
+    emailColumns: ['email1', 'email2'],
     priority: 'normal',
     maxContactsPerProperty: 1,
     testMode: false,
@@ -97,9 +125,12 @@ export default function CampaignCreator() {
   const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [sending, setSending] = useState(false);
-  const [sendResults, setSendResults] = useState<{success: number, failed: number} | null>(null);
-  const [propertiesList, setPropertiesList] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<CampaignProperty[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendResults, setSendResults] = useState<SendResults | null>(null);
+
+  const { templates } = useTemplates();
+  const { settings } = useMarketingStore();
 
   // Load properties from database
   useEffect(() => {
@@ -108,7 +139,7 @@ export default function CampaignCreator() {
         setLoading(true);
         const { data, error } = await supabase
           .from('properties')
-          .select('*')
+          .select('id, address, city, state, zip_code, owner_name, cash_offer_amount, estimated_value, approval_status, phone1, phone2, email1, email2')
           .eq('approval_status', 'approved')
           .order('created_at', { ascending: false });
 
@@ -120,7 +151,7 @@ export default function CampaignCreator() {
             variant: 'destructive',
           });
         } else {
-          setPropertiesList(data || []);
+          setProperties((data as CampaignProperty[]) || []);
         }
       } catch (error) {
         console.error('Error loading properties:', error);
@@ -136,8 +167,6 @@ export default function CampaignCreator() {
 
     loadProperties();
   }, [toast]);
-  const { templates } = useTemplates();
-  const { settings } = useMarketingStore();
 
   const steps = [
     { id: 'template', title: 'Choose Template', icon: FileText },
@@ -158,84 +187,57 @@ export default function CampaignCreator() {
   }, [campaignConfig.trackingId]);
 
   const getSelectedProperties = () => {
-    return propertiesList.filter(prop => selectedPropertyIds.includes(prop.id));
+    return properties.filter(prop => selectedPropertyIds.includes(prop.id));
   };
 
-  const getAllPhones = (property: Property): string[] => {
+  const getAllPhones = (property: CampaignProperty): string[] => {
     const phones: string[] = [];
-
-    // Preferred phones first (from skip tracing data)
-    if (property.skip_tracing_data?.preferred_phones) {
-      phones.push(...property.skip_tracing_data.preferred_phones);
-    }
-
-    // Preferred phones from direct fields
-    if (property.preferred_phone) phones.push(property.preferred_phone);
-    if (property.preferred_phone_2) phones.push(property.preferred_phone_2);
-
-    // Primary phones
-    if (property.phone) phones.push(property.phone);
-    if (property.phone_2) phones.push(property.phone_2);
-
-    // Skip tracing phones (additional ones)
-    if (property.skip_tracing_phone) phones.push(property.skip_tracing_phone);
-    if (property.skip_tracing_phone_2) phones.push(property.skip_tracing_phone_2);
-
-    return [...new Set(phones)]; // Remove duplicates
+    if (property.phone1) phones.push(String(property.phone1));
+    if (property.phone2) phones.push(String(property.phone2));
+    return [...new Set(phones)];
   };
 
-  const getAllEmails = (property: Property): string[] => {
+  const getAllEmails = (property: CampaignProperty): string[] => {
     const emails: string[] = [];
-
-    // Preferred emails first (from skip tracing data)
-    if (property.skip_tracing_data?.preferred_emails) {
-      emails.push(...property.skip_tracing_data.preferred_emails);
-    }
-
-    // Preferred emails from direct fields
-    if (property.preferred_email) emails.push(property.preferred_email);
-    if (property.preferred_email_2) emails.push(property.preferred_email_2);
-
-    // Primary emails
-    if (property.email) emails.push(property.email);
-    if (property.email_2) emails.push(property.email_2);
-
-    // Skip tracing emails (additional ones)
-    if (property.skip_tracing_email) emails.push(property.skip_tracing_email);
-    if (property.skip_tracing_email_2) emails.push(property.skip_tracing_email_2);
-
-    return [...new Set(emails)]; // Remove duplicates
+    if (property.email1) emails.push(String(property.email1));
+    if (property.email2) emails.push(String(property.email2));
+    return [...new Set(emails)];
   };
 
-  const generateTemplateContent = (template: SavedTemplate, property: Property) => {
-    let content = template.body || template.message_template || '';
+  const generatePropertyUrl = (property: CampaignProperty, source: string = 'sms'): string => {
+    const slug = createPropertySlug(property.address, property.city, property.zip_code);
+    return `https://offer.mylocalinvest.com/property/${slug}?src=${source}`;
+  };
+
+  const generateTemplateContent = (template: SavedTemplate, property: CampaignProperty) => {
+    let content = template.body;
     let subject = template.subject || '';
 
-    // Generate property URL with tracking
-    const propertyUrl = `${settings.company.website}/property/${property.id}?source=${campaignConfig.channels.join(',')}&tracking=${campaignConfig.trackingId}`;
-
-    // Generate QR code URL
+    const sourceChannel = campaignConfig.channels.length > 0 ? campaignConfig.channels[0] : 'sms';
+    const propertyUrl = generatePropertyUrl(property, sourceChannel);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 
-    // Replace variables
-    const replacements = {
+    const replacements: Record<string, string> = {
       '{name}': property.owner_name || 'Owner',
+      '{owner_name}': property.owner_name || 'Owner',
       '{address}': property.address,
       '{city}': property.city,
       '{state}': property.state,
       '{zip_code}': property.zip_code,
       '{cash_offer}': property.cash_offer_amount ? `$${property.cash_offer_amount.toLocaleString()}` : '$XXX,XXX',
+      '{estimated_value}': property.estimated_value ? `$${property.estimated_value.toLocaleString()}` : '$XXX,XXX',
       '{property_url}': propertyUrl,
       '{qr_code_url}': qrCodeUrl,
       '{phone}': settings.company.contact_phone,
       '{company_name}': settings.company.company_name,
       '{seller_name}': settings.company.company_name,
-      '{source_channel}': campaignConfig.channels.join(','),
+      '{source_channel}': sourceChannel,
     };
 
     Object.entries(replacements).forEach(([key, value]) => {
-      content = content.replace(new RegExp(key, 'g'), value);
-      subject = subject.replace(new RegExp(key, 'g'), value);
+      const escapedKey = key.replace(/[{}]/g, '\\$&');
+      content = content.replace(new RegExp(escapedKey, 'g'), value);
+      subject = subject.replace(new RegExp(escapedKey, 'g'), value);
     });
 
     return { content, subject };
@@ -243,49 +245,20 @@ export default function CampaignCreator() {
 
   const getContactStats = () => {
     const selectedProps = getSelectedProperties();
-    let preferredPhones = 0, primaryPhones = 0, skipPhones = 0;
-    let preferredEmails = 0, primaryEmails = 0, skipEmails = 0;
+    let totalPhones = 0;
+    let totalEmails = 0;
 
     selectedProps.forEach(prop => {
-      const allPhones = getAllPhones(prop);
-      const allEmails = getAllEmails(prop);
-
-      // Count phones by source
-      const preferredPhoneCount = (prop.skip_tracing_data?.preferred_phones?.length || 0) +
-                                 (prop.preferred_phone ? 1 : 0) +
-                                 (prop.preferred_phone_2 ? 1 : 0);
-      const primaryPhoneCount = (prop.phone ? 1 : 0) + (prop.phone_2 ? 1 : 0);
-      const skipPhoneCount = (prop.skip_tracing_phone ? 1 : 0) +
-                            (prop.skip_tracing_phone_2 ? 1 : 0) +
-                            ((prop.skip_tracing_data?.preferred_phones?.length || 0) - (preferredPhoneCount - (prop.preferred_phone ? 1 : 0) - (prop.preferred_phone_2 ? 1 : 0)));
-
-      // Count emails by source
-      const preferredEmailCount = (prop.skip_tracing_data?.preferred_emails?.length || 0) +
-                                 (prop.preferred_email ? 1 : 0) +
-                                 (prop.preferred_email_2 ? 1 : 0);
-      const primaryEmailCount = (prop.email ? 1 : 0) + (prop.email_2 ? 1 : 0);
-      const skipEmailCount = (prop.skip_tracing_email ? 1 : 0) +
-                            (prop.skip_tracing_email_2 ? 1 : 0) +
-                            ((prop.skip_tracing_data?.preferred_emails?.length || 0) - (preferredEmailCount - (prop.preferred_email ? 1 : 0) - (prop.preferred_email_2 ? 1 : 0)));
-
-      preferredPhones += preferredPhoneCount > 0 ? 1 : 0; // Count properties with preferred phones
-      primaryPhones += primaryPhoneCount > 0 ? 1 : 0; // Count properties with primary phones
-      skipPhones += skipPhoneCount > 0 ? 1 : 0; // Count properties with skip tracing phones
-      preferredEmails += preferredEmailCount > 0 ? 1 : 0; // Count properties with preferred emails
-      primaryEmails += primaryEmailCount > 0 ? 1 : 0; // Count properties with primary emails
-      skipEmails += skipEmailCount > 0 ? 1 : 0; // Count properties with skip tracing emails
+      totalPhones += getAllPhones(prop).length;
+      totalEmails += getAllEmails(prop).length;
     });
 
     return {
       totalProperties: selectedProps.length,
-      preferredPhones,
-      primaryPhones,
-      skipPhones,
-      totalPhones: selectedProps.reduce((sum, prop) => sum + getAllPhones(prop).length, 0),
-      preferredEmails,
-      primaryEmails,
-      skipEmails,
-      totalEmails: selectedProps.reduce((sum, prop) => sum + getAllEmails(prop).length, 0),
+      totalPhones,
+      totalEmails,
+      propertiesWithPhones: selectedProps.filter(p => getAllPhones(p).length > 0).length,
+      propertiesWithEmails: selectedProps.filter(p => getAllEmails(p).length > 0).length,
     };
   };
 
@@ -332,20 +305,6 @@ export default function CampaignCreator() {
     let successCount = 0;
     let failCount = 0;
 
-    // Log campaign start
-    await supabase.from('campaign_logs').insert({
-      campaign_id: campaignConfig.trackingId,
-      template_id: campaignConfig.template?.id,
-      channels: campaignConfig.channels,
-      total_properties: selectedProps.length,
-      status: 'started',
-      metadata: {
-        template_name: campaignConfig.template?.name,
-        channels: campaignConfig.channels,
-        tracking_id: campaignConfig.trackingId,
-      }
-    });
-
     for (const prop of selectedProps) {
       try {
         const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
@@ -353,7 +312,6 @@ export default function CampaignCreator() {
         const allEmails = getAllEmails(prop);
 
         let sent = false;
-        let lastError: any = null;
 
         if (campaignConfig.channels.includes('sms') && allPhones.length > 0) {
           const { content } = generateTemplateContent(campaignConfig.template!, prop);
@@ -365,25 +323,9 @@ export default function CampaignCreator() {
                 body: content,
               });
               sent = true;
-
-              // Log individual send
-              await supabase.from('campaign_logs').insert({
-                campaign_id: campaignConfig.trackingId,
-                property_id: prop.id,
-                channel: 'sms',
-                contact_info: phone,
-                status: 'sent',
-                template_content: content,
-                metadata: {
-                  template_name: campaignConfig.template?.name,
-                  property_address: fullAddress,
-                  contact_type: 'phone',
-                }
-              });
-
               break;
             } catch (error) {
-              lastError = error;
+              console.error('SMS error:', error);
             }
           }
         }
@@ -399,26 +341,9 @@ export default function CampaignCreator() {
                 message_body: content,
               });
               sent = true;
-
-              // Log individual send
-              await supabase.from('campaign_logs').insert({
-                campaign_id: campaignConfig.trackingId,
-                property_id: prop.id,
-                channel: 'email',
-                contact_info: email,
-                status: 'sent',
-                template_content: content,
-                metadata: {
-                  template_name: campaignConfig.template?.name,
-                  property_address: fullAddress,
-                  contact_type: 'email',
-                  subject: subject,
-                }
-              });
-
               break;
             } catch (error) {
-              lastError = error;
+              console.error('Email error:', error);
             }
           }
         }
@@ -437,25 +362,9 @@ export default function CampaignCreator() {
                 seller_name: settings.company.company_name,
               });
               sent = true;
-
-              // Log individual send
-              await supabase.from('campaign_logs').insert({
-                campaign_id: campaignConfig.trackingId,
-                property_id: prop.id,
-                channel: 'call',
-                contact_info: phone,
-                status: 'sent',
-                template_content: content,
-                metadata: {
-                  template_name: campaignConfig.template?.name,
-                  property_address: fullAddress,
-                  contact_type: 'phone',
-                }
-              });
-
               break;
             } catch (error) {
-              lastError = error;
+              console.error('Call error:', error);
             }
           }
         }
@@ -465,22 +374,11 @@ export default function CampaignCreator() {
         } else {
           failCount++;
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(`Error sending to ${prop.id}:`, error);
         failCount++;
       }
     }
-
-    // Log campaign completion
-    await supabase.from('campaign_logs').insert({
-      campaign_id: campaignConfig.trackingId,
-      status: 'completed',
-      metadata: {
-        success_count: successCount,
-        fail_count: failCount,
-        total_sent: successCount + failCount,
-      }
-    });
 
     setSending(false);
     setSendResults({ success: successCount, failed: failCount });
@@ -519,7 +417,7 @@ export default function CampaignCreator() {
                       <FileText className="w-5 h-5" />
                       {template.name}
                     </CardTitle>
-                    <CardDescription>{template.description}</CardDescription>
+                    <CardDescription>{template.channel}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <Badge variant="secondary">{template.channel}</Badge>
@@ -538,7 +436,6 @@ export default function CampaignCreator() {
               <p className="text-muted-foreground">Choose properties to include in your campaign</p>
             </div>
 
-            {/* Resumo dinâmico */}
             {!loading && (
               <div className="flex flex-wrap gap-4 items-center justify-between border-b pb-2 mb-2">
                 <div className="text-sm text-muted-foreground">
@@ -557,93 +454,44 @@ export default function CampaignCreator() {
               </div>
             ) : (
               <ScrollArea className="h-96">
-              <div className="space-y-2">
-                {properties.map((property) => (
-                  <Card key={property.id} className="p-4">
-                    <div className="flex items-start gap-4">
-                      <Checkbox
-                        checked={selectedPropertyIds.includes(property.id)}
-                        onCheckedChange={() => handlePropertyToggle(property.id)}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">{property.address}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {property.city}, {property.state} {property.zip_code}
-                        </div>
-                        <div className="flex gap-2 mt-2">
-                          {getAllPhones(property).length > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              <Phone className="w-3 h-3 mr-1" />
-                              {getAllPhones(property).length} phones
-                            </Badge>
-                          )}
-                          {getAllEmails(property).length > 0 && (
-                            <Badge variant="outline" className="text-xs">
-                              <Mail className="w-3 h-3 mr-1" />
-                              {getAllEmails(property).length} emails
-                            </Badge>
-                          )}
-                          {property.cash_offer_amount && (
-                            <Badge variant="default" className="text-xs">
-                              ${property.cash_offer_amount.toLocaleString()}
-                            </Badge>
-                          )}
-                        </div>
-                        {/* Contatos detalhados */}
-                        <div className="mt-2 space-y-1">
-                          <div className="flex items-center gap-2 text-xs text-gray-700">
-                            <Phone className="w-3 h-3" />
-                            {getAllPhones(property).length > 0
-                              ? getAllPhones(property).map((phone, idx) => (
-                                  <TooltipProvider key={idx}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="mr-2 flex items-center gap-1 cursor-pointer group">
-                                          {phone}
-                                          <Copy className="w-3 h-3 opacity-60 group-hover:opacity-100 hover:text-blue-600" onClick={() => navigator.clipboard.writeText(phone)} />
-                                          <Info className="w-3 h-3 opacity-60" />
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <span>Origem: {phone.includes('skip') ? 'Skip tracing' : 'Principal/Preferencial'}</span>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ))
-                              : <Badge variant="destructive" className="text-xs"><AlertTriangle className="w-3 h-3 mr-1" />Sem telefone</Badge>
-                            }
-                            <Button size="sm" variant="ghost" className="ml-2 px-2 py-0 h-6">Editar</Button>
+                <div className="space-y-2">
+                  {properties.map((property) => (
+                    <Card key={property.id} className="p-4">
+                      <div className="flex items-start gap-4">
+                        <Checkbox
+                          checked={selectedPropertyIds.includes(property.id)}
+                          onCheckedChange={() => handlePropertyToggle(property.id)}
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{property.address}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {property.city}, {property.state} {property.zip_code}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-gray-700">
-                            <Mail className="w-3 h-3" />
-                            {getAllEmails(property).length > 0
-                              ? getAllEmails(property).map((email, idx) => (
-                                  <TooltipProvider key={idx}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="mr-2 flex items-center gap-1 cursor-pointer group">
-                                          {email}
-                                          <Copy className="w-3 h-3 opacity-60 group-hover:opacity-100 hover:text-blue-600" onClick={() => navigator.clipboard.writeText(email)} />
-                                          <Info className="w-3 h-3 opacity-60" />
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <span>Origem: {email.includes('skip') ? 'Skip tracing' : 'Principal/Preferencial'}</span>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ))
-                              : <Badge variant="destructive" className="text-xs"><AlertTriangle className="w-3 h-3 mr-1" />Sem email</Badge>
-                            }
-                            <Button size="sm" variant="ghost" className="ml-2 px-2 py-0 h-6">Editar</Button>
+                          <div className="flex gap-2 mt-2">
+                            {getAllPhones(property).length > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                <Phone className="w-3 h-3 mr-1" />
+                                {getAllPhones(property).length} phones
+                              </Badge>
+                            )}
+                            {getAllEmails(property).length > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                <Mail className="w-3 h-3 mr-1" />
+                                {getAllEmails(property).length} emails
+                              </Badge>
+                            )}
+                            {property.cash_offer_amount && (
+                              <Badge variant="default" className="text-xs">
+                                ${property.cash_offer_amount.toLocaleString()}
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
             )}
           </div>
         );
@@ -711,85 +559,6 @@ export default function CampaignCreator() {
               </CardContent>
             </Card>
 
-            {/* Phone Column Selection */}
-            {(campaignConfig.channels.includes('sms') || campaignConfig.channels.includes('call')) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Phone Contact Settings</CardTitle>
-                  <CardDescription>Select which phone columns to use for SMS and calls</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Phone Columns</Label>
-                      <div className="space-y-2">
-                        {[
-                          { value: 'preferred_phones', label: 'Preferred Phones (Skip Tracing)' },
-                          { value: 'phone1', label: 'Phone 1 (Principal)' },
-                          { value: 'phone2', label: 'Phone 2' },
-                          { value: 'skip_tracing_phones', label: 'Skip Tracing Phones' },
-                        ].map((column) => (
-                          <div key={column.value} className="flex items-center space-x-2">
-                            <Checkbox
-                              checked={campaignConfig.phoneColumns.includes(column.value)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setCampaignConfig(prev => ({
-                                    ...prev,
-                                    phoneColumns: [...prev.phoneColumns, column.value]
-                                  }));
-                                } else {
-                                  setCampaignConfig(prev => ({
-                                    ...prev,
-                                    phoneColumns: prev.phoneColumns.filter(c => c !== column.value)
-                                  }));
-                                }
-                              }}
-                            />
-                            <Label className="text-sm">{column.label}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {(campaignConfig.channels.includes('email')) && (
-                      <div>
-                        <Label className="text-sm font-medium mb-2 block">Email Columns</Label>
-                        <div className="space-y-2">
-                          {[
-                            { value: 'preferred_emails', label: 'Preferred Emails (Skip Tracing)' },
-                            { value: 'email1', label: 'Email 1 (Principal)' },
-                            { value: 'email2', label: 'Email 2' },
-                            { value: 'skip_tracing_emails', label: 'Skip Tracing Emails' },
-                          ].map((column) => (
-                            <div key={column.value} className="flex items-center space-x-2">
-                              <Checkbox
-                                checked={campaignConfig.emailColumns.includes(column.value)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    setCampaignConfig(prev => ({
-                                      ...prev,
-                                      emailColumns: [...prev.emailColumns, column.value]
-                                    }));
-                                  } else {
-                                    setCampaignConfig(prev => ({
-                                      ...prev,
-                                      emailColumns: prev.emailColumns.filter(c => c !== column.value)
-                                    }));
-                                  }
-                                }}
-                              />
-                              <Label className="text-sm">{column.label}</Label>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
             {/* Advanced Settings */}
             <Card>
               <CardHeader>
@@ -801,7 +570,6 @@ export default function CampaignCreator() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
-                  {/* Priority & Contact Limits */}
                   <div className="space-y-4">
                     <div>
                       <Label className="text-sm font-medium mb-2 block">Campaign Priority</Label>
@@ -815,125 +583,34 @@ export default function CampaignCreator() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="low">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                              Low Priority
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="normal">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                              Normal Priority
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="high">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                              High Priority
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="urgent">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                              Urgent Priority
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium mb-2 block">Max Contacts per Property</Label>
-                      <Select
-                        value={campaignConfig.maxContactsPerProperty.toString()}
-                        onValueChange={(value) =>
-                          setCampaignConfig(prev => ({ ...prev, maxContactsPerProperty: parseInt(value) }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 contact (Recommended)</SelectItem>
-                          <SelectItem value="2">2 contacts</SelectItem>
-                          <SelectItem value="3">3 contacts</SelectItem>
-                          <SelectItem value="5">5 contacts (Aggressive)</SelectItem>
+                          <SelectItem value="low">Low Priority</SelectItem>
+                          <SelectItem value="normal">Normal Priority</SelectItem>
+                          <SelectItem value="high">High Priority</SelectItem>
+                          <SelectItem value="urgent">Urgent Priority</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
-                  {/* Compliance & Testing */}
                   <div className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={campaignConfig.testMode}
-                          onCheckedChange={(checked) =>
-                            setCampaignConfig(prev => ({ ...prev, testMode: Boolean(checked) }))
-                          }
-                        />
-                        <div className="flex items-center gap-2">
-                          <TestTube className="w-4 h-4 text-blue-500" />
-                          <Label className="text-sm">Test Mode (No actual sending)</Label>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={campaignConfig.complianceCheck}
-                          onCheckedChange={(checked) =>
-                            setCampaignConfig(prev => ({ ...prev, complianceCheck: Boolean(checked) }))
-                          }
-                        />
-                        <div className="flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-green-500" />
-                          <Label className="text-sm">Compliance Check</Label>
-                        </div>
-                      </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Test Mode</Label>
+                      <Checkbox
+                        checked={campaignConfig.testMode}
+                        onCheckedChange={(checked) =>
+                          setCampaignConfig(prev => ({ ...prev, testMode: checked === true }))
+                        }
+                      />
                     </div>
-
-                    {campaignConfig.testMode && (
-                      <Alert>
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertDescription>
-                          Test mode enabled. Messages will be logged but not actually sent.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Campaign Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Campaign Summary</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm font-medium">Template:</Label>
-                    <div className="font-medium">{campaignConfig.template?.name || 'None selected'}</div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Channel:</Label>
-                    <div className="font-medium">{campaignConfig.channels.join(', ') || 'None selected'}</div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Properties:</Label>
-                    <div className="font-medium">{getSelectedProperties().length}</div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Mode:</Label>
-                    <div className="font-medium">Production</div>
-                  </div>
-                </div>
-                <div className="pt-2 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    URL: https://offer.mylocalinvest.com/marketing/campaigns
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Compliance Check</Label>
+                      <Checkbox
+                        checked={campaignConfig.complianceCheck}
+                        onCheckedChange={(checked) =>
+                          setCampaignConfig(prev => ({ ...prev, complianceCheck: checked === true }))
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -948,63 +625,32 @@ export default function CampaignCreator() {
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-2">Campaign Preview</h2>
+              <h2 className="text-2xl font-bold mb-2">Preview Campaign</h2>
               <p className="text-muted-foreground">Review your campaign before sending</p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Target Audience */}
-              <Card className="bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg border-b">
-                  <CardTitle className="flex items-center gap-3 text-gray-800">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Users className="w-5 h-5 text-blue-600" />
-                    </div>
-                    Target Audience
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Contact Stats */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    Contact Stats
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between">
                     <span>Total Properties:</span>
-                    <Badge variant="secondary">{stats.totalProperties}</Badge>
+                    <span className="font-medium">{stats.totalProperties}</span>
                   </div>
                   <Separator />
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Preferred Phones:</span>
-                      <span>{stats.preferredPhones}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Primary Phones:</span>
-                      <span>{stats.primaryPhones}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Skip Tracing Phones:</span>
-                      <span>{stats.skipPhones}</span>
-                    </div>
-                    <div className="flex justify-between font-medium">
-                      <span>Total Phone Contacts:</span>
-                      <span>{stats.totalPhones}</span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span>Total Phones:</span>
+                    <span className="font-medium">{stats.totalPhones}</span>
                   </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Preferred Emails:</span>
-                      <span>{stats.preferredEmails}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Primary Emails:</span>
-                      <span>{stats.primaryEmails}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Skip Tracing Emails:</span>
-                      <span>{stats.skipEmails}</span>
-                    </div>
-                    <div className="flex justify-between font-medium">
-                      <span>Total Email Contacts:</span>
-                      <span>{stats.totalEmails}</span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span>Total Emails:</span>
+                    <span className="font-medium">{stats.totalEmails}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -1032,44 +678,22 @@ export default function CampaignCreator() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Expected Success:</span>
-                    <Badge variant="default">15-25%</Badge>
-                  </div>
                 </CardContent>
               </Card>
 
-              {/* Cost & Delivery Estimation */}
+              {/* Cost Estimate */}
               <Card className="bg-gradient-to-br from-white to-amber-50/30 border-amber-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-gray-800">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <Zap className="w-5 h-5 text-amber-600" />
-                    </div>
-                    Cost & Delivery Estimate
+                  <CardTitle className="flex items-center gap-3">
+                    <Zap className="w-5 h-5 text-amber-600" />
+                    Cost Estimate
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="text-center p-4 bg-white rounded-lg border border-green-200">
-                      <div className="text-2xl font-bold text-green-600 mb-1">
-                        ${((stats.totalPhones * 0.02) + (stats.totalEmails * 0.01)).toFixed(2)}
-                      </div>
-                      <div className="text-sm text-gray-600 mb-2">Estimated Cost</div>
-                      <div className="flex justify-center gap-4 text-xs text-gray-500">
-                        <span>{stats.totalPhones} SMS</span>
-                        <span>{stats.totalEmails} Email</span>
-                      </div>
-                    </div>
-
-                    <div className="text-center p-4 bg-white rounded-lg border border-blue-200">
-                      <div className="text-2xl font-bold text-blue-600 mb-1">
-                        {Math.ceil((stats.totalPhones + stats.totalEmails) / 50)} min
-                      </div>
-                      <div className="text-sm text-gray-600 mb-2">Delivery Time</div>
-                      <div className="text-xs text-gray-500">~50 messages/minute</div>
-                    </div>
+                  <div className="text-2xl font-bold text-green-600 mb-1">
+                    ${((stats.totalPhones * 0.02) + (stats.totalEmails * 0.01)).toFixed(2)}
                   </div>
+                  <div className="text-sm text-gray-600">Estimated Cost</div>
                 </CardContent>
               </Card>
             </div>
@@ -1078,7 +702,7 @@ export default function CampaignCreator() {
             <Card>
               <CardHeader>
                 <CardTitle>Message Content Preview</CardTitle>
-                <CardDescription>Preview of actual messages that will be sent to recipients</CardDescription>
+                <CardDescription>Preview of actual messages that will be sent</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {sampleProperty && campaignConfig.template && (
@@ -1092,8 +716,32 @@ export default function CampaignCreator() {
                         <div className="text-sm bg-gray-50 p-3 rounded border">
                           {generateTemplateContent(campaignConfig.template, sampleProperty).content}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          ~{generateTemplateContent(campaignConfig.template, sampleProperty).content.length} characters
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Link className="w-3 h-3" />
+                          Property URL: {generatePropertyUrl(sampleProperty, 'sms')}
+                        </div>
+                      </div>
+                    )}
+
+                    {campaignConfig.channels.includes('email') && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Mail className="w-4 h-4" />
+                          Email Message
+                        </div>
+                        <div className="text-sm bg-white p-4 rounded border">
+                          <div className="font-medium border-b pb-2 mb-2">
+                            Subject: {generateTemplateContent(campaignConfig.template, sampleProperty).subject}
+                          </div>
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: generateTemplateContent(campaignConfig.template, sampleProperty).content
+                            }}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Link className="w-3 h-3" />
+                          Property URL: {generatePropertyUrl(sampleProperty, 'email')}
                         </div>
                       </div>
                     )}
@@ -1107,37 +755,6 @@ export default function CampaignCreator() {
                         <div className="text-sm bg-gray-50 p-3 rounded border">
                           {generateTemplateContent(campaignConfig.template, sampleProperty).content}
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Voicemail message for unanswered calls
-                        </div>
-                      </div>
-                    )}
-
-                    {campaignConfig.channels.includes('email') && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm font-medium">
-                          <Mail className="w-4 h-4" />
-                          Email Message
-                        </div>
-                        <div className="text-sm bg-white p-4 rounded border space-y-3 border-gray-200">
-                          <div className="font-medium text-gray-900 border-b pb-2">
-                            Subject: {generateTemplateContent(campaignConfig.template, sampleProperty).subject}
-                          </div>
-                          <div
-                            className="text-gray-800 leading-relaxed"
-                            dangerouslySetInnerHTML={{
-                              __html: generateTemplateContent(campaignConfig.template, sampleProperty).content
-                            }}
-                          />
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t">
-                            <QrCode className="w-3 h-3" />
-                            <Link className="w-3 h-3" />
-                            QR Code and trackable links included
-                          </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          HTML email with professional formatting
-                        </div>
                       </div>
                     )}
                   </>
@@ -1149,7 +766,6 @@ export default function CampaignCreator() {
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 This campaign will be sent to {stats.totalProperties} properties using {campaignConfig.channels.length} communication channels.
-                Make sure your marketing API is configured before proceeding.
               </AlertDescription>
             </Alert>
           </div>
@@ -1332,7 +948,6 @@ export default function CampaignCreator() {
             <DialogTitle>Confirm Campaign Launch</DialogTitle>
             <DialogDescription>
               Are you ready to send this campaign to {getSelectedProperties().length} properties?
-              This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
 
