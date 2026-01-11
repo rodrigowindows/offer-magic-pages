@@ -126,8 +126,6 @@ const Property = () => {
         propertyId={property.id}
         propertyAddress={property.address}
         ownerName={property.owner_name}
-        ownerEmail={property.owner_email}
-        ownerPhone={property.owner_phone}
       />
       <ABTestWrapper property={property} />
       <PropertyCommunicationHistory propertyId={property.id} />

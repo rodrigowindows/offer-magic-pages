@@ -31,14 +31,13 @@ interface ClickAnalytic {
   id: string;
   property_id: string | null;
   event_type: string;
-  source: string | null;
-  campaign: string | null;
-  utm_source: string | null;
-  utm_medium: string | null;
-  utm_campaign: string | null;
-  referrer: string;
-  user_agent: string;
+  referrer: string | null;
+  user_agent: string | null;
   created_at: string;
+  device_type?: string | null;
+  ip_address?: string | null;
+  city?: string | null;
+  country?: string | null;
 }
 
 interface ClickMetrics {
@@ -95,25 +94,39 @@ export const ClicksAnalytics = () => {
       const byDate: Record<string, number> = {};
 
       clicks.forEach((click) => {
-        // Count by source
-        const source = click.source || 'direct';
+        // Count by source (use referrer as source)
+        const source = click.referrer || 'direct';
         bySource[source] = (bySource[source] || 0) + 1;
 
-        // Count by campaign
-        const campaign = click.campaign || 'default';
+        // Count by event_type as campaign
+        const campaign = click.event_type || 'page_view';
         byCampaign[campaign] = (byCampaign[campaign] || 0) + 1;
 
         // Count by date (YYYY-MM-DD)
-        const date = new Date(click.created_at).toISOString().split('T')[0];
+        const date = new Date(click.created_at || '').toISOString().split('T')[0];
         byDate[date] = (byDate[date] || 0) + 1;
       });
+
+      // Map clicks to ClickAnalytic type
+      const mappedClicks: ClickAnalytic[] = clicks.map((c) => ({
+        id: c.id,
+        property_id: c.property_id,
+        event_type: c.event_type,
+        referrer: c.referrer,
+        user_agent: c.user_agent,
+        created_at: c.created_at || '',
+        device_type: c.device_type,
+        ip_address: c.ip_address,
+        city: c.city,
+        country: c.country,
+      }));
 
       setMetrics({
         total: clicks.length,
         bySource,
         byCampaign,
         byDate,
-        recentClicks: clicks.slice(0, 20),
+        recentClicks: mappedClicks.slice(0, 20),
       });
     } catch (error) {
       console.error('Error fetching clicks data:', error);
@@ -347,33 +360,34 @@ export const ClicksAnalytics = () => {
         <CardContent>
           <div className="space-y-3">
             {metrics.recentClicks.map((click) => {
-              const Icon = getSourceIcon(click.source || 'direct');
+              const source = click.referrer || 'direct';
+              const Icon = getSourceIcon(source);
               return (
                 <div
                   key={click.id}
                   className="flex items-center justify-between border-b pb-3 last:border-0"
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${getSourceColor(click.source || 'direct')}`} />
+                    <Icon className={`w-4 h-4 ${getSourceColor(source)}`} />
                     <div>
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="capitalize">
-                          {click.source || 'direct'}
+                          {click.event_type || 'page_view'}
                         </Badge>
-                        {click.campaign && click.campaign !== 'default' && (
-                          <Badge variant="outline">{click.campaign}</Badge>
+                        {click.device_type && (
+                          <Badge variant="outline">{click.device_type}</Badge>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {click.event_type} •{' '}
+                        {click.city || 'Unknown location'} •{' '}
                         {new Date(click.created_at).toLocaleString()}
                       </div>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {click.referrer !== 'direct' && (
+                    {source !== 'direct' && (
                       <span className="truncate max-w-[200px] block">
-                        from: {click.referrer}
+                        from: {source}
                       </span>
                     )}
                   </div>

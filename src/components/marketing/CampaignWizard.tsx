@@ -74,14 +74,9 @@ interface Property {
   tags?: string[];
 }
 
-// Helper functions to extract preferred contacts from JSONB columns
+// Helper functions to extract preferred contacts from tags (legacy approach)
 const getPreferredPhones = (property: Property): string[] => {
-  // Priority: preferred_phones JSONB column > tags (legacy)
-  if (property.preferred_phones && Array.isArray(property.preferred_phones)) {
-    return property.preferred_phones as string[];
-  }
-
-  // Fallback to tags for backward compatibility
+  // Use tags for backward compatibility (preferred_phones column doesn't exist)
   const tags = Array.isArray(property.tags) ? property.tags : [];
   const prefPhones = tags
     .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_phone:'))
@@ -90,12 +85,7 @@ const getPreferredPhones = (property: Property): string[] => {
 };
 
 const getPreferredEmails = (property: Property): string[] => {
-  // Priority: preferred_emails JSONB column > tags (legacy)
-  if (property.preferred_emails && Array.isArray(property.preferred_emails)) {
-    return property.preferred_emails as string[];
-  }
-
-  // Fallback to tags for backward compatibility
+  // Use tags for backward compatibility (preferred_emails column doesn't exist)
   const tags = Array.isArray(property.tags) ? property.tags : [];
   const prefEmails = tags
     .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_email:'))
