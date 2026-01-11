@@ -12,6 +12,9 @@ interface ABTestWrapperProps {
     city: string;
     state: string;
     estimated_value: number;
+    zip_code?: string;
+    property_image_url?: string | null;
+    cash_offer_amount?: number;
   };
 }
 
@@ -77,9 +80,12 @@ export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
             status: 'active',
             owner_name: null,
             neighborhood: null,
+            zip_code: property.zip_code || '',
+            property_image_url: property.property_image_url || null,
+            cash_offer_amount: property.cash_offer_amount || property.estimated_value * 0.7,
           }}
-          onFormSubmit={() => trackABEvent(property.id, variant, 'form_submitted')}
-          trackEvent={(event: string) => trackABEvent(property.id, variant, event)}
+          onFormSubmit={() => trackABEvent(property.id, variant, 'form_submitted' as any)}
+          trackEvent={(event: string) => trackABEvent(property.id, variant, event as any)}
         />
       );
   }

@@ -584,7 +584,12 @@ export const OfferManagementDashboard = () => {
               </div>
 
               <PropertyOffer
-                property={selectedOffer.property}
+                property={{
+                  ...selectedOffer.property,
+                  id: selectedOffer.id,
+                  offerAmount: selectedOffer.offerAmount,
+                  closingDays: selectedOffer.closingDays,
+                }}
                 onAcceptOffer={(id, amount) => {
                   PropertyOfferService.acceptOffer(id, 'user');
                   setSelectedOffer(null);
