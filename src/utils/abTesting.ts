@@ -43,12 +43,21 @@ export function getABVariant(propertyId: string): ABVariant {
     return 'ultra-simple';
   }
 
+  const isVariantActive = (variant: ABVariant) =>
+    AB_TEST_CONFIG.variants.some((v) => v.variant === variant && v.active && v.weight > 0);
+
   // Check if user already has assigned variant (stored in localStorage)
   const storageKey = `ab-variant-${propertyId}`;
   const stored = localStorage.getItem(storageKey);
 
   if (stored && isValidVariant(stored)) {
-    return stored as ABVariant;
+    const storedVariant = stored as ABVariant;
+    // If config changed (variant disabled / weight 0), reassign.
+    if (isVariantActive(storedVariant)) {
+      return storedVariant;
+    }
+
+    localStorage.removeItem(storageKey);
   }
 
   // Assign new variant based on weights

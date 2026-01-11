@@ -37,7 +37,7 @@ const Property = () => {
   const trackAnalytics = async (propertyId: string, eventType: string) => {
     try {
       // Get tracking parameters from URL
-      const source = searchParams.get('source') || 'direct';
+      const source = searchParams.get('src') || searchParams.get('source') || 'direct';
       const campaign = searchParams.get('campaign') || 'default';
       const utmSource = searchParams.get('utm_source');
       const utmMedium = searchParams.get('utm_medium');
