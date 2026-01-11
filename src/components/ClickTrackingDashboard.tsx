@@ -27,33 +27,6 @@ import {
   Clock
 } from "lucide-react";
 
-interface ClickData {
-  id: string;
-  property_id: string;
-  property_address: string;
-  recipient_name: string;
-  recipient_email: string;
-  recipient_phone: string;
-  channel: string;
-  link_clicked: boolean;
-  link_clicked_at: string;
-  click_count: number;
-  button_clicked: boolean;
-  button_clicked_at: string;
-  button_click_count: number;
-  button_click_source: string;
-  email_opened: boolean;
-  email_opened_at: string;
-  email_open_count: number;
-  sent_at: string;
-  follow_up_sent?: boolean;
-  follow_up_sent_at?: string;
-  follow_up_channel?: string;
-  click_source?: string;
-  user_agent?: string;
-  referrer?: string;
-}
-
 interface ClickStats {
   totalClicks: number;
   linkClicks: number;
@@ -65,7 +38,7 @@ interface ClickStats {
   followUpRate: number;
   channelBreakdown: Record<string, number>;
   followUpBreakdown: Record<string, number>;
-  recentClicks: ClickData[];
+  recentClicks: any[];
 }
 
 export const ClickTrackingDashboard = () => {
@@ -78,6 +51,7 @@ export const ClickTrackingDashboard = () => {
 
   const fetchClickData = async () => {
     try {
+      // Use campaign_logs table with only columns that exist
       const { data, error } = await supabase
         .from("campaign_logs")
         .select(`
@@ -89,22 +63,9 @@ export const ClickTrackingDashboard = () => {
           recipient_phone,
           channel,
           link_clicked,
-          link_clicked_at,
           click_count,
-          button_clicked,
-          button_clicked_at,
-          button_click_count,
-          button_click_source,
-          email_opened,
-          email_opened_at,
-          email_open_count,
           sent_at,
-          follow_up_sent,
-          follow_up_sent_at,
-          follow_up_channel,
-          click_source,
-          user_agent,
-          referrer
+          metadata
         `)
         .order("sent_at", { ascending: false })
         .limit(1000);
@@ -113,99 +74,79 @@ export const ClickTrackingDashboard = () => {
 
       const clickData = data || [];
 
-      // Calculate stats
-      const totalClicks = clickData.reduce((sum, item) => sum + (item.click_count || 0) + (item.button_click_count || 0), 0);
+      // Calculate stats from available data
+      const totalClicks = clickData.reduce((sum, item) => sum + (item.click_count || 0), 0);
       const linkClicks = clickData.filter(item => item.link_clicked).length;
-      const buttonClicks = clickData.filter(item => item.button_clicked).length;
-      const emailOpens = clickData.filter(item => item.email_opened).length;
-      const followUpsSent = clickData.filter(item => item.follow_up_sent).length;
       const totalSent = clickData.length;
 
       const channelBreakdown = clickData.reduce((acc, item) => {
-        acc[item.channel] = (acc[item.channel] || 0) + 1;
+        const channel = item.channel || 'unknown';
+        acc[channel] = (acc[channel] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-
-      const followUpBreakdown = clickData
-        .filter(item => item.follow_up_channel)
-        .reduce((acc, item) => {
-          acc[item.follow_up_channel!] = (acc[item.follow_up_channel!] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-
-      const recentClicks = clickData
-        .filter(item => item.link_clicked || item.button_clicked)
-        .slice(0, 10);
 
       setStats({
         totalClicks,
         linkClicks,
-        buttonClicks,
-        emailOpens,
-        followUpsSent,
+        buttonClicks: 0,
+        emailOpens: 0,
+        followUpsSent: 0,
         clickRate: totalSent > 0 ? (totalClicks / totalSent) * 100 : 0,
-        openRate: totalSent > 0 ? (emailOpens / totalSent) * 100 : 0,
-        followUpRate: totalClicks > 0 ? (followUpsSent / totalClicks) * 100 : 0,
+        openRate: 0,
+        followUpRate: 0,
         channelBreakdown,
-        followUpBreakdown,
-        recentClicks
+        followUpBreakdown: {},
+        recentClicks: clickData.slice(0, 10)
       });
 
     } catch (error) {
       console.error("Error fetching click data:", error);
+      // Set default stats on error
+      setStats({
+        totalClicks: 0,
+        linkClicks: 0,
+        buttonClicks: 0,
+        emailOpens: 0,
+        followUpsSent: 0,
+        clickRate: 0,
+        openRate: 0,
+        followUpRate: 0,
+        channelBreakdown: {},
+        followUpBreakdown: {},
+        recentClicks: []
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+  const channelData = stats ? Object.entries(stats.channelBreakdown).map(([name, value]) => ({
+    name,
+    value
+  })) : [];
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Click Tracking Analytics</CardTitle>
-          <CardDescription>Loading click data...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
-
-  if (!stats) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Click Tracking Analytics</CardTitle>
-          <CardDescription>No data available</CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
-  const channelData = Object.entries(stats.channelBreakdown).map(([channel, count]) => ({
-    name: channel.toUpperCase(),
-    value: count
-  }));
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Header Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
             <MousePointerClick className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalClicks}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.clickRate.toFixed(1)}% click rate
-            </p>
+            <div className="text-2xl font-bold">{stats?.totalClicks || 0}</div>
+            <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
 
@@ -215,94 +156,30 @@ export const ClickTrackingDashboard = () => {
             <Link className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.linkClicks}</div>
-            <p className="text-xs text-muted-foreground">
-              Direct link clicks
-            </p>
+            <div className="text-2xl font-bold">{stats?.linkClicks || 0}</div>
+            <p className="text-xs text-muted-foreground">Property links</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Button Clicks</CardTitle>
-            <MousePointerClick className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.buttonClicks}</div>
-            <p className="text-xs text-muted-foreground">
-              CTA button clicks
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Email Opens</CardTitle>
-            <Mail className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.emailOpens}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.openRate.toFixed(1)}% open rate
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Follow-up Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Auto Follow-ups</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.followUpsSent}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.followUpRate.toFixed(1)}% of clicks
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Follow-up Channels</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm space-y-1">
-              {Object.entries(stats.followUpBreakdown).map(([channel, count]) => (
-                <div key={channel} className="flex justify-between">
-                  <span className="capitalize">{channel}</span>
-                  <span className="font-medium">{count}</span>
-                </div>
-              ))}
-              {Object.keys(stats.followUpBreakdown).length === 0 && (
-                <span className="text-muted-foreground">No follow-ups yet</span>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Click Sources</CardTitle>
+            <CardTitle className="text-sm font-medium">Click Rate</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-sm space-y-1">
-              {stats.recentClicks.slice(0, 3).map((click, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="truncate max-w-[120px]">{click.property_address}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {click.click_source || click.channel}
-                  </Badge>
-                </div>
-              ))}
-              {stats.recentClicks.length === 0 && (
-                <span className="text-muted-foreground">No recent clicks</span>
-              )}
-            </div>
+            <div className="text-2xl font-bold">{stats?.clickRate.toFixed(1) || 0}%</div>
+            <p className="text-xs text-muted-foreground">Of campaigns</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Follow-ups</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.followUpsSent || 0}</div>
+            <p className="text-xs text-muted-foreground">Auto-sent</p>
           </CardContent>
         </Card>
       </div>
@@ -310,25 +187,74 @@ export const ClickTrackingDashboard = () => {
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="channels">By Channel</TabsTrigger>
+          <TabsTrigger value="channels">Channels</TabsTrigger>
           <TabsTrigger value="recent">Recent Activity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value="overview">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Channel Distribution</CardTitle>
+                <CardDescription>Clicks by communication channel</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={channelData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {channelData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance Metrics</CardTitle>
+                <CardDescription>Key engagement indicators</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Click Rate</span>
+                    <Badge variant="secondary">{stats?.clickRate.toFixed(1) || 0}%</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Open Rate</span>
+                    <Badge variant="secondary">{stats?.openRate.toFixed(1) || 0}%</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Follow-up Rate</span>
+                    <Badge variant="secondary">{stats?.followUpRate.toFixed(1) || 0}%</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="channels">
           <Card>
             <CardHeader>
-              <CardTitle>Click Performance</CardTitle>
-              <CardDescription>
-                Overview of link clicks, button clicks, and email opens
-              </CardDescription>
+              <CardTitle>Channel Breakdown</CardTitle>
+              <CardDescription>Campaign activity by channel</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={[
-                  { name: 'Link Clicks', value: stats.linkClicks },
-                  { name: 'Button Clicks', value: stats.buttonClicks },
-                  { name: 'Email Opens', value: stats.emailOpens }
-                ]}>
+                <BarChart data={channelData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -340,82 +266,43 @@ export const ClickTrackingDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="channels" className="space-y-4">
+        <TabsContent value="recent">
           <Card>
             <CardHeader>
-              <CardTitle>Clicks by Channel</CardTitle>
-              <CardDescription>
-                Distribution of clicks across different marketing channels
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={channelData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {channelData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="recent" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Click Activity</CardTitle>
-              <CardDescription>
-                Latest clicks and interactions from your campaigns
-              </CardDescription>
+              <CardTitle>Recent Clicks</CardTitle>
+              <CardDescription>Latest campaign interactions</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {stats.recentClicks.map((click) => (
-                  <div key={click.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{click.property_address}</span>
-                        <Badge variant="outline">{click.channel}</Badge>
+                {stats?.recentClicks.map((click, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {click.channel === 'sms' ? (
+                        <MessageSquare className="h-4 w-4 text-blue-500" />
+                      ) : click.channel === 'email' ? (
+                        <Mail className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Phone className="h-4 w-4 text-orange-500" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{click.property_address || 'Unknown Property'}</p>
+                        <p className="text-xs text-muted-foreground">{click.recipient_name || click.recipient_email || 'Unknown'}</p>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        {click.recipient_name || click.recipient_email || click.recipient_phone}
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        {click.link_clicked && (
-                          <span className="flex items-center gap-1">
-                            <Link className="w-3 h-3" />
-                            Link clicked
-                          </span>
-                        )}
-                        {click.button_clicked && (
-                          <span className="flex items-center gap-1">
-                            <MousePointerClick className="w-3 h-3" />
-                            Button clicked ({click.button_click_source})
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(click.sent_at).toLocaleDateString()}
-                        </span>
-                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={click.link_clicked ? "default" : "secondary"}>
+                        {click.link_clicked ? "Clicked" : "Sent"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3 inline mr-1" />
+                        {new Date(click.sent_at).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                 ))}
-                {stats.recentClicks.length === 0 && (
+                {(!stats?.recentClicks || stats.recentClicks.length === 0) && (
                   <div className="text-center py-8 text-muted-foreground">
-                    No recent clicks to display
+                    No recent click activity
                   </div>
                 )}
               </div>
