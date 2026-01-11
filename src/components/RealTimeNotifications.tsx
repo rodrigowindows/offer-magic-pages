@@ -505,7 +505,14 @@ const RealTimeNotifications = () => {
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-purple-500" />
               <div>
-                <p className="text-2xl font-bold">{Math.round(notifications.length / Math.max(1, (Date.now() - Date.parse(notifications[0]?.timestamp || Date.now())) / (1000 * 60 * 60 * 24)))}</p>
+                <p className="text-2xl font-bold">
+                  {Math.round(
+                    notifications.length / Math.max(
+                      1,
+                      (Date.now() - Date.parse(notifications[0]?.timestamp || Date.now())) / (1000 * 60 * 60 * 24)
+                    )
+                  )}
+                </p>
                 <p className="text-xs text-muted-foreground">Per Day</p>
               </div>
             </div>
