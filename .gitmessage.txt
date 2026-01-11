@@ -1,0 +1,26 @@
+# Commit Message Template
+# Use the following format:
+#
+# type(scope): description
+#
+# [optional body explaining what and why]
+#
+# [optional footer with issue references]
+
+# Types:
+# feat:     A new feature
+# fix:      A bug fix
+# docs:     Documentation only changes
+# style:    Changes that do not affect the meaning of the code
+# refactor: A code change that neither fixes a bug nor adds a feature
+# test:     Adding missing tests or correcting existing tests
+# chore:    Changes to the build process or auxiliary tools
+
+# Example:
+# feat(auth): add user login functionality
+#
+# - Implement JWT token authentication
+# - Add login/logout endpoints
+# - Update user session management
+#
+# Closes #123

@@ -8,13 +8,17 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "check:errors": "node scripts/check-errors.cjs",
+    "type-check": "tsc --noEmit",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "pre-commit": "npm run type-check && npm run lint",
+    "prepare": "husky install || true"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
