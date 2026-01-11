@@ -202,23 +202,6 @@ export const PropertyCardView = ({
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-green-700 hover:text-green-900 hover:bg-green-50"
-                  title="Oferta"
-                  tabIndex={-1}
-                  disabled
-                >
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  <span className="font-bold">{offerDisplay}</span>
-                </Button>
-              </div>
-            </div>
-            {/* Oferta percentual */}
-            {offerPercentage && (
-              <div className="text-xs text-green-700 mt-1">{offerPercentage}% do valor estimado</div>
-            )}
-          </div>
-                  size="sm"
-                  variant="ghost"
                   className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -242,8 +225,23 @@ export const PropertyCardView = ({
                 >
                   <span className="text-xs font-bold">T</span>
                 </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-green-700 hover:text-green-900 hover:bg-green-50"
+                  title="Oferta"
+                  tabIndex={-1}
+                  disabled
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  <span className="font-bold">{offerDisplay}</span>
+                </Button>
               </div>
             </div>
+            {/* Oferta percentual */}
+            {offerPercentage && (
+              <div className="text-xs text-green-700 mt-1">{offerPercentage}% do valor estimado</div>
+            )}
             {property.owner_name && (
               <p className="text-xs text-muted-foreground mt-1">
                 Proprietário: {property.owner_name}
