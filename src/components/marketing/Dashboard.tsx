@@ -256,9 +256,6 @@ export const Dashboard = () => {
       {/* External Tools Integration */}
       <ExternalToolsIntegration />
 
-      {/* Backup & Recovery System */}
-      <BackupRecoverySystem />
-
       {/* Console de Debug - Estado do Sistema */}
       <Card className="border-blue-500/50 bg-slate-50 dark:bg-slate-900">
         <CardHeader>
