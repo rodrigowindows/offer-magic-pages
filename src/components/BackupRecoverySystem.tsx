@@ -98,8 +98,6 @@ const BackupRecoverySystem = () => {
     </Card>
   );
 };
-
-  const loadBackupData = async () => {
     try {
       setLoading(true);
 
