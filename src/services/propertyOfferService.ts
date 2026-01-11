@@ -52,6 +52,26 @@ export interface OfferCampaignData {
 
 export class PropertyOfferService {
   /**
+   * Generate QR code URL for property offer
+   */
+  static generateQRCodeUrl(offerUrl: string): string {
+    // Using QR Server API to generate QR codes
+    // In production, you might want to use a different service or generate locally
+    const encodedUrl = encodeURIComponent(offerUrl);
+    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
+  }
+
+  /**
+   * Create property slug for URL
+   */
+  static createPropertySlug(address: string, city: string): string {
+    return `${address.toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')}-${city.toLowerCase()}`;
+  }
+
+  /**
    * Create a new property offer
    */
   static async createOffer(offerData: Omit<PropertyOfferData, 'id' | 'createdAt' | 'status'>): Promise<PropertyOfferData> {
@@ -128,23 +148,35 @@ export class PropertyOfferService {
 
       // Send email if requested
       if (sendEmail) {
+        // Create property URL and QR code
+        const propertySlug = this.createPropertySlug(property.address || '', property.city || '');
+        const propertyUrl = `${window.location.origin}/property/${propertySlug}?src=email`;
+        const qrCodeUrl = this.generateQRCodeUrl(propertyUrl);
+
         const emailHtml = generatePropertyOfferEmail({
-          property: offer.property,
+          property: {
+            ...offer.property,
+            offerAmount: offerAmount
+          },
           recipientName: offer.recipientName,
           trackingUrl: `${window.location.origin}/api/track-open?offerId=${offer.id}`,
           acceptUrl: `${window.location.origin}/offer/${offer.id}/accept`,
           questionsUrl: `${window.location.origin}/offer/${offer.id}/questions`,
-          pdfUrl: `${window.location.origin}/api/download-offer-pdf?offerId=${offer.id}`
+          pdfUrl: `${window.location.origin}/api/download-offer-pdf?offerId=${offer.id}`,
+          propertyUrl: propertyUrl,
+          qrCodeUrl: qrCodeUrl
         });
 
         // Here you would integrate with your email service (SendGrid, Mailgun, etc.)
         console.log('Sending email to:', recipientEmail);
+        console.log('Property URL:', propertyUrl);
         console.log('Email content length:', emailHtml.length);
 
         // For now, we'll simulate sending
         await this.logCampaignActivity(offer.id, 'email_sent', {
           recipient: recipientEmail,
-          subject: `Cash Offer: $${offerAmount.toLocaleString()} for ${property.address}`
+          subject: `Cash Offer: $${offerAmount.toLocaleString()} for ${property.address}`,
+          propertyUrl: propertyUrl
         });
       }
 

@@ -11,7 +11,7 @@
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "check:errors": "node scripts/check-errors.cjs",
-    "type-check": "tsc --noEmit",
+    "type-check": "npx tsc --noEmit",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",

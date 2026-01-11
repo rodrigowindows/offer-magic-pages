@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getABVariant, trackABEvent, type ABVariant } from "@/utils/abTesting";
 import { UltraSimpleVariant } from "@/components/variants/UltraSimpleVariant";
 import { EmailFirstVariant } from "@/components/variants/EmailFirstVariant";
+import PropertyPageMinimal from "@/components/PropertyPageMinimal";
 import { type OfferData } from "@/utils/offerUtils";
 
 interface ABTestWrapperProps {
@@ -67,6 +68,19 @@ export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
       return <UltraSimpleVariant property={property} />;
 
     default:
-      return <UltraSimpleVariant property={property} />;
+      // Use PropertyPageMinimal for the default offer page layout
+      return (
+        <PropertyPageMinimal
+          property={{
+            ...property,
+            slug: property.address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unknown',
+            status: 'active',
+            owner_name: null,
+            neighborhood: null,
+          }}
+          onFormSubmit={() => trackABEvent(property.id, variant, 'form_submitted')}
+          trackEvent={(event: string) => trackABEvent(property.id, variant, event)}
+        />
+      );
   }
 };

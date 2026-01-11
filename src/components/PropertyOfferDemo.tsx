@@ -65,6 +65,7 @@ export const PropertyOfferDemo = () => {
           onAcceptOffer={handleAcceptOffer}
           onContactQuestions={handleContactQuestions}
           onDownloadPDF={handleDownloadPDF}
+          propertyUrl="https://offer.mylocalinvest.com/property/144-washington-ave-eatonville?src=demo"
         />
 
         {/* Additional demo information */}

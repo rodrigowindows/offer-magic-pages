@@ -213,10 +213,18 @@ export const CashOfferLetter = ({
           {/* QR Code */}
           <div className="pt-2 border-t border-primary-foreground/20 mt-3">
             <p className="text-xs opacity-75 mb-2">{t.orText}</p>
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-2">
               <div className="bg-white p-2 rounded-lg">
                 <QRCodeSVG value={offerUrl} size={80} level="H" />
               </div>
+              <a
+                href={offerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-xs mt-1"
+              >
+                View Full Offer Details
+              </a>
             </div>
           </div>
         </div>
