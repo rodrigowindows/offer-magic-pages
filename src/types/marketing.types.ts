@@ -136,6 +136,7 @@ export interface CommunicationHistory {
   response: CommunicationResponse;
   status: CommunicationStatus;
   test_mode?: boolean; // Indica se foi enviado em modo de teste
+  sent_by?: string | null; // user id who sent the communication
 }
 
 export interface ChannelStats {

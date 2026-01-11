@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ABTestWrapper } from "@/components/ABTestWrapper";
+import { PropertyCommunicationHistory } from "@/components/PropertyCommunicationHistory";
 interface PropertyData {
   id: string;
   slug: string;
@@ -116,7 +117,12 @@ const Property = () => {
     );
   }
 
-  return <ABTestWrapper property={property} />;
+  return (
+    <>
+      <ABTestWrapper property={property} />
+      <PropertyCommunicationHistory propertyId={property.id} />
+    </>
+  );
 };
 
 export default Property;

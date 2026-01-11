@@ -3,7 +3,7 @@
  * Lista e filtra todas as comunicações enviadas
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useMarketingStore } from '@/store/marketingStore';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Search,
   Filter,
@@ -28,17 +28,53 @@ import {
   Phone,
   TestTube2,
   Calendar,
+  RefreshCw,
 } from 'lucide-react';
-import type { CommunicationHistory } from '@/types/marketing.types';
+
+interface CampaignLog {
+  id: string;
+  property_id: string | null;
+  channel: string | null;
+  recipient_email: string | null;
+  recipient_phone: string | null;
+  recipient_name: string | null;
+  property_address: string | null;
+  sent_at: string;
+  tracking_id: string;
+  metadata: any;
+  campaign_type: string;
+}
 
 export const History = () => {
-  const history = useMarketingStore((state) => state.history);
-  const clearHistory = useMarketingStore((state) => state.clearHistory);
+  const [history, setHistory] = useState<CampaignLog[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [channelFilter, setChannelFilter] = useState<string>('all');
-  const [modeFilter, setModeFilter] = useState<string>('all');
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState<string>('all');
+
+  // Fetch history from database
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('campaign_logs')
+        .select('*')
+        .order('sent_at', { ascending: false })
+        .limit(1000);
+
+      if (error) throw error;
+      setHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching campaign history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filtros aplicados
   const filteredHistory = useMemo(() => {
@@ -46,27 +82,22 @@ export const History = () => {
       // Search
       const matchesSearch =
         searchTerm === '' ||
-        (typeof item.recipient.name === 'string' && item.recipient.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (typeof item.recipient.phone_number === 'string' && item.recipient.phone_number.includes(searchTerm)) ||
-        (typeof item.recipient.email === 'string' && item.recipient.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (typeof item.recipient.address === 'string' && item.recipient.address.toLowerCase().includes(searchTerm.toLowerCase()));
+        (typeof item.recipient_name === 'string' && item.recipient_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (typeof item.recipient_phone === 'string' && item.recipient_phone.includes(searchTerm)) ||
+        (typeof item.recipient_email === 'string' && item.recipient_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (typeof item.property_address === 'string' && item.property_address.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Status filter
-      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-
-      // Channel filter - safely check if channels is an array
+      // Channel filter
       const matchesChannel =
-        channelFilter === 'all' || (Array.isArray(item.channels) && item.channels.includes(channelFilter as any));
+        channelFilter === 'all' || item.channel === channelFilter;
 
-      // Mode filter (test/production)
-      const matchesMode =
-        modeFilter === 'all' ||
-        (modeFilter === 'test' && item.test_mode) ||
-        (modeFilter === 'production' && !item.test_mode);
+      // Campaign type filter
+      const matchesCampaignType =
+        campaignTypeFilter === 'all' || item.campaign_type === campaignTypeFilter;
 
-      return matchesSearch && matchesStatus && matchesChannel && matchesMode;
+      return matchesSearch && matchesChannel && matchesCampaignType;
     });
-  }, [history, searchTerm, statusFilter, channelFilter, modeFilter]);
+  }, [history, searchTerm, channelFilter, campaignTypeFilter]);
 
   // Exportar para CSV
   const exportToCSV = () => {
@@ -76,22 +107,22 @@ export const History = () => {
       'Phone',
       'Email',
       'Address',
-      'Channels',
-      'Status',
-      'Mode',
-      'Response',
+      'Channel',
+      'Campaign Type',
+      'Template',
+      'Tracking ID',
     ];
 
     const rows = filteredHistory.map((item) => [
-      new Date(item.timestamp).toISOString(),
-      item.recipient.name,
-      item.recipient.phone_number,
-      item.recipient.email || '',
-      item.recipient.address || '',
-      Array.isArray(item.channels) ? item.channels.join('; ') : '',
-      item.status,
-      item.test_mode ? 'Test' : 'Production',
-      JSON.stringify(item.response),
+      new Date(item.sent_at).toISOString(),
+      item.recipient_name || '',
+      item.recipient_phone || '',
+      item.recipient_email || '',
+      item.property_address || '',
+      item.channel || '',
+      item.campaign_type,
+      item.metadata?.template_name || '',
+      item.tracking_id,
     ]);
 
     const csv = [
@@ -103,7 +134,7 @@ export const History = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `marketing-history-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `campaign-history-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -146,18 +177,6 @@ export const History = () => {
 
           {/* Filter Row */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="sent">Sent</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-              </SelectContent>
-            </Select>
-
             {/* Channel Filter */}
             <Select value={channelFilter} onValueChange={setChannelFilter}>
               <SelectTrigger>
@@ -171,17 +190,28 @@ export const History = () => {
               </SelectContent>
             </Select>
 
-            {/* Mode Filter */}
-            <Select value={modeFilter} onValueChange={setModeFilter}>
+            {/* Campaign Type Filter */}
+            <Select value={campaignTypeFilter} onValueChange={setCampaignTypeFilter}>
               <SelectTrigger>
-                <SelectValue placeholder="Mode" />
+                <SelectValue placeholder="Campaign Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Modes</SelectItem>
-                <SelectItem value="test">Test</SelectItem>
-                <SelectItem value="production">Production</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+                <SelectItem value="automated">Automated</SelectItem>
+                <SelectItem value="sequence">Sequence</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* Refresh Button */}
+            <Button
+              variant="outline"
+              onClick={fetchHistory}
+              disabled={loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
 
             {/* Export Button */}
             <Button
@@ -199,28 +229,24 @@ export const History = () => {
             <span>
               Showing {filteredHistory.length} of {history.length} communications
             </span>
-            {history.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearHistory}
-                className="text-red-600 hover:text-red-700"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear All History
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
 
       {/* History List */}
       <div className="space-y-3">
-        {filteredHistory.length === 0 ? (
+        {loading ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin" />
+              Loading communications...
+            </CardContent>
+          </Card>
+        ) : filteredHistory.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               {history.length === 0
-                ? 'No communications yet. Send your first communication to see it here!'
+                ? 'No communications yet. Send your first campaign to see it here!'
                 : 'No communications match your filters.'}
             </CardContent>
           </Card>
@@ -235,14 +261,16 @@ export const History = () => {
 };
 
 // Componente individual de histórico
-const HistoryItem = ({ item }: { item: CommunicationHistory }) => {
+const HistoryItem = ({ item }: { item: CampaignLog }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const channelIcons = {
+  const channelIcons: Record<string, any> = {
     sms: MessageSquare,
     email: Mail,
     call: Phone,
   };
+
+  const Icon = item.channel ? channelIcons[item.channel] : MessageSquare;
 
   return (
     <Card>
@@ -254,24 +282,17 @@ const HistoryItem = ({ item }: { item: CommunicationHistory }) => {
           {/* Header Row */}
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
-              {item.status === 'sent' ? (
-                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-              ) : (
-                <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              )}
+              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
               <div>
                 <div className="font-medium flex items-center gap-2">
-                  {item.recipient.name}
-                  {item.test_mode && (
-                    <Badge variant="outline" className="text-orange-600 border-orange-600">
-                      <TestTube2 className="w-3 h-3 mr-1" />
-                      Test
-                    </Badge>
-                  )}
+                  {item.recipient_name || 'Unknown'}
+                  <Badge variant="outline" className="capitalize">
+                    {item.campaign_type}
+                  </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {item.recipient.phone_number}
-                  {item.recipient.email && ` • ${item.recipient.email}`}
+                  {item.recipient_phone && item.recipient_phone}
+                  {item.recipient_email && (item.recipient_phone ? ` • ${item.recipient_email}` : item.recipient_email)}
                 </div>
               </div>
             </div>
@@ -279,54 +300,67 @@ const HistoryItem = ({ item }: { item: CommunicationHistory }) => {
             <div className="text-right flex-shrink-0">
               <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
                 <Calendar className="w-3 h-3" />
-                {new Date(item.timestamp).toLocaleDateString()}
+                {new Date(item.sent_at).toLocaleDateString()}
               </div>
               <div className="text-xs text-muted-foreground">
-                {new Date(item.timestamp).toLocaleTimeString()}
+                {new Date(item.sent_at).toLocaleTimeString()}
               </div>
             </div>
           </div>
 
-          {/* Channels */}
-          <div className="flex gap-2 mb-3">
-            {(Array.isArray(item.channels) ? item.channels : []).map((channel) => {
-              const Icon = channelIcons[channel];
-              return (
-                <Badge key={channel} variant="secondary" className="flex items-center gap-1">
-                  <Icon className="w-3 h-3" />
-                  {channel.toUpperCase()}
+          {/* Channel Badge */}
+          {item.channel && (
+            <div className="flex gap-2 mb-3">
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Icon className="w-3 h-3" />
+                {item.channel.toUpperCase()}
+              </Badge>
+              {item.metadata?.template_name && (
+                <Badge variant="outline">
+                  {item.metadata.template_name}
                 </Badge>
-              );
-            })}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Expanded Details */}
           {expanded && (
             <div className="mt-4 pt-4 border-t space-y-3">
-              {item.recipient.address && (
+              {item.property_address && (
                 <div>
-                  <span className="text-sm font-medium">Address: </span>
+                  <span className="text-sm font-medium">Property Address: </span>
                   <span className="text-sm text-muted-foreground">
-                    {item.recipient.address}
+                    {item.property_address}
                   </span>
                 </div>
               )}
 
-              {item.recipient.seller_name && (
+              {item.metadata?.subject && (
                 <div>
-                  <span className="text-sm font-medium">Seller: </span>
+                  <span className="text-sm font-medium">Email Subject: </span>
                   <span className="text-sm text-muted-foreground">
-                    {item.recipient.seller_name}
+                    {item.metadata.subject}
                   </span>
                 </div>
               )}
 
-              <div>
-                <span className="text-sm font-medium">Response: </span>
-                <pre className="text-xs bg-muted p-3 rounded mt-2 overflow-auto">
-                  {JSON.stringify(item.response, null, 2)}
-                </pre>
-              </div>
+              {item.tracking_id && (
+                <div>
+                  <span className="text-sm font-medium">Tracking ID: </span>
+                  <code className="text-xs bg-muted px-2 py-1 rounded">
+                    {item.tracking_id}
+                  </code>
+                </div>
+              )}
+
+              {item.metadata && (
+                <div>
+                  <span className="text-sm font-medium">Metadata: </span>
+                  <pre className="text-xs bg-muted p-3 rounded mt-2 overflow-auto">
+                    {JSON.stringify(item.metadata, null, 2)}
+                  </pre>
+                </div>
+              )}
             </div>
           )}
         </div>

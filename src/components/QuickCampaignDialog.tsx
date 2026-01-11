@@ -189,7 +189,7 @@ export const QuickCampaignDialog = ({
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
-      console.log('QuickCampaignDialog opened with properties:', safeProperties.length);
+      
       setSelectedTemplate(null);
       setSelectedSequence(null);
       setCampaignMode('single');

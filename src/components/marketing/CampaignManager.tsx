@@ -710,6 +710,8 @@ export const CampaignManager = () => {
               channel: 'sms',
               property_id: prop.id,
               recipient_phone: phone,
+              recipient_name: prop.owner_name || 'Owner',
+              property_address: fullAddress,
               sent_at: new Date().toISOString(),
               metadata: {
                 template_id: selectedTemplate.id,
@@ -749,6 +751,8 @@ export const CampaignManager = () => {
               channel: 'email',
               property_id: prop.id,
               recipient_email: email,
+              recipient_name: prop.owner_name || 'Owner',
+              property_address: fullAddress,
               sent_at: new Date().toISOString(),
               metadata: {
                 template_id: selectedTemplate.id,
@@ -792,6 +796,8 @@ export const CampaignManager = () => {
               channel: 'call',
               property_id: prop.id,
               recipient_phone: phone,
+              recipient_name: prop.owner_name || 'Owner',
+              property_address: fullAddress,
               sent_at: new Date().toISOString(),
               metadata: {
                 template_id: selectedTemplate.id,
