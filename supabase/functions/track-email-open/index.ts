@@ -41,9 +41,9 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Find the email campaign
+    // Find the campaign log
     const { data: campaign, error: findError } = await supabase
-      .from("email_campaigns")
+      .from("campaign_logs")
       .select("*")
       .eq("tracking_id", trackingId)
       .single();
@@ -62,21 +62,21 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Update the campaign with open tracking
     const updateData: any = {
-      opened_count: campaign.opened_count + 1,
+      email_open_count: (campaign.email_open_count || 0) + 1,
     };
 
-    // Set opened_at only on first open
-    if (!campaign.opened_at) {
-      updateData.opened_at = new Date().toISOString();
+    // Set email_opened_at only on first open
+    if (!campaign.email_opened_at) {
+      updateData.email_opened_at = new Date().toISOString();
     }
 
     await supabase
-      .from("email_campaigns")
+      .from("campaign_logs")
       .update(updateData)
       .eq("tracking_id", trackingId);
 
     // Create notification only on first open
-    if (!campaign.opened_at) {
+    if (!campaign.email_opened_at) {
       const { data: property } = await supabase
         .from("properties")
         .select("address")
@@ -85,18 +85,76 @@ const handler = async (req: Request): Promise<Response> => {
 
       await supabase.from("notifications").insert({
         event_type: "email_opened",
-        message: `Email opened by ${campaign.recipient_email}${property ? ` for ${property.address}` : ""}`,
+        message: `Email opened by ${campaign.recipient_email || campaign.recipient_name || 'recipient'}${property ? ` for ${property.address}` : ""}`,
         property_id: campaign.property_id,
         metadata: {
-          recipient: campaign.recipient_email,
+          recipient: campaign.recipient_email || campaign.recipient_name,
           tracking_id: trackingId,
           opened_at: new Date().toISOString(),
         },
       });
 
       console.log(`First email open tracked for campaign ${trackingId}`);
+
+      // Schedule follow-ups (5 minutes) on first open as well
+      try {
+        const { data: prop } = await supabase
+          .from('properties')
+          .select('preferred_phones, preferred_emails, owner_phone, owner_email, skip_tracing_data, property_address, city, state')
+          .eq('id', campaign.property_id)
+          .single();
+
+        if (prop) {
+          const contacts: Array<{ phone?: string; email?: string; type: string }> = [];
+          const skip = prop.skip_tracing_data || {};
+          if (Array.isArray(skip?.phones)) skip.phones.forEach((p: string) => { if (p) contacts.push({ phone: p, type: 'skip_phone' }); });
+          if (Array.isArray(skip?.emails)) skip.emails.forEach((e: string) => { if (e) contacts.push({ email: e, type: 'skip_email' }); });
+          if (Array.isArray(prop.preferred_phones)) prop.preferred_phones.forEach((p: string) => { if (p && !contacts.some(c => c.phone === p)) contacts.push({ phone: p, type: 'preferred_phone' }); });
+          if (Array.isArray(prop.preferred_emails)) prop.preferred_emails.forEach((e: string) => { if (e && !contacts.some(c => c.email === e)) contacts.push({ email: e, type: 'preferred_email' }); });
+          if (prop.owner_phone && !contacts.some(c => c.phone === prop.owner_phone)) contacts.push({ phone: prop.owner_phone, type: 'owner_phone' });
+          if (prop.owner_email && !contacts.some(c => c.email === prop.owner_email)) contacts.push({ email: prop.owner_email, type: 'owner_email' });
+
+          const uniqueContacts: Array<{ phone?: string; email?: string; type: string }> = [];
+          for (const c of contacts) {
+            if (c.phone && uniqueContacts.some(x => x.phone === c.phone)) continue;
+            if (c.email && uniqueContacts.some(x => x.email === c.email)) continue;
+            uniqueContacts.push(c);
+          }
+
+          if (uniqueContacts.length > 0) {
+            const scheduledAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+            const addr = `${prop.property_address || ''} ${prop.city || ''} ${prop.state || ''}`.trim();
+            const smsMsg = `Oi, seguimento sobre sua propriedade em ${addr}. Podemos conversar sobre uma oferta em dinheiro?`;
+            const emailMsg = `Olá, seguimos interessados na sua propriedade em ${addr}. Veja sua oferta completa.`;
+            const callMsg = `Hi, this is a follow up regarding your property at ${addr}. Please call us back to discuss a cash offer.`;
+
+            const channels = [
+              { type: 'sms', message: smsMsg },
+              { type: 'email', message: emailMsg },
+              { type: 'call', message: callMsg }
+            ];
+
+            for (const ch of channels) {
+              const chContacts = uniqueContacts.filter(c => ch.type === 'email' ? !!c.email : !!c.phone).map(c => ({ phone: c.phone, email: c.email, type: c.type }));
+              if (chContacts.length === 0) continue;
+              const { error: followUpError } = await supabase.from('scheduled_followups').insert({
+                property_id: campaign.property_id,
+                campaign_log_id: campaign.id,
+                scheduled_at: scheduledAt,
+                message_type: ch.type,
+                contacts: chContacts,
+                follow_up_message: ch.message
+              });
+              if (followUpError) console.error('Failed to schedule follow-up on email open:', followUpError);
+              else console.log(`Scheduled ${ch.type} follow-up for ${scheduledAt} on email open`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error scheduling follow-ups on email open:', err);
+      }
     } else {
-      console.log(`Email opened again (count: ${campaign.opened_count + 1}) for campaign ${trackingId}`);
+      console.log(`Email opened again (count: ${(campaign.email_open_count || 0) + 1}) for campaign ${trackingId}`);
     }
 
     // Return the tracking pixel
