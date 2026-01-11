@@ -27,6 +27,7 @@ export interface CompanyConfig {
   from_phone_number: string;
   city: string;
   region: string;
+  website?: string;        // ADICIONAR
 }
 
 export interface LLMConfig {
@@ -163,6 +164,9 @@ export interface SavedTemplate {
   channel: Channel;
   subject?: string;
   body: string;
+  content?: string;        // ADICIONAR
+  message_template?: string; // ADICIONAR
+  description?: string;    // ADICIONAR
   is_default: boolean;
   created_at: Date;
   updated_at: Date;

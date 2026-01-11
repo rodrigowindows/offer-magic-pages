@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock, AlertTriangle, Zap, Shield, TestTube, Users, Copy, Info } from 'lucide-react';
+import { Calendar, Clock, AlertTriangle, Zap, Shield, TestTube, Copy, Info } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
@@ -47,7 +47,6 @@ import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  Users,
   Target,
   Settings,
   RefreshCw,
@@ -60,26 +59,10 @@ import {
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplates';
-import type { SavedTemplate, Property, Channel } from '@/types/marketing.types';
-
-interface Property {
-  id: string;
-  address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  owner_name?: string;
-  cash_offer_amount?: number;
-  approval_status?: string;
-  preferred_phones?: string[];  // Root level - from properties table
-  preferred_emails?: string[];  // Root level - from properties table
-  skip_tracing_data?: {
-    preferred_phones?: string[];
-    preferred_emails?: string[];
-  };
-  // Dynamic columns
-  [key: string]: string | number | boolean | null | undefined | object;
-}
+import type { SavedTemplate, Channel } from '@/types/marketing.types';
+import type { Property } from '@/integrations/supabase/types';
+import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
 
 type WizardStep = 'template' | 'properties' | 'configure' | 'preview' | 'send';
 
@@ -114,7 +97,8 @@ export default function CampaignCreator() {
   const [selectedPropertyIds, setSelectedPropertyIds] = useState<string[]>([]);
   const [showSendDialog, setShowSendDialog] = useState(false);
   const [sending, setSending] = useState(false);
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [sendResults, setSendResults] = useState<{success: number, failed: number} | null>(null);
+  const [propertiesList, setPropertiesList] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Load properties from database
@@ -136,7 +120,7 @@ export default function CampaignCreator() {
             variant: 'destructive',
           });
         } else {
-          setProperties(data || []);
+          setPropertiesList(data || []);
         }
       } catch (error) {
         console.error('Error loading properties:', error);
@@ -153,7 +137,7 @@ export default function CampaignCreator() {
     loadProperties();
   }, [toast]);
   const { templates } = useTemplates();
-  const { properties, settings } = useMarketingStore();
+  const { settings } = useMarketingStore();
 
   const steps = [
     { id: 'template', title: 'Choose Template', icon: FileText },
@@ -174,7 +158,7 @@ export default function CampaignCreator() {
   }, [campaignConfig.trackingId]);
 
   const getSelectedProperties = () => {
-    return properties.filter(prop => selectedPropertyIds.includes(prop.id));
+    return propertiesList.filter(prop => selectedPropertyIds.includes(prop.id));
   };
 
   const getAllPhones = (property: Property): string[] => {
@@ -224,7 +208,7 @@ export default function CampaignCreator() {
   };
 
   const generateTemplateContent = (template: SavedTemplate, property: Property) => {
-    let content = template.content;
+    let content = template.body || template.message_template || '';
     let subject = template.subject || '';
 
     // Generate property URL with tracking
@@ -628,7 +612,7 @@ export default function CampaignCreator() {
                                 ))
                               : <Badge variant="destructive" className="text-xs"><AlertTriangle className="w-3 h-3 mr-1" />Sem telefone</Badge>
                             }
-                            <Button size="xs" variant="ghost" className="ml-2 px-2 py-0 h-6">Editar</Button>
+                            <Button size="sm" variant="ghost" className="ml-2 px-2 py-0 h-6">Editar</Button>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-gray-700">
                             <Mail className="w-3 h-3" />
@@ -651,7 +635,7 @@ export default function CampaignCreator() {
                                 ))
                               : <Badge variant="destructive" className="text-xs"><AlertTriangle className="w-3 h-3 mr-1" />Sem email</Badge>
                             }
-                            <Button size="xs" variant="ghost" className="ml-2 px-2 py-0 h-6">Editar</Button>
+                            <Button size="sm" variant="ghost" className="ml-2 px-2 py-0 h-6">Editar</Button>
                           </div>
                         </div>
                       </div>
@@ -887,7 +871,7 @@ export default function CampaignCreator() {
                         <Checkbox
                           checked={campaignConfig.testMode}
                           onCheckedChange={(checked) =>
-                            setCampaignConfig(prev => ({ ...prev, testMode: checked || false }))
+                            setCampaignConfig(prev => ({ ...prev, testMode: Boolean(checked) }))
                           }
                         />
                         <div className="flex items-center gap-2">
@@ -900,7 +884,7 @@ export default function CampaignCreator() {
                         <Checkbox
                           checked={campaignConfig.complianceCheck}
                           onCheckedChange={(checked) =>
-                            setCampaignConfig(prev => ({ ...prev, complianceCheck: checked || false }))
+                            setCampaignConfig(prev => ({ ...prev, complianceCheck: Boolean(checked) }))
                           }
                         />
                         <div className="flex items-center gap-2">
