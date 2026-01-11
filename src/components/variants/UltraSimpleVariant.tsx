@@ -62,7 +62,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                 {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
               </p>
               <h1 className="text-5xl md:text-6xl font-bold text-primary">
-                {offerDisplay}
+                {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || property.estimated_value * 0.7)}
               </h1>
               <p className="text-sm text-muted-foreground mt-2">
                 For {property.address}, {property.city}, {property.state}
