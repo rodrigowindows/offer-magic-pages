@@ -509,7 +509,7 @@ const RealTimeNotifications = () => {
                   {Math.round(
                     notifications.length / Math.max(
                       1,
-                      (Date.now() - Date.parse(notifications[0]?.timestamp || Date.now())) / (1000 * 60 * 60 * 24)
+                      (Date.now() - Date.parse(String(notifications[0]?.timestamp || Date.now()))) / (1000 * 60 * 60 * 24)
                     )
                   )}
                 </p>

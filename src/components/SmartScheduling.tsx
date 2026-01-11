@@ -61,29 +61,20 @@ const SmartScheduling = () => {
     try {
       setLoading(true);
 
-      // Load engagement data from campaign_logs and lead_activities
+      // Load engagement data from campaign_logs
       const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
       const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
       // Get campaign performance by hour
       const { data: campaignData, error: campaignError } = await supabase
         .from('campaign_logs')
-        .select('created_at, channel, sent_at, response_received_at')
-        .gte('created_at', startDate.toISOString());
+        .select('sent_at, channel, first_response_at, link_clicked')
+        .gte('sent_at', startDate.toISOString());
 
       if (campaignError) throw campaignError;
 
-      // Get lead activities by hour
-      const { data: activityData, error: activityError } = await supabase
-        .from('lead_activities')
-        .select('created_at, channel, activity_type')
-        .gte('created_at', startDate.toISOString())
-        .in('activity_type', ['click', 'email_open', 'sms_response']);
-
-      if (activityError) throw activityError;
-
       // Process and aggregate data
-      const processedData = processEngagementData(campaignData || [], activityData || []);
+      const processedData = processEngagementData(campaignData || []);
       setEngagementData(processedData);
 
       // Calculate optimal times
@@ -102,377 +93,245 @@ const SmartScheduling = () => {
     }
   };
 
-  const processEngagementData = (campaigns: any[], activities: any[]): EngagementData[] => {
-    const hourlyData: Record<string, EngagementData> = {};
+  const processEngagementData = (campaignData: any[]): EngagementData[] => {
+    // Group by hour and day
+    const hourlyData: Record<string, { sends: number; responses: number; channel: string }> = {};
 
-    // Process campaign data
-    campaigns.forEach(campaign => {
-      const date = new Date(campaign.created_at);
+    campaignData.forEach(item => {
+      const date = new Date(item.sent_at);
       const hour = date.getHours();
       const dayOfWeek = date.getDay();
-      const key = `${dayOfWeek}-${hour}-${campaign.channel}`;
+      const channel = item.channel || 'sms';
+      const key = `${hour}-${dayOfWeek}-${channel}`;
 
       if (!hourlyData[key]) {
-        hourlyData[key] = {
-          hour,
-          day_of_week: dayOfWeek,
-          channel: campaign.channel,
-          engagement_rate: 0,
-          total_sends: 0,
-          total_responses: 0
-        };
+        hourlyData[key] = { sends: 0, responses: 0, channel };
       }
 
-      hourlyData[key].total_sends++;
-      if (campaign.response_received_at) {
-        hourlyData[key].total_responses++;
+      hourlyData[key].sends++;
+      if (item.link_clicked || item.first_response_at) {
+        hourlyData[key].responses++;
       }
     });
 
-    // Process activity data
-    activities.forEach(activity => {
-      const date = new Date(activity.created_at);
-      const hour = date.getHours();
-      const dayOfWeek = date.getDay();
-      const key = `${dayOfWeek}-${hour}-${activity.channel}`;
-
-      if (!hourlyData[key]) {
-        hourlyData[key] = {
-          hour,
-          day_of_week: dayOfWeek,
-          channel: activity.channel,
-          engagement_rate: 0,
-          total_sends: 0,
-          total_responses: 0
-        };
-      }
-
-      hourlyData[key].total_responses++;
+    // Convert to array format
+    return Object.entries(hourlyData).map(([key, data]) => {
+      const [hour, dayOfWeek] = key.split('-').map(Number);
+      return {
+        hour,
+        day_of_week: dayOfWeek,
+        channel: data.channel,
+        engagement_rate: data.sends > 0 ? (data.responses / data.sends) * 100 : 0,
+        total_sends: data.sends,
+        total_responses: data.responses
+      };
     });
-
-    // Calculate engagement rates
-    return Object.values(hourlyData).map(data => ({
-      ...data,
-      engagement_rate: data.total_sends > 0 ? (data.total_responses / data.total_sends) * 100 : 0
-    }));
   };
 
   const calculateOptimalTimes = (data: EngagementData[], channel: string): OptimalTime[] => {
-    const filteredData = channel === 'all' ? data : data.filter(d => d.channel === channel);
+    // Filter by channel if needed
+    const filteredData = channel === 'all' 
+      ? data 
+      : data.filter(d => d.channel === channel);
 
-    // Group by hour and calculate average engagement
-    const hourlyStats: Record<number, { totalRate: number, count: number, confidence: number }> = {};
+    // Calculate scores for each time slot
+    const timeSlots: OptimalTime[] = [];
 
-    filteredData.forEach(item => {
-      if (!hourlyStats[item.hour]) {
-        hourlyStats[item.hour] = { totalRate: 0, count: 0, confidence: 0 };
+    for (let hour = 0; hour < 24; hour++) {
+      for (let day = 0; day < 7; day++) {
+        const slotData = filteredData.filter(d => d.hour === hour && d.day_of_week === day);
+        
+        if (slotData.length > 0) {
+          const totalSends = slotData.reduce((sum, d) => sum + d.total_sends, 0);
+          const totalResponses = slotData.reduce((sum, d) => sum + d.total_responses, 0);
+          const avgEngagement = slotData.reduce((sum, d) => sum + d.engagement_rate, 0) / slotData.length;
+          
+          timeSlots.push({
+            hour,
+            dayOfWeek: day,
+            channel: channel === 'all' ? 'all' : channel,
+            score: avgEngagement,
+            confidence: Math.min(totalSends / 10, 1) * 100 // Confidence based on sample size
+          });
+        }
       }
-      hourlyStats[item.hour].totalRate += item.engagement_rate;
-      hourlyStats[item.hour].count++;
-    });
+    }
 
-    // Calculate averages and confidence scores
-    const optimalTimes: OptimalTime[] = Object.entries(hourlyStats)
-      .map(([hour, stats]) => ({
-        hour: parseInt(hour),
-        dayOfWeek: 0, // General optimal hour across days
-        channel,
-        score: stats.totalRate / stats.count,
-        confidence: Math.min(100, stats.count * 10) // Confidence based on sample size
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5); // Top 5 optimal times
-
-    return optimalTimes;
+    // Sort by score descending
+    return timeSlots.sort((a, b) => b.score - a.score).slice(0, 10);
   };
 
-  const getHourLabel = (hour: number) => {
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:00 ${period}`;
-  };
-
-  const getDayLabel = (day: number) => {
+  const getDayName = (day: number): string => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     return days[day];
   };
 
-  const getEngagementColor = (rate: number) => {
-    if (rate >= 70) return 'bg-green-500';
-    if (rate >= 50) return 'bg-yellow-500';
-    if (rate >= 30) return 'bg-orange-500';
-    return 'bg-red-500';
+  const formatHour = (hour: number): string => {
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:00 ${ampm}`;
   };
 
-  const getConfidenceLabel = (confidence: number) => {
-    if (confidence >= 80) return 'High';
-    if (confidence >= 60) return 'Medium';
-    return 'Low';
+  const getTimeIcon = (hour: number) => {
+    if (hour >= 6 && hour < 18) {
+      return <Sun className="h-4 w-4 text-yellow-500" />;
+    }
+    return <Moon className="h-4 w-4 text-blue-400" />;
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Smart Scheduling Optimizer</h2>
-          <p className="text-muted-foreground">AI-powered optimal send times based on engagement data</p>
-        </div>
-        <Button onClick={loadEngagementData} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Data
-        </Button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4">
-        <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by channel" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Channels</SelectItem>
-            <SelectItem value="sms">SMS Only</SelectItem>
-            <SelectItem value="email">Email Only</SelectItem>
-            <SelectItem value="call">Call Only</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={timeRange} onValueChange={setTimeRange}>
-          <SelectTrigger className="w-32">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7d">Last 7 days</SelectItem>
-            <SelectItem value="30d">Last 30 days</SelectItem>
-            <SelectItem value="90d">Last 90 days</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Optimal Times */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            Optimal Send Times
-          </CardTitle>
-          <CardDescription>
-            Best times to send messages based on historical engagement data
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-yellow-500" />
+                Smart Scheduling
+              </CardTitle>
+              <CardDescription>
+                AI-optimized send times based on engagement data
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadEngagementData}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {optimalTimes.map((time, index) => (
-              <Card key={index} className="border-2 border-primary/20">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant="outline" className="text-lg px-3 py-1">
-                      #{index + 1}
-                    </Badge>
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Confidence</div>
-                      <Badge variant={time.confidence >= 70 ? "default" : "secondary"}>
-                        {getConfidenceLabel(time.confidence)}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span className="font-semibold">{getHourLabel(time.hour)}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-green-600" />
-                      <span className="text-sm">
-                        {time.score.toFixed(1)}% engagement rate
-                      </span>
-                    </div>
-
-                    <Progress value={time.score} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex gap-4 mb-6">
+            <Select value={selectedChannel} onValueChange={setSelectedChannel}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Channel" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Channels</SelectItem>
+                <SelectItem value="sms">SMS</SelectItem>
+                <SelectItem value="email">Email</SelectItem>
+                <SelectItem value="call">Phone</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Time Range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Last 7 days</SelectItem>
+                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : optimalTimes.length === 0 ? (
+            <Alert>
+              <Lightbulb className="h-4 w-4" />
+              <AlertDescription>
+                Not enough data to calculate optimal times. Send more campaigns to get recommendations.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-4">
+              <h3 className="font-medium flex items-center gap-2">
+                <Target className="h-4 w-4" />
+                Top Recommended Times
+              </h3>
+              
+              <div className="grid gap-3">
+                {optimalTimes.slice(0, 5).map((time, index) => (
+                  <div 
+                    key={`${time.hour}-${time.dayOfWeek}`}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Badge variant={index === 0 ? 'default' : 'secondary'}>
+                        #{index + 1}
+                      </Badge>
+                      {getTimeIcon(time.hour)}
+                      <div>
+                        <p className="font-medium">
+                          {getDayName(time.dayOfWeek)} at {formatHour(time.hour)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {time.score.toFixed(1)}% engagement rate
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">Confidence</p>
+                        <Progress value={time.confidence} className="w-20 h-2" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="heatmap" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="heatmap">Engagement Heatmap</TabsTrigger>
-          <TabsTrigger value="trends">Time Trends</TabsTrigger>
-          <TabsTrigger value="insights">AI Insights</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="heatmap" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Engagement Heatmap by Hour</CardTitle>
-              <CardDescription>
-                Engagement rates by hour of day (higher = better)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-24 gap-1">
-                {Array.from({ length: 24 }, (_, hour) => {
-                  const hourData = engagementData.filter(d => d.hour === hour);
-                  const avgEngagement = hourData.length > 0
-                    ? hourData.reduce((sum, d) => sum + d.engagement_rate, 0) / hourData.length
-                    : 0;
-
-                  return (
-                    <div
-                      key={hour}
-                      className={`h-8 rounded text-xs flex items-center justify-center text-white font-medium ${getEngagementColor(avgEngagement)}`}
-                      title={`${getHourLabel(hour)}: ${avgEngagement.toFixed(1)}% engagement`}
-                    >
-                      {avgEngagement > 20 ? hour : ''}
-                    </div>
-                  );
-                })}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Engagement Heatmap
+          </CardTitle>
+          <CardDescription>
+            View engagement patterns across different times and days
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="overview">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="sms">
+                <Phone className="h-4 w-4 mr-1" />
+                SMS
+              </TabsTrigger>
+              <TabsTrigger value="email">
+                <Mail className="h-4 w-4 mr-1" />
+                Email
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="overview" className="pt-4">
+              <div className="text-center text-muted-foreground py-8">
+                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Engagement heatmap visualization</p>
+                <p className="text-sm">Based on {engagementData.length} data points</p>
               </div>
-              <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                <span>12 AM</span>
-                <span>6 AM</span>
-                <span>12 PM</span>
-                <span>6 PM</span>
-                <span>11 PM</span>
+            </TabsContent>
+            
+            <TabsContent value="sms" className="pt-4">
+              <div className="text-center text-muted-foreground py-8">
+                <Phone className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>SMS engagement patterns</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="trends" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Engagement Trends by Day</CardTitle>
-              <CardDescription>
-                How engagement varies throughout the week
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Array.from({ length: 7 }, (_, day) => {
-                  const dayData = engagementData.filter(d => d.day_of_week === day);
-                  const avgEngagement = dayData.length > 0
-                    ? dayData.reduce((sum, d) => sum + d.engagement_rate, 0) / dayData.length
-                    : 0;
-
-                  return (
-                    <div key={day} className="flex items-center gap-4">
-                      <div className="w-20 text-sm font-medium">
-                        {getDayLabel(day)}
-                      </div>
-                      <div className="flex-1">
-                        <Progress value={avgEngagement} className="h-3" />
-                      </div>
-                      <div className="w-16 text-sm text-right">
-                        {avgEngagement.toFixed(1)}%
-                      </div>
-                    </div>
-                  );
-                })}
+            </TabsContent>
+            
+            <TabsContent value="email" className="pt-4">
+              <div className="text-center text-muted-foreground py-8">
+                <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Email engagement patterns</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="insights" className="space-y-4">
-          <Alert>
-            <Lightbulb className="h-4 w-4" />
-            <AlertDescription>
-              <strong>AI Scheduling Insights:</strong> Your best engagement times are between 9 AM - 11 AM and 7 PM - 9 PM.
-              SMS campaigns perform 35% better during morning hours, while emails see higher open rates in the evening.
-            </AlertDescription>
-          </Alert>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Sun className="h-5 w-5 text-yellow-500" />
-                  Peak Morning Hours
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>9:00 AM - 11:00 AM</span>
-                    <Badge>High Priority</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    42% higher response rate for SMS campaigns
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Moon className="h-5 w-5 text-blue-500" />
-                  Peak Evening Hours
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>7:00 PM - 9:00 PM</span>
-                    <Badge>High Priority</Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    28% higher email open rates
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Automated Scheduling Recommendations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 p-3 border rounded">
-                  <Zap className="h-5 w-5 text-green-500 mt-0.5" />
-                  <div>
-                    <div className="font-medium">SMS Campaigns</div>
-                    <div className="text-sm text-muted-foreground">
-                      Schedule between 9:00 AM - 11:00 AM for maximum response rates
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 border rounded">
-                  <Mail className="h-5 w-5 text-blue-500 mt-0.5" />
-                  <div>
-                    <div className="font-medium">Email Campaigns</div>
-                    <div className="text-sm text-muted-foreground">
-                      Best sent between 7:00 PM - 9:00 PM for higher open rates
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-3 border rounded">
-                  <Phone className="h-5 w-5 text-orange-500 mt-0.5" />
-                  <div>
-                    <div className="font-medium">Call Campaigns</div>
-                    <div className="text-sm text-muted-foreground">
-                      Weekdays 10:00 AM - 4:00 PM show 40% higher connect rates
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export { SmartScheduling };
+export default SmartScheduling;

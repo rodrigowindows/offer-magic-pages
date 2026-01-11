@@ -193,24 +193,26 @@ export const OfferCreationForm = ({
           state: formData.state,
           zipCode: formData.zipCode,
           propertyType: formData.propertyType,
-          bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
-          bathrooms: formData.bathrooms ? parseFloat(formData.bathrooms) : undefined,
-          squareFeet: formData.squareFeet ? parseInt(formData.squareFeet) : undefined
-        }
+          bedrooms: formData.bedrooms ? parseInt(String(formData.bedrooms)) : undefined,
+          bathrooms: formData.bathrooms ? parseFloat(String(formData.bathrooms)) : undefined,
+          squareFeet: formData.squareFeet ? parseInt(String(formData.squareFeet)) : undefined
+        },
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
       };
 
       const result = await PropertyOfferService.createOffer(offerData);
 
-      if (result.success && result.data) {
+      // createOffer returns the offer directly, not a response object
+      if (result) {
         toast({
           title: "Offer Saved",
           description: "Offer has been saved as draft"
         });
-        onSave?.(result.data);
+        onSave?.(result);
       } else {
         toast({
           title: "Error",
-          description: result.error || "Failed to save offer",
+          description: "Failed to save offer",
           variant: "destructive"
         });
       }
@@ -256,7 +258,7 @@ export const OfferCreationForm = ({
           title: "Offer Sent",
           description: "Offer campaign has been sent successfully"
         });
-        onSend?.(result.data!);
+        onSend?.(result.offerId || '');
       } else {
         toast({
           title: "Error",

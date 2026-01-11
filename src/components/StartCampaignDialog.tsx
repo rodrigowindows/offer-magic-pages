@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,7 +57,7 @@ interface CampaignConfig {
   scheduleType: 'immediate' | 'scheduled' | 'drip';
   scheduledDate?: string;
   dripConfig?: {
-    interval: number; // days
+    interval: number;
     totalMessages: number;
   };
   targetSegment: 'selected' | 'all_filtered' | 'smart_segment';
@@ -119,49 +119,29 @@ export const StartCampaignDialog = ({
 
     setLoading(true);
     try {
-      // Create campaign record
-      const { data: campaign, error: campaignError } = await supabase
-        .from('campaigns')
-        .insert({
-          name: config.name,
-          description: config.description,
-          channel: config.channel,
-          status: config.scheduleType === 'immediate' ? 'running' : 'scheduled',
-          config: config,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-          scheduled_at: config.scheduleType === 'scheduled' ? config.scheduledDate : null,
-        })
-        .select()
-        .single();
+      // Use campaign_logs to track campaigns since 'campaigns' table doesn't exist
+      let targetProperties = selectedProperties;
 
-      if (campaignError) throw campaignError;
-
-      // Create campaign targets
-      let targetProperties = [];
-
-      if (config.targetSegment === 'selected') {
-        targetProperties = selectedProperties;
-      } else if (config.targetSegment === 'all_filtered') {
-        // This would need to be implemented based on current filters
-        // For now, use selected properties
-        targetProperties = selectedProperties;
-      }
-
-      const campaignTargets = targetProperties.map(propertyId => ({
-        campaign_id: campaign.id,
+      // Create campaign log entries for each target
+      const campaignLogs = targetProperties.map(propertyId => ({
         property_id: propertyId,
-        status: 'pending',
+        campaign_type: config.name,
+        channel: config.channel,
+        sent_at: new Date().toISOString(),
+        metadata: JSON.parse(JSON.stringify({
+          schedule_type: config.scheduleType,
+          scheduled_date: config.scheduledDate || null,
+          settings: config.settings,
+        })),
       }));
 
-      const { error: targetsError } = await supabase
-        .from('campaign_targets')
-        .insert(campaignTargets);
+      const { error: logsError } = await supabase
+        .from('campaign_logs')
+        .insert(campaignLogs);
 
-      if (targetsError) throw targetsError;
+      if (logsError) throw logsError;
 
-      // If immediate, start processing
       if (config.scheduleType === 'immediate') {
-        // Trigger campaign processing (this would be handled by a backend function)
         toast({
           title: "Campaign started!",
           description: `Campaign "${config.name}" is now running with ${targetProperties.length} properties.`,
@@ -173,7 +153,7 @@ export const StartCampaignDialog = ({
         });
       }
 
-      onCampaignStarted?.(campaign.id.toString());
+      onCampaignStarted?.(config.name);
       onOpenChange(false);
 
       // Reset form
@@ -196,7 +176,7 @@ export const StartCampaignDialog = ({
     } catch (error) {
       console.error('Error starting campaign:', error);
       toast({
-        title: "Error",
+        title: "Campaign failed",
         description: "Failed to start campaign. Please try again.",
         variant: "destructive",
       });
@@ -205,397 +185,275 @@ export const StartCampaignDialog = ({
     }
   };
 
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1);
-  };
-
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
-  const getStepTitle = () => {
-    switch (step) {
-      case 1: return "Campaign Basics";
-      case 2: return "Content & Targeting";
-      case 3: return "Schedule & Settings";
-      default: return "Campaign Setup";
-    }
-  };
-
-  const getStepDescription = () => {
-    switch (step) {
-      case 1: return "Set up the basic information for your campaign";
-      case 2: return "Choose your message and target audience";
-      case 3: return "Configure timing and advanced settings";
-      default: return "";
+  const getChannelIcon = (channel: string) => {
+    switch (channel) {
+      case 'email': return <Mail className="h-4 w-4" />;
+      case 'sms': return <MessageSquare className="h-4 w-4" />;
+      case 'call': return <Phone className="h-4 w-4" />;
+      default: return null;
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Rocket className="h-5 w-5" />
             Start New Campaign
           </DialogTitle>
           <DialogDescription>
-            {getStepDescription()}
+            Configure and launch your marketing campaign
           </DialogDescription>
         </DialogHeader>
 
-        {/* Progress indicator */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="flex items-center space-x-4">
-            {[1, 2, 3].map((stepNum) => (
-              <div key={stepNum} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step >= stepNum
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {stepNum}
-                </div>
-                {stepNum < 3 && (
-                  <div
-                    className={`w-12 h-0.5 mx-2 ${
-                      step > stepNum ? 'bg-primary' : 'bg-muted'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <Tabs value={`step-${step}`} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="step-1" onClick={() => setStep(1)}>
+              <span className="flex items-center gap-2">
+                <Badge variant={step >= 1 ? "default" : "secondary"}>1</Badge>
+                Basics
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="step-2" onClick={() => setStep(2)}>
+              <span className="flex items-center gap-2">
+                <Badge variant={step >= 2 ? "default" : "secondary"}>2</Badge>
+                Content
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="step-3" onClick={() => setStep(3)}>
+              <span className="flex items-center gap-2">
+                <Badge variant={step >= 3 ? "default" : "secondary"}>3</Badge>
+                Schedule
+              </span>
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="space-y-6">
-          {step === 1 && (
-            <div className="space-y-4">
+          <TabsContent value="step-1" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="campaign-name">Campaign Name</Label>
+              <Input
+                id="campaign-name"
+                placeholder="e.g., Spring Outreach 2024"
+                value={config.name}
+                onChange={(e) => setConfig({ ...config, name: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="campaign-desc">Description (optional)</Label>
+              <Textarea
+                id="campaign-desc"
+                placeholder="Brief description of campaign goals..."
+                value={config.description}
+                onChange={(e) => setConfig({ ...config, description: e.target.value })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Channel</Label>
+              <RadioGroup
+                value={config.channel}
+                onValueChange={(value) => setConfig({ ...config, channel: value as any })}
+                className="grid grid-cols-3 gap-4"
+              >
+                <div>
+                  <RadioGroupItem value="email" id="email" className="peer sr-only" />
+                  <Label
+                    htmlFor="email"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Mail className="h-6 w-6 mb-2" />
+                    Email
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="sms" id="sms" className="peer sr-only" />
+                  <Label
+                    htmlFor="sms"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <MessageSquare className="h-6 w-6 mb-2" />
+                    SMS
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="call" id="call" className="peer sr-only" />
+                  <Label
+                    htmlFor="call"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Phone className="h-6 w-6 mb-2" />
+                    Call
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="flex justify-end">
+              <Button onClick={() => setStep(2)}>Next</Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="step-2" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Select Template</Label>
+              <Select
+                value={config.templateId}
+                onValueChange={(value) => setConfig({ ...config, templateId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a template..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {channelTemplates.map((template) => (
+                    <SelectItem key={template.id} value={template.id}>
+                      {template.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="custom-message">Or write custom message</Label>
+              <Textarea
+                id="custom-message"
+                placeholder="Your custom message here..."
+                value={config.customMessage}
+                onChange={(e) => setConfig({ ...config, customMessage: e.target.value })}
+                rows={4}
+              />
+              <p className="text-sm text-muted-foreground">
+                Available variables: {'{'}name{'}'}, {'{'}address{'}'}, {'{'}offer_amount{'}'}
+              </p>
+            </div>
+
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+              <Button onClick={() => setStep(3)}>Next</Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="step-3" className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Schedule Type</Label>
+              <RadioGroup
+                value={config.scheduleType}
+                onValueChange={(value) => setConfig({ ...config, scheduleType: value as any })}
+                className="space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="immediate" id="immediate" />
+                  <Label htmlFor="immediate" className="flex items-center gap-2 cursor-pointer">
+                    <Zap className="h-4 w-4 text-yellow-500" />
+                    Send immediately
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="scheduled" id="scheduled" />
+                  <Label htmlFor="scheduled" className="flex items-center gap-2 cursor-pointer">
+                    <Calendar className="h-4 w-4" />
+                    Schedule for later
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="drip" id="drip" />
+                  <Label htmlFor="drip" className="flex items-center gap-2 cursor-pointer">
+                    <Clock className="h-4 w-4" />
+                    Drip campaign
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {config.scheduleType === 'scheduled' && (
               <div className="space-y-2">
-                <Label htmlFor="campaign-name">Campaign Name *</Label>
+                <Label htmlFor="schedule-date">Scheduled Date & Time</Label>
                 <Input
-                  id="campaign-name"
-                  value={config.name}
-                  onChange={(e) => setConfig({ ...config, name: e.target.value })}
-                  placeholder="e.g., Miami Properties Q1 2026"
+                  id="schedule-date"
+                  type="datetime-local"
+                  value={config.scheduledDate}
+                  onChange={(e) => setConfig({ ...config, scheduledDate: e.target.value })}
                 />
               </div>
+            )}
 
-              <div className="space-y-2">
-                <Label htmlFor="campaign-description">Description</Label>
-                <Textarea
-                  id="campaign-description"
-                  value={config.description}
-                  onChange={(e) => setConfig({ ...config, description: e.target.value })}
-                  placeholder="Brief description of this campaign..."
-                  rows={3}
-                />
-              </div>
+            <Separator />
 
-              <div className="space-y-2">
-                <Label>Communication Channel</Label>
-                <RadioGroup
-                  value={config.channel}
-                  onValueChange={(value: 'email' | 'sms' | 'call') =>
-                    setConfig({ ...config, channel: value })
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="email" id="email" />
-                    <Label htmlFor="email" className="flex items-center gap-2 cursor-pointer">
-                      <Mail className="h-4 w-4" />
-                      Email
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="sms" id="sms" />
-                    <Label htmlFor="sms" className="flex items-center gap-2 cursor-pointer">
-                      <MessageSquare className="h-4 w-4" />
-                      SMS
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="call" id="call" />
-                    <Label htmlFor="call" className="flex items-center gap-2 cursor-pointer">
-                      <Phone className="h-4 w-4" />
-                      Phone Call
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Message Template</Label>
-                <Select
-                  value={config.templateId}
-                  onValueChange={(value) => setConfig({ ...config, templateId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a template or create custom message" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Custom Message</SelectItem>
-                    {channelTemplates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {!config.templateId && (
-                <div className="space-y-2">
-                  <Label htmlFor="custom-message">Custom Message</Label>
-                  <Textarea
-                    id="custom-message"
-                    value={config.customMessage}
-                    onChange={(e) => setConfig({ ...config, customMessage: e.target.value })}
-                    placeholder="Enter your message here..."
-                    rows={5}
-                  />
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label>Target Audience</Label>
-                <RadioGroup
-                  value={config.targetSegment}
-                  onValueChange={(value: 'selected' | 'all_filtered' | 'smart_segment') =>
-                    setConfig({ ...config, targetSegment: value })
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="selected" id="selected" />
-                    <Label htmlFor="selected" className="cursor-pointer">
-                      Selected Properties ({selectedProperties.length})
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="all_filtered" id="all_filtered" />
-                    <Label htmlFor="all_filtered" className="cursor-pointer">
-                      All Currently Filtered Properties
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="smart_segment" id="smart_segment" />
-                    <Label htmlFor="smart_segment" className="cursor-pointer">
-                      Smart Segment (AI-powered targeting)
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Schedule Type</Label>
-                <RadioGroup
-                  value={config.scheduleType}
-                  onValueChange={(value: 'immediate' | 'scheduled' | 'drip') =>
-                    setConfig({ ...config, scheduleType: value })
-                  }
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="immediate" id="immediate" />
-                    <Label htmlFor="immediate" className="flex items-center gap-2 cursor-pointer">
-                      <Zap className="h-4 w-4" />
-                      Send Immediately
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="scheduled" id="scheduled" />
-                    <Label htmlFor="scheduled" className="flex items-center gap-2 cursor-pointer">
-                      <Calendar className="h-4 w-4" />
-                      Schedule for Later
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="drip" id="drip" />
-                    <Label htmlFor="drip" className="flex items-center gap-2 cursor-pointer">
-                      <Clock className="h-4 w-4" />
-                      Drip Campaign
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {config.scheduleType === 'scheduled' && (
-                <div className="space-y-2">
-                  <Label htmlFor="scheduled-date">Scheduled Date & Time</Label>
-                  <Input
-                    id="scheduled-date"
-                    type="datetime-local"
-                    value={config.scheduledDate}
-                    onChange={(e) => setConfig({ ...config, scheduledDate: e.target.value })}
-                  />
-                </div>
-              )}
-
-              {config.scheduleType === 'drip' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="drip-interval">Days Between Messages</Label>
-                    <Input
-                      id="drip-interval"
-                      type="number"
-                      value={config.dripConfig?.interval || 3}
-                      onChange={(e) => setConfig({
-                        ...config,
-                        dripConfig: {
-                          ...config.dripConfig,
-                          interval: parseInt(e.target.value) || 3
-                        }
-                      })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="drip-total">Total Messages</Label>
-                    <Input
-                      id="drip-total"
-                      type="number"
-                      value={config.dripConfig?.totalMessages || 3}
-                      onChange={(e) => setConfig({
-                        ...config,
-                        dripConfig: {
-                          ...config.dripConfig,
-                          totalMessages: parseInt(e.target.value) || 3
-                        }
-                      })}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="space-y-4">
-                <h4 className="font-medium flex items-center gap-2">
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center gap-2">
                   <Settings className="h-4 w-4" />
-                  Advanced Settings
-                </h4>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="batch-size">Batch Size</Label>
-                    <Input
-                      id="batch-size"
-                      type="number"
-                      value={config.settings.batchSize}
-                      onChange={(e) => setConfig({
-                        ...config,
-                        settings: {
-                          ...config.settings,
-                          batchSize: parseInt(e.target.value) || 10
-                        }
-                      })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="batch-delay">Delay Between Batches (min)</Label>
-                    <Input
-                      id="batch-delay"
-                      type="number"
-                      value={config.settings.delayBetweenBatches}
-                      onChange={(e) => setConfig({
-                        ...config,
-                        settings: {
-                          ...config.settings,
-                          delayBetweenBatches: parseInt(e.target.value) || 5
-                        }
-                      })}
-                    />
-                  </div>
+                  Campaign Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="track-opens"
+                    checked={config.settings.trackOpens}
+                    onCheckedChange={(checked) => 
+                      setConfig({ 
+                        ...config, 
+                        settings: { ...config.settings, trackOpens: !!checked } 
+                      })
+                    }
+                  />
+                  <Label htmlFor="track-opens">Track opens</Label>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="respect-limits"
-                      checked={config.settings.respectLimits}
-                      onCheckedChange={(checked) => setConfig({
-                        ...config,
-                        settings: {
-                          ...config.settings,
-                          respectLimits: checked as boolean
-                        }
-                      })}
-                    />
-                    <Label htmlFor="respect-limits">Respect daily sending limits</Label>
-                  </div>
-
-                  {config.channel === 'email' && (
-                    <>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="track-opens"
-                          checked={config.settings.trackOpens}
-                          onCheckedChange={(checked) => setConfig({
-                            ...config,
-                            settings: {
-                              ...config.settings,
-                              trackOpens: checked as boolean
-                            }
-                          })}
-                        />
-                        <Label htmlFor="track-opens">Track email opens</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="track-clicks"
-                          checked={config.settings.trackClicks}
-                          onCheckedChange={(checked) => setConfig({
-                            ...config,
-                            settings: {
-                              ...config.settings,
-                              trackClicks: checked as boolean
-                            }
-                          })}
-                        />
-                        <Label htmlFor="track-clicks">Track link clicks</Label>
-                      </div>
-                    </>
-                  )}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="track-clicks"
+                    checked={config.settings.trackClicks}
+                    onCheckedChange={(checked) => 
+                      setConfig({ 
+                        ...config, 
+                        settings: { ...config.settings, trackClicks: !!checked } 
+                      })
+                    }
+                  />
+                  <Label htmlFor="track-clicks">Track clicks</Label>
                 </div>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="respect-limits"
+                    checked={config.settings.respectLimits}
+                    onCheckedChange={(checked) => 
+                      setConfig({ 
+                        ...config, 
+                        settings: { ...config.settings, respectLimits: !!checked } 
+                      })
+                    }
+                  />
+                  <Label htmlFor="respect-limits">Respect sending limits</Label>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-medium flex items-center gap-2 mb-2">
+                <Target className="h-4 w-4" />
+                Campaign Summary
+              </h4>
+              <ul className="text-sm space-y-1">
+                <li>• <strong>Channel:</strong> {config.channel.toUpperCase()}</li>
+                <li>• <strong>Properties:</strong> {selectedProperties.length} selected</li>
+                <li>• <strong>Schedule:</strong> {config.scheduleType === 'immediate' ? 'Immediate' : config.scheduleType}</li>
+              </ul>
             </div>
-          )}
-        </div>
 
-        <DialogFooter className="flex justify-between">
-          <div>
-            {step > 1 && (
-              <Button variant="outline" onClick={prevStep}>
-                Previous
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+              <Button onClick={startCampaign} disabled={loading}>
+                {loading ? 'Starting...' : 'Start Campaign'}
+                <Play className="h-4 w-4 ml-2" />
               </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            {step < 3 ? (
-              <Button onClick={nextStep}>
-                Next
-              </Button>
-            ) : (
-              <Button onClick={startCampaign} disabled={loading} className="gap-2">
-                <Play className="h-4 w-4" />
-                {config.scheduleType === 'immediate' ? 'Start Campaign' : 'Schedule Campaign'}
-              </Button>
-            )}
-          </div>
-        </DialogFooter>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
