@@ -23,6 +23,7 @@ import { AutomatedABTesting } from './AutomatedABTesting';
 import { ABTestAnalytics } from '@/components/ABTestAnalytics';
 import TemplateManager from './TemplateManager';
 import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
+import { ClicksAnalytics } from './ClicksAnalytics';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -91,7 +92,7 @@ const MarketingAppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/quick" element={<SimpleCampaignDashboard />} />
             <Route path="/campaigns" element={<CampaignManager />} />
-            <Route path="/analytics" element={<Dashboard />} />
+            <Route path="/analytics" element={<ClicksAnalytics />} />
             <Route path="/ab-testing" element={<ABTestAnalytics />} />
             <Route path="/follow-ups" element={<Dashboard />} />
             <Route path="/webhooks" element={<AdvancedWebhookManager />} />

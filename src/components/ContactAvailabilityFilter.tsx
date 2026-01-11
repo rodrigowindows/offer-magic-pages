@@ -13,12 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Phone, Mail, Filter } from "lucide-react";
+import { Phone, Mail, Filter, X } from "lucide-react";
 
 export interface ContactFilters {
   hasPhone?: boolean;
   hasEmail?: boolean;
   hasPreferredContacts?: boolean;
+  noSkiptraceData?: boolean;
 }
 
 interface ContactAvailabilityFilterProps {
@@ -27,6 +28,7 @@ interface ContactAvailabilityFilterProps {
   phonesCount?: number;
   emailsCount?: number;
   preferredCount?: number;
+  noSkiptraceCount?: number;
 }
 
 export const ContactAvailabilityFilter = ({
@@ -35,6 +37,7 @@ export const ContactAvailabilityFilter = ({
   phonesCount = 0,
   emailsCount = 0,
   preferredCount = 0,
+  noSkiptraceCount = 0,
 }: ContactAvailabilityFilterProps) => {
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
 
@@ -109,6 +112,19 @@ export const ContactAvailabilityFilter = ({
             )}
           </DropdownMenuCheckboxItem>
 
+          <DropdownMenuCheckboxItem
+            checked={filters.noSkiptraceData === true}
+            onCheckedChange={() => toggleFilter('noSkiptraceData')}
+          >
+            <X className="h-4 w-4 mr-2" />
+            No Skiptrace Data
+            {noSkiptraceCount > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {noSkiptraceCount}
+              </Badge>
+            )}
+          </DropdownMenuCheckboxItem>
+
           {activeFiltersCount > 0 && (
             <>
               <DropdownMenuSeparator />
@@ -146,6 +162,12 @@ export const ContactAvailabilityFilter = ({
             <Badge variant="secondary" className="gap-1">
               <Filter className="h-3 w-3" />
               Preferred Set
+            </Badge>
+          )}
+          {filters.noSkiptraceData && (
+            <Badge variant="secondary" className="gap-1">
+              <X className="h-3 w-3" />
+              No Skiptrace
             </Badge>
           )}
         </div>

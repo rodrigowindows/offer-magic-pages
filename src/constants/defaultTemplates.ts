@@ -9,10 +9,10 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
   // ===== SMS TEMPLATES =====
   {
     id: 'sms-cash-offer-default',
-    name: 'Oferta Cash Padrão',
+    name: 'Cash Offer Standard',
     channel: 'sms',
     subject: '',
-    body: 'Olá {name}! Oferta de ${cash_offer} pela sua casa em {address}. Válido por 7 dias. Veja detalhes: {property_url} Ligue: {phone}',
+    body: 'Hi {name}! {cash_offer} cash offer for your home at {address}. Valid for 7 days. See details: {property_url} Call: {phone}',
     is_default: true,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -22,17 +22,17 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     name: 'Follow-up SMS',
     channel: 'sms',
     subject: '',
-    body: 'Oi {name}, nossa oferta de ${cash_offer} pela {address} ainda está de pé. Podemos fechar rápido! Detalhes: {property_url} Ligue: {phone}',
+    body: 'Hi {name}, our {cash_offer} offer for {address} is still available. We can close fast! Details: {property_url} Call: {phone}',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
   },
   {
     id: 'sms-urgent',
-    name: 'SMS Urgente',
+    name: 'Urgent SMS',
     channel: 'sms',
     subject: '',
-    body: '🚨 ÚLTIMA CHANCE: Oferta ${cash_offer} expira hoje! Veja agora: {property_url} Ligue AGORA: {phone}',
+    body: '🚨 LAST CHANCE: {cash_offer} offer expires today! View now: {property_url} Call NOW: {phone}',
     is_default: false,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-01'),
@@ -41,7 +41,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
   // ===== EMAIL TEMPLATES =====
   {
     id: 'email-cash-offer-default',
-    name: 'Oferta Cash Profissional',
+    name: 'Professional Cash Offer',
     channel: 'email',
     subject: 'Cash Offer for Your Property at {address}',
     body: `<!DOCTYPE html>
@@ -69,6 +69,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
         <div style="text-align: center; margin: 30px 0;">
           <p style="font-size: 14px; color: #666; margin: 0;">Our Cash Offer</p>
           <p style="font-size: 36px; color: #28a745; font-weight: bold; margin: 10px 0;">{cash_offer}</p>
+          <p style="font-size: 12px; color: #666; margin: 5px 0 0;">Estimated Property Value: {estimated_value}</p>
         </div>
         <p style="font-size: 16px; color: #333; line-height: 1.6;">This offer is valid for 7 days. Contact us to discuss!</p>
         <div style="text-align: center; margin: 30px 0;">
@@ -118,6 +119,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     <p>I wanted to follow up on the cash offer we sent you for your property at <strong>{address}, {city}, {state}</strong>.</p>
     <div style="background-color: #e8f5e8; padding: 20px; border-radius: 5px; text-align: center; margin: 20px 0;">
       <p style="margin: 0; font-size: 18px; color: #2e7d32; font-weight: bold;">Our Offer: {cash_offer}</p>
+      <p style="margin: 5px 0 0; color: #666;">Estimated Value: {estimated_value}</p>
       <p style="margin: 5px 0 0; color: #666;">Still valid for the next few days</p>
     </div>
     <p>We're ready to move forward quickly and can close in as little as 7 days. Are you ready to sell?</p>
@@ -148,7 +150,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
   // ===== VOICEMAIL TEMPLATES =====
   {
     id: 'call-voicemail-default',
-    name: 'Voicemail Default',
+    name: 'Default Voicemail',
     channel: 'call',
     subject: '',
     body: 'Hi {name}, this is {seller_name} from {company_name}. We have a cash offer of {cash_offer} for your property at {address}. We can close in as little as 7 days with no repairs needed. View your complete offer details at {property_url} or call us back at {phone}. Thank you!',
@@ -158,7 +160,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
   },
   {
     id: 'call-voicemail-urgent',
-    name: 'Voicemail Urgent',
+    name: 'Urgent Voicemail',
     channel: 'call',
     subject: '',
     body: 'Hi {name}, {seller_name} from {company_name}. URGENT: Our cash offer of {cash_offer} for {address} expires in 24 hours. This is a unique opportunity - view full details at {property_url} or call immediately at {phone}. Don\'t miss out!',
@@ -168,7 +170,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
   },
   {
     id: 'call-voicemail-follow-up',
-    name: 'Voicemail Follow-up',
+    name: 'Follow-up Voicemail',
     channel: 'call',
     subject: '',
     body: 'Hi {name}, {seller_name} from {company_name} following up. Our {cash_offer} cash offer for your property at {address} is still available. No fees, no hassle. See all details at {property_url} or call when you can: {phone}.',

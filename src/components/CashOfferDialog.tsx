@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CashOfferLetter } from "./CashOfferLetter";
+import { OfferConfiguration } from "./OfferConfiguration";
 import { Copy, Download, MessageSquare, Mail, Send, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { sendEmail } from "@/services/marketingService";
+import type { OfferConfig } from "./OfferConfiguration";
 
 interface Property {
   id: string;
@@ -37,15 +39,39 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   const [recipientEmail, setRecipientEmail] = useState("");
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [offerConfig, setOfferConfig] = useState<OfferConfig>({
+    type: 'fixed',
+    fixedAmount: property?.cash_offer_amount,
+    estimatedValue: property?.estimated_value,
+  });
 
   if (!property) return null;
 
+  // Atualizar configuração quando a propriedade muda
+  if (offerConfig.estimatedValue !== property.estimated_value) {
+    setOfferConfig({
+      type: 'fixed',
+      fixedAmount: property.cash_offer_amount,
+      estimatedValue: property.estimated_value,
+    });
+  }
+
   const offerUrl = `${window.location.origin}/property/${property.slug}`;
-  
+
+  // Gerar texto baseado na configuração da oferta
+  const getOfferText = () => {
+    if (offerConfig.type === 'range' && offerConfig.rangeMin && offerConfig.rangeMax) {
+      return `$${offerConfig.rangeMin.toLocaleString()} - $${offerConfig.rangeMax.toLocaleString()}`;
+    }
+    return offerConfig.fixedAmount ? `$${offerConfig.fixedAmount.toLocaleString()}` : `$${property.cash_offer_amount.toLocaleString()}`;
+  };
+
+  const offerText = getOfferText();
+
   const smsText = language === "en"
-    ? `Hi${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! $${property.cash_offer_amount.toLocaleString()} cash for ${property.address}. No repairs, close in 7 days. Reply YES → ${offerUrl}?src=sms`
-    : `¡Hola${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! $${property.cash_offer_amount.toLocaleString()} en efectivo por ${property.address}. Sin reparaciones, cierre en 7 días. Responda SÍ → ${offerUrl}?src=sms`;
-  
+    ? `Hi${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! ${offerText} cash for ${property.address}. No repairs, close in 7 days. Reply YES → ${offerUrl}?src=sms`
+    : `¡Hola${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! ${offerText} en efectivo por ${property.address}. Sin reparaciones, cierre en 7 días. Responda SÍ → ${offerUrl}?src=sms`;
+
   const whatsappText = encodeURIComponent(smsText);
   const whatsappUrl = property.owner_phone 
     ? `https://wa.me/${property.owner_phone.replace(/\D/g, '')}?text=${whatsappText}`
@@ -193,8 +219,9 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
         </DialogHeader>
 
         <Tabs defaultValue="preview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="preview">Preview</TabsTrigger>
+            <TabsTrigger value="config">Offer Config</TabsTrigger>
             <TabsTrigger value="send">Send</TabsTrigger>
             <TabsTrigger value="sms">SMS/WhatsApp</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -218,7 +245,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 city={property.city}
                 state={property.state}
                 zipCode={property.zip_code}
-                cashOffer={property.cash_offer_amount}
+                offerConfig={offerConfig}
                 estimatedValue={property.estimated_value}
                 propertySlug={property.slug}
                 phone={phone}
@@ -228,6 +255,14 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 language={language}
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="config" className="space-y-4">
+            <OfferConfiguration
+              propertyValue={property.estimated_value}
+              currentOffer={offerConfig}
+              onOfferChange={setOfferConfig}
+            />
           </TabsContent>
 
           <TabsContent value="send" className="space-y-4">

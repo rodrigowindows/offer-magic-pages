@@ -25,6 +25,14 @@ import { useMemo, useEffect } from 'react';
 import { TestModeToggle } from './TestModeToggle';
 import { QuickApiTest } from './QuickApiTest';
 import { CreateTestProperty } from './CreateTestProperty';
+import { ClickTrackingDashboard } from '../ClickTrackingDashboard';
+import { LeadScoringDashboard } from '../LeadScoringDashboard';
+import { AutomatedSequences } from '../AutomatedSequences';
+import { SmartScheduling } from '../SmartScheduling';
+import { RealTimeNotifications } from '../RealTimeNotifications';
+import { ROIAnalytics } from '../ROIAnalytics';
+import { ExternalToolsIntegration } from '../ExternalToolsIntegration';
+import { BackupRecoverySystem } from '../BackupRecoverySystem';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -337,6 +345,30 @@ export const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Click Tracking Analytics */}
+      <ClickTrackingDashboard />
+
+      {/* Lead Scoring & Analytics */}
+      <LeadScoringDashboard />
+
+      {/* Automated Sequences */}
+      <AutomatedSequences />
+
+      {/* Smart Scheduling */}
+      <SmartScheduling />
+
+      {/* Real-time Notifications */}
+      <RealTimeNotifications />
+
+      {/* ROI Analytics & Reports */}
+      <ROIAnalytics />
+
+      {/* External Tools Integration */}
+      <ExternalToolsIntegration />
+
+      {/* Backup & Recovery System */}
+      <BackupRecoverySystem />
 
       {/* Console de Debug - Estado do Sistema */}
       <Card className="border-blue-500/50 bg-slate-50 dark:bg-slate-900">

@@ -865,6 +865,48 @@ const Admin = () => {
         return false;
       }
 
+      // Advanced Filters - Skip Trace
+      if (advancedFilters.noPhoneNumber) {
+        // Check if property has NO phone numbers (no skip trace phones)
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const hasPreferredPhone = tags.some((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'));
+        const hasManualPhone = tags.some((t: string) => typeof t === 'string' && t.startsWith('manual_phone:'));
+        const hasPhone1 = p.phone1 && p.phone1.trim().length > 0;
+        const hasPhone2 = (p as any).phone2 && (p as any).phone2.trim().length > 0;
+
+        if (hasPreferredPhone || hasManualPhone || hasPhone1 || hasPhone2) {
+          return false; // Has phone, exclude it
+        }
+      }
+
+      if (advancedFilters.noEmail) {
+        // Check if property has NO emails (no skip trace emails)
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const hasPreferredEmail = tags.some((t: string) => typeof t === 'string' && t.startsWith('pref_email:'));
+        const hasManualEmail = tags.some((t: string) => typeof t === 'string' && t.startsWith('manual_email:'));
+        const hasEmail1 = (p as any).email1 && (p as any).email1.trim().length > 0;
+        const hasEmail2 = (p as any).email2 && (p as any).email2.trim().length > 0;
+
+        if (hasPreferredEmail || hasManualEmail || hasEmail1 || hasEmail2) {
+          return false; // Has email, exclude it
+        }
+      }
+
+      if (advancedFilters.noSkipTrace) {
+        // Check if property has NO phone AND NO email
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const hasPreferredPhone = tags.some((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'));
+        const hasManualPhone = tags.some((t: string) => typeof t === 'string' && t.startsWith('manual_phone:'));
+        const hasPreferredEmail = tags.some((t: string) => typeof t === 'string' && t.startsWith('pref_email:'));
+        const hasManualEmail = tags.some((t: string) => typeof t === 'string' && t.startsWith('manual_email:'));
+        const hasPhone = p.phone1 || (p as any).phone2;
+        const hasEmail = (p as any).email1 || (p as any).email2;
+
+        if (hasPreferredPhone || hasManualPhone || hasPreferredEmail || hasManualEmail || hasPhone || hasEmail) {
+          return false; // Has some contact info, exclude it
+        }
+      }
+
       return true;
     });
 

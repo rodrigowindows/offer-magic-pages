@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { getABVariant, trackABEvent, type ABVariant } from "@/utils/abTesting";
 import { UltraSimpleVariant } from "@/components/variants/UltraSimpleVariant";
 import { EmailFirstVariant } from "@/components/variants/EmailFirstVariant";
+import { type OfferData } from "@/utils/offerUtils";
 
 interface ABTestWrapperProps {
-  property: {
+  property: OfferData & {
     id: string;
     address: string;
     city: string;
     state: string;
-    cash_offer_amount: number;
     estimated_value: number;
   };
 }

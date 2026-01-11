@@ -5,14 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Check, Phone, Mail, Download } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
+import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 
 interface UltraSimpleVariantProps {
-  property: {
+  property: OfferData & {
     id: string;
     address: string;
     city: string;
     state: string;
-    cash_offer_amount: number;
     estimated_value: number;
   };
 }
@@ -47,6 +47,9 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     alert('Thanks! We\'ll contact you shortly.');
   };
 
+  const offerType = getOfferType(property);
+  const offerDisplay = formatOffer(property, { shortForm: true });
+
   return (
     <div className="space-y-8">
       {/* Main Offer Card */}
@@ -56,14 +59,19 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             {/* Offer Amount - SHOWN IMMEDIATELY */}
             <div>
               <p className="text-lg text-muted-foreground mb-2">
-                Your Fair Cash Offer
+                {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
               </p>
               <h1 className="text-5xl md:text-6xl font-bold text-primary">
-                {formatCurrency(property.cash_offer_amount)}
+                {offerDisplay}
               </h1>
               <p className="text-sm text-muted-foreground mt-2">
                 For {property.address}, {property.city}, {property.state}
               </p>
+              {offerType === 'range' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Final offer determined after property inspection
+                </p>
+              )}
             </div>
 
             {/* Benefits */}

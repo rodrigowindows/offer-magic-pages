@@ -593,6 +593,8 @@ export type Database = {
           card_sent: boolean
           carta: string | null
           cash_offer_amount: number
+          cash_offer_min?: number | null
+          cash_offer_max?: number | null
           city: string
           comparative_price: number | null
           confirmed_mailing_address: string | null
@@ -926,6 +928,8 @@ export type Database = {
           card_sent?: boolean
           carta?: string | null
           cash_offer_amount: number
+          cash_offer_min?: number | null
+          cash_offer_max?: number | null
           city?: string
           comparative_price?: number | null
           confirmed_mailing_address?: string | null
@@ -1259,6 +1263,8 @@ export type Database = {
           card_sent?: boolean
           carta?: string | null
           cash_offer_amount?: number
+          cash_offer_min?: number | null
+          cash_offer_max?: number | null
           city?: string
           comparative_price?: number | null
           confirmed_mailing_address?: string | null

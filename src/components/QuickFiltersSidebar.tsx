@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { X, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import { PropertyUserFilter } from "./PropertyUserFilter";
 import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "./AdvancedPropertyFilters";
+import { ContactAvailabilityFilter, ContactFilters } from "./ContactAvailabilityFilter";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,8 @@ interface QuickFiltersSidebarProps {
   advancedFilters: AdvancedFilters;
   onAdvancedFiltersChange: (filters: AdvancedFilters) => void;
   onClearAll: () => void;
+  contactFilters?: ContactFilters;
+  onContactFiltersChange?: (filters: ContactFilters) => void;
 }
 
 export const QuickFiltersSidebar = ({
@@ -55,16 +58,25 @@ export const QuickFiltersSidebar = ({
   advancedFilters,
   onAdvancedFiltersChange,
   onClearAll,
+  contactFilters = {},
+  onContactFiltersChange,
 }: QuickFiltersSidebarProps) => {
   const [availableTags, setAvailableTags] = useState<{ tag: string; count: number }[]>([]);
   const [availableCities, setAvailableCities] = useState<{ city: string; count: number }[]>([]);
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
+  const [contactCounts, setContactCounts] = useState({
+    phones: 0,
+    emails: 0,
+    preferred: 0,
+    noSkiptrace: 0,
+  });
   const [expandedSections, setExpandedSections] = useState({
     status: true,
     tags: true,
     location: true,
     price: true,
     date: true,
+    contacts: true,
   });
 
   // Fetch available tags
@@ -119,6 +131,53 @@ export const QuickFiltersSidebar = ({
     };
 
     fetchCities();
+  }, []);
+
+  // Calculate contact counts
+  useEffect(() => {
+    const calculateContactCounts = async () => {
+      const { data } = await supabase
+        .from("properties")
+        .select("owner_phone, owner_email, preferred_phones, preferred_emails, tags");
+
+      if (data) {
+        let phones = 0;
+        let emails = 0;
+        let preferred = 0;
+        let noSkiptrace = 0;
+
+        data.forEach((prop: any) => {
+          // Count phones
+          if (prop.owner_phone || (prop.preferred_phones && JSON.parse(prop.preferred_phones || '[]').length > 0)) {
+            phones++;
+          }
+
+          // Count emails
+          if (prop.owner_email || (prop.preferred_emails && JSON.parse(prop.preferred_emails || '[]').length > 0)) {
+            emails++;
+          }
+
+          // Count preferred contacts
+          const hasPreferredPhone = prop.preferred_phones && JSON.parse(prop.preferred_phones || '[]').length > 0;
+          const hasPreferredEmail = prop.preferred_emails && JSON.parse(prop.preferred_emails || '[]').length > 0;
+          if (hasPreferredPhone || hasPreferredEmail) {
+            preferred++;
+          }
+
+          // Count no skiptrace data (properties without skiptrace tags)
+          const hasSkiptraceTags = prop.tags?.some((tag: string) =>
+            tag.includes('skiptrace') || tag.includes('phone') || tag.includes('email')
+          );
+          if (!hasSkiptraceTags) {
+            noSkiptrace++;
+          }
+        });
+
+        setContactCounts({ phones, emails, preferred, noSkiptrace });
+      }
+    };
+
+    calculateContactCounts();
   }, []);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
@@ -409,6 +468,32 @@ export const QuickFiltersSidebar = ({
           </RadioGroup>
         )}
       </div>
+
+      {/* Contact Availability */}
+      {onContactFiltersChange && (
+        <div className="space-y-2">
+          <button
+            className="flex justify-between items-center w-full text-sm font-semibold"
+            onClick={() => toggleSection("contacts")}
+          >
+            <span>📞 Contact Availability</span>
+            {expandedSections.contacts ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+
+          {expandedSections.contacts && (
+            <div className="pl-2">
+              <ContactAvailabilityFilter
+                filters={contactFilters}
+                onFiltersChange={onContactFiltersChange}
+                phonesCount={contactCounts.phones}
+                emailsCount={contactCounts.emails}
+                preferredCount={contactCounts.preferred}
+                noSkiptraceCount={contactCounts.noSkiptrace}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Active Filters Summary */}
       {(selectedTags.length > 0 || selectedCities.length > 0) && (

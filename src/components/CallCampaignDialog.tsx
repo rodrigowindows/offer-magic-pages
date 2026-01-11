@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertCircle, Phone, Settings } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatOfferForTemplate } from "@/utils/offerUtils";
 
 interface Property {
   id: string;
@@ -21,7 +22,9 @@ interface Property {
   city: string;
   state: string;
   zip_code: string;
-  cash_offer_amount: number;
+  cash_offer_amount?: number;
+  cash_offer_min?: number;
+  cash_offer_max?: number;
   owner_name?: string;
   owner_phone?: string;
 }
@@ -57,7 +60,7 @@ export const CallCampaignDialog = ({
   const [enableFallback, setEnableFallback] = useState<boolean>(true);
   const [rateLimitDelay, setRateLimitDelay] = useState<number>(2000); // Calls need more delay
   const [script, setScript] = useState(
-    `Hi {owner_name}, this is calling from MyLocalInvest about your property at {address}. We have a cash offer of ${"{cash_offer}"} that we'd like to discuss with you. Would you be interested in hearing more?`
+    `Hi {owner_name}, this is calling from MyLocalInvest about your property at {address}. We have a cash offer of {cash_offer} that we'd like to discuss with you. The key advantage is that we can close quickly and handle all repairs ourselves. Would you be open to showing the property this week so we can make you a final offer?`
   );
 
   useEffect(() => {
@@ -71,7 +74,7 @@ export const CallCampaignDialog = ({
     setIsLoading(true);
     const { data, error } = await supabase
       .from("properties")
-      .select("id, address, city, state, zip_code, cash_offer_amount, owner_name, owner_phone")
+      .select("id, address, city, state, zip_code, cash_offer_amount, cash_offer_min, cash_offer_max, owner_name, owner_phone")
       .in("id", propertyIds);
 
     if (error) {
@@ -148,7 +151,7 @@ export const CallCampaignDialog = ({
     return script
       .replace("{owner_name}", property.owner_name || "there")
       .replace("{address}", property.address)
-      .replace("{cash_offer}", `$${property.cash_offer_amount.toLocaleString()}`);
+      .replace("{cash_offer}", formatOfferForTemplate(property));
   };
 
   const handleMakeCalls = async () => {

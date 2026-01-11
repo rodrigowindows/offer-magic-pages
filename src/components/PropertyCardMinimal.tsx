@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { formatOfferForTemplate } from "@/utils/offerUtils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -151,7 +152,7 @@ export const PropertyCardMinimal = ({
           <div>
             <div className="text-xs text-gray-500 uppercase tracking-wide">Oferta</div>
             <div className="text-2xl font-bold text-green-600">
-              ${(property.cash_offer_amount / 1000).toFixed(0)}k
+              {formatOfferForTemplate(property)}
             </div>
           </div>
           <div className="text-right">

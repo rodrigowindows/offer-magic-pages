@@ -24,6 +24,9 @@ export interface PropertyFilters {
   bedrooms?: number;
   bathrooms?: number;
   hasImage?: boolean;
+  noPhoneNumber?: boolean;
+  noEmail?: boolean;
+  noSkipTrace?: boolean;
 }
 
 interface AdvancedPropertyFiltersProps {
@@ -112,6 +115,9 @@ export const AdvancedPropertyFilters = ({
     if (filters.bedrooms) count++;
     if (filters.bathrooms) count++;
     if (filters.hasImage !== undefined) count++;
+    if (filters.noPhoneNumber) count++;
+    if (filters.noEmail) count++;
+    if (filters.noSkipTrace) count++;
     return count;
   };
 
@@ -204,6 +210,24 @@ export const AdvancedPropertyFilters = ({
           {filters.hasImage && (
             <Badge variant="secondary">
               📸 Com Foto
+            </Badge>
+          )}
+
+          {filters.noPhoneNumber && (
+            <Badge variant="secondary">
+              📵 Sem Telefone
+            </Badge>
+          )}
+
+          {filters.noEmail && (
+            <Badge variant="secondary">
+              📧❌ Sem Email
+            </Badge>
+          )}
+
+          {filters.noSkipTrace && (
+            <Badge variant="secondary">
+              🔍❌ Sem Skip Trace
             </Badge>
           )}
 
@@ -435,6 +459,45 @@ export const AdvancedPropertyFilters = ({
                 />
                 <Label htmlFor="has-image" className="text-sm cursor-pointer">
                   📸 Apenas com foto
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="no-phone-number"
+                  checked={localFilters.noPhoneNumber || false}
+                  onCheckedChange={(checked) =>
+                    setLocalFilters({ ...localFilters, noPhoneNumber: checked ? true : undefined })
+                  }
+                />
+                <Label htmlFor="no-phone-number" className="text-sm cursor-pointer">
+                  📵 Sem telefone (sem skip trace phone)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="no-email"
+                  checked={localFilters.noEmail || false}
+                  onCheckedChange={(checked) =>
+                    setLocalFilters({ ...localFilters, noEmail: checked ? true : undefined })
+                  }
+                />
+                <Label htmlFor="no-email" className="text-sm cursor-pointer">
+                  📧❌ Sem email (sem skip trace email)
+                </Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="no-skip-trace"
+                  checked={localFilters.noSkipTrace || false}
+                  onCheckedChange={(checked) =>
+                    setLocalFilters({ ...localFilters, noSkipTrace: checked ? true : undefined })
+                  }
+                />
+                <Label htmlFor="no-skip-trace" className="text-sm cursor-pointer">
+                  🔍❌ Sem skip trace (sem phone e sem email)
                 </Label>
               </div>
             </div>

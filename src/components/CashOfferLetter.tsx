@@ -1,13 +1,19 @@
 import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import { Shield, Clock, CheckCircle2, Home, Phone, Star } from "lucide-react";
+import { formatOffer, getOfferType, getOfferAverage } from "@/utils/offerUtils";
+import type { OfferConfig } from "./OfferConfiguration";
 
 interface CashOfferLetterProps {
   address: string;
   city: string;
   state: string;
   zipCode: string;
-  cashOffer: number;
+  offerConfig?: OfferConfig;
+  // Legacy props for backward compatibility
+  cashOffer?: number;
+  minOffer?: number;
+  maxOffer?: number;
   estimatedValue: number;
   propertySlug: string;
   phone?: string;
@@ -73,7 +79,11 @@ export const CashOfferLetter = ({
   city,
   state,
   zipCode,
+  offerConfig,
+  // Legacy props
   cashOffer,
+  minOffer,
+  maxOffer,
   estimatedValue,
   propertySlug,
   phone = "786 882 8251",
@@ -85,7 +95,25 @@ export const CashOfferLetter = ({
   const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
   const offerUrl = `${window.location.origin}/property/${propertySlug}?src=${source}`;
   const t = content[language];
-  const savings = estimatedValue - cashOffer;
+
+  // Use new offer config or fallback to legacy props
+  const currentOfferConfig = offerConfig || {
+    type: (minOffer && maxOffer) ? 'range' : 'fixed',
+    fixedAmount: cashOffer,
+    rangeMin: minOffer,
+    rangeMax: maxOffer,
+    estimatedValue: estimatedValue,
+  };
+
+  // Create property object for offer formatting
+  const property = {
+    cash_offer_amount: currentOfferConfig.fixedAmount,
+    min_offer_amount: currentOfferConfig.rangeMin,
+    max_offer_amount: currentOfferConfig.rangeMax
+  };
+  const offerType = getOfferType(property);
+  const averageOffer = getOfferAverage(property);
+  const savings = estimatedValue - averageOffer;
   
   return (
     <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden">
@@ -117,7 +145,7 @@ export const CashOfferLetter = ({
           </div>
           
           <p className="text-sm text-muted-foreground mb-1 mt-2">{t.cashOffer}</p>
-          <p className="text-5xl font-black text-primary">${cashOffer.toLocaleString()}</p>
+          <p className="text-5xl font-black text-primary">{formatOffer(property)}</p>
           <p className="text-xs text-muted-foreground mt-2">
             {t.fairMarketValue}: ${estimatedValue.toLocaleString()}
           </p>

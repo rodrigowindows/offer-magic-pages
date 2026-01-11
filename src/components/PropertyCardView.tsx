@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatOfferForTemplate } from "@/utils/offerUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +73,8 @@ export const PropertyCardView = ({
 }: PropertyCardViewProps) => {
   const [showSkipTracing, setShowSkipTracing] = useState(false);
   
-  const offerPercentage = ((property.cash_offer_amount / property.estimated_value) * 100).toFixed(1);
+  const offerDisplay = formatOfferForTemplate(property);
+  const offerPercentage = property.estimated_value ? (((property.cash_offer_amount ?? property.cash_offer_min ?? 0) / property.estimated_value) * 100).toFixed(1) : '';
   const score = property.focar ? parseInt(property.focar) : 0;
 
   // Determine approval status color
@@ -198,6 +200,23 @@ export const PropertyCardView = ({
                   <MapPin className="h-4 w-4" />
                 </Button>
                 <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-green-700 hover:text-green-900 hover:bg-green-50"
+                  title="Oferta"
+                  tabIndex={-1}
+                  disabled
+                >
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  <span className="font-bold">{offerDisplay}</span>
+                </Button>
+              </div>
+            </div>
+            {/* Oferta percentual */}
+            {offerPercentage && (
+              <div className="text-xs text-green-700 mt-1">{offerPercentage}% do valor estimado</div>
+            )}
+          </div>
                   size="sm"
                   variant="ghost"
                   className="h-8 w-8 p-0 text-blue-500 hover:text-blue-600 hover:bg-blue-50"

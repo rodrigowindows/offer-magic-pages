@@ -111,6 +111,7 @@ const TEMPLATE_VARIABLES = [
   { key: '{qr_code_url}', description: 'QR code image URL for property page' },
   { key: '{source_channel}', description: 'Source channel (SMS, Email, Call)' },
   { key: '{tracking_pixel}', description: 'Tracking pixel for email opens' },
+  { key: '{button_click_url}', description: 'Trackable URL for button clicks' },
   { key: '{unsubscribe_url}', description: 'Unsubscribe URL' },
 ];
 
@@ -144,6 +145,7 @@ const HTML_TEMPLATES = {
         </div>
         <p style="font-size: 16px; color: #333; line-height: 1.6;">This offer is valid for 7 days. Contact us to discuss!</p>
         <div style="text-align: center; margin: 30px 0;">
+          <a href="{button_click_url}" style="background-color: #28a745; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin: 0 10px 10px 0;">Accept Offer</a>
           <a href="tel:{phone}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Call Us: {phone}</a>
         </div>
         <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
@@ -381,6 +383,7 @@ export const TemplateManager = () => {
       qr_code_url: generateQrCodeUrl('25217 MATHEW ST', 'UNINCORPORATED', '32709', channel),
       source_channel: channel.toUpperCase(),
       tracking_pixel: generateTrackingPixel('sample-property-id', channel),
+      button_click_url: `https://your-domain.supabase.co/functions/v1/track-button-click?id=sample-tracking-id&src=${channel}`,
       unsubscribe_url: generateUnsubscribeUrl('example@email.com')
     };
 

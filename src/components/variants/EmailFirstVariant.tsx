@@ -2,14 +2,14 @@ import { useState } from "react";
 import { SimpleLeadCapture } from "@/components/SimpleLeadCapture";
 import { OfferRevealCard } from "@/components/OfferRevealCard";
 import { InterestCapture } from "@/components/InterestCapture";
+import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 
 interface EmailFirstVariantProps {
-  property: {
+  property: OfferData & {
     id: string;
     address: string;
     city: string;
     state: string;
-    cash_offer_amount: number;
     estimated_value: number;
   };
 }
@@ -31,6 +31,11 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
     setStep('interested');
   };
 
+  const offerType = getOfferType(property);
+  const offerAmount = offerType === 'range'
+    ? (property.min_offer_amount! + property.max_offer_amount!) / 2
+    : property.cash_offer_amount!;
+
   return (
     <div className="space-y-6">
       {step === 'gate' && (
@@ -39,14 +44,14 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
           onClose={() => {}}
           onSubmit={handleEmailSubmit}
           propertyAddress={`${property.address}, ${property.city}, ${property.state}`}
-          offerAmount={property.cash_offer_amount}
+          offerAmount={offerAmount}
         />
       )}
 
       {step === 'revealed' && (
         <>
           <OfferRevealCard
-            cashOfferAmount={property.cash_offer_amount}
+            cashOfferAmount={offerAmount}
             estimatedValue={property.estimated_value}
             propertyAddress={`${property.address}, ${property.city}, ${property.state}`}
             leadName="there"

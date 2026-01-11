@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ABTestWrapper } from "@/components/ABTestWrapper";
 import { PropertyCommunicationHistory } from "@/components/PropertyCommunicationHistory";
+import { PropertyPageFollowUp } from "@/components/PropertyPageFollowUp";
 interface PropertyData {
   id: string;
   slug: string;
@@ -13,6 +14,8 @@ interface PropertyData {
   property_image_url: string | null;
   estimated_value: number;
   cash_offer_amount: number;
+  min_offer_amount?: number;
+  max_offer_amount?: number;
   status: string;
   owner_name: string | null;
   neighborhood: string | null;
@@ -119,6 +122,13 @@ const Property = () => {
 
   return (
     <>
+      <PropertyPageFollowUp
+        propertyId={property.id}
+        propertyAddress={property.address}
+        ownerName={property.owner_name}
+        ownerEmail={property.owner_email}
+        ownerPhone={property.owner_phone}
+      />
       <ABTestWrapper property={property} />
       <PropertyCommunicationHistory propertyId={property.id} />
     </>
