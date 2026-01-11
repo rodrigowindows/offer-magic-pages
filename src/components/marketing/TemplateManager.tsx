@@ -151,7 +151,8 @@ const HTML_TEMPLATES = {
         <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
           <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">Scan to view your personalized offer page:</p>
           <img src="{qr_code_url}" alt="QR Code" style="width: 200px; height: 200px; margin: 0 auto; display: block; border: 4px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
-          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or visit: <a href="{property_url}" style="color: #667eea;">{property_url}</a></p>
+          <p style="font-size: 14px; color: #666; margin: 15px 0 10px 0;">Or click here: <a href="{property_url}" style="color: #667eea; font-weight: bold; text-decoration: underline;">View Full Offer Details</a></p>
+          <p style="font-size: 12px; color: #999; margin: 5px 0 0 0;">Or visit: <a href="{property_url}" style="color: #667eea;">{property_url}</a></p>
           <p style="font-size: 11px; color: #999; margin: 5px 0 0 0;">Source: {source_channel}</p>
         </div>
         {tracking_pixel}
@@ -181,7 +182,8 @@ const HTML_TEMPLATES = {
     <div style="text-align: center; margin: 30px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
       <p style="font-size: 13px; margin: 0 0 10px 0;">View your personalized offer page:</p>
       <img src="{qr_code_url}" alt="QR Code" style="width: 150px; height: 150px; margin: 0 auto; display: block;" />
-      <p style="font-size: 11px; margin: 10px 0 0 0;"><a href="{property_url}" style="color: #333;">{property_url}</a></p>
+      <p style="font-size: 13px; margin: 10px 0 5px 0;">Or click here: <a href="{property_url}" style="color: #333; font-weight: bold; text-decoration: underline;">View Full Offer Details</a></p>
+      <p style="font-size: 11px; margin: 5px 0 0 0;"><a href="{property_url}" style="color: #333;">{property_url}</a></p>
       <p style="font-size: 10px; color: #999; margin: 5px 0 0 0;">Source: {source_channel}</p>
     </div>
     {tracking_pixel}
@@ -224,7 +226,8 @@ const HTML_TEMPLATES = {
         <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
           <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;"><strong>View Full Details Online:</strong></p>
           <img src="{qr_code_url}" alt="QR Code" style="width: 180px; height: 180px; margin: 0 auto; display: block; border: 3px solid #1a365d;" />
-          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Scan or visit: <a href="{property_url}" style="color: #1a365d; text-decoration: none;">{property_url}</a></p>
+          <p style="font-size: 14px; color: #666; margin: 15px 0 10px 0;">Or click here: <a href="{property_url}" style="color: #1a365d; font-weight: bold; text-decoration: underline;">View Full Offer Details</a></p>
+          <p style="font-size: 12px; color: #999; margin: 5px 0 0 0;">Scan or visit: <a href="{property_url}" style="color: #1a365d; text-decoration: none;">{property_url}</a></p>
           <p style="font-size: 11px; color: #999; margin: 5px 0 0 0;">Source: {source_channel}</p>
         </div>
         {tracking_pixel}

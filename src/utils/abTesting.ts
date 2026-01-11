@@ -25,8 +25,8 @@ export interface ABTestConfig {
 export const AB_TEST_CONFIG: ABTestConfig = {
   enabled: true,
   variants: [
-    { variant: 'ultra-simple', weight: 50, active: true },
-    { variant: 'email-first', weight: 50, active: true },
+    { variant: 'ultra-simple', weight: 100, active: true },
+    { variant: 'email-first', weight: 0, active: false },
     // Add more variants here:
     // { variant: 'progressive', weight: 33, active: false },
     // { variant: 'social-proof', weight: 33, active: false },
