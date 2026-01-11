@@ -74,7 +74,7 @@ export const CallCampaignDialog = ({
     setIsLoading(true);
     const { data, error } = await supabase
       .from("properties")
-      .select("id, address, city, state, zip_code, cash_offer_amount, cash_offer_min, cash_offer_max, owner_name, owner_phone")
+      .select("id, address, city, state, zip_code, cash_offer_amount, owner_name, owner_phone")
       .in("id", propertyIds);
 
     if (error) {

@@ -78,13 +78,27 @@ const AutomatedSequences = () => {
   const loadSequences = async () => {
     try {
       setLoading(true);
+      // Use campaign_sequences table which exists in the schema
       const { data, error } = await supabase
-        .from('follow_up_sequences')
+        .from('campaign_sequences')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSequences(data || []);
+      
+      // Map data to FollowUpSequence format
+      const mappedSequences: FollowUpSequence[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        description: item.description || '',
+        trigger_event: 'initial_contact',
+        is_active: item.is_active || false,
+        steps: [],
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+      
+      setSequences(mappedSequences);
     } catch (error) {
       console.error('Error loading sequences:', error);
       toast({
@@ -100,20 +114,29 @@ const AutomatedSequences = () => {
   const createSequence = async () => {
     try {
       const { data, error } = await supabase
-        .from('follow_up_sequences')
+        .from('campaign_sequences')
         .insert([{
           name: newSequence.name,
           description: newSequence.description,
-          trigger_event: newSequence.trigger_event,
-          is_active: newSequence.is_active,
-          steps: newSequence.steps
+          is_active: newSequence.is_active
         }])
         .select()
         .single();
 
       if (error) throw error;
 
-      setSequences([data, ...sequences]);
+      const newSeq: FollowUpSequence = {
+        id: data.id,
+        name: data.name,
+        description: data.description || '',
+        trigger_event: newSequence.trigger_event,
+        is_active: data.is_active || false,
+        steps: newSequence.steps,
+        created_at: data.created_at,
+        updated_at: data.updated_at
+      };
+
+      setSequences([newSeq, ...sequences]);
       setNewSequence({
         name: '',
         description: '',
@@ -140,7 +163,7 @@ const AutomatedSequences = () => {
   const toggleSequence = async (sequenceId: string, isActive: boolean) => {
     try {
       const { error } = await supabase
-        .from('follow_up_sequences')
+        .from('campaign_sequences')
         .update({ is_active: isActive })
         .eq('id', sequenceId);
 
@@ -205,14 +228,14 @@ const AutomatedSequences = () => {
   };
 
   const getTriggerLabel = (trigger: string) => {
-    const labels = {
+    const labels: Record<string, string> = {
       'initial_contact': 'Initial Contact',
       'link_click': 'Link Click',
       'email_open': 'Email Open',
       'no_response': 'No Response',
       'property_viewed': 'Property Viewed'
     };
-    return labels[trigger as keyof typeof labels] || trigger;
+    return labels[trigger] || trigger;
   };
 
   return (
