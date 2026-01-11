@@ -126,6 +126,10 @@ interface Property {
   owner_address?: string;
   owner_name?: string;
   owner_phone?: string;
+  phone1?: string;
+  phone2?: string;
+  email1?: string;
+  email2?: string;
   answer_flag?: boolean;
   dnc_flag?: boolean;
   neighborhood?: string;

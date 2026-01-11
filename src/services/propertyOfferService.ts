@@ -74,7 +74,7 @@ export class PropertyOfferService {
   /**
    * Create a new property offer
    */
-  static async createOffer(offerData: Omit<PropertyOfferData, 'id' | 'createdAt' | 'status'>): Promise<PropertyOfferData> {
+  static async createOffer(offerData: Omit<PropertyOfferData, 'id' | 'createdAt' | 'status'> & { expiresAt: Date }): Promise<PropertyOfferData> {
     const offer: PropertyOfferData = {
       ...offerData,
       id: `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -120,7 +120,7 @@ export class PropertyOfferService {
       }
 
       // Create offer record
-      const offerData: Omit<PropertyOfferData, 'id' | 'createdAt' | 'status'> = {
+      const createOfferData = {
         propertyId,
         offerAmount,
         estimatedValue,
@@ -144,7 +144,7 @@ export class PropertyOfferService {
         }
       };
 
-      const offer = await this.createOffer(offerData);
+      const offer = await this.createOffer(createOfferData);
 
       // Send email if requested
       if (sendEmail) {
@@ -155,8 +155,12 @@ export class PropertyOfferService {
 
         const emailHtml = generatePropertyOfferEmail({
           property: {
-            ...offer.property,
-            offerAmount: offerAmount
+            address: offer.property.address,
+            city: offer.property.city,
+            state: offer.property.state,
+            zipCode: offer.property.zipCode,
+            offerAmount: offerAmount,
+            closingDays: closingDays
           },
           recipientName: offer.recipientName,
           trackingUrl: `${window.location.origin}/api/track-open?offerId=${offer.id}`,
@@ -233,8 +237,14 @@ export class PropertyOfferService {
       };
 
       await downloadPropertyOfferPDF({
-        property: mockOffer.property,
-        offerAmount: mockOffer.offerAmount,
+        property: {
+          address: mockOffer.property.address,
+          city: mockOffer.property.city,
+          state: mockOffer.property.state,
+          zipCode: mockOffer.property.zipCode,
+          offerAmount: mockOffer.offerAmount,
+          closingDays: mockOffer.closingDays
+        },
         recipientName: mockOffer.recipientName,
         agentName: mockOffer.agentName,
         agentEmail: mockOffer.agentEmail,
@@ -321,10 +331,9 @@ export class PropertyOfferService {
       const { error } = await supabase
         .from('campaign_logs')
         .insert({
-          offer_id: offerId,
-          activity_type: activity,
-          activity_data: data,
-          created_at: new Date().toISOString()
+          campaign_type: activity,
+          metadata: { offer_id: offerId, ...data },
+          sent_at: new Date().toISOString()
         });
 
       if (error) {
@@ -342,15 +351,18 @@ export class PropertyOfferService {
     const followUpDate = new Date();
     followUpDate.setDate(followUpDate.getDate() + days);
 
+    // Store follow-up schedule in campaign_logs since scheduled_campaigns doesn't exist
     try {
       const { error } = await supabase
-        .from('scheduled_campaigns')
+        .from('campaign_logs')
         .insert({
-          offer_id: offerId,
-          campaign_type: 'follow_up',
-          scheduled_date: followUpDate.toISOString(),
-          status: 'scheduled',
-          created_at: new Date().toISOString()
+          campaign_type: 'scheduled_follow_up',
+          metadata: {
+            offer_id: offerId,
+            scheduled_date: followUpDate.toISOString(),
+            status: 'scheduled'
+          },
+          sent_at: new Date().toISOString()
         });
 
       if (error) {

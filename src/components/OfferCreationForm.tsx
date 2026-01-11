@@ -176,7 +176,7 @@ export const OfferCreationForm = ({
 
     setIsSubmitting(true);
     try {
-      const offerData: Omit<PropertyOfferData, 'id' | 'status' | 'createdAt' | 'expiresAt'> = {
+      const offerData: Omit<PropertyOfferData, 'id' | 'status' | 'createdAt'> = {
         propertyId: `prop_${Date.now()}`, // Generate temporary ID
         offerAmount: parseFloat(formData.offerAmount),
         estimatedValue: parseFloat(formData.estimatedValue) || parseFloat(formData.offerAmount),
@@ -253,12 +253,35 @@ export const OfferCreationForm = ({
         agentPhone: formData.agentPhone
       });
 
-      if (result.success) {
+      if (result.success && result.offerId) {
         toast({
           title: "Offer Sent",
           description: "Offer campaign has been sent successfully"
         });
-        onSend?.(result.offerId || '');
+        // Create a mock PropertyOfferData for the callback
+        const sentOffer: PropertyOfferData = {
+          id: result.offerId,
+          propertyId: `prop_${Date.now()}`,
+          offerAmount: parseFloat(formData.offerAmount),
+          estimatedValue: parseFloat(formData.estimatedValue) || parseFloat(formData.offerAmount),
+          closingDays: parseInt(formData.closingDays),
+          status: 'sent',
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          recipientName: formData.recipientName,
+          recipientEmail: formData.recipientEmail,
+          recipientPhone: formData.recipientPhone,
+          agentName: formData.agentName,
+          agentEmail: formData.agentEmail,
+          agentPhone: formData.agentPhone,
+          property: {
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            zipCode: formData.zipCode
+          }
+        };
+        onSend?.(sentOffer);
       } else {
         toast({
           title: "Error",

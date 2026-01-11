@@ -28,7 +28,7 @@ import { CreateTestProperty } from './CreateTestProperty';
 import { ClickTrackingDashboard } from '../ClickTrackingDashboard';
 import { LeadScoringDashboard } from '../LeadScoringDashboard';
 import { AutomatedSequences } from '../AutomatedSequences';
-import { SmartScheduling } from '../SmartScheduling';
+import SmartScheduling from '../SmartScheduling';
 import { RealTimeNotifications } from '../RealTimeNotifications';
 import { ROIAnalytics } from '../ROIAnalytics';
 import { ExternalToolsIntegration } from '../ExternalToolsIntegration';
