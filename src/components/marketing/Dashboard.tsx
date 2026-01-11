@@ -34,6 +34,7 @@ import { ROIAnalytics } from '../ROIAnalytics';
 import { ExternalToolsIntegration } from '../ExternalToolsIntegration';
 import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
 import { RealTimeClickNotifications } from '../RealTimeClickNotifications';
+import { RetellWebhookTester } from './RetellWebhookTester';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -172,6 +173,9 @@ export const Dashboard = () => {
 
       {/* Real-time Click Notifications */}
       <RealTimeClickNotifications />
+
+      {/* Retell AI Webhook Tester */}
+      <RetellWebhookTester />
 
 
 
