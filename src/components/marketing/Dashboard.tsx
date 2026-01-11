@@ -33,7 +33,7 @@ import { RealTimeNotifications } from '../RealTimeNotifications';
 import { ROIAnalytics } from '../ROIAnalytics';
 import { ExternalToolsIntegration } from '../ExternalToolsIntegration';
 import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
-import { RealTimeClickNotifications } from './RealTimeClickNotifications';
+import { RealTimeClickNotifications } from '../RealTimeClickNotifications';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -246,9 +246,6 @@ export const Dashboard = () => {
 
       {/* Real-time Notifications */}
       <RealTimeNotifications />
-
-      {/* Real-time Click Notifications */}
-      <RealTimeClickNotifications />
 
       {/* ROI Analytics & Reports */}
       <ROIAnalytics />

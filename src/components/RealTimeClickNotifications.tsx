@@ -508,3 +508,5 @@ export const RealTimeClickNotifications = () => {
     </div>
   );
 };
+
+export default RealTimeClickNotifications;
