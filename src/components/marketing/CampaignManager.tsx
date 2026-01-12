@@ -225,6 +225,9 @@ export const CampaignManager = () => {
     const propertySlug = createPropertySlug(prop.address);
     const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+
+    // Google Maps static image for property location
+    const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
     
     if (type === 'subject' && selectedTemplate.subject) {
       let subject = selectedTemplate.subject;
@@ -245,6 +248,9 @@ export const CampaignManager = () => {
     content = content.replace(/\{zip_code\}/g, prop.zip_code);
     content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
     content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
+    content = content.replace(/\{property_image\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_photo\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_map\}/g, googleMapsImage);
     content = content.replace(/\{company_name\}/g, settings.company.company_name);
     content = content.replace(/\{phone\}/g, settings.company.contact_phone);
     content = content.replace(/\{seller_name\}/g, settings.company.company_name);
@@ -272,6 +278,9 @@ export const CampaignManager = () => {
     const trackingPixel = trackingId ? `<img src="${window.location.origin}/track/open?tid=${trackingId}" width="1" height="1" style="display:none;" alt="" />` : '';
     const unsubscribeUrl = `${window.location.origin}/unsubscribe?property=${prop.id}`;
 
+    // Google Maps static image for property location
+    const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
+
     let content = template.body;
     content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
     content = content.replace(/\{owner_name\}/g, prop.owner_name || 'Owner');
@@ -281,6 +290,9 @@ export const CampaignManager = () => {
     content = content.replace(/\{zip_code\}/g, prop.zip_code);
     content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
     content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
+    content = content.replace(/\{property_image\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_photo\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_map\}/g, googleMapsImage);
     content = content.replace(/\{company_name\}/g, settings.company.company_name);
     content = content.replace(/\{phone\}/g, settings.company.contact_phone);
     content = content.replace(/\{seller_name\}/g, settings.company.company_name);
