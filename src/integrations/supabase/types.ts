@@ -1855,6 +1855,45 @@ export type Database = {
         }
         Relationships: []
       }
+      templates: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          edited_manually: boolean | null
+          id: string
+          is_default: boolean | null
+          name: string
+          subject: string | null
+          updated_at: string
+          version: number | null
+        }
+        Insert: {
+          body: string
+          channel: string
+          created_at?: string
+          edited_manually?: boolean | null
+          id: string
+          is_default?: boolean | null
+          name: string
+          subject?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          edited_manually?: boolean | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          subject?: string | null
+          updated_at?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
