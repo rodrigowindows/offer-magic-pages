@@ -94,6 +94,7 @@ import { ApprovedPropertiesExport } from "@/components/ApprovedPropertiesExport"
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
 import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
+import { ContactFilters } from "@/components/ContactAvailabilityFilter";
 
 const propertySchema = z.object({
   address: z.string().min(1, "Address is required").max(200, "Address too long"),
@@ -244,6 +245,7 @@ const Admin = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000000]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState('all');
+  const [contactFilters, setContactFilters] = useState<ContactFilters>({});
 
   useEffect(() => {
     checkAuth();
@@ -253,7 +255,7 @@ const Admin = () => {
   // Refetch when filters change
   useEffect(() => {
     fetchProperties();
-  }, [advancedFilters, selectedTags, approvalStatus, priceRange, selectedCities, dateFilter, filterUserId]);
+  }, [advancedFilters, selectedTags, approvalStatus, priceRange, selectedCities, dateFilter, filterUserId, contactFilters]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -912,6 +914,86 @@ const Admin = () => {
         }
       }
 
+      // Contact Filters
+      if (contactFilters.hasPhone) {
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const hasPreferredPhone = tags.some((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'));
+        const hasManualPhone = tags.some((t: string) => typeof t === 'string' && t.startsWith('manual_phone:'));
+        const hasPhone1 = p.phone1 && p.phone1.trim().length > 0;
+        const hasPhone2 = (p as any).phone2 && (p as any).phone2.trim().length > 0;
+
+        if (!hasPreferredPhone && !hasManualPhone && !hasPhone1 && !hasPhone2) {
+          return false; // No phone, exclude it
+        }
+      }
+
+      if (contactFilters.hasEmail) {
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const hasPreferredEmail = tags.some((t: string) => typeof t === 'string' && t.startsWith('pref_email:'));
+        const hasManualEmail = tags.some((t: string) => typeof t === 'string' && t.startsWith('manual_email:'));
+        const hasEmail1 = (p as any).email1 && (p as any).email1.trim().length > 0;
+        const hasEmail2 = (p as any).email2 && (p as any).email2.trim().length > 0;
+
+        if (!hasPreferredEmail && !hasManualEmail && !hasEmail1 && !hasEmail2) {
+          return false; // No email, exclude it
+        }
+      }
+
+      if (contactFilters.hasPreferredContacts) {
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const hasPreferred = tags.some((t: string) =>
+          typeof t === 'string' && (t.startsWith('pref_phone:') || t.startsWith('pref_email:'))
+        );
+
+        if (!hasPreferred) {
+          return false; // No preferred contacts, exclude it
+        }
+      }
+
+      if (contactFilters.hasSkiptracePhones) {
+        // Check if property has phone1-7 (skip trace phones)
+        const hasSkiptracePhone = p.phone1 ||
+          (p as any).phone2 ||
+          (p as any).phone3 ||
+          (p as any).phone4 ||
+          (p as any).phone5 ||
+          (p as any).phone6 ||
+          (p as any).phone7;
+
+        if (!hasSkiptracePhone) {
+          return false; // No skip trace phones, exclude it
+        }
+      }
+
+      if (contactFilters.hasSkiptraceEmails) {
+        // Check if property has email1-5 (skip trace emails)
+        const hasSkiptraceEmail = (p as any).email1 ||
+          (p as any).email2 ||
+          (p as any).email3 ||
+          (p as any).email4 ||
+          (p as any).email5;
+
+        if (!hasSkiptraceEmail) {
+          return false; // No skip trace emails, exclude it
+        }
+      }
+
+      if (contactFilters.noSkiptraceData) {
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const hasAnyContact =
+          tags.some((t: string) => typeof t === 'string' && (
+            t.startsWith('pref_phone:') ||
+            t.startsWith('pref_email:') ||
+            t.startsWith('manual_phone:') ||
+            t.startsWith('manual_email:')
+          )) ||
+          p.phone1 || (p as any).phone2 || (p as any).email1 || (p as any).email2;
+
+        if (hasAnyContact) {
+          return false; // Has contact data, exclude it
+        }
+      }
+
       return true;
     });
 
@@ -1405,6 +1487,8 @@ const Admin = () => {
                   currentUserName={filterUserName}
                   advancedFilters={advancedFilters}
                   onAdvancedFiltersChange={setAdvancedFilters}
+                  contactFilters={contactFilters}
+                  onContactFiltersChange={setContactFilters}
                   onClearAll={() => {
                     setFilterStatus("all");
                     setApprovalStatus("all");
@@ -1412,6 +1496,7 @@ const Admin = () => {
                     setFilterUserName(null);
                     setSelectedTags([]);
                     setAdvancedFilters({});
+                    setContactFilters({});
                     setPriceRange([0, 1000000]);
                     setSelectedCities([]);
                     setDateFilter("all");

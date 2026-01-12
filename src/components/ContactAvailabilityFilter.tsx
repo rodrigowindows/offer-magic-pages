@@ -20,6 +20,8 @@ export interface ContactFilters {
   hasEmail?: boolean;
   hasPreferredContacts?: boolean;
   noSkiptraceData?: boolean;
+  hasSkiptracePhones?: boolean;
+  hasSkiptraceEmails?: boolean;
 }
 
 interface ContactAvailabilityFilterProps {
@@ -29,6 +31,8 @@ interface ContactAvailabilityFilterProps {
   emailsCount?: number;
   preferredCount?: number;
   noSkiptraceCount?: number;
+  skiptracephonesCount?: number;
+  skiptraceEmailsCount?: number;
 }
 
 export const ContactAvailabilityFilter = ({
@@ -38,6 +42,8 @@ export const ContactAvailabilityFilter = ({
   emailsCount = 0,
   preferredCount = 0,
   noSkiptraceCount = 0,
+  skiptracephonesCount = 0,
+  skiptraceEmailsCount = 0,
 }: ContactAvailabilityFilterProps) => {
   const activeFiltersCount = Object.values(filters).filter(Boolean).length;
 
@@ -111,6 +117,36 @@ export const ContactAvailabilityFilter = ({
               </Badge>
             )}
           </DropdownMenuCheckboxItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuCheckboxItem
+            checked={filters.hasSkiptracePhones === true}
+            onCheckedChange={() => toggleFilter('hasSkiptracePhones')}
+          >
+            <Phone className="h-4 w-4 mr-2 text-blue-600" />
+            Has Skip Trace Phones (phone1-7)
+            {skiptracephonesCount > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {skiptracephonesCount}
+              </Badge>
+            )}
+          </DropdownMenuCheckboxItem>
+
+          <DropdownMenuCheckboxItem
+            checked={filters.hasSkiptraceEmails === true}
+            onCheckedChange={() => toggleFilter('hasSkiptraceEmails')}
+          >
+            <Mail className="h-4 w-4 mr-2 text-purple-600" />
+            Has Skip Trace Emails (email1-5)
+            {skiptraceEmailsCount > 0 && (
+              <Badge variant="secondary" className="ml-auto">
+                {skiptraceEmailsCount}
+              </Badge>
+            )}
+          </DropdownMenuCheckboxItem>
+
+          <DropdownMenuSeparator />
 
           <DropdownMenuCheckboxItem
             checked={filters.noSkiptraceData === true}
