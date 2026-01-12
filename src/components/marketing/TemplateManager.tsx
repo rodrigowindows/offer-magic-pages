@@ -50,7 +50,7 @@ import {
   AlertCircle,
   Check,
 } from 'lucide-react';
-import { useTemplates } from '@/hooks/useTemplates';
+import { useTemplates } from '@/hooks/useTemplatesDB';
 import { Channel, SavedTemplate } from '@/types/marketing.types';
 import { TEMPLATE_CATEGORIES } from '@/constants/defaultTemplates';
 

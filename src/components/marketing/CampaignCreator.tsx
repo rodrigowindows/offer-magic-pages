@@ -53,7 +53,7 @@ import {
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
-import { useTemplates } from '@/hooks/useTemplates';
+import { useTemplates } from '@/hooks/useTemplatesDB';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
 
 interface CampaignProperty {

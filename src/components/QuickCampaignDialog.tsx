@@ -15,7 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useMarketingStore } from '@/store/marketingStore';
 import { useMarketing } from '@/hooks/useMarketing';
-import { useTemplates } from '@/hooks/useTemplates';
+import { useTemplates } from '@/hooks/useTemplatesDB';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { supabase } from '@/integrations/supabase/client';
 import {
