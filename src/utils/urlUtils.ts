@@ -7,29 +7,17 @@
  */
 export const generatePropertySlug = (property: {
   address: string;
-  city: string;
-  state: string;
-  zip_code: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
 }): string => {
-  // Remove caracteres especiais e converte para lowercase
-  const cleanAddress = property.address
+  // Apenas o endereço, sem cidade/estado/zip
+  return property.address
     .toLowerCase()
     .replace(/[^\w\s-]/g, '') // Remove caracteres especiais exceto espaços e hífens
     .replace(/\s+/g, '-') // Substitui espaços por hífens
     .replace(/-+/g, '-') // Remove hífens múltiplos
     .trim();
-
-  const cleanCity = property.city
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim();
-
-  const cleanState = property.state.toLowerCase().trim();
-
-  // Formato: endereço-cidade-estado-zip
-  return `${cleanAddress}-${cleanCity}-${cleanState}-${property.zip_code}`;
 };
 
 /**
