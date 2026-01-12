@@ -217,6 +217,9 @@ export default function CampaignCreator() {
     const propertyUrl = generatePropertyUrl(property, sourceChannel);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 
+    // Google Maps static image for property location
+    const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(property.address + ', ' + property.city + ', ' + property.state)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(property.address + ', ' + property.city)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
+
     const replacements: Record<string, string> = {
       '{name}': property.owner_name || 'Owner',
       '{owner_name}': property.owner_name || 'Owner',
@@ -228,6 +231,9 @@ export default function CampaignCreator() {
       '{estimated_value}': property.estimated_value ? `$${property.estimated_value.toLocaleString()}` : '$XXX,XXX',
       '{property_url}': propertyUrl,
       '{qr_code_url}': qrCodeUrl,
+      '{property_image}': (property as any).property_image_url || googleMapsImage,
+      '{property_photo}': (property as any).property_image_url || googleMapsImage,
+      '{property_map}': googleMapsImage,
       '{phone}': settings.company.contact_phone,
       '{company_name}': settings.company.company_name,
       '{seller_name}': settings.company.company_name,

@@ -72,6 +72,8 @@ export const TemplatePreviewSelector = ({
     let content = template.body || '';
 
     // Replace template variables
+    const googleMapsPreview = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(previewData.address + ', ' + previewData.city)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(previewData.address)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
+
     const replacements: Record<string, string> = {
       '{name}': previewData.name,
       '{address}': previewData.address,
@@ -82,6 +84,9 @@ export const TemplatePreviewSelector = ({
       '{phone}': previewData.phone,
       '{property_url}': previewData.property_url,
       '{qr_code_url}': previewData.qr_code_url,
+      '{property_image}': googleMapsPreview,
+      '{property_photo}': googleMapsPreview,
+      '{property_map}': googleMapsPreview,
       '{company_name}': 'MyLocalInvest',
       '{seller_name}': 'Mike Johnson',
       '{unsubscribe_url}': 'https://mylocalinvest.com/unsubscribe',
