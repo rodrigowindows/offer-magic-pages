@@ -12,6 +12,7 @@ import {
   Phone,
   CheckCircle
 } from "lucide-react";
+import { useTrackFeature } from "@/hooks/useTrackFeature";
 
 interface DashboardQuickActionsProps {
   onStartReview?: () => void;
@@ -30,6 +31,32 @@ export const DashboardQuickActions = ({
   onStartApprovedCampaign,
   pendingCount = 0,
 }: DashboardQuickActionsProps) => {
+  const trackFeature = useTrackFeature('dashboard_quick_actions');
+
+  const handleStartReview = () => {
+    trackFeature('start_review');
+    onStartReview?.();
+  };
+
+  const handleAddProperty = () => {
+    trackFeature('add_property');
+    onAddProperty?.();
+  };
+
+  const handleExportData = () => {
+    trackFeature('export_data');
+    onExportData?.();
+  };
+
+  const handleStartCampaign = () => {
+    trackFeature('start_campaign');
+    onStartCampaign?.();
+  };
+
+  const handleStartApprovedCampaign = () => {
+    trackFeature('start_approved_campaign');
+    onStartApprovedCampaign?.();
+  };
   return (
     <Card>
       <CardHeader>
@@ -46,7 +73,7 @@ export const DashboardQuickActions = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           {/* Start Review */}
           <Button
-            onClick={onStartReview}
+            onClick={handleStartReview}
             className="h-20 flex-col gap-2 relative"
             variant="outline"
           >
@@ -68,7 +95,7 @@ export const DashboardQuickActions = ({
 
           {/* Campaign Approved - Primary Action */}
           <Button
-            onClick={onStartApprovedCampaign}
+            onClick={handleStartApprovedCampaign}
             className="h-20 flex-col gap-2"
             variant="default"
           >
@@ -81,7 +108,7 @@ export const DashboardQuickActions = ({
 
           {/* Add Property */}
           <Button
-            onClick={onAddProperty}
+            onClick={handleAddProperty}
             className="h-20 flex-col gap-2"
             variant="outline"
           >
@@ -91,7 +118,7 @@ export const DashboardQuickActions = ({
 
           {/* Export Data */}
           <Button
-            onClick={onExportData}
+            onClick={handleExportData}
             className="h-20 flex-col gap-2"
             variant="outline"
           >

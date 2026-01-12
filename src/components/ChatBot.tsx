@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useTrackFeature } from "@/hooks/useTrackFeature";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -17,6 +18,7 @@ interface ChatBotProps {
 
 export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
   const { toast } = useToast();
+  const trackFeature = useTrackFeature('chatbot');
   const [isOpen, setIsOpen] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
   const [contactInfo, setContactInfo] = useState({ name: '', email: '', phone: '' });
@@ -41,6 +43,13 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
+
+    // Track chatbot usage
+    trackFeature('send_message', {
+      has_property_context: !!propertyId,
+      message_length: input.length,
+      is_first_message: messages.length === 1
+    });
 
     // Show contact form after first message if not provided yet
     if (!contactInfo.email && messages.length === 1) {
@@ -160,7 +169,13 @@ export const ChatBot = ({ propertyId, propertyAddress }: ChatBotProps) => {
       {/* Floating Chat Button */}
       {!isOpen && (
         <Button
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            trackFeature('open_chatbot', {
+              has_property_context: !!propertyId,
+              property_address: propertyAddress
+            });
+            setIsOpen(true);
+          }}
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
           size="icon"
         >

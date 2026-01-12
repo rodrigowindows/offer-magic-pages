@@ -46,7 +46,7 @@ import { Label } from '@/components/ui/label';
 import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
 import type { SavedTemplate } from '@/types/marketing.types';
 import { useFeatureToggle } from '@/contexts/FeatureToggleContext';
-import { useAdaptiveContactHelpers, useActivePreset } from '@/hooks/useFeatureToggleHelpers';
+import { useTrackFeature } from '@/hooks/useTrackFeature';
 
 interface CampaignTemplate {
   id: string;
@@ -329,6 +329,7 @@ export const CampaignWizard = () => {
   const { flags } = useFeatureToggle();
   const contactHelpers = useAdaptiveContactHelpers();
   const activePreset = useActivePreset();
+  const trackFeature = useTrackFeature('campaign_manager');
   
   const [currentStep, setCurrentStep] = useState<WizardStep>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<CampaignTemplate | null>(null);
@@ -418,6 +419,11 @@ export const CampaignWizard = () => {
   };
 
   const handleTemplateSelect = (template: CampaignTemplate) => {
+    trackFeature('select_template', {
+      template_id: template.id,
+      template_category: template.category,
+      channels: template.channels
+    });
     setSelectedTemplate(template);
     setCampaignConfig(prev => ({
       ...prev,
@@ -438,6 +444,14 @@ export const CampaignWizard = () => {
 
     setIsSending(true);
     try {
+      // Track campaign creation
+      trackFeature('send_campaign', {
+        template: selectedTemplate.id,
+        properties_count: selectedProperties.length,
+        channels: campaignConfig.channels,
+        template_category: selectedTemplate.category
+      });
+
       // Here you would integrate with your marketing API
       // For now, just simulate sending
       await new Promise(resolve => setTimeout(resolve, 2000));

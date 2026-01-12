@@ -38,6 +38,7 @@ import {
   ChevronRight,
   Search,
   Users,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -81,6 +82,12 @@ const adminPages: NavigationItem[] = [
     href: '/skip-trace',
     description: 'View skip tracing results',
     icon: Users,
+  },
+  {
+    title: 'Features Guide',
+    href: '/features',
+    description: 'Complete guide to all features',
+    icon: FileText,
   },
   {
     title: 'MCP Tester',
