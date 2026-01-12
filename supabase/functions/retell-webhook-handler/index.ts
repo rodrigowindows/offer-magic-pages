@@ -175,6 +175,16 @@ serve(async (req) => {
       },
       property_found: !!propertyInfo,
       matched_by: matchedBy,
+      debug: fromNumber ? {
+        original: fromNumber,
+        clean: fromNumber.replace(/\D/g, ''),
+        without1: (fromNumber.replace(/\D/g, '').startsWith('1') && fromNumber.replace(/\D/g, '').length === 11)
+          ? fromNumber.replace(/\D/g, '').substring(1)
+          : fromNumber.replace(/\D/g, ''),
+        formatted: fromNumber.replace(/\D/g, '').length === 10 || (fromNumber.replace(/\D/g, '').startsWith('1') && fromNumber.replace(/\D/g, '').length === 11)
+          ? `(${(fromNumber.replace(/\D/g, '').startsWith('1') ? fromNumber.replace(/\D/g, '').substring(1) : fromNumber.replace(/\D/g, '')).slice(0, 3)}) ${(fromNumber.replace(/\D/g, '').startsWith('1') ? fromNumber.replace(/\D/g, '').substring(1) : fromNumber.replace(/\D/g, '')).slice(3, 6)}-${(fromNumber.replace(/\D/g, '').startsWith('1') ? fromNumber.replace(/\D/g, '').substring(1) : fromNumber.replace(/\D/g, '')).slice(6)}`
+          : fromNumber
+      } : null,
       property_info: propertyInfo ? {
         id: propertyInfo.id,
         address: propertyInfo.address,
