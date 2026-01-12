@@ -100,6 +100,8 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     is_default: true,
     created_at: new Date('2026-01-01'),
     updated_at: new Date('2026-01-12T17:00:00'),
+    version: 2, // Versão 2: Adicionado link "View Full Offer Details" e {estimated_value}
+    edited_manually: false,
   },
   {
     id: 'email-follow-up',

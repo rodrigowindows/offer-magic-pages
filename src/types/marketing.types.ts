@@ -170,6 +170,8 @@ export interface SavedTemplate {
   is_default: boolean;
   created_at: Date;
   updated_at: Date;
+  version?: number;        // Versão do template (para controle de atualizações)
+  edited_manually?: boolean; // Se foi editado manualmente (não sobrescrever)
 }
 
 // ===== BATCH UPLOAD =====

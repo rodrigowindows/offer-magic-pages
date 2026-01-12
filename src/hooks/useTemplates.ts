@@ -24,24 +24,45 @@ export const useTemplates = () => {
         DEFAULT_TEMPLATES.forEach(defaultTemplate => {
           const existingTemplate = templates.find(t => t.id === defaultTemplate.id);
           if (existingTemplate && existingTemplate.is_default) {
-            // Para templates padrão (is_default: true), sempre verificar se o conteúdo do código
-            // é diferente do armazenado. Se sim, sobrescrever com a versão do código.
-            // Isso garante que templates padrão sejam sempre atualizados quando o código muda.
-            const contentChanged = existingTemplate.body !== defaultTemplate.body ||
-                                 existingTemplate.subject !== defaultTemplate.subject ||
-                                 existingTemplate.name !== defaultTemplate.name;
+            // Se foi editado manualmente, NÃO sobrescrever (a menos que seja nova versão)
+            if (existingTemplate.edited_manually) {
+              // Só atualizar se a versão do código for maior
+              const codeVersion = defaultTemplate.version || 1;
+              const savedVersion = existingTemplate.version || 1;
 
-            if (contentChanged) {
-              console.log(`🔄 Updating default template: ${defaultTemplate.name} (content changed)`);
+              if (codeVersion > savedVersion) {
+                console.log(`🔄 New version available: ${defaultTemplate.name} (v${codeVersion}). Your edits will be overwritten.`);
 
-              // SEMPRE usar a versão do código para templates padrão
-              store.updateTemplate(existingTemplate.id, {
-                body: defaultTemplate.body,
-                subject: defaultTemplate.subject,
-                name: defaultTemplate.name,
-                updated_at: new Date(), // Data atual para garantir que seja mais nova
-              });
-              updatedCount++;
+                store.updateTemplate(existingTemplate.id, {
+                  body: defaultTemplate.body,
+                  subject: defaultTemplate.subject,
+                  name: defaultTemplate.name,
+                  version: codeVersion,
+                  edited_manually: false, // Reset após atualizar
+                  updated_at: new Date(),
+                });
+                updatedCount++;
+              } else {
+                console.log(`✋ Skipping: ${defaultTemplate.name} (manually edited)`);
+              }
+            } else {
+              // Não editado manualmente, atualizar se conteúdo mudou
+              const contentChanged = existingTemplate.body !== defaultTemplate.body ||
+                                   existingTemplate.subject !== defaultTemplate.subject ||
+                                   existingTemplate.name !== defaultTemplate.name;
+
+              if (contentChanged) {
+                console.log(`🔄 Updating: ${defaultTemplate.name}`);
+
+                store.updateTemplate(existingTemplate.id, {
+                  body: defaultTemplate.body,
+                  subject: defaultTemplate.subject,
+                  name: defaultTemplate.name,
+                  version: defaultTemplate.version || 1,
+                  updated_at: new Date(),
+                });
+                updatedCount++;
+              }
             }
           } else if (!existingTemplate) {
             // Template padrão não existe, adicionar
@@ -128,6 +149,12 @@ export const useTemplates = () => {
           .forEach((t) => {
             store.updateTemplate(t.id, { is_default: false });
           });
+      }
+
+      // Se é um template padrão e está sendo editado manualmente, marcar flag
+      if (template.is_default && !updates.hasOwnProperty('edited_manually')) {
+        updates.edited_manually = true;
+        console.log(`📝 Marking template as manually edited: ${template.name}`);
       }
 
       store.updateTemplate(id, updates);
