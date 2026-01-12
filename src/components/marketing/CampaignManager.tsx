@@ -205,20 +205,14 @@ export const CampaignManager = () => {
     : getDefaultTemplate(selectedChannel);
 
   // Helper function to render template preview
-  // Helper to create SEO-friendly slug from property address
-  const createPropertySlug = (address: string, city: string, zip: string): string => {
-    const addressSlug = address
+  // Helper to create SEO-friendly slug from property address (address only)
+  const createPropertySlug = (address: string): string => {
+    return address
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
-    const citySlug = city
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
-    return `${addressSlug}-${citySlug}-${zip}`;
   };
 
   const renderTemplatePreview = (prop: CampaignProperty, type: 'body' | 'subject' = 'body') => {
@@ -227,8 +221,8 @@ export const CampaignManager = () => {
     }
 
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-    // Use SEO-friendly slug: "1025-s-washington-ave-orlando-32801"
-    const propertySlug = createPropertySlug(prop.address, prop.city, prop.zip_code);
+    // Use SEO-friendly slug: "1025-s-washington-ave"
+    const propertySlug = createPropertySlug(prop.address);
     const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
     
@@ -265,8 +259,8 @@ export const CampaignManager = () => {
   // Helper function to generate template content for sending
   const generateTemplateContent = (template: any, prop: CampaignProperty, trackingId?: string) => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
-    // Use SEO-friendly slug for property URL
-    const propertySlug = createPropertySlug(prop.address, prop.city, prop.zip_code);
+    // Use SEO-friendly slug for property URL (address only)
+    const propertySlug = createPropertySlug(prop.address);
     const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 

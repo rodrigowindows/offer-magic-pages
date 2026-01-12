@@ -133,7 +133,7 @@ serve(async (req) => {
       event,
       call_id: call?.call_id,
       property_found: !!propertyInfo,
-      matched_by,
+      matchedBy,
       has_skiptrace: !!skipTraceInfo
     });
 
@@ -153,7 +153,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Webhook processing error:', error);
     return new Response(JSON.stringify({
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       received_at: new Date().toISOString()
     }), {
       status: 500,
