@@ -25,6 +25,12 @@
     "test:e2e:ui": "playwright test --ui",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:ci": "npm run type-check && npm run lint && npm run test:all",
+    "test:load": "k6 run tests/load/api-load-test.js",
+    "test:load:db": "k6 run tests/load/database-load-test.js",
+    "test:stress": "artillery run tests/stress/stress-test.yml",
+    "test:performance": "lighthouse http://localhost:4173 --output=json --output-path=./lighthouse-results.json --config-path=.lighthouserc.json",
+    "test:security": "npm audit && npm run test:unit -- --run src/test/security.test.ts",
+    "test:full": "npm run test:ci && npm run test:performance && npm run test:security",
     "pre-commit": "npm run type-check && npm run lint",
     "prepare": "husky install || true"
   },

@@ -1,0 +1,88 @@
+config:
+  target: 'http://localhost:4173'
+  phases:
+    # Warm up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    # Ramp up load
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 50
+      name: "Ramp up load"
+    # Sustained load
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained load"
+    # Stress test - high load
+    - duration: 60
+      arrivalRate: 100
+      name: "Stress test"
+    # Recovery test
+    - duration: 60
+      arrivalRate: 10
+      name: "Recovery"
+  defaults:
+    headers:
+      Content-Type: 'application/json'
+
+scenarios:
+  - name: "Property Search Stress Test"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/properties/search"
+          qs:
+            q: "Orlando"
+            limit: "20"
+          expect:
+            - statusCode: 200
+          capture:
+            json: "$.length"
+            as: "resultCount"
+
+  - name: "Campaign Creation Stress Test"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/campaigns"
+          json:
+            name: "Stress Test Campaign {{ $randomString() }}"
+            description: "Testing system under stress"
+            target_audience: "stress_test_audience"
+            budget: "{{ $randomInt(500, 5000) }}"
+          expect:
+            - statusCode: 201
+          capture:
+            json: "$.id"
+            as: "campaignId"
+
+  - name: "Analytics Dashboard Stress Test"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/analytics/overview"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/analytics/campaigns/{{ campaignId }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Mixed Operations Stress Test"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/leads/bulk-import"
+          json:
+            leads: "{{ $randomInt(10, 100) }}"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/properties/search?q={{ $randomString() }}&limit=10"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/campaigns"
+          expect:
+            - statusCode: 200

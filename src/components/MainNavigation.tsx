@@ -62,27 +62,6 @@ const publicPages: NavigationItem[] = [
     description: 'View property offer details',
     icon: Building2,
   },
-];
-
-const adminPages: NavigationItem[] = [
-  {
-    title: 'Admin Dashboard',
-    href: '/admin',
-    description: 'Manage properties and offers',
-    icon: Shield,
-  },
-  {
-    title: 'Import Properties',
-    href: '/admin/import',
-    description: 'Bulk import from CSV',
-    icon: Upload,
-  },
-  {
-    title: 'Skip Trace Data',
-    href: '/skip-trace',
-    description: 'View skip tracing results',
-    icon: Users,
-  },
   {
     title: 'Features Guide',
     href: '/features',
@@ -90,14 +69,11 @@ const adminPages: NavigationItem[] = [
     icon: FileText,
   },
   {
-    title: 'MCP Tester',
-    href: '/marketing/mcp-tester',
-    description: 'Debug MCP operations',
-    icon: TestTube2,
+    title: 'Admin Dashboard',
+    href: '/admin',
+    description: 'Manage properties and offers',
+    icon: Shield,
   },
-];
-
-const marketingPages: NavigationItem[] = [
   {
     title: 'Marketing Dashboard',
     href: '/marketing',
@@ -117,11 +93,31 @@ const marketingPages: NavigationItem[] = [
     icon: History,
   },
   {
-    title: 'Marketing Settings',
-    href: '/marketing/settings',
-    description: 'Configure marketing system',
-    icon: Settings,
+    title: 'Skip Trace Data',
+    href: '/skip-trace',
+    description: 'View skip tracing results',
+    icon: Users,
   },
+  {
+    title: 'Import Properties',
+    href: '/admin/import',
+    description: 'Bulk import from CSV',
+    icon: Upload,
+  },
+  {
+    title: 'MCP Tester',
+    href: '/marketing/mcp-tester',
+    description: 'Debug MCP operations',
+    icon: TestTube2,
+  },
+];
+
+const adminPages: NavigationItem[] = [
+  // All pages moved to public section
+];
+
+const marketingPages: NavigationItem[] = [
+  // All pages moved to public section
 ];
 
 const authPages: NavigationItem[] = [
@@ -162,9 +158,9 @@ export const MainNavigation = () => {
               <NavigationMenuList>
                 {/* Public Pages */}
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger>Public</NavigationMenuTrigger>
+                  <NavigationMenuTrigger>All Pages</NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid w-[400px] gap-3 p-4">
+                    <ul className="grid w-[500px] gap-3 p-4 md:grid-cols-2">
                       {publicPages.map((item) => (
                         <NavigationItem
                           key={item.href}
@@ -228,30 +224,12 @@ export const MainNavigation = () => {
               <div className="mt-6 space-y-6">
                 {/* Public Pages */}
                 <MobileMenuSection
-                  title="Public Pages"
+                  title="All Pages"
                   items={publicPages}
                   isActive={isActive}
                   navigate={navigate}
                   onClose={() => setMobileMenuOpen(false)}
-                />
-
-                {/* Marketing System */}
-                <MobileMenuSection
-                  title="Marketing System"
-                  items={marketingPages}
-                  isActive={isActive}
-                  navigate={navigate}
-                  onClose={() => setMobileMenuOpen(false)}
                   highlight
-                />
-
-                {/* Admin Pages */}
-                <MobileMenuSection
-                  title="Admin"
-                  items={adminPages}
-                  isActive={isActive}
-                  navigate={navigate}
-                  onClose={() => setMobileMenuOpen(false)}
                 />
 
                 {/* Auth */}
