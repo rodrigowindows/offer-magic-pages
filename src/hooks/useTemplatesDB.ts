@@ -278,7 +278,7 @@ export const useTemplates = () => {
     loadTemplates();
   }, [loadTemplates]);
 
-  
+
 
   return {
     templates,
