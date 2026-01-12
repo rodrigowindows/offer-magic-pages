@@ -263,14 +263,27 @@ export const useTemplates = () => {
     [templates]
   );
 
+  // Calcular estatísticas dos templates
+  const templateStats = useCallback(() => {
+    return {
+      total: templates.length,
+      bySMS: templates.filter(t => t.channel === 'sms').length,
+      byEmail: templates.filter(t => t.channel === 'email').length,
+      byCall: templates.filter(t => t.channel === 'call').length,
+    };
+  }, [templates]);
+
   // Carregar templates ao montar
   useEffect(() => {
     loadTemplates();
   }, [loadTemplates]);
 
+  
+
   return {
     templates,
     isLoading,
+    templateStats: templateStats(),
     addTemplate,
     updateTemplate,
     deleteTemplate,
