@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
 import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
 
-export const useTemplatesDB = () => {
+export const useTemplates = () => {
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
