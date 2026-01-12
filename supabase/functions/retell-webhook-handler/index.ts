@@ -1,3 +1,7 @@
+// 🚨 VERSÃO v2.0 - DEPLOYED ON 2026-01-12 - SE VOCÊ VÊ ISSO, O DEPLOY FUNCIONOU! 🚨
+// Se ao testar NÃO aparecer "version": "v2.0-debug-deployed" no resultado,
+// significa que você está editando a função errada ou o cache não atualizou.
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -15,7 +19,7 @@ serve(async (req) => {
     const eventPayload = await req.json();
     const { event, call } = eventPayload;
 
-    console.log(`Received Retell webhook: ${event}`, { call_id: call?.call_id, from_number: call?.from_number });
+    console.log(`🔥 v2.0 Received Retell webhook: ${event}`, { call_id: call?.call_id, from_number: call?.from_number });
 
     const fromNumber = call?.from_number;
     let propertyInfo = null;
