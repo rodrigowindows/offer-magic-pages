@@ -250,9 +250,9 @@ export const CampaignManager = () => {
     content = content.replace(/\{zip_code\}/g, prop.zip_code);
     content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
     content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
-    content = content.replace(/{property_image}/g, (prop as any).property_image_url || googleMapsImage);
-    content = content.replace(/{property_photo}/g, (prop as any).property_image_url || googleMapsImage);
-    content = content.replace(/{property_map}/g, googleMapsImage);
+    content = content.replace(/\{property_image\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_photo\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_map\}/g, googleMapsImage);
     content = content.replace(/\{company_name\}/g, settings.company.company_name);
     content = content.replace(/\{phone\}/g, settings.company.contact_phone);
     content = content.replace(/\{seller_name\}/g, settings.company.company_name);
@@ -291,9 +291,9 @@ n    // Google Maps static image for property location
     content = content.replace(/\{zip_code\}/g, prop.zip_code);
     content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
     content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
-    content = content.replace(/{property_image}/g, (prop as any).property_image_url || googleMapsImage);
-    content = content.replace(/{property_photo}/g, (prop as any).property_image_url || googleMapsImage);
-    content = content.replace(/{property_map}/g, googleMapsImage);
+    content = content.replace(/\{property_image\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_photo\}/g, (prop as any).property_image_url || googleMapsImage);
+    content = content.replace(/\{property_map\}/g, googleMapsImage);
     content = content.replace(/\{company_name\}/g, settings.company.company_name);
     content = content.replace(/\{phone\}/g, settings.company.contact_phone);
     content = content.replace(/\{seller_name\}/g, settings.company.company_name);
