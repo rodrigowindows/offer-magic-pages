@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getABVariant, trackABEvent, type ABVariant } from "@/utils/abTesting";
+import { useFeatureToggle } from "@/contexts/FeatureToggleContext";
 import { UltraSimpleVariant } from "@/components/variants/UltraSimpleVariant";
 import { EmailFirstVariant } from "@/components/variants/EmailFirstVariant";
 import PropertyPageMinimal from "@/components/PropertyPageMinimal";
@@ -19,9 +20,22 @@ interface ABTestWrapperProps {
 }
 
 export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
+  const { flags } = useFeatureToggle();
   const [variant, setVariant] = useState<ABVariant | null>(null);
 
   useEffect(() => {
+    // If there's a forced variant, use it
+    if (flags.forcePropertyVariant) {
+      setVariant(flags.forcePropertyVariant as ABVariant);
+      return;
+    }
+
+    // If A/B testing is disabled, use default variant
+    if (!flags.enableABTesting) {
+      setVariant('default');
+      return;
+    }
+
     // Get assigned variant
     const assignedVariant = getABVariant(property.id);
     setVariant(assignedVariant);
@@ -39,7 +53,7 @@ export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [property.id]);
+  }, [property.id, flags.enableABTesting, flags.forcePropertyVariant]);
 
   if (!variant) {
     // Loading state
@@ -57,6 +71,22 @@ export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
 
     case 'email-first':
       return <EmailFirstVariant property={property} />;
+
+    case 'minimal':
+      return <PropertyPageMinimal
+        property={{
+          ...property,
+          slug: property.address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unknown',
+          status: 'active',
+          owner_name: null,
+          neighborhood: null,
+          zip_code: property.zip_code || '',
+          property_image_url: property.property_image_url || null,
+          cash_offer_amount: property.cash_offer_amount || property.estimated_value * 0.7,
+        }}
+        onFormSubmit={() => trackABEvent(property.id, variant, 'form_submitted' as any)}
+        trackEvent={(event: string) => trackABEvent(property.id, variant, event as any)}
+      />;
 
     case 'progressive':
       // TODO: Implement ProgressiveVariant

@@ -39,6 +39,9 @@ export interface FeatureFlags {
   enableScheduledSends: boolean;        // Schedule campaigns
   enableTestMode: boolean;              // Test mode for campaigns
   showCampaignTemplates: boolean;       // Template selector
+  
+  // Property Page Variants
+  forcePropertyVariant: 'default' | 'ultra-simple' | 'email-first' | 'minimal' | null;  // Force specific variant (null = A/B test)
 }
 
 // Preset Configurations
@@ -66,6 +69,7 @@ export const FEATURE_PRESETS = {
     enableScheduledSends: true,
     enableTestMode: true,
     showCampaignTemplates: true,
+    forcePropertyVariant: null,  // A/B test
   },
   legacy: {
     useTagsForContacts: false,
@@ -90,6 +94,7 @@ export const FEATURE_PRESETS = {
     enableScheduledSends: true,
     enableTestMode: true,
     showCampaignTemplates: true,
+    forcePropertyVariant: 'default',  // Classic offer page
   },
   modern: {
     useTagsForContacts: false,
@@ -114,6 +119,7 @@ export const FEATURE_PRESETS = {
     enableScheduledSends: true,
     enableTestMode: true,
     showCampaignTemplates: true,
+    forcePropertyVariant: 'ultra-simple',  // Modern variant
   },
   minimal: {
     useTagsForContacts: true,
@@ -138,6 +144,7 @@ export const FEATURE_PRESETS = {
     enableScheduledSends: false,
     enableTestMode: false,
     showCampaignTemplates: false,
+    forcePropertyVariant: 'minimal',  // Minimal variant
   },
 } as const;
 
