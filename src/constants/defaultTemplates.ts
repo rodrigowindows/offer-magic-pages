@@ -99,7 +99,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
 </html>`,
     is_default: true,
     created_at: new Date('2026-01-01'),
-    updated_at: new Date('2026-01-01'),
+    updated_at: new Date('2026-01-12T04:30:00'),
   },
   {
     id: 'email-follow-up',
