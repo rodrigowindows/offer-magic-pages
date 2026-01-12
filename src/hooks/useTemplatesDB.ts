@@ -32,9 +32,10 @@ export const useTemplatesDB = () => {
         return;
       }
 
-      // Converter datas de string para Date
-      const templatesWithDates = data.map(t => ({
+      // Converter datas de string para Date e garantir tipo Channel
+      const templatesWithDates: SavedTemplate[] = data.map(t => ({
         ...t,
+        channel: t.channel as Channel,
         created_at: new Date(t.created_at),
         updated_at: new Date(t.updated_at),
       }));
@@ -81,6 +82,7 @@ export const useTemplatesDB = () => {
   };
 
   // Verificar e atualizar templates padrão
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const checkAndUpdateDefaultTemplates = async (currentTemplates: SavedTemplate[]) => {
     let updatedCount = 0;
 
@@ -168,14 +170,24 @@ export const useTemplatesDB = () => {
       const template = templates.find(t => t.id === id);
 
       // Se é template padrão sendo editado manualmente, marcar flag
-      if (template?.is_default && !updates.hasOwnProperty('edited_manually')) {
+      if (template?.is_default && !Object.prototype.hasOwnProperty.call(updates, 'edited_manually')) {
         updates.edited_manually = true;
         console.log(`📝 Marcando template como editado manualmente: ${template.name}`);
       }
 
+      // Preparar updates para o banco (converter datas para string se necessário)
+      const dbUpdates: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(updates)) {
+        if (value instanceof Date) {
+          dbUpdates[key] = value.toISOString();
+        } else {
+          dbUpdates[key] = value;
+        }
+      }
+
       const { error } = await supabase
         .from('templates')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id);
 
       if (error) throw error;

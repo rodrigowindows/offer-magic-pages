@@ -47,6 +47,7 @@ import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
 import type { SavedTemplate } from '@/types/marketing.types';
 import { useFeatureToggle } from '@/contexts/FeatureToggleContext';
 import { useTrackFeature } from '@/hooks/useTrackFeature';
+import { useAdaptiveContactHelpers, useActivePreset } from '@/hooks/useFeatureToggleHelpers';
 
 interface CampaignTemplate {
   id: string;
