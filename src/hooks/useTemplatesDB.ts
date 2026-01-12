@@ -3,7 +3,7 @@
  * Substitui o localStorage por banco de dados
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
@@ -264,13 +264,15 @@ export const useTemplates = () => {
   );
 
   // Calcular estatísticas dos templates
-  const templateStats = useCallback(() => {
-    return {
+  const templateStats = useMemo(() => {
+    const stats = {
       total: templates.length,
       bySMS: templates.filter(t => t.channel === 'sms').length,
       byEmail: templates.filter(t => t.channel === 'email').length,
       byCall: templates.filter(t => t.channel === 'call').length,
     };
+    console.log('📊 Template stats:', stats);
+    return stats;
   }, [templates]);
 
   // Carregar templates ao montar
@@ -278,12 +280,10 @@ export const useTemplates = () => {
     loadTemplates();
   }, [loadTemplates]);
 
-
-
   return {
     templates,
     isLoading,
-    templateStats: templateStats(),
+    templateStats,
     addTemplate,
     updateTemplate,
     deleteTemplate,
