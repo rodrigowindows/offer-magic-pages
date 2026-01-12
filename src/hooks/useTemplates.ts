@@ -24,20 +24,35 @@ export const useTemplates = () => {
         DEFAULT_TEMPLATES.forEach(defaultTemplate => {
           const existingTemplate = templates.find(t => t.id === defaultTemplate.id);
           if (existingTemplate && existingTemplate.is_default) {
-            // Verificar se o conteúdo mudou
-            const contentChanged = existingTemplate.body !== defaultTemplate.body ||
-                                 existingTemplate.subject !== defaultTemplate.subject ||
-                                 existingTemplate.name !== defaultTemplate.name;
+            // Verificar se a data do template padrão é mais recente
+            const defaultDate = new Date(defaultTemplate.updated_at).getTime();
+            const existingDate = new Date(existingTemplate.updated_at).getTime();
 
-            if (contentChanged) {
+            // Atualizar se a data do código for mais nova OU se o conteúdo mudou
+            const needsUpdate = defaultDate > existingDate ||
+                              existingTemplate.body !== defaultTemplate.body ||
+                              existingTemplate.subject !== defaultTemplate.subject ||
+                              existingTemplate.name !== defaultTemplate.name;
+
+            if (needsUpdate) {
+              console.log(`🔄 Updating default template: ${defaultTemplate.name}`, {
+                defaultDate: new Date(defaultDate).toISOString(),
+                existingDate: new Date(existingDate).toISOString(),
+                isNewer: defaultDate > existingDate
+              });
+
               store.updateTemplate(existingTemplate.id, {
                 body: defaultTemplate.body,
                 subject: defaultTemplate.subject,
                 name: defaultTemplate.name,
-                updated_at: new Date(),
+                updated_at: defaultTemplate.updated_at,
               });
               updatedCount++;
             }
+          } else if (!existingTemplate) {
+            // Template padrão não existe, adicionar
+            store.addTemplate(defaultTemplate);
+            updatedCount++;
           }
         });
 
