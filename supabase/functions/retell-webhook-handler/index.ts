@@ -96,6 +96,8 @@ serve(async (req) => {
           .not('tags', 'is', null);
 
         if (allPropertiesWithTags && allPropertiesWithTags.length > 0) {
+          console.log(`  Checking ${allPropertiesWithTags.length} properties with tags`);
+
           // Search for phone in tags
           const matchingProperties = allPropertiesWithTags.filter(property => {
             if (!Array.isArray(property.tags)) return false;
@@ -112,9 +114,15 @@ serve(async (req) => {
               `manual_phone:${formattedPhone}`
             ];
 
+            // Debug: Check first 3 properties
+            if (allPropertiesWithTags.indexOf(property) < 3) {
+              console.log(`  Property: ${property.address}, Tags:`, property.tags);
+              console.log(`  Looking for:`, possibleTags);
+            }
+
             const found = property.tags.some((tag: string) => possibleTags.includes(tag));
             if (found) {
-              console.log(`  Found match in tags for property: ${property.address}`, property.tags);
+              console.log(`  ✅ Found match in tags for property: ${property.address}`, property.tags);
             }
             return found;
           });
