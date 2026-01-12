@@ -66,10 +66,17 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
           <p style="margin: 0; font-size: 18px; color: #333; font-weight: bold;">{address}</p>
           <p style="margin: 5px 0 0; color: #666;">{city}, {state}</p>
         </div>
+        <div style="text-align: center; margin: 20px 0;">
+          <img src="{property_image}" alt="Property Photo" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+        </div>
         <div style="text-align: center; margin: 30px 0;">
           <p style="font-size: 14px; color: #666; margin: 0;">Our Cash Offer</p>
           <p style="font-size: 36px; color: #28a745; font-weight: bold; margin: 10px 0;">{cash_offer}</p>
           <p style="font-size: 12px; color: #666; margin: 5px 0 0;">Estimated Property Value: {estimated_value}</p>
+        </div>
+        <div style="text-align: center; margin: 20px 0;">
+          <p style="font-size: 14px; color: #666; margin: 0 0 10px 0;">Property Location:</p>
+          <img src="{property_map}" alt="Property Location Map" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; border: 2px solid #667eea;" />
         </div>
         <p style="font-size: 16px; color: #333; line-height: 1.6;">This offer is valid for 7 days. Contact us to discuss!</p>
         <div style="text-align: center; margin: 30px 0;">
@@ -99,8 +106,8 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
 </html>`,
     is_default: true,
     created_at: new Date('2026-01-01'),
-    updated_at: new Date('2026-01-12T17:00:00'),
-    version: 2, // Versão 2: Adicionado link "View Full Offer Details" e {estimated_value}
+    updated_at: new Date('2026-01-12T18:00:00'),
+    version: 3, // Versão 3: Adicionado {property_image} e {property_map}
     edited_manually: false,
   },
   {
