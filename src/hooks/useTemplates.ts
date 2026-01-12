@@ -24,28 +24,22 @@ export const useTemplates = () => {
         DEFAULT_TEMPLATES.forEach(defaultTemplate => {
           const existingTemplate = templates.find(t => t.id === defaultTemplate.id);
           if (existingTemplate && existingTemplate.is_default) {
-            // Verificar se a data do template padrão é mais recente
-            const defaultDate = new Date(defaultTemplate.updated_at).getTime();
-            const existingDate = new Date(existingTemplate.updated_at).getTime();
+            // Para templates padrão (is_default: true), sempre verificar se o conteúdo do código
+            // é diferente do armazenado. Se sim, sobrescrever com a versão do código.
+            // Isso garante que templates padrão sejam sempre atualizados quando o código muda.
+            const contentChanged = existingTemplate.body !== defaultTemplate.body ||
+                                 existingTemplate.subject !== defaultTemplate.subject ||
+                                 existingTemplate.name !== defaultTemplate.name;
 
-            // Atualizar se a data do código for mais nova OU se o conteúdo mudou
-            const needsUpdate = defaultDate > existingDate ||
-                              existingTemplate.body !== defaultTemplate.body ||
-                              existingTemplate.subject !== defaultTemplate.subject ||
-                              existingTemplate.name !== defaultTemplate.name;
+            if (contentChanged) {
+              console.log(`🔄 Updating default template: ${defaultTemplate.name} (content changed)`);
 
-            if (needsUpdate) {
-              console.log(`🔄 Updating default template: ${defaultTemplate.name}`, {
-                defaultDate: new Date(defaultDate).toISOString(),
-                existingDate: new Date(existingDate).toISOString(),
-                isNewer: defaultDate > existingDate
-              });
-
+              // SEMPRE usar a versão do código para templates padrão
               store.updateTemplate(existingTemplate.id, {
                 body: defaultTemplate.body,
                 subject: defaultTemplate.subject,
                 name: defaultTemplate.name,
-                updated_at: defaultTemplate.updated_at,
+                updated_at: new Date(), // Data atual para garantir que seja mais nova
               });
               updatedCount++;
             }
