@@ -24,8 +24,11 @@ serve(async (req) => {
     let matchedBy = null;
 
     if (fromNumber) {
-      // Clean the phone number for matching
+      // Clean the phone number for matching (remove all non-digits)
       const cleanPhone = fromNumber.replace(/\D/g, '');
+
+      // Remove leading 1 from US numbers if present
+      const cleanPhoneWithout1 = cleanPhone.startsWith('1') ? cleanPhone.substring(1) : cleanPhone;
 
       const supabaseClient = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
@@ -33,32 +36,34 @@ serve(async (req) => {
       );
 
       // First, try to find property by phone number in basic fields
-      // Try both with +1 prefix (e.g., +14079283433) and without (e.g., 4079283433)
+      // Try: original, cleaned, and cleaned without leading 1
       let { data: properties } = await supabaseClient
         .from('properties')
         .select('*')
-        .or(\owner_phone.eq.\${fromNumber},phone1.eq.\${fromNumber},phone2.eq.\${fromNumber},phone3.eq.\${fromNumber},phone4.eq.\${fromNumber},phone5.eq.\${fromNumber},owner_phone.eq.\${cleanPhone},phone1.eq.\${cleanPhone},phone2.eq.\${cleanPhone},phone3.eq.\${cleanPhone},phone4.eq.\${cleanPhone},phone5.eq.\${cleanPhone}\)
+        .or([
+          `owner_phone.eq.${fromNumber}`,
+          `phone1.eq.${fromNumber}`,
+          `phone2.eq.${fromNumber}`,
+          `phone3.eq.${fromNumber}`,
+          `phone4.eq.${fromNumber}`,
+          `phone5.eq.${fromNumber}`,
+          `owner_phone.eq.${cleanPhone}`,
+          `phone1.eq.${cleanPhone}`,
+          `phone2.eq.${cleanPhone}`,
+          `phone3.eq.${cleanPhone}`,
+          `phone4.eq.${cleanPhone}`,
+          `phone5.eq.${cleanPhone}`,
+          `owner_phone.eq.${cleanPhoneWithout1}`,
+          `phone1.eq.${cleanPhoneWithout1}`,
+          `phone2.eq.${cleanPhoneWithout1}`,
+          `phone3.eq.${cleanPhoneWithout1}`,
+          `phone4.eq.${cleanPhoneWithout1}`,
+          `phone5.eq.${cleanPhoneWithout1}`
+        ].join(','))
         .limit(1);
 
       if (properties && properties.length > 0) {
         matchedBy = 'exact_phone';
-      }
-
-        if (!preferredProperties || preferredProperties.length === 0) {
-          // Also try with cleaned phone in preferred_phones
-          const { data: preferredCleanedProperties } = await supabaseClient
-            .from('properties')
-            .select('*')
-            .contains('preferred_phones', [cleanPhone]);
-
-          properties = preferredCleanedProperties;
-          if (properties && properties.length > 0) {
-            matchedBy = 'preferred_cleaned_phone';
-          }
-        } else {
-          properties = preferredProperties;
-          matchedBy = 'preferred_phone';
-        }
       }
 
       if (properties && properties.length > 0) {
