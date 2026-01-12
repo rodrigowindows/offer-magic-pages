@@ -6,8 +6,10 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type ABVariant =
+  | 'default'         // Default variant
   | 'ultra-simple'    // Shows offer immediately, no gate
   | 'email-first'     // Email gate, then reveal
+  | 'minimal'         // Minimal page design
   | 'progressive'     // Email → Offer → Interest capture
   | 'social-proof'    // Testimonials before offer
   | 'urgency';        // Timer/scarcity elements
