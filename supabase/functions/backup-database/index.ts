@@ -182,8 +182,10 @@ Deno.serve(async (req) => {
       }
     )
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Backup failed:', error)
+    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
 
     const errorResponse: BackupResponse = {
       success: false,
@@ -191,7 +193,7 @@ Deno.serve(async (req) => {
       tables: {},
       totalRecords: 0,
       totalSize: 0,
-      error: error.message
+      error: errorMessage
     }
 
     return new Response(

@@ -135,8 +135,10 @@ export const ABTestAnalytics = () => {
 
   const getVariantLabel = (variant: ABVariant): string => {
     const labels: Record<ABVariant, string> = {
+      'default': 'Default',
       'ultra-simple': 'Ultra Simple (No Gate)',
       'email-first': 'Email First (Gated)',
+      'minimal': 'Minimal Design',
       'progressive': 'Progressive Disclosure',
       'social-proof': 'Social Proof',
       'urgency': 'Urgency/Scarcity',
