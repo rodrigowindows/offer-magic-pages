@@ -142,6 +142,7 @@ const HTML_TEMPLATES = {
         <div style="text-align: center; margin: 30px 0;">
           <p style="font-size: 14px; color: #666; margin: 0;">Our Cash Offer</p>
           <p style="font-size: 36px; color: #28a745; font-weight: bold; margin: 10px 0;">{cash_offer}</p>
+          <p style="font-size: 14px; color: #666; margin: 10px 0 0 0;">Estimated Property Value: {estimated_value}</p>
         </div>
         <p style="font-size: 16px; color: #333; line-height: 1.6;">This offer is valid for 7 days. Contact us to discuss!</p>
         <div style="text-align: center; margin: 30px 0;">
@@ -178,6 +179,7 @@ const HTML_TEMPLATES = {
     <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 10px;">Property Offer</h2>
     <p>Hello {name},</p>
     <p>We would like to make a cash offer of <strong style="color: #28a745;">{cash_offer}</strong> for your property at <strong>{address}, {city}, {state}</strong>.</p>
+    <p style="font-size: 13px; color: #666;">Estimated Property Value: <strong>{estimated_value}</strong></p>
     <p>Please contact us at <a href="tel:{phone}">{phone}</a> to discuss this offer.</p>
     <div style="text-align: center; margin: 30px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
       <p style="font-size: 13px; margin: 0 0 10px 0;">View your personalized offer page:</p>
@@ -217,7 +219,8 @@ const HTML_TEMPLATES = {
             </td>
             <td style="padding: 15px; background-color: #1a365d; color: #fff; text-align: center; border: 1px solid #1a365d;">
               <strong>Cash Offer</strong><br>
-              <span style="font-size: 24px;">{cash_offer}</span>
+              <span style="font-size: 24px;">{cash_offer}</span><br>
+              <span style="font-size: 12px; opacity: 0.9;">Est. Value: {estimated_value}</span>
             </td>
           </tr>
         </table>
