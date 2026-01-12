@@ -66,6 +66,65 @@ serve(async (req) => {
         matchedBy = 'exact_phone';
       }
 
+      // If not found in basic fields, search in skip trace data
+      if (!properties || properties.length === 0) {
+        console.log('Phone not found in basic fields, searching skip trace data...');
+
+        // Get all skip trace records
+        const { data: allSkipTrace } = await supabaseClient
+          .from('skip_trace_data')
+          .select('property_id, skip_trace_summary');
+
+        if (allSkipTrace && allSkipTrace.length > 0) {
+          // Search through skip trace phone numbers
+          for (const skipTrace of allSkipTrace) {
+            const summary = skipTrace.skip_trace_summary;
+            if (!summary) continue;
+
+            // Check phones array
+            const phones = summary.phones || [];
+            const foundPhone = phones.find((p: any) => {
+              const phoneNum = typeof p === 'string' ? p : p.number;
+              if (!phoneNum) return false;
+
+              const cleanSkipPhone = phoneNum.replace(/\D/g, '');
+              const cleanSkipPhoneWithout1 = cleanSkipPhone.startsWith('1') ? cleanSkipPhone.substring(1) : cleanSkipPhone;
+
+              return cleanSkipPhoneWithout1 === cleanPhoneWithout1 ||
+                     cleanSkipPhone === cleanPhone ||
+                     phoneNum === fromNumber;
+            });
+
+            // Also check preferred_phones
+            const preferredPhones = summary.preferred_phones || [];
+            const foundPreferredPhone = preferredPhones.find((phoneNum: string) => {
+              const cleanSkipPhone = phoneNum.replace(/\D/g, '');
+              const cleanSkipPhoneWithout1 = cleanSkipPhone.startsWith('1') ? cleanSkipPhone.substring(1) : cleanSkipPhone;
+
+              return cleanSkipPhoneWithout1 === cleanPhoneWithout1 ||
+                     cleanSkipPhone === cleanPhone ||
+                     phoneNum === fromNumber;
+            });
+
+            if (foundPhone || foundPreferredPhone) {
+              // Found match in skip trace! Now get the property
+              const { data: matchedProperty } = await supabaseClient
+                .from('properties')
+                .select('*')
+                .eq('id', skipTrace.property_id)
+                .limit(1);
+
+              if (matchedProperty && matchedProperty.length > 0) {
+                properties = matchedProperty;
+                matchedBy = foundPreferredPhone ? 'skip_trace_preferred_phone' : 'skip_trace_phone';
+                console.log(`Match found in skip trace! Property: ${matchedProperty[0].address}`);
+                break;
+              }
+            }
+          }
+        }
+      }
+
       if (properties && properties.length > 0) {
         propertyInfo = properties[0];
 
