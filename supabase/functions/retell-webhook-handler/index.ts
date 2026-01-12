@@ -1,6 +1,5 @@
-// 🚨 VERSÃO v2.0 - DEPLOYED ON 2026-01-12 - SE VOCÊ VÊ ISSO, O DEPLOY FUNCIONOU! 🚨
-// Se ao testar NÃO aparecer "version": "v2.0-debug-deployed" no resultado,
-// significa que você está editando a função errada ou o cache não atualizou.
+// 🚨 VERSÃO v3.0 - RETELL FORMAT - DEPLOYED ON 2026-01-12 🚨
+// Agora retorna formato correto para Retell AI: { call_inbound: { dynamic_variables: {...} } }
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
@@ -19,7 +18,7 @@ serve(async (req) => {
     const eventPayload = await req.json();
     const { event, call } = eventPayload;
 
-    console.log(`🔥 v2.0 Received Retell webhook: ${event}`, { call_id: call?.call_id, from_number: call?.from_number });
+    console.log(`🔥 v3.0 RETELL FORMAT - Received webhook: ${event}`, { call_id: call?.call_id, from_number: call?.from_number });
 
     const fromNumber = call?.from_number;
     let propertyInfo = null;
@@ -221,12 +220,39 @@ serve(async (req) => {
       has_skiptrace: !!skipTraceInfo
     });
 
-    return new Response(JSON.stringify({
-      success: true,
-      result,
-      version: "v2.0-debug-deployed",
-      timestamp: new Date().toISOString()
-    }), {
+    // Retell AI expects specific format for inbound calls
+    const retellResponse = propertyInfo ? {
+      call_inbound: {
+        dynamic_variables: {
+          customer_name: propertyInfo.owner_name || "Unknown",
+          property_address: propertyInfo.address || "Unknown",
+          property_city: propertyInfo.city || "Unknown",
+          property_state: propertyInfo.state || "Unknown",
+          property_zip: propertyInfo.zip_code || "Unknown",
+          estimated_value: String(propertyInfo.estimated_value || 0),
+          cash_offer: String(propertyInfo.cash_offer_amount || 0),
+          // Skip trace data if available
+          total_phones: String(skipTraceInfo?.skip_trace_summary?.total_phones || 0),
+          total_emails: String(skipTraceInfo?.skip_trace_summary?.total_emails || 0),
+          dnc_status: skipTraceInfo?.skip_trace_summary?.dnc_status || "Unknown",
+          deceased_status: skipTraceInfo?.skip_trace_summary?.deceased_status || "Unknown"
+        }
+      }
+    } : {
+      call_inbound: {
+        dynamic_variables: {
+          customer_name: "Unknown",
+          property_address: "Not found",
+          property_city: "",
+          property_state: "",
+          property_zip: "",
+          estimated_value: "0",
+          cash_offer: "0"
+        }
+      }
+    };
+
+    return new Response(JSON.stringify(retellResponse), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
