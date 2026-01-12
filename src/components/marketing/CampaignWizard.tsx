@@ -45,6 +45,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
 import type { SavedTemplate } from '@/types/marketing.types';
+import { useFeatureToggle } from '@/contexts/FeatureToggleContext';
+import { useAdaptiveContactHelpers, useActivePreset } from '@/hooks/useFeatureToggleHelpers';
 
 interface CampaignTemplate {
   id: string;
@@ -74,7 +76,34 @@ interface Property {
   tags?: string[];
 }
 
-// Helper functions to extract preferred contacts from tags (legacy approach)
+// Helper functions to extract preferred contacts - adaptive based on feature flags
+const getPreferredPhonesAdaptive = (property: Property, useTagsApproach: boolean): string[] => {
+  if (useTagsApproach) {
+    // Current approach: Use tags
+    const tags = Array.isArray(property.tags) ? property.tags : [];
+    return tags
+      .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_phone:'))
+      .map(t => t.replace('pref_phone:', ''));
+  } else {
+    // Legacy approach: Use database column (from Jan 8 version)
+    return (property as any).preferred_phones || [];
+  }
+};
+
+const getPreferredEmailsAdaptive = (property: Property, useTagsApproach: boolean): string[] => {
+  if (useTagsApproach) {
+    // Current approach: Use tags
+    const tags = Array.isArray(property.tags) ? property.tags : [];
+    return tags
+      .filter((t): t is string => typeof t === 'string' && t.startsWith('pref_email:'))
+      .map(t => t.replace('pref_email:', ''));
+  } else {
+    // Legacy approach: Use database column (from Jan 8 version)
+    return (property as any).preferred_emails || [];
+  }
+};
+
+// Backward compatibility - keep old functions for non-hook contexts
 const getPreferredPhones = (property: Property): string[] => {
   // Use tags for backward compatibility (preferred_phones column doesn't exist)
   const tags = Array.isArray(property.tags) ? property.tags : [];
@@ -296,6 +325,11 @@ const MetricCard = ({
 );
 
 export const CampaignWizard = () => {
+  // Feature Toggle Hooks
+  const { flags } = useFeatureToggle();
+  const contactHelpers = useAdaptiveContactHelpers();
+  const activePreset = useActivePreset();
+  
   const [currentStep, setCurrentStep] = useState<WizardStep>('template');
   const [selectedTemplate, setSelectedTemplate] = useState<CampaignTemplate | null>(null);
   const [selectedProperties, setSelectedProperties] = useState<Property[]>([]);
@@ -318,9 +352,9 @@ export const CampaignWizard = () => {
     { id: 'template', title: 'Choose Template', icon: Sparkles },
     { id: 'properties', title: 'Select Properties', icon: Target },
     { id: 'configure', title: 'Configure', icon: Settings },
-    { id: 'preview', title: 'Preview', icon: Eye },
+    ...(flags.enableCampaignPreview ? [{ id: 'preview', title: 'Preview', icon: Eye }] : []),
     { id: 'send', title: 'Send Campaign', icon: SendIcon }
-  ];
+  ] as const;
 
   const currentStepIndex = steps.findIndex(step => step.id === currentStep);
 
@@ -366,7 +400,7 @@ export const CampaignWizard = () => {
       // Filter for preferred contacts only (client-side filter)
       if (showOnlyWithPreferredContacts) {
         filteredData = filteredData.filter(property => {
-          return hasPreferredContacts(property as Property);
+          return contactHelpers.hasPreferredContacts(property as Property);
         });
       }
 
@@ -2130,12 +2164,47 @@ export const CampaignWizard = () => {
               </div>
             </div>
             <div className="text-center">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Campaign Creator
-              </h1>
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Campaign Creator
+                </h1>
+                {/* Preset & Mode Indicator */}
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="text-xs font-mono">
+                    {activePreset === 'full' && '🎨 Full'}
+                    {activePreset === 'legacy' && '⭐ Legacy'}
+                    {activePreset === 'modern' && '💎 Modern'}
+                    {activePreset === 'minimal' && '⚡ Minimal'}
+                    {activePreset === 'custom' && '🔧 Custom'}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {flags.useTagsForContacts ? '📦 Tags' : '🗄️ DB'}
+                  </Badge>
+                </div>
+              </div>
               <p className="text-gray-600 text-lg mt-2">
                 Create and launch marketing campaigns step by step
               </p>
+              {/* Active Features Summary - Only show if not minimal */}
+              {activePreset !== 'minimal' && (
+                <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+                  {flags.enableBatchProcessing && (
+                    <Badge variant="secondary" className="text-xs">⚡ Batch</Badge>
+                  )}
+                  {flags.enableRetryLogic && (
+                    <Badge variant="secondary" className="text-xs">🔄 Retry</Badge>
+                  )}
+                  {flags.showCostEstimates && (
+                    <Badge variant="secondary" className="text-xs">💰 Costs</Badge>
+                  )}
+                  {flags.enableQRCodes && (
+                    <Badge variant="secondary" className="text-xs">📱 QR</Badge>
+                  )}
+                  {flags.enableURLTracking && (
+                    <Badge variant="secondary" className="text-xs">🔗 UTM</Badge>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

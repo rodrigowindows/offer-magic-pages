@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useDesignMode } from "@/hooks/useDesignMode";
-import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target, Search, X, MapPin } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Copy, QrCode, FileText, Settings, LayoutGrid, List, Rocket, BarChart3, FileDown, Globe, Target, Search, X, MapPin, Zap } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -48,6 +48,7 @@ import { CampaignAnalytics } from "@/components/CampaignAnalytics";
 // import { CampaignMetricsDashboard } from "@/components/CampaignMetricsDashboard";
 import { CampaignExport } from "@/components/CampaignExport";
 import { FollowUpAlerts } from "@/components/FollowUpAlerts";
+import { FeatureTogglePanel } from "@/components/FeatureTogglePanel";
 import { ResponseTimeAnalytics } from "@/components/ResponseTimeAnalytics";
 import { CampaignTemplatesDialog } from "@/components/CampaignTemplatesDialog";
 import { CampaignPreviewDialog } from "@/components/CampaignPreviewDialog";
@@ -1089,6 +1090,10 @@ const Admin = () => {
               <BarChart3 className="h-4 w-4" />
               Analytics
             </TabsTrigger>
+            <TabsTrigger value="features" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Feature Toggles
+            </TabsTrigger>
           </TabsList>
 
           {/* Dashboard Tab */}
@@ -1764,6 +1769,11 @@ const Admin = () => {
                 <ABTestDashboard />
               </div>
             </div>
+          </TabsContent>
+
+          {/* Feature Toggle Tab */}
+          <TabsContent value="features">
+            <FeatureTogglePanel />
           </TabsContent>
         </Tabs>
 
