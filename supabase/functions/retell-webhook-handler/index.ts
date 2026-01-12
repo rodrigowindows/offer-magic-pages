@@ -33,46 +33,16 @@ serve(async (req) => {
       );
 
       // First, try to find property by phone number in basic fields
+      // Try both with +1 prefix (e.g., +14079283433) and without (e.g., 4079283433)
       let { data: properties } = await supabaseClient
         .from('properties')
         .select('*')
-        .or([
-          `owner_phone.eq.${fromNumber}`,
-          `phone1.eq.${fromNumber}`,
-          `phone2.eq.${fromNumber}`,
-          `phone3.eq.${fromNumber}`,
-          `phone4.eq.${fromNumber}`,
-          `phone5.eq.${fromNumber}`
-        ].join(','));
+        .or(\owner_phone.eq.\${fromNumber},phone1.eq.\${fromNumber},phone2.eq.\${fromNumber},phone3.eq.\${fromNumber},phone4.eq.\${fromNumber},phone5.eq.\${fromNumber},owner_phone.eq.\${cleanPhone},phone1.eq.\${cleanPhone},phone2.eq.\${cleanPhone},phone3.eq.\${cleanPhone},phone4.eq.\${cleanPhone},phone5.eq.\${cleanPhone}\)
+        .limit(1);
 
-      // If no exact match, try with cleaned phone numbers
-      if (!properties || properties.length === 0) {
-        const { data: cleanedProperties } = await supabaseClient
-          .from('properties')
-          .select('*')
-          .or([
-            `owner_phone_clean.ilike.%${cleanPhone}%`,
-            `phone1_clean.ilike.%${cleanPhone}%`,
-            `phone2_clean.ilike.%${cleanPhone}%`,
-            `phone3_clean.ilike.%${cleanPhone}%`,
-            `phone4_clean.ilike.%${cleanPhone}%`,
-            `phone5_clean.ilike.%${cleanPhone}%`
-          ].join(','));
-
-        properties = cleanedProperties;
-        if (properties && properties.length > 0) {
-          matchedBy = 'cleaned_phone';
-        }
-      } else {
+      if (properties && properties.length > 0) {
         matchedBy = 'exact_phone';
       }
-
-      // If still no match, search in preferred_phones JSONB array
-      if (!properties || properties.length === 0) {
-        const { data: preferredProperties } = await supabaseClient
-          .from('properties')
-          .select('*')
-          .contains('preferred_phones', [fromNumber]);
 
         if (!preferredProperties || preferredProperties.length === 0) {
           // Also try with cleaned phone in preferred_phones
