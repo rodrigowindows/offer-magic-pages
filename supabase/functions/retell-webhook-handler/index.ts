@@ -67,6 +67,30 @@ serve(async (req) => {
         matchedBy = 'exact_phone';
       }
 
+      // If still no match, search in preferred_phones JSONB array
+      if (!properties || properties.length === 0) {
+        const { data: preferredProperties } = await supabaseClient
+          .from('properties')
+          .select('*')
+          .contains('preferred_phones', [fromNumber]);
+
+        if (!preferredProperties || preferredProperties.length === 0) {
+          // Also try with cleaned phone in preferred_phones
+          const { data: preferredCleanedProperties } = await supabaseClient
+            .from('properties')
+            .select('*')
+            .contains('preferred_phones', [cleanPhone]);
+
+          properties = preferredCleanedProperties;
+          if (properties && properties.length > 0) {
+            matchedBy = 'preferred_cleaned_phone';
+          }
+        } else {
+          properties = preferredProperties;
+          matchedBy = 'preferred_phone';
+        }
+      }
+
       if (properties && properties.length > 0) {
         propertyInfo = properties[0];
 
