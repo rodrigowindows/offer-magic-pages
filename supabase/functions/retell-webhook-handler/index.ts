@@ -16,11 +16,20 @@ serve(async (req) => {
 
   try {
     const eventPayload = await req.json();
-    const { event, call } = eventPayload;
+    const { event, call, call_inbound } = eventPayload;
 
-    console.log(`🔥 v3.0 RETELL FORMAT - Received webhook: ${event}`, { call_id: call?.call_id, from_number: call?.from_number });
+    // Retell sends different payload formats:
+    // - call_started: uses "call" object
+    // - call_inbound: uses "call_inbound" object (REAL FORMAT)
+    const callData = call_inbound || call;
 
-    const fromNumber = call?.from_number;
+    console.log(`🔥 v3.0 RETELL FORMAT - Received webhook: ${event}`, {
+      call_id: callData?.call_id,
+      from_number: callData?.from_number,
+      payload_type: call_inbound ? 'call_inbound' : 'call'
+    });
+
+    const fromNumber = callData?.from_number;
     let propertyInfo = null;
     let skipTraceInfo = null;
     let matchedBy = null;
@@ -167,14 +176,14 @@ serve(async (req) => {
     const result = {
       event,
       call: {
-        call_id: call?.call_id,
-        from_number: call?.from_number,
-        to_number: call?.to_number,
-        direction: call?.direction,
-        call_status: call?.call_status,
-        start_timestamp: call?.start_timestamp,
-        end_timestamp: call?.end_timestamp,
-        disconnection_reason: call?.disconnection_reason,
+        call_id: callData?.call_id,
+        from_number: callData?.from_number,
+        to_number: callData?.to_number,
+        direction: callData?.direction,
+        call_status: callData?.call_status,
+        start_timestamp: callData?.start_timestamp,
+        end_timestamp: callData?.end_timestamp,
+        disconnection_reason: callData?.disconnection_reason,
       },
       property_found: !!propertyInfo,
       matched_by: matchedBy,
@@ -214,7 +223,7 @@ serve(async (req) => {
 
     console.log('Webhook processed:', {
       event,
-      call_id: call?.call_id,
+      call_id: callData?.call_id,
       property_found: !!propertyInfo,
       matched_by: matchedBy,
       has_skiptrace: !!skipTraceInfo
