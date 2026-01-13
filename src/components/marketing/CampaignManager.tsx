@@ -254,6 +254,7 @@ export const CampaignManager = () => {
 
     // Google Maps static image for property location
     const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
+    console.log('🗺️ [generateTemplateContent] googleMapsImage:', googleMapsImage);
 
     console.log('🖼️ Preview data:', { estimated_value: (prop as any).estimated_value, property_image_url: (prop as any).property_image_url });
     
@@ -292,6 +293,9 @@ export const CampaignManager = () => {
 
   // Helper function to generate template content for sending
   const generateTemplateContent = (template: any, prop: CampaignProperty, trackingId?: string) => {
+    console.log('🔧 [generateTemplateContent] INICIO - prop:', prop);
+    console.log('🔧 [generateTemplateContent] estimated_value:', (prop as any).estimated_value);
+    console.log('🔧 [generateTemplateContent] property_image_url:', (prop as any).property_image_url);
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     // Use SEO-friendly slug for property URL (address only)
     const propertySlug = createPropertySlug(prop.address);
@@ -331,6 +335,7 @@ export const CampaignManager = () => {
     content = content.replace(/\{tracking_pixel\}/g, trackingPixel);
     content = content.replace(/\{unsubscribe_url\}/g, unsubscribeUrl);
 
+    console.log('✅ [generateTemplateContent] Todos os replacements feitos');
     const subject = template.subject?.replace(/\{address\}/g, prop.address) || `Cash Offer for ${prop.address}`;
 
     return { content, subject };
@@ -343,7 +348,7 @@ export const CampaignManager = () => {
 
   // Build select columns based on selected phone/email columns
   const getSelectColumns = () => {
-    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'tags'];
+    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'tags', 'property_image_url', 'estimated_value'];
     const phoneCol = selectedPhoneColumn;
     const emailCol = selectedEmailColumn;
     
@@ -1289,6 +1294,7 @@ export const CampaignManager = () => {
                                           matched_last_name: 'Doe',
                                           estimated_value: 350000,
                                           cash_offer_amount: 245000,
+                                          property_image_url: 'https://via.placeholder.com/600x300.png?text=Sample+Property+Photo',
                                           slug: 'sample-property'
                                         } as any,
                                         'preview'
@@ -1309,6 +1315,7 @@ export const CampaignManager = () => {
                                         matched_last_name: 'Doe',
                                         estimated_value: 350000,
                                         cash_offer_amount: 245000,
+                                        property_image_url: 'https://via.placeholder.com/600x300.png?text=Sample+Property+Photo',
                                         slug: 'sample-property'
                                       } as any,
                                       'preview'
