@@ -15,40 +15,56 @@ export const useTemplates = () => {
 
   // Carregar templates do Supabase
   const loadTemplates = useCallback(async () => {
+    console.log('🔄 loadTemplates: INICIO');
     setIsLoading(true);
     try {
+      console.log('🔄 loadTemplates: Buscando templates do Supabase...');
       const { data, error } = await supabase
         .from('templates')
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ loadTemplates: Erro do Supabase:', error);
+        throw error;
+      }
+
+      console.log('✅ loadTemplates: Dados recebidos:', data?.length || 0, 'templates');
 
       if (!data || data.length === 0) {
         // Primeira vez - inserir templates padrão
         console.log('📥 Primeira vez - inserindo templates padrão no banco');
         await insertDefaultTemplates();
+        console.log('✅ Templates padrão inseridos, recarregando...');
         await loadTemplates(); // Recarregar após inserir
         return;
       }
 
+      console.log('🔄 loadTemplates: Convertendo datas...');
       // Converter datas de string para Date e garantir tipo Channel
-      const templatesWithDates: SavedTemplate[] = data.map(t => ({
-        ...t,
-        channel: t.channel as Channel,
-        created_at: new Date(t.created_at),
-        updated_at: new Date(t.updated_at),
-      }));
+      const templatesWithDates: SavedTemplate[] = data.map(t => {
+        console.log('  - Processando template:', t.id, t.name);
+        return {
+          ...t,
+          channel: t.channel as Channel,
+          created_at: new Date(t.created_at),
+          updated_at: new Date(t.updated_at),
+        };
+      });
 
+      console.log('✅ loadTemplates: Definindo templates no estado');
       setTemplates(templatesWithDates);
 
+      console.log('🔄 loadTemplates: Verificando atualizações...');
       // Verificar se há templates padrão para atualizar
       await checkAndUpdateDefaultTemplates(templatesWithDates);
 
+      console.log('✅ loadTemplates: CONCLUÍDO');
     } catch (error) {
       console.error('❌ Erro ao carregar templates:', error);
       toast.error('Erro ao carregar templates');
     } finally {
+      console.log('🔄 loadTemplates: Finalizando (setIsLoading false)');
       setIsLoading(false);
     }
   }, []);
@@ -84,57 +100,69 @@ export const useTemplates = () => {
   // Verificar e atualizar templates padrão
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const checkAndUpdateDefaultTemplates = async (currentTemplates: SavedTemplate[]) => {
+    console.log('🔍 checkAndUpdateDefaultTemplates: INICIO');
     let updatedCount = 0;
 
-    for (const defaultTemplate of DEFAULT_TEMPLATES) {
-      const existingTemplate = currentTemplates.find(t => t.id === defaultTemplate.id);
+    try {
+      console.log('🔍 Verificando', DEFAULT_TEMPLATES.length, 'templates padrão...');
 
-      if (existingTemplate && existingTemplate.is_default) {
-        // Se foi editado manualmente, só atualizar se versão for maior
-        if (existingTemplate.edited_manually) {
-          const codeVersion = defaultTemplate.version || 1;
-          const savedVersion = existingTemplate.version || 1;
+      for (const defaultTemplate of DEFAULT_TEMPLATES) {
+        console.log('  🔍 Verificando:', defaultTemplate.id, defaultTemplate.name);
+        const existingTemplate = currentTemplates.find(t => t.id === defaultTemplate.id);
 
-          if (codeVersion > savedVersion) {
-            console.log(`🔄 Nova versão disponível: ${defaultTemplate.name} (v${codeVersion})`);
+        if (existingTemplate && existingTemplate.is_default) {
+          // Se foi editado manualmente, só atualizar se versão for maior
+          if (existingTemplate.edited_manually) {
+            const codeVersion = defaultTemplate.version || 1;
+            const savedVersion = existingTemplate.version || 1;
 
-            await updateTemplate(existingTemplate.id, {
-              body: defaultTemplate.body,
-              subject: defaultTemplate.subject,
-              name: defaultTemplate.name,
-              version: codeVersion,
-              edited_manually: false,
-            });
-            updatedCount++;
+            if (codeVersion > savedVersion) {
+              console.log(`🔄 Nova versão disponível: ${defaultTemplate.name} (v${codeVersion})`);
+
+              await updateTemplate(existingTemplate.id, {
+                body: defaultTemplate.body,
+                subject: defaultTemplate.subject,
+                name: defaultTemplate.name,
+                version: codeVersion,
+                edited_manually: false,
+              });
+              updatedCount++;
+            }
+          } else {
+            // Não editado manualmente, verificar se conteúdo mudou
+            const contentChanged = existingTemplate.body !== defaultTemplate.body ||
+                                 existingTemplate.subject !== defaultTemplate.subject ||
+                                 existingTemplate.name !== defaultTemplate.name;
+
+            if (contentChanged) {
+              console.log(`🔄 Atualizando template: ${defaultTemplate.name}`);
+
+              await updateTemplate(existingTemplate.id, {
+                body: defaultTemplate.body,
+                subject: defaultTemplate.subject,
+                name: defaultTemplate.name,
+                version: defaultTemplate.version || 1,
+              });
+              updatedCount++;
+            }
           }
-        } else {
-          // Não editado manualmente, verificar se conteúdo mudou
-          const contentChanged = existingTemplate.body !== defaultTemplate.body ||
-                               existingTemplate.subject !== defaultTemplate.subject ||
-                               existingTemplate.name !== defaultTemplate.name;
-
-          if (contentChanged) {
-            console.log(`🔄 Atualizando template: ${defaultTemplate.name}`);
-
-            await updateTemplate(existingTemplate.id, {
-              body: defaultTemplate.body,
-              subject: defaultTemplate.subject,
-              name: defaultTemplate.name,
-              version: defaultTemplate.version || 1,
-            });
-            updatedCount++;
-          }
+        } else if (!existingTemplate) {
+          // Template padrão não existe, adicionar
+          console.log(`➕ Adicionando template faltante: ${defaultTemplate.name}`);
+          await addTemplate(defaultTemplate);
+          updatedCount++;
         }
-      } else if (!existingTemplate) {
-        // Template padrão não existe, adicionar
-        await addTemplate(defaultTemplate);
-        updatedCount++;
       }
-    }
 
-    if (updatedCount > 0) {
-      toast.info(`${updatedCount} template(s) atualizados`);
-      await loadTemplates(); // Recarregar
+      if (updatedCount > 0) {
+        console.log(`✅ ${updatedCount} template(s) atualizados`);
+        toast.info(`${updatedCount} template(s) atualizados`);
+        await loadTemplates(); // Recarregar
+      }
+
+      console.log('✅ checkAndUpdateDefaultTemplates: CONCLUÍDO');
+    } catch (error) {
+      console.error('❌ checkAndUpdateDefaultTemplates: ERRO:', error);
     }
   };
 
@@ -265,11 +293,19 @@ export const useTemplates = () => {
 
   // Calcular estatísticas dos templates
   const templateStats = useMemo(() => {
+    console.log('📊 Calculando template stats...');
+    console.log('📊 templates.length:', templates?.length);
+
+    if (!templates) {
+      console.log('⚠️ templates é undefined/null!');
+      return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
+    }
+
     const stats = {
       total: templates.length,
-      bySMS: templates.filter(t => t.channel === 'sms').length,
-      byEmail: templates.filter(t => t.channel === 'email').length,
-      byCall: templates.filter(t => t.channel === 'call').length,
+      bySMS: templates.filter(t => t?.channel === 'sms').length,
+      byEmail: templates.filter(t => t?.channel === 'email').length,
+      byCall: templates.filter(t => t?.channel === 'call').length,
     };
     console.log('📊 Template stats:', stats);
     return stats;
