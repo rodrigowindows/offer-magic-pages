@@ -349,13 +349,16 @@ export const TemplateManager = () => {
         is_default: formData.is_default,
       });
     } else {
-      addTemplate(
-        formData.name,
-        formData.channel,
-        formData.body,
-        formData.subject,
-        formData.is_default
-      );
+      addTemplate({
+        id: crypto.randomUUID(),
+        name: formData.name,
+        channel: formData.channel,
+        body: formData.body,
+        subject: formData.subject,
+        is_default: formData.is_default,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
     }
 
     resetForm();
@@ -369,13 +372,16 @@ export const TemplateManager = () => {
 
   // Copy template
   const handleCopy = (template: SavedTemplate) => {
-    addTemplate(
-      `${template.name} (Copy)`,
-      template.channel,
-      template.body,
-      template.subject,
-      false
-    );
+    addTemplate({
+      id: crypto.randomUUID(),
+      name: `${template.name} (Copy)`,
+      channel: template.channel,
+      body: template.body,
+      subject: template.subject,
+      is_default: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
   };
 
   // Insert variable
@@ -509,13 +515,16 @@ export const TemplateManager = () => {
                   key={suggestedTemplate.id}
                   className="border rounded-lg p-4 hover:shadow-md transition-all cursor-pointer bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200"
                   onClick={() => {
-                    addTemplate(
-                      suggestedTemplate.name,
-                      suggestedTemplate.channel,
-                      suggestedTemplate.body,
-                      suggestedTemplate.subject,
-                      suggestedTemplate.is_default
-                    );
+                    addTemplate({
+                      id: crypto.randomUUID(),
+                      name: suggestedTemplate.name,
+                      channel: suggestedTemplate.channel,
+                      body: suggestedTemplate.body,
+                      subject: suggestedTemplate.subject,
+                      is_default: suggestedTemplate.is_default,
+                      created_at: new Date(),
+                      updated_at: new Date(),
+                    });
                   }}
                 >
                   <div className="flex items-start gap-3">
@@ -551,13 +560,16 @@ export const TemplateManager = () => {
                       className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        addTemplate(
-                          suggestedTemplate.name,
-                          suggestedTemplate.channel,
-                          suggestedTemplate.body,
-                          suggestedTemplate.subject,
-                          suggestedTemplate.is_default
-                        );
+                        addTemplate({
+                          id: crypto.randomUUID(),
+                          name: suggestedTemplate.name,
+                          channel: suggestedTemplate.channel,
+                          body: suggestedTemplate.body,
+                          subject: suggestedTemplate.subject,
+                          is_default: suggestedTemplate.is_default,
+                          created_at: new Date(),
+                          updated_at: new Date(),
+                        });
                       }}
                     >
                       <Plus className="w-3 h-3 mr-1" />
@@ -657,7 +669,7 @@ export const TemplateManager = () => {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setAsDefault(template.id)}
+                                  onClick={() => setAsDefault(template.id, template.channel)}
                                   title="Set as default"
                                 >
                                   <Star className="w-4 h-4" />
@@ -1133,13 +1145,16 @@ export const TemplateManager = () => {
             {previewTemplate && (
               <Button
                 onClick={() => {
-                  addTemplate(
-                    previewTemplate.name,
-                    previewTemplate.channel,
-                    previewTemplate.body,
-                    previewTemplate.subject,
-                    previewTemplate.is_default
-                  );
+                  addTemplate({
+                    id: crypto.randomUUID(),
+                    name: previewTemplate.name,
+                    channel: previewTemplate.channel,
+                    body: previewTemplate.body,
+                    subject: previewTemplate.subject,
+                    is_default: previewTemplate.is_default,
+                    created_at: new Date(),
+                    updated_at: new Date(),
+                  });
                   setPreviewTemplate(null);
                 }}
               >
