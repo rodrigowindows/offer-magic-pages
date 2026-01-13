@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useMarketing } from '@/hooks/useMarketing';
 import { useEffect } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Components
 import { Dashboard } from './Dashboard';
@@ -91,7 +92,7 @@ const MarketingAppContent = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/quick" element={<SimpleCampaignDashboard />} />
-            <Route path="/campaigns" element={<CampaignManager />} />
+            <Route path="/campaigns" element={<ErrorBoundary><CampaignManager /></ErrorBoundary>} />
             <Route path="/analytics" element={<ClicksAnalytics />} />
             <Route path="/ab-testing" element={<ABTestAnalytics />} />
             <Route path="/follow-ups" element={<Dashboard />} />

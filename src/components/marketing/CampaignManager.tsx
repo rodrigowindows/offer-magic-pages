@@ -305,7 +305,8 @@ export const CampaignManager = () => {
 
     const trackingPixel = trackingId ? `<img src="${window.location.origin}/track/open?tid=${trackingId}" width="1" height="1" style="display:none;" alt="" />` : '';
     const unsubscribeUrl = `${window.location.origin}/unsubscribe?property=${prop.id}`;
-n    // Google Maps static image for property location
+
+    // Google Maps static image for property location
     const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
 
     let content = template.body;
