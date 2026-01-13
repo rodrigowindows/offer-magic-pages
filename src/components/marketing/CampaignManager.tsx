@@ -1259,7 +1259,7 @@ n    // Google Maps static image for property location
                         </CardTitle>
                         {selectedTemplate?.subject && (
                           <CardDescription className="text-xs">
-                            Subject: {selectedTemplate.subject}
+                            Subject: {selectedTemplate?.subject}
                           </CardDescription>
                         )}
                       </CardHeader>
@@ -1321,15 +1321,15 @@ n    // Google Maps static image for property location
                             <div className="grid grid-cols-2 gap-3 text-xs">
                               <div className="p-3 border rounded-lg">
                                 <div className="text-muted-foreground mb-1">Channel</div>
-                                <div className="font-medium capitalize">{selectedTemplate.channel}</div>
+                                <div className="font-medium capitalize">{selectedTemplate?.channel}</div>
                               </div>
                               <div className="p-3 border rounded-lg">
                                 <div className="text-muted-foreground mb-1">Type</div>
                                 <div className="font-medium">
-                                  {selectedTemplate.is_default ? 'Default' : 'Custom'}
+                                  {selectedTemplate?.is_default ? 'Default' : 'Custom'}
                                 </div>
                               </div>
-                              {selectedChannel === 'sms' && (
+                              {selectedChannel === 'sms' && selectedTemplate?.body && (
                                 <div className="p-3 border rounded-lg col-span-2">
                                   <div className="text-muted-foreground mb-1">Character Count</div>
                                   <div className="font-medium">
