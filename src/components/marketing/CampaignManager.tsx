@@ -117,10 +117,21 @@ interface CampaignProperty {
 }
 
 export const CampaignManager = () => {
+  console.log('🚀 [CampaignManager] COMPONENTE RENDERIZANDO');
+
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
   const settings = useMarketingStore((state) => state.settings);
-  const { templates, getTemplatesByChannel, getDefaultTemplate } = useTemplates();
+
+  console.log('🚀 [CampaignManager] Chamando useTemplates...');
+  const hookResult = useTemplates();
+  console.log('🚀 [CampaignManager] Hook retornou:', hookResult);
+  console.log('🚀 [CampaignManager] templates do hook:', hookResult.templates);
+  console.log('🚀 [CampaignManager] typeof templates:', typeof hookResult.templates);
+
+  const { templates, getTemplatesByChannel, getDefaultTemplate } = hookResult;
+
+  console.log('🚀 [CampaignManager] Após desestruturação, templates:', templates);
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -200,9 +211,24 @@ export const CampaignManager = () => {
   }, [selectedChannel, getDefaultTemplate]);
 
   // Get selected template
-  const selectedTemplate = selectedTemplateId 
-    ? templates.find(t => t.id === selectedTemplateId) 
-    : getDefaultTemplate(selectedChannel);
+  console.log('🎯 [CampaignManager] selectedTemplateId:', selectedTemplateId);
+  console.log('🎯 [CampaignManager] templates:', templates);
+  console.log('🎯 [CampaignManager] templates type:', typeof templates);
+  console.log('🎯 [CampaignManager] Array.isArray(templates):', Array.isArray(templates));
+
+  const selectedTemplate = selectedTemplateId
+    ? (() => {
+        console.log('🎯 [CampaignManager] Buscando template por ID:', selectedTemplateId);
+        const found = templates.find(t => t.id === selectedTemplateId);
+        console.log('🎯 [CampaignManager] Template encontrado:', found?.name || 'nenhum');
+        return found;
+      })()
+    : (() => {
+        console.log('🎯 [CampaignManager] Buscando template padrão para canal:', selectedChannel);
+        const defaultT = getDefaultTemplate(selectedChannel);
+        console.log('🎯 [CampaignManager] Template padrão:', defaultT?.name || 'nenhum');
+        return defaultT;
+      })();
 
   // Helper function to render template preview
   // Helper to create SEO-friendly slug from property address (address only)
