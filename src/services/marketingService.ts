@@ -13,6 +13,18 @@ import type {
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+
+// ===== PHONE NUMBER CLEANING UTILITY =====
+/**
+ * Removes all non-numeric characters from phone number
+ * @param phone - Phone number with formatting like "(786)882-8251" or "(240) 581-4595"
+ * @returns Clean phone number like "7868828251" or "2405814595"
+ */
+const cleanPhoneNumber = (phone: string): string => {
+  if (!phone) return '';
+  // Remove all non-numeric characters
+  return phone.replace(/\D/g, '');
+};
 // ===== SKIP TRACE DATA TYPES =====
 export interface SkipTracePhone {
   number: string;
@@ -216,10 +228,18 @@ export const initiateCall = async (
 ): Promise<{ call_id: string; status: string }> => {
   const api = getApiInstance();
 
+  // Clean phone numbers by removing all non-numeric characters
+  const cleanFromNumber = cleanPhoneNumber(data.from_number);
+  const cleanToNumber = cleanPhoneNumber(data.to_number);
+
+  console.log('🧹 [initiateCall] Cleaning phone numbers:');
+  console.log('   Original from_number:', data.from_number, '→ Cleaned:', cleanFromNumber);
+  console.log('   Original to_number:', data.to_number, '→ Cleaned:', cleanToNumber);
+
   const requestPayload = {
     name: data.name,
-    from_number: data.from_number,
-    to_number: data.to_number,
+    from_number: cleanFromNumber,
+    to_number: cleanToNumber,
     address: data.address,
     voicemail_drop: data.voicemail_drop,
     seller_name: data.seller_name,
