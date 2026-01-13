@@ -210,20 +210,30 @@ export const sendEmail = async (
   }
 };
 
-// ===== INICIAR CHAMADA INDIVIDUAL (via MCP) =====
+// ===== INICIAR CHAMADA INDIVIDUAL (via endpoint direto) =====
 export const initiateCall = async (
   data: InitiateCallRequest
 ): Promise<{ call_id: string; status: string }> => {
   const api = getApiInstance();
   try {
-    const response = await api.post('/mcp', {
-      operation: 'initiate_call',
-      data,
+    const response = await api.post('/initiate_call', {
+      name: data.name,
+      from_number: data.from_number,
+      to_number: data.to_number,
+      address: data.address,
+      voicemail_drop: data.voicemail_drop,
+      seller_name: data.seller_name,
+      test_mode: data.test_mode || false,
     });
-    if (response.data.status === 'ok') {
-      return { call_id: response.data.result?.call_id || '', status: 'ok', ...response.data.result };
+
+    if (response.data.call_id) {
+      return {
+        call_id: response.data.call_id,
+        status: response.data.call_status || 'registered',
+        ...response.data
+      };
     } else {
-      throw new Error(response.data.error || 'Erro ao iniciar chamada');
+      throw new Error('Call response did not contain call_id');
     }
   } catch (error: any) {
     if (error.response?.data?.error) {
