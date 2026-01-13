@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Supabase Signup</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .success { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Supabase Authentication</h1>
+
+  <h2>Signup Test</h2>
+  <input type="email" id="signup-email" placeholder="Email" value="test@mylocalinvest.com">
+  <input type="password" id="signup-password" placeholder="Password" value="Test123456!">
+  <button onclick="testSignup()">Test Signup</button>
+
+  <h2>Login Test</h2>
+  <input type="email" id="login-email" placeholder="Email" value="test@mylocalinvest.com">
+  <input type="password" id="login-password" placeholder="Password" value="Test123456!">
+  <button onclick="testLogin()">Test Login</button>
+
+  <div id="result" class="result" style="display:none;"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://atwdkhlyrffbaugkaker.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0d2RraGx5cmZmYmF1Z2tha2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxOTg3ODUsImV4cCI6MjA3ODc3NDc4NX0.F3AWhNZgtPInVXxpwt-WjzxLQKNl-R0QGy68F6wgtXs';
+
+    const { createClient } = supabase;
+    const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    function showResult(message, isSuccess) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.style.display = 'block';
+      resultDiv.className = 'result ' + (isSuccess ? 'success' : 'error');
+      resultDiv.textContent = message;
+    }
+
+    async function testSignup() {
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+
+      showResult('🔄 Testing signup...', true);
+
+      try {
+        const { data, error } = await client.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            emailRedirectTo: window.location.origin + '/admin'
+          }
+        });
+
+        if (error) {
+          showResult(`❌ Signup Error:\n\n${JSON.stringify(error, null, 2)}`, false);
+        } else {
+          showResult(`✅ Signup Success!\n\n${JSON.stringify(data, null, 2)}`, true);
+        }
+      } catch (err) {
+        showResult(`❌ Exception:\n\n${err.message}`, false);
+      }
+    }
+
+    async function testLogin() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      showResult('🔄 Testing login...', true);
+
+      try {
+        const { data, error } = await client.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          showResult(`❌ Login Error:\n\n${JSON.stringify(error, null, 2)}`, false);
+        } else {
+          showResult(`✅ Login Success!\n\nUser: ${data.user.email}\nToken: ${data.session.access_token.substring(0, 50)}...`, true);
+        }
+      } catch (err) {
+        showResult(`❌ Exception:\n\n${err.message}`, false);
+      }
+    }
+  </script>
+</body>
+</html>
