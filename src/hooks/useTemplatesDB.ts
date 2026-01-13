@@ -278,7 +278,8 @@ export const useTemplates = () => {
   // Carregar templates ao montar
   useEffect(() => {
     loadTemplates();
-  }, [loadTemplates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     templates,
