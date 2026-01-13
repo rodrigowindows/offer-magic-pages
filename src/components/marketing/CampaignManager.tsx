@@ -1078,6 +1078,10 @@ n    // Google Maps static image for property location
     return simulationResults;
   };
 
+  console.log('🎯 [CampaignManager] Iniciando RETURN (render JSX)...');
+  console.log('🎯 [CampaignManager] selectedTemplate:', selectedTemplate);
+  console.log('🎯 [CampaignManager] channelTemplates length:', getTemplatesByChannel(selectedChannel)?.length);
+
   return (
     <TooltipProvider>
       <div className={`space-y-6 transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>

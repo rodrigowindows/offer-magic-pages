@@ -261,7 +261,14 @@ const channelIcons = {
 };
 
 export const TemplateManager = () => {
+  console.log('🎨 [TemplateManager] COMPONENTE RENDERIZANDO');
+
   const { toast } = useToast();
+
+  console.log('🎨 [TemplateManager] Chamando useTemplates...');
+  const hookResult = useTemplates();
+  console.log('🎨 [TemplateManager] Hook retornou:', hookResult);
+
   const {
     templates,
     templateStats,
@@ -270,7 +277,10 @@ export const TemplateManager = () => {
     updateTemplate,
     deleteTemplate,
     setAsDefault,
-  } = useTemplates();
+  } = hookResult;
+
+  console.log('🎨 [TemplateManager] templates:', templates);
+  console.log('🎨 [TemplateManager] templateStats:', templateStats);
 
   const [activeChannel, setActiveChannel] = useState<Channel>('email');
   const [editingTemplate, setEditingTemplate] = useState<SavedTemplate | null>(null);
@@ -418,9 +428,16 @@ export const TemplateManager = () => {
     setShowHtmlEditor(true);
   };
 
-  const channelTemplates = getTemplatesByChannel(activeChannel);
+  console.log('🎨 [TemplateManager] Obtendo channelTemplates para:', activeChannel);
+  const channelTemplates = getTemplatesByChannel(activeChannel) || [];
+  console.log('📋 [TemplateManager] channelTemplates:', channelTemplates);
+  console.log('📋 [TemplateManager] channelTemplates.length:', channelTemplates?.length);
 
-  return (
+  console.log('🎨 [TemplateManager] Iniciando RETURN (render JSX)...');
+
+  try {
+    console.log('🎨 [TemplateManager] Dentro do try, antes do return');
+    return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -1135,6 +1152,18 @@ export const TemplateManager = () => {
       </Dialog>
     </div>
   );
+  } catch (error) {
+    console.error('❌ [TemplateManager] ERRO NO RENDER:', error);
+    console.error('❌ [TemplateManager] Stack:', error.stack);
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Erro no Template Manager</h2>
+        <pre className="text-left bg-gray-100 p-4 rounded overflow-auto">
+          {error.toString()}
+        </pre>
+      </div>
+    );
+  }
 };
 
 export default TemplateManager;
