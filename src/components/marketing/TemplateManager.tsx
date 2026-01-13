@@ -266,7 +266,7 @@ export const TemplateManager = () => {
     templates,
     templateStats,
     getTemplatesByChannel,
-    createTemplate,
+    addTemplate,
     updateTemplate,
     deleteTemplate,
     setAsDefault,
@@ -339,7 +339,7 @@ export const TemplateManager = () => {
         is_default: formData.is_default,
       });
     } else {
-      createTemplate(
+      addTemplate(
         formData.name,
         formData.channel,
         formData.body,
@@ -359,7 +359,7 @@ export const TemplateManager = () => {
 
   // Copy template
   const handleCopy = (template: SavedTemplate) => {
-    createTemplate(
+    addTemplate(
       `${template.name} (Copy)`,
       template.channel,
       template.body,
@@ -492,7 +492,7 @@ export const TemplateManager = () => {
                   key={suggestedTemplate.id}
                   className="border rounded-lg p-4 hover:shadow-md transition-all cursor-pointer bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200"
                   onClick={() => {
-                    createTemplate(
+                    addTemplate(
                       suggestedTemplate.name,
                       suggestedTemplate.channel,
                       suggestedTemplate.body,
@@ -534,7 +534,7 @@ export const TemplateManager = () => {
                       className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        createTemplate(
+                        addTemplate(
                           suggestedTemplate.name,
                           suggestedTemplate.channel,
                           suggestedTemplate.body,
@@ -1116,7 +1116,7 @@ export const TemplateManager = () => {
             {previewTemplate && (
               <Button
                 onClick={() => {
-                  createTemplate(
+                  addTemplate(
                     previewTemplate.name,
                     previewTemplate.channel,
                     previewTemplate.body,
