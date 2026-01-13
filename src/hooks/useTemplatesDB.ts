@@ -3,7 +3,7 @@
  * Substitui o localStorage por banco de dados
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
@@ -12,9 +12,10 @@ import { DEFAULT_TEMPLATES } from '@/constants/defaultTemplates';
 export const useTemplates = () => {
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const isUpdatingRef = React.useRef(false); // Flag para evitar loop infinito
 
   // Carregar templates do Supabase
-  const loadTemplates = useCallback(async () => {
+  const loadTemplates = useCallback(async (skipCheck = false) => {
     console.log('🔄 loadTemplates: INICIO');
     setIsLoading(true);
     try {
@@ -55,9 +56,14 @@ export const useTemplates = () => {
       console.log('✅ loadTemplates: Definindo templates no estado');
       setTemplates(templatesWithDates);
 
-      console.log('🔄 loadTemplates: Verificando atualizações...');
-      // Verificar se há templates padrão para atualizar
-      await checkAndUpdateDefaultTemplates(templatesWithDates);
+      // Só verificar atualizações se não estiver em um ciclo de update
+      if (!skipCheck && !isUpdatingRef.current) {
+        console.log('🔄 loadTemplates: Verificando atualizações...');
+        // Verificar se há templates padrão para atualizar
+        await checkAndUpdateDefaultTemplates(templatesWithDates);
+      } else {
+        console.log('⏭️ loadTemplates: Pulando checkAndUpdate (skipCheck ou isUpdating)');
+      }
 
       console.log('✅ loadTemplates: CONCLUÍDO');
     } catch (error) {
@@ -157,7 +163,8 @@ export const useTemplates = () => {
       if (updatedCount > 0) {
         console.log(`✅ ${updatedCount} template(s) atualizados`);
         toast.info(`${updatedCount} template(s) atualizados`);
-        await loadTemplates(); // Recarregar
+        // NÃO recarregar aqui - evita loop infinito
+        // O loadTemplates já foi chamado pelas funções updateTemplate/addTemplate
       }
 
       console.log('✅ checkAndUpdateDefaultTemplates: CONCLUÍDO');
@@ -169,6 +176,8 @@ export const useTemplates = () => {
   // Adicionar template
   const addTemplate = async (template: SavedTemplate) => {
     try {
+      isUpdatingRef.current = true; // Marcar que estamos atualizando
+
       const { error } = await supabase
         .from('templates')
         .insert({
@@ -184,17 +193,21 @@ export const useTemplates = () => {
 
       if (error) throw error;
 
-      await loadTemplates();
+      await loadTemplates(true); // skipCheck = true
       toast.success('Template criado com sucesso');
     } catch (error) {
       console.error('❌ Erro ao adicionar template:', error);
       toast.error('Erro ao criar template');
+    } finally {
+      isUpdatingRef.current = false; // Limpar flag
     }
   };
 
   // Atualizar template
   const updateTemplate = async (id: string, updates: Partial<SavedTemplate>) => {
     try {
+      isUpdatingRef.current = true; // Marcar que estamos atualizando
+
       const template = templates.find(t => t.id === id);
 
       // Se é template padrão sendo editado manualmente, marcar flag
@@ -220,17 +233,21 @@ export const useTemplates = () => {
 
       if (error) throw error;
 
-      await loadTemplates();
+      await loadTemplates(true); // skipCheck = true
       toast.success('Template atualizado');
     } catch (error) {
       console.error('❌ Erro ao atualizar template:', error);
       toast.error('Erro ao atualizar template');
+    } finally {
+      isUpdatingRef.current = false; // Limpar flag
     }
   };
 
   // Deletar template
   const deleteTemplate = async (id: string) => {
     try {
+      isUpdatingRef.current = true;
+
       const { error } = await supabase
         .from('templates')
         .delete()
@@ -238,17 +255,21 @@ export const useTemplates = () => {
 
       if (error) throw error;
 
-      await loadTemplates();
+      await loadTemplates(true);
       toast.success('Template deletado');
     } catch (error) {
       console.error('❌ Erro ao deletar template:', error);
       toast.error('Erro ao deletar template');
+    } finally {
+      isUpdatingRef.current = false;
     }
   };
 
   // Definir como padrão
   const setAsDefault = async (id: string, channel: Channel) => {
     try {
+      isUpdatingRef.current = true;
+
       // Desmarcar outros templates padrão do mesmo canal
       const { error: unsetError } = await supabase
         .from('templates')
@@ -267,11 +288,13 @@ export const useTemplates = () => {
 
       if (setError) throw setError;
 
-      await loadTemplates();
+      await loadTemplates(true);
       toast.success('Template padrão atualizado');
     } catch (error) {
       console.error('❌ Erro ao definir template padrão:', error);
       toast.error('Erro ao atualizar template padrão');
+    } finally {
+      isUpdatingRef.current = false;
     }
   };
 
