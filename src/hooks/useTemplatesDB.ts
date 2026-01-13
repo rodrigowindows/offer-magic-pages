@@ -278,7 +278,16 @@ export const useTemplates = () => {
   // Obter templates por canal
   const getTemplatesByChannel = useCallback(
     (channel: Channel): SavedTemplate[] => {
-      return templates.filter(t => t.channel === channel);
+      console.log(`🔍 [getTemplatesByChannel] Buscando templates do canal: ${channel}`);
+      console.log(`🔍 [getTemplatesByChannel] templates:`, templates);
+      try {
+        const filtered = templates.filter(t => t.channel === channel);
+        console.log(`✅ [getTemplatesByChannel] Encontrados ${filtered.length} templates`);
+        return filtered;
+      } catch (error) {
+        console.error(`❌ [getTemplatesByChannel] ERRO:`, error);
+        return [];
+      }
     },
     [templates]
   );
@@ -286,36 +295,78 @@ export const useTemplates = () => {
   // Obter template padrão por canal
   const getDefaultTemplate = useCallback(
     (channel: Channel): SavedTemplate | undefined => {
-      return templates.find(t => t.channel === channel && t.is_default);
+      console.log(`🔍 [getDefaultTemplate] Buscando template padrão do canal: ${channel}`);
+      try {
+        const defaultTemplate = templates.find(t => t.channel === channel && t.is_default);
+        console.log(`✅ [getDefaultTemplate] Resultado:`, defaultTemplate?.name || 'nenhum');
+        return defaultTemplate;
+      } catch (error) {
+        console.error(`❌ [getDefaultTemplate] ERRO:`, error);
+        return undefined;
+      }
     },
     [templates]
   );
 
   // Calcular estatísticas dos templates
   const templateStats = useMemo(() => {
-    console.log('📊 Calculando template stats...');
-    console.log('📊 templates.length:', templates?.length);
+    console.log('📊 [templateStats] INICIO');
+    console.log('📊 [templateStats] templates:', templates);
+    console.log('📊 [templateStats] templates type:', typeof templates);
+    console.log('📊 [templateStats] templates.length:', templates?.length);
 
-    if (!templates) {
-      console.log('⚠️ templates é undefined/null!');
+    try {
+      if (!templates) {
+        console.log('⚠️ [templateStats] templates é undefined/null!');
+        return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
+      }
+
+      if (!Array.isArray(templates)) {
+        console.error('❌ [templateStats] templates NÃO É UM ARRAY!', templates);
+        return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
+      }
+
+      console.log('📊 [templateStats] Filtrando SMS...');
+      const bySMS = templates.filter(t => {
+        console.log('  - Checando template:', t?.id, 'channel:', t?.channel);
+        return t?.channel === 'sms';
+      }).length;
+      console.log('📊 [templateStats] SMS count:', bySMS);
+
+      console.log('📊 [templateStats] Filtrando Email...');
+      const byEmail = templates.filter(t => t?.channel === 'email').length;
+      console.log('📊 [templateStats] Email count:', byEmail);
+
+      console.log('📊 [templateStats] Filtrando Call...');
+      const byCall = templates.filter(t => t?.channel === 'call').length;
+      console.log('📊 [templateStats] Call count:', byCall);
+
+      const stats = {
+        total: templates.length,
+        bySMS,
+        byEmail,
+        byCall,
+      };
+      console.log('✅ [templateStats] Stats calculado:', stats);
+      return stats;
+    } catch (error) {
+      console.error('❌ [templateStats] ERRO ao calcular stats:', error);
       return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
     }
-
-    const stats = {
-      total: templates.length,
-      bySMS: templates.filter(t => t?.channel === 'sms').length,
-      byEmail: templates.filter(t => t?.channel === 'email').length,
-      byCall: templates.filter(t => t?.channel === 'call').length,
-    };
-    console.log('📊 Template stats:', stats);
-    return stats;
   }, [templates]);
 
   // Carregar templates ao montar
   useEffect(() => {
+    console.log('🚀 [useTemplates] useEffect MONTANDO - chamando loadTemplates');
     loadTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  console.log('🔄 [useTemplates] RENDER - retornando hook com:', {
+    templatesCount: templates?.length,
+    isLoading,
+    templateStats,
+  });
 
   return {
     templates,
