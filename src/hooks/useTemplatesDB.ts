@@ -13,6 +13,9 @@ export const useTemplates = () => {
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Garantir que templates sempre seja um array válido
+  const safeTemplates = Array.isArray(templates) ? templates : [];
+
   // Carregar templates do Supabase
   const loadTemplates = useCallback(async () => {
     console.log('🔄 loadTemplates: INICIO');
@@ -279,9 +282,9 @@ export const useTemplates = () => {
   const getTemplatesByChannel = useCallback(
     (channel: Channel): SavedTemplate[] => {
       console.log(`🔍 [getTemplatesByChannel] Buscando templates do canal: ${channel}`);
-      console.log(`🔍 [getTemplatesByChannel] templates:`, templates);
+      console.log(`🔍 [getTemplatesByChannel] safeTemplates:`, safeTemplates);
       try {
-        const filtered = templates.filter(t => t.channel === channel);
+        const filtered = safeTemplates.filter(t => t.channel === channel);
         console.log(`✅ [getTemplatesByChannel] Encontrados ${filtered.length} templates`);
         return filtered;
       } catch (error) {
@@ -289,7 +292,7 @@ export const useTemplates = () => {
         return [];
       }
     },
-    [templates]
+    [safeTemplates]
   );
 
   // Obter template padrão por canal
@@ -297,7 +300,7 @@ export const useTemplates = () => {
     (channel: Channel): SavedTemplate | undefined => {
       console.log(`🔍 [getDefaultTemplate] Buscando template padrão do canal: ${channel}`);
       try {
-        const defaultTemplate = templates.find(t => t.channel === channel && t.is_default);
+        const defaultTemplate = safeTemplates.find(t => t.channel === channel && t.is_default);
         console.log(`✅ [getDefaultTemplate] Resultado:`, defaultTemplate?.name || 'nenhum');
         return defaultTemplate;
       } catch (error) {
@@ -305,44 +308,33 @@ export const useTemplates = () => {
         return undefined;
       }
     },
-    [templates]
+    [safeTemplates]
   );
 
   // Calcular estatísticas dos templates
   const templateStats = useMemo(() => {
     console.log('📊 [templateStats] INICIO');
-    console.log('📊 [templateStats] templates:', templates);
-    console.log('📊 [templateStats] templates type:', typeof templates);
-    console.log('📊 [templateStats] templates.length:', templates?.length);
+    console.log('📊 [templateStats] safeTemplates:', safeTemplates);
+    console.log('📊 [templateStats] safeTemplates.length:', safeTemplates.length);
 
     try {
-      if (!templates) {
-        console.log('⚠️ [templateStats] templates é undefined/null!');
-        return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
-      }
-
-      if (!Array.isArray(templates)) {
-        console.error('❌ [templateStats] templates NÃO É UM ARRAY!', templates);
-        return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
-      }
-
       console.log('📊 [templateStats] Filtrando SMS...');
-      const bySMS = templates.filter(t => {
+      const bySMS = safeTemplates.filter(t => {
         console.log('  - Checando template:', t?.id, 'channel:', t?.channel);
         return t?.channel === 'sms';
       }).length;
       console.log('📊 [templateStats] SMS count:', bySMS);
 
       console.log('📊 [templateStats] Filtrando Email...');
-      const byEmail = templates.filter(t => t?.channel === 'email').length;
+      const byEmail = safeTemplates.filter(t => t?.channel === 'email').length;
       console.log('📊 [templateStats] Email count:', byEmail);
 
       console.log('📊 [templateStats] Filtrando Call...');
-      const byCall = templates.filter(t => t?.channel === 'call').length;
+      const byCall = safeTemplates.filter(t => t?.channel === 'call').length;
       console.log('📊 [templateStats] Call count:', byCall);
 
       const stats = {
-        total: templates.length,
+        total: safeTemplates.length,
         bySMS,
         byEmail,
         byCall,
@@ -353,7 +345,7 @@ export const useTemplates = () => {
       console.error('❌ [templateStats] ERRO ao calcular stats:', error);
       return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
     }
-  }, [templates]);
+  }, [safeTemplates]);
 
   // Carregar templates ao montar
   useEffect(() => {
@@ -363,13 +355,13 @@ export const useTemplates = () => {
   }, []);
 
   console.log('🔄 [useTemplates] RENDER - retornando hook com:', {
-    templatesCount: templates?.length,
+    templatesCount: safeTemplates?.length,
     isLoading,
     templateStats,
   });
 
   return {
-    templates,
+    templates: safeTemplates,
     isLoading,
     templateStats,
     addTemplate,
