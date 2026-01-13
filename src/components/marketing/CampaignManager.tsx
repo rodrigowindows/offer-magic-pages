@@ -253,7 +253,7 @@ export const CampaignManager = () => {
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 
     // Google Maps static image for property location
-    const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
+    const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
     console.log('🗺️ [generateTemplateContent] googleMapsImage:', googleMapsImage);
 
     console.log('🖼️ Preview data:', { estimated_value: (prop as any).estimated_value, property_image_url: (prop as any).property_image_url });
@@ -288,6 +288,8 @@ export const CampaignManager = () => {
     content = content.replace(/\{qr_code_url\}/g, qrCodeUrl);
     content = content.replace(/\{source_channel\}/g, selectedChannel);
 
+    console.log('🗺️ [renderTemplatePreview] googleMapsImage usado:', googleMapsImage);
+    console.log('✅ [renderTemplatePreview] Content gerado. Length:', content.length);
     return content;
   };
 
@@ -311,7 +313,7 @@ export const CampaignManager = () => {
     const unsubscribeUrl = `${window.location.origin}/unsubscribe?property=${prop.id}`;
 
     // Google Maps static image for property location
-    const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=YOUR_GOOGLE_MAPS_API_KEY`;
+    const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
 
     let content = template.body;
     content = content.replace(/\{name\}/g, prop.owner_name || 'Owner');
