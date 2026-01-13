@@ -215,16 +215,27 @@ export const initiateCall = async (
   data: InitiateCallRequest
 ): Promise<{ call_id: string; status: string }> => {
   const api = getApiInstance();
+
+  const requestPayload = {
+    name: data.name,
+    from_number: data.from_number,
+    to_number: data.to_number,
+    address: data.address,
+    voicemail_drop: data.voicemail_drop,
+    seller_name: data.seller_name,
+    test_mode: data.test_mode || false,
+  };
+
+  console.log('📞 [initiateCall] ===== START =====');
+  console.log('📞 [initiateCall] API Base URL:', api.defaults.baseURL);
+  console.log('📞 [initiateCall] Full URL:', `${api.defaults.baseURL}/initiate_call`);
+  console.log('📞 [initiateCall] Request payload:', JSON.stringify(requestPayload, null, 2));
+
   try {
-    const response = await api.post('/initiate_call', {
-      name: data.name,
-      from_number: data.from_number,
-      to_number: data.to_number,
-      address: data.address,
-      voicemail_drop: data.voicemail_drop,
-      seller_name: data.seller_name,
-      test_mode: data.test_mode || false,
-    });
+    const response = await api.post('/initiate_call', requestPayload);
+
+    console.log('✅ [initiateCall] Response status:', response.status);
+    console.log('✅ [initiateCall] Response data:', JSON.stringify(response.data, null, 2));
 
     if (response.data.call_id) {
       return {
