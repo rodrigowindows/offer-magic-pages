@@ -26,6 +26,7 @@ import TemplateManager from './TemplateManager';
 import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 import { ClicksAnalytics } from './ClicksAnalytics';
 import { LeadsManagerEnhanced } from './LeadsManagerEnhanced';
+import { LetterGenerator } from './LetterGenerator';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ import {
   TestTube,
   Brain,
   UserCheck,
+  Mail,
 } from 'lucide-react';
 
 import { useState } from 'react';
@@ -97,6 +99,7 @@ const MarketingAppContent = () => {
             <Route path="/campaigns" element={<ErrorBoundary><CampaignManager /></ErrorBoundary>} />
             <Route path="/analytics" element={<ClicksAnalytics />} />
             <Route path="/leads" element={<LeadsManagerEnhanced />} />
+            <Route path="/letters" element={<LetterGenerator />} />
             <Route path="/ab-testing" element={<ABTestAnalytics />} />
             <Route path="/follow-ups" element={<Dashboard />} />
             <Route path="/webhooks" element={<AdvancedWebhookManager />} />
@@ -125,6 +128,7 @@ const Sidebar = () => {
     { path: '/marketing/campaigns/wizard', icon: Sparkles, label: 'Campaign Wizard' },
     { path: '/marketing/analytics', icon: BarChart3, label: 'Analytics' },
     { path: '/marketing/leads', icon: UserCheck, label: 'Leads' },
+    { path: '/marketing/letters', icon: Mail, label: 'Letter Generator' },
     { path: '/marketing/ab-testing', icon: TestTube, label: 'A/B Testing' },
     { path: '/marketing/follow-ups', icon: Brain, label: 'Follow-ups' },
     { path: '/marketing/webhooks', icon: Webhook, label: 'Webhooks' },
