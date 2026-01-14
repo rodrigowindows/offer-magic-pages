@@ -15,12 +15,15 @@ const EXAMPLES: Record<string, any> = {
   send_sms: { phone_number: getTestPhone(), body: 'Olá! Interessado na propriedade?' },
   send_email: { receiver_email: getTestEmail(), subject: 'Oferta Especial', message_body: 'Olá! Temos uma oportunidade.' },
   initiate_call: {
-    name: getTestName(),
-    address: 'Rua das Flores, 123',
-    from_number: '7868828251',
-    to_number: getTestPhone(),
-    voicemail_drop: `Olá ${getTestName()}, temos uma oferta especial.`,
-    seller_name: 'Carlos Vendedor',
+    phone: '+17868828251',
+    agent_id: 'agent_9ccc12...78e',
+    from_number: '+17869606820',
+    dynamic_variables: {
+      customer_name: getTestName(),
+      address: '114 W CELESTE ST APOPKA, Orlando, FL 32801',
+      seller_name: 'Miami Local Investors',
+      voicemail_drop: `Hi ${getTestName()}, this is Miami Local Investors calling about your property at 114 W CELESTE ST. We have a cash offer we'd like to discuss with you.`
+    }
   },
 };
 

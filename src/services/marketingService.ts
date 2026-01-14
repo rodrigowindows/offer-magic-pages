@@ -222,51 +222,49 @@ export const sendEmail = async (
   }
 };
 
-// ===== INICIAR CHAMADA INDIVIDUAL (via endpoint direto) =====
+// ===== INICIAR CHAMADA INDIVIDUAL (via MCP com Retell API) =====
 export const initiateCall = async (
   data: InitiateCallRequest
 ): Promise<{ call_id: string; status: string }> => {
   const api = getApiInstance();
 
-  // Clean phone numbers by removing all non-numeric characters
-  const cleanFromNumber = cleanPhoneNumber(data.from_number);
-  const cleanToNumber = cleanPhoneNumber(data.to_number);
-
-  console.log('🧹 [initiateCall] Cleaning phone numbers:');
-  console.log('   Original from_number:', data.from_number, '→ Cleaned:', cleanFromNumber);
-  console.log('   Original to_number:', data.to_number, '→ Cleaned:', cleanToNumber);
+  // Ensure phone numbers have + prefix for international format
+  const formatPhone = (phone: string): string => {
+    const cleaned = cleanPhoneNumber(phone);
+    return cleaned.startsWith('+') ? cleaned : `+${cleaned}`;
+  };
 
   const requestPayload = {
-    name: data.name,
-    from_number: cleanFromNumber,
-    to_number: cleanToNumber,
-    address: data.address,
-    voicemail_drop: data.voicemail_drop,
-    seller_name: data.seller_name,
-    test_mode: data.test_mode || false,
+    operation: 'initiate_call',
+    phone: formatPhone(data.phone),
+    agent_id: data.agent_id,
+    from_number: formatPhone(data.from_number),
+    dynamic_variables: data.dynamic_variables,
   };
 
   console.log('📞 [initiateCall] ===== START =====');
   console.log('📞 [initiateCall] API Base URL:', api.defaults.baseURL);
-  console.log('📞 [initiateCall] Full URL:', `${api.defaults.baseURL}/initiate_call`);
+  console.log('📞 [initiateCall] Full URL:', `${api.defaults.baseURL}/mcp`);
   console.log('📞 [initiateCall] Request payload:', JSON.stringify(requestPayload, null, 2));
 
   try {
-    const response = await api.post('/initiate_call', requestPayload);
+    const response = await api.post('/mcp', requestPayload);
 
     console.log('✅ [initiateCall] Response status:', response.status);
     console.log('✅ [initiateCall] Response data:', JSON.stringify(response.data, null, 2));
 
-    if (response.data.call_id) {
+    if (response.data.status === 'ok') {
+      const result = response.data.result;
       return {
-        call_id: response.data.call_id,
-        status: response.data.call_status || 'registered',
-        ...response.data
+        call_id: result.call_id,
+        status: result.call_status || 'registered',
+        ...result
       };
     } else {
-      throw new Error('Call response did not contain call_id');
+      throw new Error(response.data.error || 'Failed to initiate call');
     }
   } catch (error: any) {
+    console.error('❌ [initiateCall] Error:', error);
     if (error.response?.data?.error) {
       throw new Error(error.response.data.error);
     }

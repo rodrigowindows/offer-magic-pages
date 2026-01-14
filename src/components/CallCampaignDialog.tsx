@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, AlertCircle, Phone, Settings } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatOfferForTemplate } from "@/utils/offerUtils";
+import { initiateCall } from "@/services/marketingService";
 
 interface Property {
   id: string;
@@ -34,6 +35,8 @@ interface CallSettings {
   api_key: string | null;
   http_method: string;
   headers: Record<string, string> | null;
+  agent_id?: string;  // Retell agent ID
+  from_number?: string; // Número de origem para chamadas
 }
 
 interface CallCampaignDialogProps {
@@ -164,8 +167,12 @@ export const CallCampaignDialog = ({
       return;
     }
 
+    // Configurações padrão (podem ser movidas para settings futuramente)
+    const AGENT_ID = callSettings.agent_id || 'agent_9ccc12a37b82d4f2a1fb52aad6c3978e';
+    const FROM_NUMBER = callSettings.from_number || '+17869606820';
+
     const validProperties = removeDuplicateContacts(properties);
-    
+
     if (validProperties.length === 0) {
       toast({
         title: "No Phone Numbers",
@@ -181,7 +188,7 @@ export const CallCampaignDialog = ({
 
     for (let i = 0; i < validProperties.length; i++) {
       const property = validProperties[i];
-      
+
       try {
         const contact = getBestContact(property);
         if (!contact) {
@@ -190,43 +197,32 @@ export const CallCampaignDialog = ({
         }
 
         const callScript = generateScript(property);
-        
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...(callSettings.headers || {}),
-        };
+        const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
 
-        if (callSettings.api_key) {
-          headers["Authorization"] = `Bearer ${callSettings.api_key}`;
-        }
-
-        const response = await fetch(callSettings.api_endpoint, {
-          method: callSettings.http_method,
-          headers,
-          body: JSON.stringify({
-            to: contact,
-            script: callScript,
-            property_id: property.id,
-            owner_name: property.owner_name,
-            address: property.address,
-            cash_offer: property.cash_offer_amount,
-          }),
+        // Usar a nova estrutura do payload
+        await initiateCall({
+          phone: contact,
+          agent_id: AGENT_ID,
+          from_number: FROM_NUMBER,
+          dynamic_variables: {
+            customer_name: property.owner_name || 'Homeowner',
+            address: fullAddress,
+            seller_name: 'Miami Local Investors',
+            voicemail_drop: callScript,
+          },
         });
 
-        if (response.ok) {
-          await supabase
-            .from("properties")
-            .update({ phone_call_made: true })
-            .eq("id", property.id);
-          successCount++;
-          
-          // Rate limiting for calls (calls need more delay)
-          if (i < validProperties.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
-          }
-        } else {
-          console.error(`Failed to initiate call for property ${property.id}:`, await response.text());
-          errorCount++;
+        // Marcar como chamada feita
+        await supabase
+          .from("properties")
+          .update({ phone_call_made: true })
+          .eq("id", property.id);
+
+        successCount++;
+
+        // Rate limiting for calls (calls need more delay)
+        if (i < validProperties.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
         }
       } catch (error) {
         console.error(`Error initiating call for property ${property.id}:`, error);
