@@ -55,6 +55,8 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportCompsToPDF, exportCompsToSimplePDF } from '@/utils/pdfExport';
+import { CompsMap } from './CompsMap';
+import { CompsComparison } from './CompsComparison';
 
 interface Property {
   id: string;
@@ -120,6 +122,8 @@ export const CompsAnalysis = () => {
   const [filterUnits, setFilterUnits] = useState<string>('all');
   const [filterCondition, setFilterCondition] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'capRate' | 'price' | 'date' | 'noi'>('date');
+  // Comparison
+  const [selectedCompsForComparison, setSelectedCompsForComparison] = useState<string[]>([]);
 
   useEffect(() => {
     fetchProperties();
@@ -157,58 +161,106 @@ export const CompsAnalysis = () => {
     }
   };
 
-  const generateComparables = (property: Property) => {
-    // Generate realistic comparable properties
-    // In production, this would fetch from MLS, Zillow API, or property database
-    const baseValue = property.estimated_value || 250000;
-    const variance = baseValue * 0.15; // 15% variance
+  const generateComparables = async (property: Property) => {
+    setLoading(true);
+    try {
+      // First, try to fetch real comparables from database
+      const { data: realComps, error } = await supabase
+        .from('comparables')
+        .select('*')
+        .eq('property_id', property.id)
+        .order('sale_date', { ascending: false });
 
-    const comps: ComparableProperty[] = Array.from({ length: 5 }, (_, i) => {
-      const sqft = 1200 + Math.floor(Math.random() * 800);
-      const salePrice = Math.round(baseValue + (Math.random() * variance * 2 - variance));
-      const pricePerSqft = Math.round(salePrice / sqft);
-      const daysAgo = 5 + Math.floor(Math.random() * 180); // 6 months max
-      const beds = 2 + Math.floor(Math.random() * 3);
-      const baths = 1 + Math.floor(Math.random() * 2.5);
-      const lotSize = 5000 + Math.floor(Math.random() * 5000);
+      if (error) throw error;
 
-      // Investment metrics
-      const units = Math.floor(Math.random() * 2) === 0 ? 1 : Math.floor(Math.random() * 3) + 2; // 1, 2, 3, or 4 units
-      const rentPerUnit = Math.round((salePrice * 0.008) / units); // ~0.8% monthly rent
-      const totalRent = rentPerUnit * units;
-      const expenseRatio = 0.50 + (Math.random() * 0.15); // 50-65%
-      const noi = Math.round(totalRent * 12 * (1 - expenseRatio));
-      const capRate = salePrice > 0 ? (noi / salePrice) * 100 : 0;
+      // If we have real comps, use them
+      if (realComps && realComps.length > 0) {
+        const mappedComps: ComparableProperty[] = realComps.map(comp => ({
+          id: comp.id,
+          address: comp.address,
+          saleDate: new Date(comp.sale_date),
+          salePrice: Number(comp.sale_price),
+          sqft: comp.sqft,
+          beds: comp.beds || 0,
+          baths: comp.baths || 0,
+          yearBuilt: comp.year_built || 0,
+          lotSize: comp.lot_size,
+          distanceMiles: Number(comp.distance_miles) || 0,
+          daysOnMarket: comp.days_on_market,
+          adjustment: Number(comp.adjustment) || 0,
+          pricePerSqft: Number(comp.price_per_sqft) || 0,
+          units: comp.units || 1,
+          totalRent: comp.total_rent ? Number(comp.total_rent) : undefined,
+          rentPerUnit: comp.rent_per_unit ? Number(comp.rent_per_unit) : undefined,
+          expenseRatio: comp.expense_ratio ? Number(comp.expense_ratio) : undefined,
+          noi: comp.noi ? Number(comp.noi) : undefined,
+          capRate: comp.cap_rate ? Number(comp.cap_rate) : undefined,
+          condition: comp.condition as 'reformed' | 'good' | 'needs_work' | 'as-is' | undefined,
+        }));
 
-      const conditions: Array<'reformed' | 'good' | 'needs_work' | 'as-is'> = ['reformed', 'good', 'needs_work', 'as-is'];
-      const condition = conditions[Math.floor(Math.random() * conditions.length)];
+        setComparables(mappedComps);
+        setLoading(false);
+        return;
+      }
 
-      return {
-        id: `comp-${i}`,
-        address: `${Math.floor(Math.random() * 9999)} ${['N', 'S', 'E', 'W'][i % 4]} ${['Evergreen', 'Hubert', 'Main', 'Oak', 'Pine'][i % 5]} ${['St', 'Ave', 'Ter', 'Dr', 'Ln'][i % 5]}`,
-        saleDate: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
-        salePrice,
-        sqft,
-        beds,
-        baths,
-        yearBuilt: 1980 + Math.floor(Math.random() * 40),
-        lotSize,
-        distanceMiles: 0.1 + Math.random() * 0.9,
-        daysOnMarket: 10 + Math.floor(Math.random() * 60),
-        adjustment: 0,
-        pricePerSqft,
-        // Investment fields
-        units,
-        totalRent,
-        rentPerUnit,
-        expenseRatio: Math.round(expenseRatio * 100) / 100,
-        noi,
-        capRate: Math.round(capRate * 100) / 100,
-        condition,
-      };
-    });
+      // If no real comps, generate sample data (for demo/testing)
+      const baseValue = property.estimated_value || 250000;
+      const variance = baseValue * 0.15; // 15% variance
 
-    setComparables(comps);
+      const comps: ComparableProperty[] = Array.from({ length: 5 }, (_, i) => {
+        const sqft = 1200 + Math.floor(Math.random() * 800);
+        const salePrice = Math.round(baseValue + (Math.random() * variance * 2 - variance));
+        const pricePerSqft = Math.round(salePrice / sqft);
+        const daysAgo = 5 + Math.floor(Math.random() * 180); // 6 months max
+        const beds = 2 + Math.floor(Math.random() * 3);
+        const baths = 1 + Math.floor(Math.random() * 2.5);
+        const lotSize = 5000 + Math.floor(Math.random() * 5000);
+
+        // Investment metrics
+        const units = Math.floor(Math.random() * 2) === 0 ? 1 : Math.floor(Math.random() * 3) + 2;
+        const rentPerUnit = Math.round((salePrice * 0.008) / units);
+        const totalRent = rentPerUnit * units;
+        const expenseRatio = 0.50 + (Math.random() * 0.15);
+        const noi = Math.round(totalRent * 12 * (1 - expenseRatio));
+        const capRate = salePrice > 0 ? (noi / salePrice) * 100 : 0;
+
+        const conditions: Array<'reformed' | 'good' | 'needs_work' | 'as-is'> = ['reformed', 'good', 'needs_work', 'as-is'];
+        const condition = conditions[Math.floor(Math.random() * conditions.length)];
+
+        return {
+          id: `comp-${i}`,
+          address: `${Math.floor(Math.random() * 9999)} ${['N', 'S', 'E', 'W'][i % 4]} ${['Evergreen', 'Hubert', 'Main', 'Oak', 'Pine'][i % 5]} ${['St', 'Ave', 'Ter', 'Dr', 'Ln'][i % 5]}`,
+          saleDate: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+          salePrice,
+          sqft,
+          beds,
+          baths,
+          yearBuilt: 1980 + Math.floor(Math.random() * 40),
+          lotSize,
+          distanceMiles: 0.1 + Math.random() * 0.9,
+          daysOnMarket: 10 + Math.floor(Math.random() * 60),
+          adjustment: 0,
+          pricePerSqft,
+          units,
+          totalRent,
+          rentPerUnit,
+          expenseRatio: Math.round(expenseRatio * 100) / 100,
+          noi,
+          capRate: Math.round(capRate * 100) / 100,
+          condition,
+        };
+      });
+
+      setComparables(comps);
+    } catch (error: any) {
+      toast({
+        title: 'Error loading comparables',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const calculateAnalysis = () => {
@@ -394,6 +446,27 @@ export const CompsAnalysis = () => {
   const getBestComp = () => {
     if (comparables.length === 0) return null;
     return [...comparables].sort((a, b) => (b.capRate || 0) - (a.capRate || 0))[0];
+  };
+
+  const toggleCompForComparison = (compId: string) => {
+    setSelectedCompsForComparison(prev => {
+      if (prev.includes(compId)) {
+        return prev.filter(id => id !== compId);
+      } else if (prev.length < 3) {
+        return [...prev, compId];
+      } else {
+        toast({
+          title: 'Limite Atingido',
+          description: 'Você pode comparar até 3 propriedades por vez',
+          variant: 'destructive',
+        });
+        return prev;
+      }
+    });
+  };
+
+  const clearComparison = () => {
+    setSelectedCompsForComparison([]);
   };
 
   // Filter and sort comparables
@@ -783,6 +856,65 @@ export const CompsAnalysis = () => {
         </div>
       )}
 
+      {/* Side-by-Side Comparison */}
+      {selectedProperty && selectedCompsForComparison.length > 0 && (
+        <CompsComparison
+          subjectProperty={{
+            id: selectedProperty.id,
+            address: selectedProperty.address,
+            estimatedValue: selectedProperty.estimated_value,
+            sqft: 0, // Would need to add to properties table
+            beds: 0,
+            baths: 0,
+          }}
+          selectedComps={comparables
+            .filter(comp => selectedCompsForComparison.includes(comp.id))
+            .map(comp => ({
+              id: comp.id,
+              address: comp.address,
+              salePrice: comp.salePrice,
+              saleDate: comp.saleDate,
+              sqft: comp.sqft,
+              beds: comp.beds,
+              baths: comp.baths,
+              yearBuilt: comp.yearBuilt,
+              units: comp.units,
+              totalRent: comp.totalRent,
+              rentPerUnit: comp.rentPerUnit,
+              noi: comp.noi,
+              capRate: comp.capRate,
+              condition: comp.condition,
+              distanceMiles: comp.distanceMiles,
+              pricePerSqft: comp.pricePerSqft,
+            }))}
+          onRemoveComp={(compId) => toggleCompForComparison(compId)}
+          onClear={clearComparison}
+        />
+      )}
+
+      {/* Map View */}
+      {selectedProperty && comparables.length > 0 && (
+        <CompsMap
+          subjectProperty={{
+            address: selectedProperty.address,
+            latitude: undefined, // Will add geocoding later
+            longitude: undefined,
+          }}
+          comparables={comparables.map(comp => ({
+            ...comp,
+            latitude: undefined, // Will add geocoding later
+            longitude: undefined,
+            isBest: getBestComp()?.id === comp.id,
+          }))}
+          onCompClick={(comp) => {
+            toast({
+              title: comp.address,
+              description: `$${comp.salePrice.toLocaleString()} • ${comp.capRate ? comp.capRate + '% Cap Rate' : 'N/A'}`,
+            });
+          }}
+        />
+      )}
+
       {/* Comparable Properties Table */}
       {comparables.length > 0 && (
         <Card>
@@ -878,6 +1010,7 @@ export const CompsAnalysis = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Compare</TableHead>
                     <TableHead>Address</TableHead>
                     <TableHead>Sale Date</TableHead>
                     <TableHead className="text-right">Price/Unit</TableHead>
@@ -894,11 +1027,20 @@ export const CompsAnalysis = () => {
                 <TableBody>
                   {getFilteredComparables().map((comp) => {
                     const isBest = getBestComp()?.id === comp.id;
+                    const isSelected = selectedCompsForComparison.includes(comp.id);
                     return (
                     <TableRow
                       key={comp.id}
-                      className={isBest ? 'bg-green-50 border-l-4 border-l-green-500' : ''}
+                      className={`${isBest ? 'bg-green-50 border-l-4 border-l-green-500' : ''} ${isSelected ? 'bg-blue-50' : ''}`}
                     >
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleCompForComparison(comp.id)}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           {isBest && <Star className="w-4 h-4 text-green-500 fill-green-500" />}
