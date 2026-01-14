@@ -164,46 +164,7 @@ export const CompsAnalysis = () => {
   const generateComparables = async (property: Property) => {
     setLoading(true);
     try {
-      // First, try to fetch real comparables from database
-      const { data: realComps, error } = await supabase
-        .from('comparables')
-        .select('*')
-        .eq('property_id', property.id)
-        .order('sale_date', { ascending: false });
-
-      if (error) throw error;
-
-      // If we have real comps, use them
-      if (realComps && realComps.length > 0) {
-        const mappedComps: ComparableProperty[] = realComps.map(comp => ({
-          id: comp.id,
-          address: comp.address,
-          saleDate: new Date(comp.sale_date),
-          salePrice: Number(comp.sale_price),
-          sqft: comp.sqft,
-          beds: comp.beds || 0,
-          baths: comp.baths || 0,
-          yearBuilt: comp.year_built || 0,
-          lotSize: comp.lot_size,
-          distanceMiles: Number(comp.distance_miles) || 0,
-          daysOnMarket: comp.days_on_market,
-          adjustment: Number(comp.adjustment) || 0,
-          pricePerSqft: Number(comp.price_per_sqft) || 0,
-          units: comp.units || 1,
-          totalRent: comp.total_rent ? Number(comp.total_rent) : undefined,
-          rentPerUnit: comp.rent_per_unit ? Number(comp.rent_per_unit) : undefined,
-          expenseRatio: comp.expense_ratio ? Number(comp.expense_ratio) : undefined,
-          noi: comp.noi ? Number(comp.noi) : undefined,
-          capRate: comp.cap_rate ? Number(comp.cap_rate) : undefined,
-          condition: comp.condition as 'reformed' | 'good' | 'needs_work' | 'as-is' | undefined,
-        }));
-
-        setComparables(mappedComps);
-        setLoading(false);
-        return;
-      }
-
-      // If no real comps, generate sample data (for demo/testing)
+      // Generate sample comparables data (for demo/testing)
       const baseValue = property.estimated_value || 250000;
       const variance = baseValue * 0.15; // 15% variance
 

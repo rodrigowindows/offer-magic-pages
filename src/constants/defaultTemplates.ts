@@ -74,10 +74,6 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
           <p style="font-size: 36px; color: #28a745; font-weight: bold; margin: 10px 0;">{cash_offer}</p>
           <p style="font-size: 12px; color: #666; margin: 5px 0 0;">Estimated Property Value: {estimated_value}</p>
         </div>
-        <div style="text-align: center; margin: 20px 0;">
-          <p style="font-size: 14px; color: #666; margin: 0 0 10px 0;">Property Location:</p>
-          <img src="{property_map}" alt="Property Location Map" style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; border: 2px solid #667eea;" />
-        </div>
         <p style="font-size: 16px; color: #333; line-height: 1.6;">This offer is valid for 7 days. Contact us to discuss!</p>
         <div style="text-align: center; margin: 30px 0;">
           <a href="tel:{phone}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Call Us: {phone}</a>
