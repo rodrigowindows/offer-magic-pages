@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableBody,
@@ -42,6 +44,14 @@ import {
   Info,
   FileText,
   Loader2,
+  RefreshCw,
+  Share2,
+  MessageSquare,
+  Percent,
+  Target,
+  Edit2,
+  Star,
+  ArrowUpDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportCompsToPDF, exportCompsToSimplePDF } from '@/utils/pdfExport';
@@ -71,6 +81,14 @@ interface ComparableProperty {
   daysOnMarket?: number;
   adjustment: number;
   pricePerSqft: number;
+  // Investment analysis fields
+  units?: number;
+  totalRent?: number;
+  rentPerUnit?: number;
+  expenseRatio?: number;
+  noi?: number;
+  capRate?: number;
+  condition?: 'reformed' | 'good' | 'needs_work' | 'as-is';
 }
 
 interface MarketAnalysis {
@@ -80,6 +98,10 @@ interface MarketAnalysis {
   suggestedValueMax: number;
   marketTrend: 'up' | 'down' | 'stable';
   trendPercentage: number;
+  // Investment metrics
+  avgCapRate?: number;
+  avgNOI?: number;
+  avgRentPerUnit?: number;
 }
 
 export const CompsAnalysis = () => {
@@ -90,6 +112,14 @@ export const CompsAnalysis = () => {
   const [analysis, setAnalysis] = useState<MarketAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
+  const [editingOffer, setEditingOffer] = useState(false);
+  const [newOfferAmount, setNewOfferAmount] = useState<number>(0);
+  const [analysisNotes, setAnalysisNotes] = useState<string>('');
+  // Filters
+  const [minCapRate, setMinCapRate] = useState<number>(0);
+  const [filterUnits, setFilterUnits] = useState<string>('all');
+  const [filterCondition, setFilterCondition] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'capRate' | 'price' | 'date' | 'noi'>('date');
 
   useEffect(() => {
     fetchProperties();
@@ -137,22 +167,44 @@ export const CompsAnalysis = () => {
       const sqft = 1200 + Math.floor(Math.random() * 800);
       const salePrice = Math.round(baseValue + (Math.random() * variance * 2 - variance));
       const pricePerSqft = Math.round(salePrice / sqft);
-      const daysAgo = 5 + Math.floor(Math.random() * 120);
+      const daysAgo = 5 + Math.floor(Math.random() * 180); // 6 months max
+      const beds = 2 + Math.floor(Math.random() * 3);
+      const baths = 1 + Math.floor(Math.random() * 2.5);
+      const lotSize = 5000 + Math.floor(Math.random() * 5000);
+
+      // Investment metrics
+      const units = Math.floor(Math.random() * 2) === 0 ? 1 : Math.floor(Math.random() * 3) + 2; // 1, 2, 3, or 4 units
+      const rentPerUnit = Math.round((salePrice * 0.008) / units); // ~0.8% monthly rent
+      const totalRent = rentPerUnit * units;
+      const expenseRatio = 0.50 + (Math.random() * 0.15); // 50-65%
+      const noi = Math.round(totalRent * 12 * (1 - expenseRatio));
+      const capRate = salePrice > 0 ? (noi / salePrice) * 100 : 0;
+
+      const conditions: Array<'reformed' | 'good' | 'needs_work' | 'as-is'> = ['reformed', 'good', 'needs_work', 'as-is'];
+      const condition = conditions[Math.floor(Math.random() * conditions.length)];
 
       return {
         id: `comp-${i}`,
-        address: `${Math.floor(Math.random() * 9999)} ${['NW', 'SW', 'NE', 'SE'][i % 4]} ${Math.floor(Math.random() * 99)}th ${['St', 'Ave', 'Ter', 'Dr'][i % 4]}`,
+        address: `${Math.floor(Math.random() * 9999)} ${['N', 'S', 'E', 'W'][i % 4]} ${['Evergreen', 'Hubert', 'Main', 'Oak', 'Pine'][i % 5]} ${['St', 'Ave', 'Ter', 'Dr', 'Ln'][i % 5]}`,
         saleDate: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
         salePrice,
         sqft,
-        beds: 2 + Math.floor(Math.random() * 3),
-        baths: 1 + Math.floor(Math.random() * 2.5),
+        beds,
+        baths,
         yearBuilt: 1980 + Math.floor(Math.random() * 40),
-        lotSize: 5000 + Math.floor(Math.random() * 5000),
+        lotSize,
         distanceMiles: 0.1 + Math.random() * 0.9,
         daysOnMarket: 10 + Math.floor(Math.random() * 60),
         adjustment: 0,
         pricePerSqft,
+        // Investment fields
+        units,
+        totalRent,
+        rentPerUnit,
+        expenseRatio: Math.round(expenseRatio * 100) / 100,
+        noi,
+        capRate: Math.round(capRate * 100) / 100,
+        condition,
       };
     });
 
@@ -183,6 +235,20 @@ export const CompsAnalysis = () => {
     const marketTrend: 'up' | 'down' | 'stable' =
       trendPercentage > 2 ? 'up' : trendPercentage < -2 ? 'down' : 'stable';
 
+    // Calculate investment metrics
+    const compsWithInvestment = comparables.filter(c => c.capRate && c.capRate > 0);
+    const avgCapRate = compsWithInvestment.length > 0
+      ? Math.round((compsWithInvestment.reduce((sum, c) => sum + (c.capRate || 0), 0) / compsWithInvestment.length) * 100) / 100
+      : undefined;
+
+    const avgNOI = compsWithInvestment.length > 0
+      ? Math.round(compsWithInvestment.reduce((sum, c) => sum + (c.noi || 0), 0) / compsWithInvestment.length)
+      : undefined;
+
+    const avgRentPerUnit = compsWithInvestment.length > 0
+      ? Math.round(compsWithInvestment.reduce((sum, c) => sum + (c.rentPerUnit || 0), 0) / compsWithInvestment.length)
+      : undefined;
+
     setAnalysis({
       avgSalePrice,
       avgPricePerSqft,
@@ -190,6 +256,9 @@ export const CompsAnalysis = () => {
       suggestedValueMax,
       marketTrend,
       trendPercentage: Math.round(trendPercentage * 10) / 10,
+      avgCapRate,
+      avgNOI,
+      avgRentPerUnit,
     });
   };
 
@@ -255,6 +324,147 @@ export const CompsAnalysis = () => {
     }
   };
 
+  const updatePropertyOffer = async (newOffer: number) => {
+    if (!selectedProperty) return;
+
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ cash_offer_amount: newOffer })
+        .eq('id', selectedProperty.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setSelectedProperty({ ...selectedProperty, cash_offer_amount: newOffer });
+      setProperties(prev =>
+        prev.map(p => (p.id === selectedProperty.id ? { ...p, cash_offer_amount: newOffer } : p))
+      );
+
+      setEditingOffer(false);
+
+      toast({
+        title: 'Oferta Atualizada',
+        description: `Nova oferta: $${newOffer.toLocaleString()}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao Atualizar Oferta',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const setOfferToAverage = () => {
+    if (!analysis) return;
+    setNewOfferAmount(analysis.avgSalePrice);
+    setEditingOffer(true);
+  };
+
+  const setOfferToPercentage = (percentage: number) => {
+    if (!analysis) return;
+    const offerAmount = Math.round(analysis.avgSalePrice * percentage);
+    setNewOfferAmount(offerAmount);
+    setEditingOffer(true);
+  };
+
+  const setOfferToMin = () => {
+    if (!analysis) return;
+    setNewOfferAmount(analysis.suggestedValueMin);
+    setEditingOffer(true);
+  };
+
+  const setOfferToBestComp = () => {
+    if (comparables.length === 0) return;
+
+    // Find best comp (highest cap rate)
+    const bestComp = [...comparables].sort((a, b) => (b.capRate || 0) - (a.capRate || 0))[0];
+
+    if (bestComp && bestComp.capRate) {
+      setNewOfferAmount(bestComp.salePrice);
+      setEditingOffer(true);
+      toast({
+        title: 'Oferta Baseada no Melhor Comp',
+        description: `${bestComp.address} - Cap Rate: ${bestComp.capRate}%`,
+      });
+    }
+  };
+
+  const getBestComp = () => {
+    if (comparables.length === 0) return null;
+    return [...comparables].sort((a, b) => (b.capRate || 0) - (a.capRate || 0))[0];
+  };
+
+  // Filter and sort comparables
+  const getFilteredComparables = () => {
+    let filtered = [...comparables];
+
+    // Apply filters
+    if (minCapRate > 0) {
+      filtered = filtered.filter(c => (c.capRate || 0) >= minCapRate);
+    }
+
+    if (filterUnits !== 'all') {
+      filtered = filtered.filter(c => c.units?.toString() === filterUnits);
+    }
+
+    if (filterCondition !== 'all') {
+      filtered = filtered.filter(c => c.condition === filterCondition);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'capRate':
+          return (b.capRate || 0) - (a.capRate || 0);
+        case 'price':
+          return b.salePrice - a.salePrice;
+        case 'noi':
+          return (b.noi || 0) - (a.noi || 0);
+        case 'date':
+        default:
+          return b.saleDate.getTime() - a.saleDate.getTime();
+      }
+    });
+
+    return filtered;
+  };
+
+  const shareReport = async () => {
+    if (!selectedProperty) return;
+
+    const shareData = {
+      title: `CMA Report - ${selectedProperty.address}`,
+      text: `Comparative Market Analysis for ${selectedProperty.address}\n\nAvg Sale Price: $${analysis?.avgSalePrice.toLocaleString()}\nSuggested Value: $${analysis?.suggestedValueMin.toLocaleString()} - $${analysis?.suggestedValueMax.toLocaleString()}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        toast({
+          title: 'Compartilhado',
+          description: 'Relatório compartilhado com sucesso',
+        });
+      } else {
+        // Fallback: copiar para clipboard
+        await navigator.clipboard.writeText(`${shareData.title}\n\n${shareData.text}\n\n${shareData.url}`);
+        toast({
+          title: 'Copiado',
+          description: 'Link copiado para a área de transferência',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error sharing:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível compartilhar',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -269,6 +479,10 @@ export const CompsAnalysis = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={shareReport} variant="outline" disabled={!selectedProperty}>
+            <Share2 className="w-4 h-4 mr-2" />
+            Compartilhar
+          </Button>
           <Button onClick={saveReport} variant="outline" disabled={!selectedProperty}>
             <Save className="w-4 h-4 mr-2" />
             Save Report
@@ -326,24 +540,137 @@ export const CompsAnalysis = () => {
           </Select>
 
           {selectedProperty && (
-            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Address</p>
-                <p className="font-medium">{selectedProperty.address}</p>
+            <>
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="font-medium">{selectedProperty.address}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">City</p>
+                  <p className="font-medium">{selectedProperty.city}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Estimated Value</p>
+                  <p className="font-medium">${selectedProperty.estimated_value.toLocaleString()}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Current Offer</p>
+                  <div className="flex items-center gap-2">
+                    {editingOffer ? (
+                      <>
+                        <Input
+                          type="number"
+                          value={newOfferAmount}
+                          onChange={(e) => setNewOfferAmount(Number(e.target.value))}
+                          className="w-32"
+                          autoFocus
+                        />
+                        <Button size="sm" onClick={() => updatePropertyOffer(newOfferAmount)}>
+                          Save
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setEditingOffer(false)}>
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium">${selectedProperty.cash_offer_amount.toLocaleString()}</p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setNewOfferAmount(selectedProperty.cash_offer_amount);
+                            setEditingOffer(true);
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">City</p>
-                <p className="font-medium">{selectedProperty.city}</p>
+
+              {/* Quick Actions for Offer */}
+              {analysis && (
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg border border-border">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="w-4 h-4 text-primary" />
+                    <h4 className="text-sm font-semibold">Ações Rápidas para Oferta</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={setOfferToAverage}
+                      disabled={editingOffer}
+                    >
+                      <Calculator className="w-4 h-4 mr-2" />
+                      Média dos Comps (${analysis.avgSalePrice.toLocaleString()})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setOfferToPercentage(0.90)}
+                      disabled={editingOffer}
+                    >
+                      <Percent className="w-4 h-4 mr-2" />
+                      90% da Média (${Math.round(analysis.avgSalePrice * 0.90).toLocaleString()})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setOfferToPercentage(0.85)}
+                      disabled={editingOffer}
+                    >
+                      <Percent className="w-4 h-4 mr-2" />
+                      85% da Média (${Math.round(analysis.avgSalePrice * 0.85).toLocaleString()})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={setOfferToMin}
+                      disabled={editingOffer}
+                    >
+                      <TrendingDown className="w-4 h-4 mr-2" />
+                      Valor Mínimo (${analysis.suggestedValueMin.toLocaleString()})
+                    </Button>
+                    {getBestComp() && getBestComp()!.capRate && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={setOfferToBestComp}
+                        disabled={editingOffer}
+                        className="border-green-500 text-green-700 hover:bg-green-50"
+                      >
+                        <Star className="w-4 h-4 mr-2 fill-green-500" />
+                        Melhor Comp (${getBestComp()!.salePrice.toLocaleString()} - {getBestComp()!.capRate}%)
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Clique para pré-preencher o campo de oferta baseado na análise dos comparáveis
+                  </p>
+                </div>
+              )}
+
+              {/* Analysis Notes */}
+              <div className="mt-4">
+                <Label htmlFor="analysis-notes" className="flex items-center gap-2 mb-2">
+                  <MessageSquare className="w-4 h-4" />
+                  Notas da Análise
+                </Label>
+                <Textarea
+                  id="analysis-notes"
+                  placeholder="Adicione observações sobre a análise, condições da propriedade, ajustes considerados, etc."
+                  value={analysisNotes}
+                  onChange={(e) => setAnalysisNotes(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
               </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Estimated Value</p>
-                <p className="font-medium">${selectedProperty.estimated_value.toLocaleString()}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Current Offer</p>
-                <p className="font-medium">${selectedProperty.cash_offer_amount.toLocaleString()}</p>
-              </div>
-            </div>
+            </>
           )}
         </CardContent>
       </Card>
@@ -407,6 +734,46 @@ export const CompsAnalysis = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Investment Metrics - only show if available */}
+          {analysis.avgCapRate && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Avg Cap Rate
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{analysis.avgCapRate}%</div>
+              </CardContent>
+            </Card>
+          )}
+
+          {analysis.avgNOI && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Avg NOI
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${analysis.avgNOI.toLocaleString()}</div>
+              </CardContent>
+            </Card>
+          )}
+
+          {analysis.avgRentPerUnit && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Avg Rent/Unit
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">${analysis.avgRentPerUnit.toLocaleString()}/mo</div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -414,10 +781,91 @@ export const CompsAnalysis = () => {
       {comparables.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Comparable Sales</CardTitle>
-            <CardDescription>
-              Recent sales within 1 mile of subject property
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Comparable Sales</CardTitle>
+                <CardDescription>
+                  Recent sales within 1 mile of subject property ({getFilteredComparables().length} of {comparables.length} shown)
+                </CardDescription>
+              </div>
+
+              {/* Quick Filters */}
+              <div className="flex gap-2">
+                <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date">Sale Date</SelectItem>
+                    <SelectItem value="capRate">Cap Rate</SelectItem>
+                    <SelectItem value="price">Price</SelectItem>
+                    <SelectItem value="noi">NOI</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="flex gap-3 mt-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground">Min Cap Rate:</Label>
+                <Input
+                  type="number"
+                  value={minCapRate || ''}
+                  onChange={(e) => setMinCapRate(Number(e.target.value))}
+                  className="w-20 h-8"
+                  placeholder="0%"
+                  step="0.5"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground">Units:</Label>
+                <Select value={filterUnits} onValueChange={setFilterUnits}>
+                  <SelectTrigger className="w-[100px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="1">1 unit</SelectItem>
+                    <SelectItem value="2">2 units</SelectItem>
+                    <SelectItem value="3">3 units</SelectItem>
+                    <SelectItem value="4">4 units</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Label className="text-xs text-muted-foreground">Condição:</Label>
+                <Select value={filterCondition} onValueChange={setFilterCondition}>
+                  <SelectTrigger className="w-[140px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="reformed">Reformada</SelectItem>
+                    <SelectItem value="good">Boa</SelectItem>
+                    <SelectItem value="needs_work">Precisa Reforma</SelectItem>
+                    <SelectItem value="as-is">As-is</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {(minCapRate > 0 || filterUnits !== 'all' || filterCondition !== 'all') && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setMinCapRate(0);
+                    setFilterUnits('all');
+                    setFilterCondition('all');
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -426,21 +874,28 @@ export const CompsAnalysis = () => {
                   <TableRow>
                     <TableHead>Address</TableHead>
                     <TableHead>Sale Date</TableHead>
-                    <TableHead className="text-right">Sale Price</TableHead>
+                    <TableHead className="text-right">Price/Unit</TableHead>
                     <TableHead className="text-right">Sqft</TableHead>
                     <TableHead className="text-right">$/Sqft</TableHead>
-                    <TableHead>Beds/Baths</TableHead>
-                    <TableHead className="text-right">Distance</TableHead>
-                    <TableHead className="text-right">DOM</TableHead>
-                    <TableHead className="text-right">Adjustment</TableHead>
-                    <TableHead className="text-right">Adj. Price</TableHead>
+                    <TableHead>Beds/Ba</TableHead>
+                    <TableHead className="text-right">Units</TableHead>
+                    <TableHead className="text-right">Rent/Unit</TableHead>
+                    <TableHead className="text-right">NOI</TableHead>
+                    <TableHead className="text-right">Cap Rate</TableHead>
+                    <TableHead>Condition</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {comparables.map((comp) => (
-                    <TableRow key={comp.id}>
+                  {getFilteredComparables().map((comp) => {
+                    const isBest = getBestComp()?.id === comp.id;
+                    return (
+                    <TableRow
+                      key={comp.id}
+                      className={isBest ? 'bg-green-50 border-l-4 border-l-green-500' : ''}
+                    >
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
+                          {isBest && <Star className="w-4 h-4 text-green-500 fill-green-500" />}
                           <MapPin className="w-4 h-4 text-muted-foreground" />
                           {comp.address}
                         </div>
@@ -451,8 +906,8 @@ export const CompsAnalysis = () => {
                           {format(comp.saleDate, 'MMM dd, yyyy')}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        ${comp.salePrice.toLocaleString()}
+                      <TableCell className="text-right font-semibold">
+                        ${comp.units ? Math.round(comp.salePrice / comp.units).toLocaleString() : comp.salePrice.toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right">
                         {comp.sqft.toLocaleString()}
@@ -461,28 +916,45 @@ export const CompsAnalysis = () => {
                         ${comp.pricePerSqft}
                       </TableCell>
                       <TableCell>
-                        {comp.beds}bd / {comp.baths}ba
+                        {comp.beds}/{comp.baths}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {comp.units || 1}
+                      </TableCell>
+                      <TableCell className="text-right text-green-700">
+                        ${comp.rentPerUnit?.toLocaleString() || '-'}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        ${comp.noi?.toLocaleString() || '-'}
                       </TableCell>
                       <TableCell className="text-right">
-                        {comp.distanceMiles.toFixed(2)} mi
+                        <Badge variant={comp.capRate && comp.capRate > 6 ? "default" : "secondary"}>
+                          {comp.capRate ? `${comp.capRate}%` : '-'}
+                        </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        {comp.daysOnMarket || '-'} days
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Input
-                          type="number"
-                          value={comp.adjustment}
-                          onChange={(e) => updateAdjustment(comp.id, Number(e.target.value))}
-                          className="w-24 text-right"
-                          placeholder="0"
-                        />
-                      </TableCell>
-                      <TableCell className="text-right font-bold">
-                        ${(comp.salePrice + comp.adjustment).toLocaleString()}
+                      <TableCell>
+                        <Badge
+                          variant={
+                            comp.condition === 'reformed' ? 'default' :
+                            comp.condition === 'good' ? 'secondary' :
+                            comp.condition === 'needs_work' ? 'outline' : 'destructive'
+                          }
+                        >
+                          {comp.condition === 'reformed' ? 'Reformada' :
+                           comp.condition === 'good' ? 'Boa' :
+                           comp.condition === 'needs_work' ? 'Precisa Reforma' : 'As-is'}
+                        </Badge>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )})}
+
+                  {getFilteredComparables().length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                        Nenhum comp corresponde aos filtros selecionados
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
