@@ -1,19 +1,20 @@
-import { Button } from "./ui/button";
+import { Check } from "lucide-react";
+import ContactFormModal from "./ContactFormModal";
 
 interface CashOfferSectionBProps {
   offerAmount?: string;
   onViewOffer?: () => void;
+  propertyAddress?: string;
+  propertyId?: string;
 }
 
 // Variant B: Ultra-simplified version (50% less content)
-const CashOfferSectionB = ({ 
+const CashOfferSectionB = ({
   offerAmount = "$285,000",
-  onViewOffer
+  onViewOffer,
+  propertyAddress = "",
+  propertyId
 }: CashOfferSectionBProps) => {
-  const scrollToForm = () => {
-    onViewOffer?.();
-    document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <section className="py-16 bg-gradient-to-br from-secondary/10 to-primary/5">
@@ -31,13 +32,13 @@ const CashOfferSectionB = ({
             No repairs • No fees • Close in 7 days
           </p>
 
-          <Button 
-            size="lg" 
-            onClick={scrollToForm}
-            className="bg-secondary hover:bg-secondary/90 text-secondary-foreground text-xl px-12 py-8 h-auto font-bold shadow-lg hover:shadow-xl transition-all"
-          >
-            Reply "YES" to Get Started
-          </Button>
+          <ContactFormModal
+            propertyAddress={propertyAddress}
+            propertyId={propertyId}
+            onSubmit={onViewOffer}
+            buttonText="I'm Interested"
+            buttonClassName="bg-green-600 hover:bg-green-700 text-white text-xl px-12 py-8 h-auto font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105 animate-pulse"
+          />
           
           <p className="text-sm text-muted-foreground">
             Call: 786 882 8251
