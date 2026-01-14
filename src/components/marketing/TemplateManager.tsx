@@ -678,6 +678,14 @@ export const TemplateManager = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                onClick={() => setPreviewTemplate(template)}
+                                title="Preview"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleCopy(template)}
                                 title="Duplicate"
                               >

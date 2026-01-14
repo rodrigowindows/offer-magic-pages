@@ -566,7 +566,11 @@ export const CompsAnalysis = () => {
                           className="w-32"
                           autoFocus
                         />
-                        <Button size="sm" onClick={() => updatePropertyOffer(newOfferAmount)}>
+                        <Button
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => updatePropertyOffer(newOfferAmount)}
+                        >
                           Save
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setEditingOffer(false)}>
@@ -575,16 +579,18 @@ export const CompsAnalysis = () => {
                       </>
                     ) : (
                       <>
-                        <p className="font-medium">${selectedProperty.cash_offer_amount.toLocaleString()}</p>
+                        <p className="font-medium text-lg">${selectedProperty.cash_offer_amount.toLocaleString()}</p>
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="outline"
+                          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                           onClick={() => {
                             setNewOfferAmount(selectedProperty.cash_offer_amount);
                             setEditingOffer(true);
                           }}
                         >
-                          <Edit2 className="w-4 h-4" />
+                          <Edit2 className="w-4 h-4 mr-1" />
+                          Editar Oferta
                         </Button>
                       </>
                     )}
