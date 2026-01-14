@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { initiateCall } from '@/services/marketingService';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Phone,
@@ -53,6 +54,7 @@ import {
   MessageSquare,
   Trash2,
   PhoneCall,
+  Home,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -87,6 +89,7 @@ interface LeadsStats {
 
 export const LeadsManagerEnhanced = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
@@ -764,6 +767,16 @@ export const LeadsManagerEnhanced = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          {lead.property_id && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate('/marketing/comps')}
+                              title="View comparable properties"
+                            >
+                              <Home className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             onClick={() => handleCallNow(lead)}

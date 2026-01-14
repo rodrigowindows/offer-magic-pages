@@ -27,6 +27,7 @@ import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 import { ClicksAnalytics } from './ClicksAnalytics';
 import { LeadsManagerEnhanced } from './LeadsManagerEnhanced';
 import { LetterGenerator } from './LetterGenerator';
+import { CompsAnalysis } from './CompsAnalysis';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ import {
   Brain,
   UserCheck,
   Mail,
+  Home,
 } from 'lucide-react';
 
 import { useState } from 'react';
@@ -98,6 +100,7 @@ const MarketingAppContent = () => {
             <Route path="/quick" element={<SimpleCampaignDashboard />} />
             <Route path="/campaigns" element={<ErrorBoundary><CampaignManager /></ErrorBoundary>} />
             <Route path="/analytics" element={<ClicksAnalytics />} />
+            <Route path="/comps" element={<CompsAnalysis />} />
             <Route path="/leads" element={<LeadsManagerEnhanced />} />
             <Route path="/letters" element={<LetterGenerator />} />
             <Route path="/ab-testing" element={<ABTestAnalytics />} />
@@ -127,6 +130,7 @@ const Sidebar = () => {
     { path: '/marketing/campaigns', icon: Rocket, label: 'Campaigns' },
     { path: '/marketing/campaigns/wizard', icon: Sparkles, label: 'Campaign Wizard' },
     { path: '/marketing/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/marketing/comps', icon: Home, label: 'Comps Analysis' },
     { path: '/marketing/leads', icon: UserCheck, label: 'Leads' },
     { path: '/marketing/letters', icon: Mail, label: 'Letter Generator' },
     { path: '/marketing/ab-testing', icon: TestTube, label: 'A/B Testing' },
