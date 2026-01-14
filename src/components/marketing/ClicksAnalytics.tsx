@@ -35,12 +35,6 @@ interface ClickAnalytic {
   id: string;
   property_id: string | null;
   event_type: string;
-  source?: string | null;
-  campaign_name?: string | null;
-  contact_phone?: string | null;
-  contact_email?: string | null;
-  contact_name?: string | null;
-  property_address?: string | null;
   referrer: string | null;
   user_agent: string | null;
   created_at: string;
@@ -48,9 +42,6 @@ interface ClickAnalytic {
   ip_address?: string | null;
   city?: string | null;
   country?: string | null;
-  utm_source?: string | null;
-  utm_medium?: string | null;
-  utm_campaign?: string | null;
 }
 
 interface ClickMetrics {
@@ -98,28 +89,35 @@ export const ClicksAnalytics = () => {
         query = query.gte('created_at', dateFilter.toISOString());
       }
 
-      // Apply source filter
-      if (sourceFilter !== 'all') {
-        query = query.eq('source', sourceFilter);
-      }
+      // Note: source filter not applied as property_analytics doesn't have source column
+      // Filter will be applied client-side based on referrer
 
       const { data, error } = await query.limit(1000);
 
       if (error) throw error;
 
       // Process metrics
-      const clicks = data || [];
+      let clicks = data || [];
+
+      // Apply client-side source filter based on referrer
+      if (sourceFilter !== 'all') {
+        clicks = clicks.filter((click) => {
+          const source = click.referrer || 'direct';
+          return source.toLowerCase().includes(sourceFilter.toLowerCase());
+        });
+      }
+
       const bySource: Record<string, number> = {};
       const byCampaign: Record<string, number> = {};
       const byDate: Record<string, number> = {};
 
       clicks.forEach((click) => {
-        // Count by source (use source field, fallback to referrer)
-        const source = click.source || click.referrer || 'direct';
+        // Count by source (use referrer since source column doesn't exist)
+        const source = click.referrer || 'direct';
         bySource[source] = (bySource[source] || 0) + 1;
 
-        // Count by campaign name
-        const campaign = click.campaign_name || click.event_type || 'page_view';
+        // Count by event_type (campaign_name column doesn't exist)
+        const campaign = click.event_type || 'page_view';
         byCampaign[campaign] = (byCampaign[campaign] || 0) + 1;
 
         // Count by date (YYYY-MM-DD)
@@ -409,7 +407,7 @@ export const ClicksAnalytics = () => {
         <CardContent>
           <div className="space-y-4">
             {metrics.recentClicks.map((click) => {
-              const source = click.source || click.referrer || 'direct';
+              const source = click.referrer || 'direct';
               const Icon = getSourceIcon(source);
               const timeAgo = getTimeAgo(click.created_at);
               return (
@@ -427,63 +425,11 @@ export const ClicksAnalytics = () => {
                         {timeAgo.text}
                       </Badge>
                       <div className="flex-1 min-w-0">
-                        {/* Contact Info */}
-                        {(click.contact_name || click.contact_phone || click.contact_email) && (
-                          <div className="mb-2">
-                            <div className="font-medium text-sm">
-                              {click.contact_name || 'Unknown Contact'}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {click.contact_phone && (
-                                <Badge variant="secondary" className="text-xs">
-                                  📞 {click.contact_phone}
-                                </Badge>
-                              )}
-                              {click.contact_email && (
-                                <Badge variant="secondary" className="text-xs">
-                                  📧 {click.contact_email}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Property Address with Copy Link */}
-                        {click.property_address && (
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm text-muted-foreground">
-                              🏠 {click.property_address}
-                            </div>
-                            {click.property_id && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const propertyUrl = `${window.location.origin}/property/${click.property_id}`;
-                                  navigator.clipboard.writeText(propertyUrl);
-                                  toast({
-                                    title: 'Link Copied!',
-                                    description: 'Property URL copied to clipboard',
-                                  });
-                                }}
-                              >
-                                <Copy className="w-3 h-3 mr-1" />
-                                Copy Link
-                              </Button>
-                            )}
-                          </div>
-                        )}
-
                         {/* Badges Row */}
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <Badge variant="default" className="capitalize text-xs">
                             {source}
                           </Badge>
-                          {click.campaign_name && (
-                            <Badge variant="outline" className="text-xs">
-                              📋 {click.campaign_name}
-                            </Badge>
-                          )}
                           <Badge variant="secondary" className="capitalize text-xs">
                             {click.event_type || 'page_view'}
                           </Badge>
@@ -510,61 +456,8 @@ export const ClicksAnalytics = () => {
                             🕐 {new Date(click.created_at).toLocaleString()}
                           </span>
                         </div>
-
-                        {/* UTM Parameters */}
-                        {(click.utm_source || click.utm_medium || click.utm_campaign) && (
-                          <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
-                            <span className="font-medium">UTM:</span>{' '}
-                            {click.utm_source && <span>Source: {click.utm_source}</span>}
-                            {click.utm_medium && <span> • Medium: {click.utm_medium}</span>}
-                            {click.utm_campaign && <span> • Campaign: {click.utm_campaign}</span>}
-                          </div>
-                        )}
                       </div>
                     </div>
-
-                    {/* Quick Action Buttons */}
-                    {(click.contact_phone || click.contact_email) && (
-                      <div className="flex flex-col gap-2 ml-2">
-                        {click.contact_phone && (
-                          <>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              asChild
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <a href={`tel:${click.contact_phone}`}>
-                                <Phone className="w-4 h-4 mr-1" />
-                                Call Now
-                              </a>
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              asChild
-                            >
-                              <a href={`sms:${click.contact_phone}`}>
-                                <MessageSquare className="w-4 h-4 mr-1" />
-                                SMS
-                              </a>
-                            </Button>
-                          </>
-                        )}
-                        {click.contact_email && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            asChild
-                          >
-                            <a href={`mailto:${click.contact_email}`}>
-                              <Mail className="w-4 h-4 mr-1" />
-                              Email
-                            </a>
-                          </Button>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
               );
