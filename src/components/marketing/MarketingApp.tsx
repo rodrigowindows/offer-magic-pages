@@ -25,7 +25,7 @@ import { ABTestAnalytics } from '@/components/ABTestAnalytics';
 import TemplateManager from './TemplateManager';
 import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
 import { ClicksAnalytics } from './ClicksAnalytics';
-import { LeadsManager } from './LeadsManager';
+import { LeadsManagerEnhanced } from './LeadsManagerEnhanced';
 
 // Layout Components
 import { Button } from '@/components/ui/button';
@@ -96,7 +96,7 @@ const MarketingAppContent = () => {
             <Route path="/quick" element={<SimpleCampaignDashboard />} />
             <Route path="/campaigns" element={<ErrorBoundary><CampaignManager /></ErrorBoundary>} />
             <Route path="/analytics" element={<ClicksAnalytics />} />
-            <Route path="/leads" element={<LeadsManager />} />
+            <Route path="/leads" element={<LeadsManagerEnhanced />} />
             <Route path="/ab-testing" element={<ABTestAnalytics />} />
             <Route path="/follow-ups" element={<Dashboard />} />
             <Route path="/webhooks" element={<AdvancedWebhookManager />} />
