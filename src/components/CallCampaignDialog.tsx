@@ -167,10 +167,6 @@ export const CallCampaignDialog = ({
       return;
     }
 
-    // Configurações padrão (podem ser movidas para settings futuramente)
-    const AGENT_ID = callSettings.agent_id || 'agent_9ccc12a37b82d4f2a1fb52aad6c3978e';
-    const FROM_NUMBER = callSettings.from_number || '+17869606820';
-
     const validProperties = removeDuplicateContacts(properties);
 
     if (validProperties.length === 0) {
@@ -199,25 +195,19 @@ export const CallCampaignDialog = ({
         const callScript = generateScript(property);
         const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
 
-        // Usar a nova estrutura do payload
         await initiateCall({
-          phone: contact,
-          agent_id: AGENT_ID,
-          from_number: FROM_NUMBER,
-          dynamic_variables: {
-            customer_name: property.owner_name || 'Homeowner',
-            address: fullAddress,
-            seller_name: 'Miami Local Investors',
-            voicemail_drop: callScript,
-          },
+          name: property.owner_name || 'Homeowner',
+          address: fullAddress,
+          from_number: '7868828251',
+          to_number: contact,
+          voicemail_drop: callScript,
+          seller_name: 'Miami Local Investors',
         });
 
-        // Marcar como chamada feita
         await supabase
           .from("properties")
           .update({ phone_call_made: true })
           .eq("id", property.id);
-
         successCount++;
 
         // Rate limiting for calls (calls need more delay)

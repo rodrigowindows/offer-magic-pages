@@ -113,15 +113,12 @@ export interface SendEmailRequest {
 }
 
 export interface InitiateCallRequest {
-  phone: string;              // Número do destinatário (ex: "+17868828251")
-  agent_id: string;           // ID do agente Retell (ex: "agent_9ccc12...78e")
-  from_number: string;        // Número de origem (ex: "+17869606820")
-  dynamic_variables: {        // Variáveis dinâmicas para substituição na transcrição
-    customer_name: string;
-    address: string;
-    seller_name: string;
-    voicemail_drop: string;
-  };
+  name: string;
+  address: string;
+  from_number: string;
+  to_number: string;
+  voicemail_drop: string;
+  seller_name: string;
   test_mode?: boolean;
 }
 
