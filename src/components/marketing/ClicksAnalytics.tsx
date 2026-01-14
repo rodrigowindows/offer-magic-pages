@@ -31,6 +31,12 @@ interface ClickAnalytic {
   id: string;
   property_id: string | null;
   event_type: string;
+  source?: string | null;
+  campaign_name?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
+  contact_name?: string | null;
+  property_address?: string | null;
   referrer: string | null;
   user_agent: string | null;
   created_at: string;
@@ -38,6 +44,9 @@ interface ClickAnalytic {
   ip_address?: string | null;
   city?: string | null;
   country?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
 }
 
 interface ClickMetrics {
@@ -94,12 +103,12 @@ export const ClicksAnalytics = () => {
       const byDate: Record<string, number> = {};
 
       clicks.forEach((click) => {
-        // Count by source (use referrer as source)
-        const source = click.referrer || 'direct';
+        // Count by source (use source field, fallback to referrer)
+        const source = click.source || click.referrer || 'direct';
         bySource[source] = (bySource[source] || 0) + 1;
 
-        // Count by event_type as campaign
-        const campaign = click.event_type || 'page_view';
+        // Count by campaign name
+        const campaign = click.campaign_name || click.event_type || 'page_view';
         byCampaign[campaign] = (byCampaign[campaign] || 0) + 1;
 
         // Count by date (YYYY-MM-DD)
@@ -355,41 +364,98 @@ export const ClicksAnalytics = () => {
       <Card>
         <CardHeader>
           <CardTitle>Recent Clicks</CardTitle>
-          <CardDescription>Latest property page visits</CardDescription>
+          <CardDescription>Latest property page visits with detailed information</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {metrics.recentClicks.map((click) => {
-              const source = click.referrer || 'direct';
+              const source = click.source || click.referrer || 'direct';
               const Icon = getSourceIcon(source);
               return (
                 <div
                   key={click.id}
-                  className="flex items-center justify-between border-b pb-3 last:border-0"
+                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${getSourceColor(source)}`} />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="capitalize">
-                          {click.event_type || 'page_view'}
-                        </Badge>
-                        {click.device_type && (
-                          <Badge variant="outline">{click.device_type}</Badge>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <Icon className={`w-5 h-5 mt-0.5 ${getSourceColor(source)}`} />
+                      <div className="flex-1 min-w-0">
+                        {/* Contact Info */}
+                        {(click.contact_name || click.contact_phone || click.contact_email) && (
+                          <div className="mb-2">
+                            <div className="font-medium text-sm">
+                              {click.contact_name || 'Unknown Contact'}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {click.contact_phone && (
+                                <Badge variant="secondary" className="text-xs">
+                                  📞 {click.contact_phone}
+                                </Badge>
+                              )}
+                              {click.contact_email && (
+                                <Badge variant="secondary" className="text-xs">
+                                  📧 {click.contact_email}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Property Address */}
+                        {click.property_address && (
+                          <div className="text-sm text-muted-foreground mb-2">
+                            🏠 {click.property_address}
+                          </div>
+                        )}
+
+                        {/* Badges Row */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <Badge variant="default" className="capitalize text-xs">
+                            {source}
+                          </Badge>
+                          {click.campaign_name && (
+                            <Badge variant="outline" className="text-xs">
+                              📋 {click.campaign_name}
+                            </Badge>
+                          )}
+                          <Badge variant="secondary" className="capitalize text-xs">
+                            {click.event_type || 'page_view'}
+                          </Badge>
+                          {click.device_type && (
+                            <Badge variant="outline" className="text-xs">
+                              {click.device_type === 'mobile' ? '📱' : click.device_type === 'tablet' ? '📱' : '💻'} {click.device_type}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Location & Time Info */}
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                          {(click.city || click.country) && (
+                            <span>
+                              📍 {click.city || 'Unknown'}, {click.country || 'Unknown'}
+                            </span>
+                          )}
+                          {click.ip_address && (
+                            <span>
+                              🌐 {click.ip_address}
+                            </span>
+                          )}
+                          <span>
+                            🕐 {new Date(click.created_at).toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* UTM Parameters */}
+                        {(click.utm_source || click.utm_medium || click.utm_campaign) && (
+                          <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
+                            <span className="font-medium">UTM:</span>{' '}
+                            {click.utm_source && <span>Source: {click.utm_source}</span>}
+                            {click.utm_medium && <span> • Medium: {click.utm_medium}</span>}
+                            {click.utm_campaign && <span> • Campaign: {click.utm_campaign}</span>}
+                          </div>
                         )}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {click.city || 'Unknown location'} •{' '}
-                        {new Date(click.created_at).toLocaleString()}
-                      </div>
                     </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {source !== 'direct' && (
-                      <span className="truncate max-w-[200px] block">
-                        from: {source}
-                      </span>
-                    )}
                   </div>
                 </div>
               );

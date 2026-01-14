@@ -38,10 +38,33 @@ const Property = () => {
     try {
       // Get tracking parameters from URL
       const source = searchParams.get('src') || searchParams.get('source') || 'direct';
-      const campaign = searchParams.get('campaign') || 'default';
+      const campaign = searchParams.get('campaign') || searchParams.get('c') || null;
+      const contactPhone = searchParams.get('phone') || searchParams.get('p') || null;
+      const contactEmail = searchParams.get('email') || searchParams.get('e') || null;
+      const contactName = searchParams.get('name') || searchParams.get('n') || null;
       const utmSource = searchParams.get('utm_source');
       const utmMedium = searchParams.get('utm_medium');
       const utmCampaign = searchParams.get('utm_campaign');
+
+      // Get IP and location from ipapi.co (free tier: 1000 requests/day)
+      let ipData = null;
+      try {
+        const ipResponse = await fetch('https://ipapi.co/json/');
+        if (ipResponse.ok) {
+          ipData = await ipResponse.json();
+        }
+      } catch (ipError) {
+        console.log('Could not fetch IP data:', ipError);
+      }
+
+      // Detect device type
+      const userAgent = navigator.userAgent.toLowerCase();
+      let deviceType = 'desktop';
+      if (/mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
+        deviceType = 'mobile';
+      } else if (/tablet|ipad/i.test(userAgent)) {
+        deviceType = 'tablet';
+      }
 
       // Track in analytics function
       await supabase.functions.invoke('track-analytics', {
@@ -50,20 +73,40 @@ const Property = () => {
           eventType,
           source,
           campaign,
+          contactPhone,
+          contactEmail,
+          contactName,
           utmSource,
           utmMedium,
           utmCampaign,
           referrer: document.referrer || 'direct',
           userAgent: navigator.userAgent,
+          ipAddress: ipData?.ip,
+          city: ipData?.city,
+          country: ipData?.country_name,
+          deviceType,
         },
       });
 
-      // Save to property_analytics table
+      // Save to property_analytics table with all new fields
       await supabase.from('property_analytics').insert({
         property_id: propertyId,
         event_type: eventType,
+        source: source,
+        campaign_name: campaign,
+        contact_phone: contactPhone,
+        contact_email: contactEmail,
+        contact_name: contactName,
+        property_address: property?.address || null,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
         referrer: document.referrer || 'direct',
         user_agent: navigator.userAgent,
+        ip_address: ipData?.ip || null,
+        city: ipData?.city || null,
+        country: ipData?.country_name || null,
+        device_type: deviceType,
       });
     } catch (error) {
       console.error('Error tracking analytics:', error);
