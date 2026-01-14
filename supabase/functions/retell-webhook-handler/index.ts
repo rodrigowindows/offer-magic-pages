@@ -176,14 +176,29 @@ serve(async (req) => {
     const result = {
       event,
       call: {
+        // Basic call information
         call_id: callData?.call_id,
+        call_type: callData?.call_type,
         from_number: callData?.from_number,
         to_number: callData?.to_number,
         direction: callData?.direction,
         call_status: callData?.call_status,
+        agent_id: callData?.agent_id,
+
+        // Timestamps
         start_timestamp: callData?.start_timestamp,
         end_timestamp: callData?.end_timestamp,
         disconnection_reason: callData?.disconnection_reason,
+
+        // Transcript and content
+        transcript: callData?.transcript,
+        transcript_object: callData?.transcript_object,
+        transcript_with_tool_calls: callData?.transcript_with_tool_calls,
+
+        // Metadata and dynamic variables
+        metadata: callData?.metadata,
+        retell_llm_dynamic_variables: callData?.retell_llm_dynamic_variables,
+        opt_out_sensitive_data_storage: callData?.opt_out_sensitive_data_storage,
       },
       property_found: !!propertyInfo,
       matched_by: matchedBy,
@@ -230,10 +245,18 @@ serve(async (req) => {
     });
 
     // Retell AI expects specific format for inbound calls
+    // Try to get best customer name from multiple sources
+    const getBestCustomerName = () => {
+      if (propertyInfo?.owner_name) return propertyInfo.owner_name;
+      if (skipTraceInfo?.skip_trace_summary?.owner_name) return skipTraceInfo.skip_trace_summary.owner_name;
+      if (skipTraceInfo?.owner_name) return skipTraceInfo.owner_name;
+      return "Unknown";
+    };
+
     const retellResponse = propertyInfo ? {
       call_inbound: {
         dynamic_variables: {
-          customer_name: propertyInfo.owner_name || "Unknown",
+          customer_name: getBestCustomerName(),
           property_address: propertyInfo.address || "Unknown",
           property_city: propertyInfo.city || "Unknown",
           property_state: propertyInfo.state || "Unknown",
@@ -261,7 +284,14 @@ serve(async (req) => {
       }
     };
 
-    return new Response(JSON.stringify(retellResponse), {
+    // Return complete response with both Retell format and full details
+    const completeResponse = {
+      success: true,
+      retell_response: retellResponse,
+      webhook_data: result
+    };
+
+    return new Response(JSON.stringify(completeResponse), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
