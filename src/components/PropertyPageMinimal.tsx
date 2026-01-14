@@ -1,6 +1,5 @@
 import PropertyHero from "@/components/PropertyHero";
 import CashOfferSectionB from "@/components/CashOfferSectionB";
-import ContactForm from "@/components/ContactForm";
 import TrustCredentials from "@/components/TrustCredentials";
 
 interface PropertyData {
@@ -55,9 +54,14 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
         offerValue={property.cash_offer_amount}
       />
 
-      <CashOfferSectionB 
+      <CashOfferSectionB
         offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
-        onViewOffer={() => trackEvent('viewed_offer')}
+        onViewOffer={() => {
+          trackEvent('viewed_offer');
+          onFormSubmit();
+        }}
+        propertyAddress={fullAddress}
+        propertyId={property.id}
       />
 
       {/* Trust Credentials - Compact */}
@@ -66,12 +70,6 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
           <TrustCredentials />
         </div>
       </section>
-      
-      <ContactForm 
-        propertyAddress={fullAddress} 
-        propertyId={property.id} 
-        onSubmit={onFormSubmit}
-      />
       
       <footer className="bg-foreground text-background py-8">
         <div className="container mx-auto px-4">
