@@ -25,7 +25,11 @@ import {
   MessageSquare,
   Phone,
   ExternalLink,
+  Copy,
+  Filter,
+  Clock,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ClickAnalytic {
   id: string;
@@ -67,10 +71,12 @@ export const ClicksAnalytics = () => {
     recentClicks: [],
   });
   const [dateRange, setDateRange] = useState<'7' | '30' | '90' | 'all'>('30');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchClicksData();
-  }, [dateRange]);
+  }, [dateRange, sourceFilter]);
 
   const fetchClicksData = async () => {
     setLoading(true);
@@ -90,6 +96,11 @@ export const ClicksAnalytics = () => {
 
       if (dateFilter) {
         query = query.gte('created_at', dateFilter.toISOString());
+      }
+
+      // Apply source filter
+      if (sourceFilter !== 'all') {
+        query = query.eq('source', sourceFilter);
       }
 
       const { data, error } = await query.limit(1000);
@@ -170,6 +181,22 @@ export const ClicksAnalytics = () => {
     }
   };
 
+  // Calculate time difference helper
+  const getTimeAgo = (createdAt: string) => {
+    const now = new Date();
+    const clickTime = new Date(createdAt);
+    const diffMs = now.getTime() - clickTime.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return { text: 'Just now', color: 'bg-green-500' };
+    if (diffMins < 60) return { text: `${diffMins} min ago`, color: diffMins < 30 ? 'bg-green-500' : 'bg-yellow-500' };
+    if (diffHours < 24) return { text: `${diffHours}h ago`, color: diffHours < 2 ? 'bg-yellow-500' : 'bg-orange-500' };
+    if (diffDays < 7) return { text: `${diffDays}d ago`, color: 'bg-gray-500' };
+    return { text: `${diffDays}d ago`, color: 'bg-gray-400' };
+  };
+
   // Calculate conversion rates and trends
   const topSource = Object.entries(metrics.bySource).sort((a, b) => b[1] - a[1])[0];
   const topCampaign = Object.entries(metrics.byCampaign).sort((a, b) => b[1] - a[1])[0];
@@ -185,6 +212,19 @@ export const ClicksAnalytics = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-[160px]">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              <SelectItem value="sms">SMS Only</SelectItem>
+              <SelectItem value="email">Email Only</SelectItem>
+              <SelectItem value="call">Call Only</SelectItem>
+              <SelectItem value="direct">Direct Only</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={dateRange} onValueChange={(v: any) => setDateRange(v)}>
             <SelectTrigger className="w-[180px]">
               <Calendar className="w-4 h-4 mr-2" />
@@ -371,6 +411,7 @@ export const ClicksAnalytics = () => {
             {metrics.recentClicks.map((click) => {
               const source = click.source || click.referrer || 'direct';
               const Icon = getSourceIcon(source);
+              const timeAgo = getTimeAgo(click.created_at);
               return (
                 <div
                   key={click.id}
@@ -379,6 +420,12 @@ export const ClicksAnalytics = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3 flex-1">
                       <Icon className={`w-5 h-5 mt-0.5 ${getSourceColor(source)}`} />
+
+                      {/* Time Badge */}
+                      <Badge className={`${timeAgo.color} text-white text-xs`}>
+                        <Clock className="w-3 h-3 mr-1" />
+                        {timeAgo.text}
+                      </Badge>
                       <div className="flex-1 min-w-0">
                         {/* Contact Info */}
                         {(click.contact_name || click.contact_phone || click.contact_email) && (
@@ -401,10 +448,29 @@ export const ClicksAnalytics = () => {
                           </div>
                         )}
 
-                        {/* Property Address */}
+                        {/* Property Address with Copy Link */}
                         {click.property_address && (
-                          <div className="text-sm text-muted-foreground mb-2">
-                            🏠 {click.property_address}
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm text-muted-foreground">
+                              🏠 {click.property_address}
+                            </div>
+                            {click.property_id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const propertyUrl = `${window.location.origin}/property/${click.property_id}`;
+                                  navigator.clipboard.writeText(propertyUrl);
+                                  toast({
+                                    title: 'Link Copied!',
+                                    description: 'Property URL copied to clipboard',
+                                  });
+                                }}
+                              >
+                                <Copy className="w-3 h-3 mr-1" />
+                                Copy Link
+                              </Button>
+                            )}
                           </div>
                         )}
 
@@ -456,6 +522,49 @@ export const ClicksAnalytics = () => {
                         )}
                       </div>
                     </div>
+
+                    {/* Quick Action Buttons */}
+                    {(click.contact_phone || click.contact_email) && (
+                      <div className="flex flex-col gap-2 ml-2">
+                        {click.contact_phone && (
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              asChild
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <a href={`tel:${click.contact_phone}`}>
+                                <Phone className="w-4 h-4 mr-1" />
+                                Call Now
+                              </a>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                            >
+                              <a href={`sms:${click.contact_phone}`}>
+                                <MessageSquare className="w-4 h-4 mr-1" />
+                                SMS
+                              </a>
+                            </Button>
+                          </>
+                        )}
+                        {click.contact_email && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                          >
+                            <a href={`mailto:${click.contact_email}`}>
+                              <Mail className="w-4 h-4 mr-1" />
+                              Email
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
