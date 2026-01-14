@@ -85,7 +85,7 @@ export const CompsMap = ({ subjectProperty, comparables, onCompClick }: CompsMap
     const height = 400;
     const padding = 40;
 
-    const allPoints = [
+    const allPoints: Array<{ lat: number | undefined; lng: number | undefined; type: 'subject' | 'comp'; comp?: ComparableProperty }> = [
       { lat: subjectProperty.latitude, lng: subjectProperty.longitude, type: 'subject' },
       ...comparables.map(c => ({
         lat: c.latitude,
@@ -93,9 +93,10 @@ export const CompsMap = ({ subjectProperty, comparables, onCompClick }: CompsMap
         type: 'comp' as const,
         comp: c,
       })),
-    ].filter(p => p.lat && p.lng);
+    ];
+    const validPoints = allPoints.filter(p => p.lat && p.lng);
 
-    if (allPoints.length === 0) {
+    if (validPoints.length === 0) {
       return (
         <div className="flex items-center justify-center h-[400px] bg-muted/30 rounded-lg">
           <div className="text-center">
@@ -112,8 +113,8 @@ export const CompsMap = ({ subjectProperty, comparables, onCompClick }: CompsMap
     }
 
     // Calculate scale
-    const lats = allPoints.map(p => p.lat!);
-    const lngs = allPoints.map(p => p.lng!);
+    const lats = validPoints.map(p => p.lat!);
+    const lngs = validPoints.map(p => p.lng!);
 
     const minLat = Math.min(...lats);
     const maxLat = Math.max(...lats);
@@ -136,7 +137,7 @@ export const CompsMap = ({ subjectProperty, comparables, onCompClick }: CompsMap
         <rect width={width} height={height} fill="url(#grid)" />
 
         {/* Connection lines from subject to comps */}
-        {allPoints.filter(p => p.type === 'comp').map((point, idx) => (
+        {validPoints.filter(p => p.type === 'comp' && p.comp).map((point, idx) => (
           <line
             key={`line-${idx}`}
             x1={scaleX(subjectProperty.longitude!)}
@@ -151,7 +152,7 @@ export const CompsMap = ({ subjectProperty, comparables, onCompClick }: CompsMap
         ))}
 
         {/* Comparable markers */}
-        {allPoints.filter(p => p.type === 'comp').map((point, idx) => {
+        {validPoints.filter(p => p.type === 'comp' && p.comp).map((point, idx) => {
           const comp = point.comp!;
           const x = scaleX(point.lng!);
           const y = scaleY(point.lat!);
