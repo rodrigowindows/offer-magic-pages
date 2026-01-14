@@ -116,9 +116,9 @@ export const CashOfferLetter = ({
   const savings = estimatedValue - averageOffer;
   
   return (
-    <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden">
+    <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none print:max-w-full overflow-hidden">
       {/* Professional Header */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 text-center">
+      <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 text-center print:p-8">
         <div className="flex items-center justify-center gap-2 mb-2">
           <Home className="h-6 w-6" />
           <span className="text-xl font-bold tracking-wide">MyLocalInvest</span>
@@ -126,102 +126,102 @@ export const CashOfferLetter = ({
         <p className="text-sm opacity-90">{t.since}</p>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-6 space-y-5 print:p-8 print:space-y-6">
         {/* Personalized Greeting & Property */}
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-1 print:space-y-2">
           {ownerName && (
-            <p className="text-lg text-muted-foreground">{t.dear} {ownerName},</p>
+            <p className="text-lg text-muted-foreground print:text-2xl">{t.dear} {ownerName},</p>
           )}
-          <h1 className="text-2xl font-bold text-foreground">{t.headline}</h1>
-          <p className="text-base text-muted-foreground">{t.subheadline}</p>
-          <p className="text-sm font-medium text-primary mt-2">{fullAddress}</p>
+          <h1 className="text-2xl font-bold text-foreground print:text-4xl">{t.headline}</h1>
+          <p className="text-base text-muted-foreground print:text-xl">{t.subheadline}</p>
+          <p className="text-sm font-medium text-primary mt-2 print:text-lg print:mt-4">{fullAddress}</p>
         </div>
 
         {/* Main Offer Box with Urgency */}
-        <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary rounded-xl p-5 text-center">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-            <Clock className="h-3 w-3" />
+        <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary rounded-xl p-5 text-center print:p-8">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 print:text-sm print:px-4 print:py-2 print:-top-4">
+            <Clock className="h-3 w-3 print:h-4 print:w-4" />
             {t.urgency}
           </div>
-          
-          <p className="text-sm text-muted-foreground mb-1 mt-2">{t.cashOffer}</p>
-          <p className="text-5xl font-black text-primary">{formatOffer(property)}</p>
-          <p className="text-xs text-muted-foreground mt-2">
+
+          <p className="text-sm text-muted-foreground mb-1 mt-2 print:text-xl print:mb-2 print:mt-4">{t.cashOffer}</p>
+          <p className="text-5xl font-black text-primary print:text-7xl">{formatOffer(property)}</p>
+          <p className="text-xs text-muted-foreground mt-2 print:text-lg print:mt-4">
             {t.fairMarketValue}: ${estimatedValue.toLocaleString()}
           </p>
         </div>
 
         {/* Trust Badges Row */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-muted/50 rounded-lg p-2">
-            <Clock className="h-4 w-4 mx-auto text-primary mb-1" />
-            <p className="text-xs font-medium text-foreground">{t.fastClose}</p>
+        <div className="grid grid-cols-3 gap-2 text-center print:gap-4">
+          <div className="bg-muted/50 rounded-lg p-2 print:p-4">
+            <Clock className="h-4 w-4 mx-auto text-primary mb-1 print:h-6 print:w-6 print:mb-2" />
+            <p className="text-xs font-medium text-foreground print:text-sm">{t.fastClose}</p>
           </div>
-          <div className="bg-muted/50 rounded-lg p-2">
-            <Shield className="h-4 w-4 mx-auto text-primary mb-1" />
-            <p className="text-xs font-medium text-foreground">{t.guarantee}</p>
+          <div className="bg-muted/50 rounded-lg p-2 print:p-4">
+            <Shield className="h-4 w-4 mx-auto text-primary mb-1 print:h-6 print:w-6 print:mb-2" />
+            <p className="text-xs font-medium text-foreground print:text-sm">{t.guarantee}</p>
           </div>
-          <div className="bg-muted/50 rounded-lg p-2">
-            <CheckCircle2 className="h-4 w-4 mx-auto text-primary mb-1" />
-            <p className="text-xs font-medium text-foreground">{t.noCost}</p>
+          <div className="bg-muted/50 rounded-lg p-2 print:p-4">
+            <CheckCircle2 className="h-4 w-4 mx-auto text-primary mb-1 print:h-6 print:w-6 print:mb-2" />
+            <p className="text-xs font-medium text-foreground print:text-sm">{t.noCost}</p>
           </div>
         </div>
 
         {/* Benefits Grid */}
-        <div className="space-y-1">
-          <h2 className="text-sm font-bold text-foreground text-center">{t.weHelpYou}</h2>
-          <div className="grid grid-cols-2 gap-1 text-xs">
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
+        <div className="space-y-1 print:space-y-2">
+          <h2 className="text-sm font-bold text-foreground text-center print:text-xl">{t.weHelpYou}</h2>
+          <div className="grid grid-cols-2 gap-1 text-xs print:gap-3 print:text-base">
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 text-primary shrink-0 print:h-5 print:w-5" />
               <span>{t.benefit1}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 text-primary shrink-0 print:h-5 print:w-5" />
               <span>{t.benefit2}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 text-primary shrink-0 print:h-5 print:w-5" />
               <span>{t.benefit3}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 text-primary shrink-0 print:h-5 print:w-5" />
               <span>{t.benefit4}</span>
             </div>
           </div>
         </div>
 
         {/* Testimonial */}
-        <div className="bg-muted/30 border border-border rounded-lg p-3 text-center">
-          <div className="flex justify-center gap-0.5 mb-1">
+        <div className="bg-muted/30 border border-border rounded-lg p-3 text-center print:p-4">
+          <div className="flex justify-center gap-0.5 mb-1 print:gap-1 print:mb-2">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400 print:h-4 print:w-4" />
             ))}
           </div>
-          <p className="text-xs italic text-muted-foreground">{t.testimonial}</p>
-          <p className="text-xs font-medium text-foreground mt-1">{t.testimonialAuthor}</p>
+          <p className="text-xs italic text-muted-foreground print:text-base">{t.testimonial}</p>
+          <p className="text-xs font-medium text-foreground mt-1 print:text-sm print:mt-2">{t.testimonialAuthor}</p>
         </div>
 
         {/* CTA Section */}
-        <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center space-y-2">
-          <h2 className="text-lg font-bold">{t.cta}</h2>
-          <div className="flex items-center justify-center gap-2 text-xl font-bold">
-            <Phone className="h-5 w-5" />
+        <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center space-y-2 print:p-6 print:space-y-3">
+          <h2 className="text-lg font-bold print:text-2xl">{t.cta}</h2>
+          <div className="flex items-center justify-center gap-2 text-xl font-bold print:text-3xl print:gap-3">
+            <Phone className="h-5 w-5 print:h-7 print:w-7" />
             {phone}
           </div>
-          <p className="text-xs opacity-90">{t.ctaDescription}</p>
+          <p className="text-xs opacity-90 print:text-base">{t.ctaDescription}</p>
           
           {/* QR Code */}
-          <div className="pt-2 border-t border-primary-foreground/20 mt-3">
-            <p className="text-xs opacity-75 mb-2">{t.orText}</p>
+          <div className="pt-2 border-t border-primary-foreground/20 mt-3 print:pt-4 print:mt-4">
+            <p className="text-xs opacity-75 mb-2 print:text-sm print:mb-3">{t.orText}</p>
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-white p-2 rounded-lg">
-                <QRCodeSVG value={offerUrl} size={80} level="H" />
+              <div className="bg-white p-2 rounded-lg print:p-4">
+                <QRCodeSVG value={offerUrl} size={80} level="H" className="print:!w-32 print:!h-32" />
               </div>
               <a
                 href={offerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-xs mt-1"
+                className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-xs mt-1 print:text-sm print:py-3 print:px-6"
               >
                 View Full Offer Details
               </a>
@@ -230,20 +230,32 @@ export const CashOfferLetter = ({
         </div>
 
         {/* Footer */}
-        <div 
-          className="text-center pt-3 border-t border-border" 
+        <div
+          className="text-center pt-3 border-t border-border print:pt-4"
           style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
         >
-          <p className="text-xs text-muted-foreground">{email}</p>
-          <p className="text-xs italic text-muted-foreground mt-1">{t.footer}</p>
+          <p className="text-xs text-muted-foreground print:text-sm">{email}</p>
+          <p className="text-xs italic text-muted-foreground mt-1 print:text-sm print:mt-2">{t.footer}</p>
         </div>
       </div>
-      
+
       <style>{`
         @media print {
-          .bg-gradient-to-r {
+          .bg-gradient-to-r,
+          .bg-gradient-to-br,
+          .bg-primary,
+          .bg-muted,
+          .bg-muted\\/50,
+          .bg-muted\\/30 {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+
+          /* Ensure QR code scales properly */
+          svg {
+            width: 100% !important;
+            height: 100% !important;
           }
         }
       `}</style>
