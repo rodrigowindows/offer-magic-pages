@@ -1,18 +1,21 @@
-import { DollarSign, TrendingUp } from "lucide-react";
-import { Button } from "./ui/button";
+import { DollarSign, TrendingUp, Check } from "lucide-react";
+import ContactFormModal from "./ContactFormModal";
 
 interface CashOfferSectionProps {
   offerAmount?: string;
   estimatedValue?: string;
+  propertyAddress?: string;
+  propertyId?: string;
+  onFormSubmit?: () => void;
 }
 
-const CashOfferSection = ({ 
+const CashOfferSection = ({
   offerAmount = "$285,000",
-  estimatedValue = "$320,000"
+  estimatedValue = "$320,000",
+  propertyAddress = "",
+  propertyId,
+  onFormSubmit
 }: CashOfferSectionProps) => {
-  const scrollToForm = () => {
-    document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <section className="py-16 bg-gradient-to-br from-secondary/10 to-primary/5">
@@ -60,13 +63,13 @@ const CashOfferSection = ({
                 </ul>
               </div>
 
-              <Button 
-                size="lg" 
-                onClick={scrollToForm}
-                className="bg-secondary hover:bg-secondary/90 text-secondary-foreground text-lg px-8 py-6 h-auto font-bold shadow-md hover:shadow-lg transition-all"
-              >
-                Get Your Fair Cash Offer
-              </Button>
+              <ContactFormModal
+                propertyAddress={propertyAddress}
+                propertyId={propertyId}
+                onSubmit={onFormSubmit}
+                buttonText="I'm Interested"
+                buttonClassName="bg-green-600 hover:bg-green-700 text-white text-xl px-12 py-8 h-auto font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              />
               
               <p className="text-sm text-muted-foreground">
                 No obligation • Free consultation • Confidential
