@@ -437,7 +437,7 @@ export const CompsAnalysis = () => {
     }
   };
 
-  // Export all filtered properties in batch
+  // Export all filtered properties in a single consolidated PDF
   const exportAllFiltered = async (withImages: boolean = false) => {
     const filteredProperties = properties.filter(property => {
       if (offerStatusFilter === 'all') return true;
@@ -457,8 +457,8 @@ export const CompsAnalysis = () => {
     }
 
     const confirmed = window.confirm(
-      `Export ${filteredProperties.length} property reports?\n\n` +
-      `This will generate CMA reports for all ${offerStatusFilter === 'all' ? 'properties' : offerStatusFilter + ' properties'}.\n\n` +
+      `Export consolidated PDF with ${filteredProperties.length} properties?\n\n` +
+      `This will create ONE single PDF file with all ${offerStatusFilter === 'all' ? 'properties' : offerStatusFilter + ' properties'} and their comparables WITH PHOTOS.\n\n` +
       `This may take a few minutes.`
     );
 
@@ -468,64 +468,84 @@ export const CompsAnalysis = () => {
 
     try {
       toast({
-        title: 'Batch Export Started',
-        description: `Generating reports for ${filteredProperties.length} properties...`,
+        title: 'Generating Consolidated PDF',
+        description: `Processing ${filteredProperties.length} properties with images...`,
       });
 
-      let successCount = 0;
-      let failCount = 0;
+      // Function to generate comparables for each property
+      const getComparablesForProperty = async (property: Property) => {
+        const baseValue = property.estimated_value || 250000;
+        const variance = baseValue * 0.15;
 
-      for (let i = 0; i < filteredProperties.length; i++) {
-        const property = filteredProperties[i];
+        const sampleAddresses = [
+          `100 S Eola Dr, Orlando, FL 32801`,
+          `400 W Church St, Orlando, FL 32801`,
+          `555 N Orange Ave, Orlando, FL 32801`,
+          `1000 E Colonial Dr, Orlando, FL 32803`,
+          `2000 S Orange Ave, Orlando, FL 32806`,
+        ];
 
-        try {
-          // Temporarily set as selected property to generate comparables
-          const originalSelected = selectedProperty;
-          setSelectedProperty(property);
+        const comps = Array.from({ length: 5 }, (_, i) => {
+          const sqft = 1200 + Math.floor(Math.random() * 800);
+          const salePrice = Math.round(baseValue + (Math.random() * variance * 2 - variance));
+          const pricePerSqft = Math.round(salePrice / sqft);
+          const daysAgo = 5 + Math.floor(Math.random() * 180);
 
-          // Wait for comparables to be generated
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          return {
+            id: `comp-${i}`,
+            address: sampleAddresses[i],
+            saleDate: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+            salePrice,
+            sqft,
+            beds: 2 + Math.floor(Math.random() * 3),
+            baths: 1 + Math.floor(Math.random() * 2.5),
+            yearBuilt: 1980 + Math.floor(Math.random() * 40),
+            lotSize: 5000 + Math.floor(Math.random() * 5000),
+            distanceMiles: 0.1 + Math.random() * 0.9,
+            daysOnMarket: 10 + Math.floor(Math.random() * 60),
+            adjustment: 0,
+            pricePerSqft,
+          };
+        });
 
-          // Export PDF
-          if (analysis) {
-            if (withImages) {
-              await exportCompsToPDF(property, comparables, analysis);
-            } else {
-              exportCompsToSimplePDF(property, comparables, analysis);
-            }
-            successCount++;
-          }
+        const avgSalePrice = comps.reduce((sum, c) => sum + c.salePrice, 0) / comps.length;
+        const avgPricePerSqft = comps.reduce((sum, c) => sum + c.pricePerSqft, 0) / comps.length;
 
-          // Restore original selection
-          setSelectedProperty(originalSelected);
+        const analysis = {
+          avgSalePrice,
+          avgPricePerSqft: Math.round(avgPricePerSqft),
+          suggestedValueMin: Math.round(avgSalePrice * 0.85),
+          suggestedValueMax: Math.round(avgSalePrice * 1.15),
+          marketTrend: 'stable' as const,
+          trendPercentage: 0,
+        };
 
-          // Progress update every 5 properties
-          if ((i + 1) % 5 === 0 || i === filteredProperties.length - 1) {
+        return { comparables: comps, analysis };
+      };
+
+      // Export consolidated PDF with progress
+      await exportConsolidatedCompsPDF(
+        filteredProperties,
+        getComparablesForProperty,
+        (current, total) => {
+          if (current % 3 === 0 || current === total) {
             toast({
               title: 'Progress',
-              description: `Exported ${i + 1}/${filteredProperties.length} reports...`,
+              description: `Processing property ${current} of ${total}...`,
             });
           }
-
-          // Small delay between exports
-          if (i < filteredProperties.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-        } catch (error) {
-          console.error(`Failed to export ${property.address}:`, error);
-          failCount++;
         }
-      }
+      );
 
       toast({
-        title: 'Batch Export Complete',
-        description: `Successfully exported ${successCount} reports${failCount > 0 ? `, ${failCount} failed` : ''}`,
+        title: 'Export Complete! ✅',
+        description: `Successfully exported ONE consolidated PDF with ${filteredProperties.length} properties and their photos`,
       });
     } catch (error: any) {
-      console.error('Batch Export Error:', error);
+      console.error('Consolidated Export Error:', error);
       toast({
-        title: 'Batch Export Failed',
-        description: error.message || 'Failed to export all properties',
+        title: 'Export Failed',
+        description: error.message || 'Failed to export consolidated PDF',
         variant: 'destructive',
       });
     } finally {
