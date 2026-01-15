@@ -215,7 +215,9 @@ export default function CampaignCreator() {
 
     const sourceChannel = campaignConfig.channels.length > 0 ? campaignConfig.channels[0] : 'sms';
     const propertyUrl = generatePropertyUrl(property, sourceChannel);
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+    // QR Code URL has different source to track QR scans separately
+    const qrPropertyUrl = generatePropertyUrl(property, `${sourceChannel}-qr`);
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 
     // Google Maps static image for property location
     const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(property.address + ', ' + property.city + ', ' + property.state)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(property.address + ', ' + property.city)}&key=YOUR_GOOGLE_MAPS_API_KEY`;

@@ -254,8 +254,10 @@ const renderTemplateContent = (content: string, property: any, channel?: string)
   const sourceParam = channel ? `?src=${channel}` : '?src=campaign';
   const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}${sourceParam}`;
 
-  // Generate QR code with tracking URL
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+  // Generate QR code with different source to track QR scans separately
+  const qrSourceParam = channel ? `?src=${channel}-qr` : '?src=campaign-qr';
+  const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}${qrSourceParam}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 
   // Unsubscribe URL (can be improved with property-specific tokens)
   const unsubscribeUrl = `https://offer.mylocalinvest.com/unsubscribe?email=${encodeURIComponent(property.owner_email || '')}`;

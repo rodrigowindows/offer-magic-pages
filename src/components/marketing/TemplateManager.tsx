@@ -85,8 +85,9 @@ const generatePropertyUrl = (address: string = '25217 MATHEW ST', city: string =
 };
 
 const generateQrCodeUrl = (address: string = '25217 MATHEW ST', city: string = 'UNINCORPORATED', zip: string = '32709', sourceChannel: string = 'email') => {
-  const propertyUrl = generatePropertyUrl(address, city, zip, sourceChannel);
-  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+  // QR Code URL has different source to track QR scans separately
+  const qrPropertyUrl = generatePropertyUrl(address, city, zip, `${sourceChannel}-qr`);
+  return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 };
 
 const generateTrackingPixel = (propertyId: string = 'sample', sourceChannel: string = 'email') => {

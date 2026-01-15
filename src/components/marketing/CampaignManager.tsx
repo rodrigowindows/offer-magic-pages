@@ -250,7 +250,9 @@ export const CampaignManager = () => {
     // Use SEO-friendly slug: "1025-s-washington-ave"
     const propertySlug = createPropertySlug(prop.address);
     const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+    // QR Code URL has different source to track QR scans separately
+    const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}-qr`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 
     // Google Maps static image for property location
     const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
@@ -302,7 +304,9 @@ export const CampaignManager = () => {
     // Use SEO-friendly slug for property URL (address only)
     const propertySlug = createPropertySlug(prop.address);
     const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+    // QR Code URL has different source to track QR scans separately
+    const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}-qr`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 
     // Use direct property URL without wrapping in tracking redirect
     // Tracking is handled via pixel and analytics, not URL redirect

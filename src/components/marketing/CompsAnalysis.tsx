@@ -999,14 +999,61 @@ export const CompsAnalysis = () => {
                   <MessageSquare className="w-4 h-4" />
                   Notas da Análise
                 </Label>
-                <Textarea
-                  id="analysis-notes"
-                  placeholder="Adicione observações sobre a análise, condições da propriedade, ajustes considerados, etc."
-                  value={analysisNotes}
-                  onChange={(e) => setAnalysisNotes(e.target.value)}
-                  rows={3}
-                  className="resize-none"
-                />
+                <div className="flex gap-2">
+                  <Textarea
+                    id="analysis-notes"
+                    placeholder="Adicione observações sobre a análise, condições da propriedade, ajustes considerados, etc."
+                    value={analysisNotes}
+                    onChange={(e) => setAnalysisNotes(e.target.value)}
+                    rows={3}
+                    className="resize-none flex-1"
+                  />
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        if (!selectedProperty) return;
+                        try {
+                          const { error } = await supabase
+                            .from('properties')
+                            .update({ notes: analysisNotes })
+                            .eq('id', selectedProperty.id);
+
+                          if (error) throw error;
+
+                          toast({
+                            title: '✅ Notas Salvas',
+                            description: 'Notas da análise foram salvas com sucesso',
+                          });
+                        } catch (error: any) {
+                          toast({
+                            title: '❌ Erro',
+                            description: error.message,
+                            variant: 'destructive',
+                          });
+                        }
+                      }}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Save className="w-4 h-4 mr-1" />
+                      Salvar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(analysisNotes);
+                        toast({
+                          title: '📋 Copiado',
+                          description: 'Notas copiadas para clipboard',
+                        });
+                      }}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-1" />
+                      Copiar
+                    </Button>
+                  </div>
+                </div>
               </div>
             </>
           )}

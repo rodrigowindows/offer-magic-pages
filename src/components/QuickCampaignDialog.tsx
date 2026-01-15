@@ -539,8 +539,10 @@ export const QuickCampaignDialog = ({
     let subject = template.subject || '';
 
     const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
-    const propertyUrl = `https://offer.mylocalinvest.com/property/${property.id}`;
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
+    const propertyUrl = `https://offer.mylocalinvest.com/property/${property.id}?src=${channel}`;
+    // QR Code URL has different source to track QR scans separately
+    const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${property.id}?src=${channel}-qr`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
     const trackingPixel = generateTrackingPixel(property.id, channel);
     const unsubscribeUrl = generateUnsubscribeUrl(property.id);
 
