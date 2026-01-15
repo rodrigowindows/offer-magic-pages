@@ -116,8 +116,8 @@ export const CashOfferLetter = ({
   const savings = estimatedValue - averageOffer;
   
   return (
-    <div className="print:scale-[3.8] print:origin-top-left print:w-[26.3%]">
-      <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden">
+    <div className="print:scale-[3.2] print:origin-top-left print:w-[31.25%]">
+      <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden print:page-break-inside-avoid">
         {/* Professional Header */}
         <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
@@ -203,7 +203,7 @@ export const CashOfferLetter = ({
         </div>
 
         {/* CTA Section */}
-        <div className="bg-primary text-primary-foreground rounded-xl p-6 text-center space-y-4">
+        <div className="bg-primary text-primary-foreground rounded-xl p-6 text-center space-y-4" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
           <h2 className="text-xl font-bold mb-4">{t.cta}</h2>
 
           {/* Phone Number - Large and Prominent */}
@@ -242,6 +242,7 @@ export const CashOfferLetter = ({
 
       <style>{`
         @media print {
+          /* Preserve colors */
           .bg-gradient-to-r,
           .bg-gradient-to-br,
           .bg-primary,
@@ -251,6 +252,24 @@ export const CashOfferLetter = ({
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
+          }
+
+          /* Prevent page breaks */
+          * {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+
+          /* Keep everything on one page if possible */
+          @page {
+            size: letter;
+            margin: 0;
+          }
+
+          /* Ensure card stays together */
+          [class*="Card"] {
+            page-break-inside: avoid !important;
+            break-inside: avoid-page !important;
           }
         }
       `}</style>
