@@ -136,20 +136,32 @@ export const CompsMap = ({ subjectProperty, comparables, onCompClick }: CompsMap
         </defs>
         <rect width={width} height={height} fill="url(#grid)" />
 
-        {/* Connection lines from subject to comps */}
-        {validPoints.filter(p => p.type === 'comp' && p.comp).map((point, idx) => (
-          <line
-            key={`line-${idx}`}
-            x1={scaleX(subjectProperty.longitude!)}
-            y1={scaleY(subjectProperty.latitude!)}
-            x2={scaleX(point.lng!)}
-            y2={scaleY(point.lat!)}
-            stroke="hsl(var(--muted-foreground))"
-            strokeWidth="1"
-            strokeDasharray="4,4"
-            opacity="0.3"
-          />
-        ))}
+        {/* Connection lines from subject to comps - only if subject has valid coords */}
+        {subjectProperty.latitude && subjectProperty.longitude && validPoints.filter(p => p.type === 'comp' && p.comp).map((point, idx) => {
+          const x1 = scaleX(subjectProperty.longitude);
+          const y1 = scaleY(subjectProperty.latitude);
+          const x2 = scaleX(point.lng!);
+          const y2 = scaleY(point.lat!);
+          
+          // Skip if any coordinate is NaN
+          if (isNaN(x1) || isNaN(y1) || isNaN(x2) || isNaN(y2)) {
+            return null;
+          }
+          
+          return (
+            <line
+              key={`line-${idx}`}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke="hsl(var(--muted-foreground))"
+              strokeWidth="1"
+              strokeDasharray="4,4"
+              opacity="0.3"
+            />
+          );
+        })}
 
         {/* Comparable markers */}
         {validPoints.filter(p => p.type === 'comp' && p.comp).map((point, idx) => {
