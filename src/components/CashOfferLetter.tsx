@@ -254,13 +254,7 @@ export const CashOfferLetter = ({
             color-adjust: exact !important;
           }
 
-          /* Prevent page breaks */
-          * {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-
-          /* Keep everything on one page if possible */
+          /* Page setup */
           @page {
             size: letter;
             margin: 0;
