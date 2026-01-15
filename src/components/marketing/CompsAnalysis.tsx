@@ -55,7 +55,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportCompsToPDF, exportCompsToSimplePDF } from '@/utils/pdfExport';
-import { CompsMap } from './CompsMap';
+import { CompsMapboxMap } from './CompsMapboxMap';
 import { CompsComparison } from './CompsComparison';
 import { CompsDataService } from '@/services/compsDataService';
 
@@ -1199,35 +1199,26 @@ export const CompsAnalysis = () => {
       )}
 
       {/* Map View */}
-      {selectedProperty && comparables.length > 0 && (() => {
-        const fullAddress = `${selectedProperty.address}, ${selectedProperty.city}, ${selectedProperty.state} ${selectedProperty.zip_code}`;
-        const subjectCoords = geocodedLocations[fullAddress];
-
-        return (
-          <CompsMap
-            subjectProperty={{
-              address: selectedProperty.address,
-              latitude: subjectCoords?.lat,
-              longitude: subjectCoords?.lng,
-            }}
-            comparables={comparables.map(comp => {
-              const compCoords = geocodedLocations[comp.address];
-              return {
-                ...comp,
-                latitude: compCoords?.lat,
-                longitude: compCoords?.lng,
-                isBest: getBestComp()?.id === comp.id,
-              };
-            })}
-            onCompClick={(comp) => {
-              toast({
-                title: comp.address,
-                description: `$${comp.salePrice.toLocaleString()} • ${comp.capRate ? comp.capRate + '% Cap Rate' : 'N/A'}`,
-              });
-            }}
-          />
-        );
-      })()}
+      {selectedProperty && comparables.length > 0 && (
+        <CompsMapboxMap
+          subjectProperty={{
+            address: selectedProperty.address,
+            city: selectedProperty.city,
+            state: selectedProperty.state,
+            zip_code: selectedProperty.zip_code,
+          }}
+          comparables={comparables.map(comp => ({
+            ...comp,
+            isBest: getBestComp()?.id === comp.id,
+          }))}
+          onCompClick={(comp) => {
+            toast({
+              title: comp.address,
+              description: `$${comp.salePrice.toLocaleString()} • ${comp.capRate ? comp.capRate + '% Cap Rate' : 'N/A'}`,
+            });
+          }}
+        />
+      )}
 
       {/* Comparable Properties Table */}
       {comparables.length > 0 && (
