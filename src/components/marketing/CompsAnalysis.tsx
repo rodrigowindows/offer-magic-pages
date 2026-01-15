@@ -124,6 +124,8 @@ export const CompsAnalysis = () => {
   const [sortBy, setSortBy] = useState<'capRate' | 'price' | 'date' | 'noi'>('date');
   // Comparison
   const [selectedCompsForComparison, setSelectedCompsForComparison] = useState<string[]>([]);
+  // Geocoding
+  const [geocodedLocations, setGeocodedLocations] = useState<Record<string, { lat: number; lng: number }>>({});
 
   useEffect(() => {
     fetchProperties();
@@ -140,6 +142,24 @@ export const CompsAnalysis = () => {
       calculateAnalysis();
     }
   }, [comparables]);
+
+  // Geocode subject property and comparables when they change
+  useEffect(() => {
+    const geocodeAll = async () => {
+      if (selectedProperty) {
+        const fullAddress = `${selectedProperty.address}, ${selectedProperty.city}, ${selectedProperty.state} ${selectedProperty.zip_code}`;
+        await geocodeAddress(fullAddress);
+      }
+
+      for (const comp of comparables) {
+        await geocodeAddress(comp.address);
+        // Add small delay to respect Nominatim's rate limit (1 request per second)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    };
+
+    geocodeAll();
+  }, [selectedProperty, comparables]);
 
   const fetchProperties = async () => {
     try {
@@ -159,6 +179,45 @@ export const CompsAnalysis = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  // Geocode address using Nominatim (OpenStreetMap - free)
+  const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    // Check cache first
+    if (geocodedLocations[address]) {
+      return geocodedLocations[address];
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'MyLocalInvest-CompsAnalysis/1.0'
+          }
+        }
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const location = {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        };
+
+        // Cache the result
+        setGeocodedLocations(prev => ({
+          ...prev,
+          [address]: location
+        }));
+
+        return location;
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+    }
+
+    return null;
   };
 
   const generateComparables = async (property: Property) => {
@@ -854,27 +913,35 @@ export const CompsAnalysis = () => {
       )}
 
       {/* Map View */}
-      {selectedProperty && comparables.length > 0 && (
-        <CompsMap
-          subjectProperty={{
-            address: selectedProperty.address,
-            latitude: undefined, // Will add geocoding later
-            longitude: undefined,
-          }}
-          comparables={comparables.map(comp => ({
-            ...comp,
-            latitude: undefined, // Will add geocoding later
-            longitude: undefined,
-            isBest: getBestComp()?.id === comp.id,
-          }))}
-          onCompClick={(comp) => {
-            toast({
-              title: comp.address,
-              description: `$${comp.salePrice.toLocaleString()} • ${comp.capRate ? comp.capRate + '% Cap Rate' : 'N/A'}`,
-            });
-          }}
-        />
-      )}
+      {selectedProperty && comparables.length > 0 && (() => {
+        const fullAddress = `${selectedProperty.address}, ${selectedProperty.city}, ${selectedProperty.state} ${selectedProperty.zip_code}`;
+        const subjectCoords = geocodedLocations[fullAddress];
+
+        return (
+          <CompsMap
+            subjectProperty={{
+              address: selectedProperty.address,
+              latitude: subjectCoords?.lat,
+              longitude: subjectCoords?.lng,
+            }}
+            comparables={comparables.map(comp => {
+              const compCoords = geocodedLocations[comp.address];
+              return {
+                ...comp,
+                latitude: compCoords?.lat,
+                longitude: compCoords?.lng,
+                isBest: getBestComp()?.id === comp.id,
+              };
+            })}
+            onCompClick={(comp) => {
+              toast({
+                title: comp.address,
+                description: `$${comp.salePrice.toLocaleString()} • ${comp.capRate ? comp.capRate + '% Cap Rate' : 'N/A'}`,
+              });
+            }}
+          />
+        );
+      })()}
 
       {/* Comparable Properties Table */}
       {comparables.length > 0 && (
