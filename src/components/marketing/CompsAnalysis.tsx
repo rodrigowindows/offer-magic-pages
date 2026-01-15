@@ -664,6 +664,17 @@ export const CompsAnalysis = () => {
     setSelectedCompsForComparison([]);
   };
 
+  const toggleSelectAll = () => {
+    const filteredComps = getFilteredComparables();
+    if (selectedCompsForComparison.length === filteredComps.length && filteredComps.length > 0) {
+      // Deselect all
+      setSelectedCompsForComparison([]);
+    } else {
+      // Select all filtered
+      setSelectedCompsForComparison(filteredComps.map(c => c.id));
+    }
+  };
+
   // Filter and sort comparables
   const getFilteredComparables = () => {
     let filtered = [...comparables];
@@ -1328,6 +1339,20 @@ export const CompsAnalysis = () => {
                   Limpar Filtros
                 </Button>
               )}
+
+              <div className="ml-auto">
+                <Button
+                  size="sm"
+                  variant={selectedCompsForComparison.length === getFilteredComparables().length && getFilteredComparables().length > 0 ? "default" : "outline"}
+                  onClick={toggleSelectAll}
+                  disabled={getFilteredComparables().length === 0}
+                >
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {selectedCompsForComparison.length === getFilteredComparables().length && getFilteredComparables().length > 0
+                    ? `Deselect All (${selectedCompsForComparison.length})`
+                    : `Select All (${getFilteredComparables().length})`}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
