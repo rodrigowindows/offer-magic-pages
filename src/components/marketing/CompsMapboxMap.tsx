@@ -38,17 +38,29 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
   const map = useRef<mapboxgl.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [geocodingProgress, setGeocodingProgress] = useState({ current: 0, total: 0 });
-  const [mapboxToken, setMapboxToken] = useState<string>(
-    localStorage.getItem('mapbox_token') || ''
-  );
-  const [showTokenInput, setShowTokenInput] = useState(!mapboxToken);
+  const [mapboxToken, setMapboxToken] = useState<string>('');
+  const [showTokenInput, setShowTokenInput] = useState(false);
+
+  // Initialize token from localStorage on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem('mapbox_token');
+    if (storedToken && storedToken.trim()) {
+      setMapboxToken(storedToken.trim());
+      setShowTokenInput(false);
+    } else {
+      setShowTokenInput(true);
+    }
+  }, []);
 
   const handleTokenSubmit = () => {
     if (mapboxToken.trim()) {
       localStorage.setItem('mapbox_token', mapboxToken.trim());
       setShowTokenInput(false);
-      window.location.reload(); // Reload to initialize map with token
     }
+  };
+
+  const handleTokenChange = () => {
+    setShowTokenInput(true);
   };
 
   // Geocode address using Mapbox
@@ -245,12 +257,22 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
             <MapPin className="w-5 h-5" />
             Comparable Properties Map
           </div>
-          {isLoading && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Geocoding {geocodingProgress.current}/{geocodingProgress.total}...
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {isLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Geocoding {geocodingProgress.current}/{geocodingProgress.total}...
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleTokenChange}
+              className="text-xs"
+            >
+              Alterar Token
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
