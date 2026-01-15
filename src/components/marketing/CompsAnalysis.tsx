@@ -164,9 +164,9 @@ export const CompsAnalysis = () => {
         const comp = comparables[i];
         console.log(`  ${i + 1}/${comparables.length}:`, comp.address);
         await geocodeAddress(comp.address);
-        // Add small delay to respect Nominatim's rate limit (1 request per second)
+        // Add small delay to be respectful to API (Google allows more requests)
         if (i < comparables.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1100));
+          await new Promise(resolve => setTimeout(resolve, 300));
         }
       }
 
@@ -198,7 +198,7 @@ export const CompsAnalysis = () => {
     }
   };
 
-  // Geocode address using Nominatim (OpenStreetMap - free)
+  // Geocode address using Google Maps Geocoding API with Nominatim fallback
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     // Check cache first
     if (geocodedLocations[address]) {
@@ -208,23 +208,21 @@ export const CompsAnalysis = () => {
 
     try {
       console.log('🌐 Geocoding:', address);
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-        {
-          headers: {
-            'User-Agent': 'MyLocalInvest-CompsAnalysis/1.0'
-          }
-        }
-      );
-      const data = await response.json();
 
-      if (data && data.length > 0) {
+      // Try Google Maps Geocoding API first (more reliable for US addresses)
+      const googleApiKey = 'AIzaSyDWr6TkYH9wh46YXzmoMjQVJ8_pVtqYytQ';
+      const googleResponse = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleApiKey}`
+      );
+      const googleData = await googleResponse.json();
+
+      if (googleData.status === 'OK' && googleData.results.length > 0) {
         const location = {
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon)
+          lat: googleData.results[0].geometry.location.lat,
+          lng: googleData.results[0].geometry.location.lng
         };
 
-        console.log('✅ Geocoded:', address, location);
+        console.log('✅ Geocoded (Google):', address, location);
 
         // Cache the result
         setGeocodedLocations(prev => ({
@@ -234,7 +232,36 @@ export const CompsAnalysis = () => {
 
         return location;
       } else {
-        console.warn('❌ No results for:', address);
+        console.warn('⚠️ Google geocoding failed:', googleData.status);
+
+        // Fallback to Nominatim
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+          {
+            headers: {
+              'User-Agent': 'MyLocalInvest-CompsAnalysis/1.0'
+            }
+          }
+        );
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+          const location = {
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon)
+          };
+
+          console.log('✅ Geocoded (Nominatim):', address, location);
+
+          setGeocodedLocations(prev => ({
+            ...prev,
+            [address]: location
+          }));
+
+          return location;
+        } else {
+          console.warn('❌ No results for:', address);
+        }
       }
     } catch (error) {
       console.error('❌ Geocoding error:', error);
@@ -403,6 +430,102 @@ export const CompsAnalysis = () => {
       toast({
         title: 'Export Failed',
         description: error.message || 'Failed to generate PDF. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
+  // Export all filtered properties in batch
+  const exportAllFiltered = async (withImages: boolean = false) => {
+    const filteredProperties = properties.filter(property => {
+      if (offerStatusFilter === 'all') return true;
+      if (offerStatusFilter === 'approved') return property.approval_status === 'approved';
+      if (offerStatusFilter === 'manual') return property.cash_offer_amount > 0 && property.approval_status !== 'approved';
+      if (offerStatusFilter === 'none') return !property.cash_offer_amount || property.cash_offer_amount === 0;
+      return true;
+    });
+
+    if (filteredProperties.length === 0) {
+      toast({
+        title: 'No Properties',
+        description: 'No properties match the current filter',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Export ${filteredProperties.length} property reports?\n\n` +
+      `This will generate CMA reports for all ${offerStatusFilter === 'all' ? 'properties' : offerStatusFilter + ' properties'}.\n\n` +
+      `This may take a few minutes.`
+    );
+
+    if (!confirmed) return;
+
+    setExportingPDF(true);
+
+    try {
+      toast({
+        title: 'Batch Export Started',
+        description: `Generating reports for ${filteredProperties.length} properties...`,
+      });
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < filteredProperties.length; i++) {
+        const property = filteredProperties[i];
+
+        try {
+          // Temporarily set as selected property to generate comparables
+          const originalSelected = selectedProperty;
+          setSelectedProperty(property);
+
+          // Wait for comparables to be generated
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Export PDF
+          if (analysis) {
+            if (withImages) {
+              await exportCompsToPDF(property, comparables, analysis);
+            } else {
+              exportCompsToSimplePDF(property, comparables, analysis);
+            }
+            successCount++;
+          }
+
+          // Restore original selection
+          setSelectedProperty(originalSelected);
+
+          // Progress update every 5 properties
+          if ((i + 1) % 5 === 0 || i === filteredProperties.length - 1) {
+            toast({
+              title: 'Progress',
+              description: `Exported ${i + 1}/${filteredProperties.length} reports...`,
+            });
+          }
+
+          // Small delay between exports
+          if (i < filteredProperties.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+        } catch (error) {
+          console.error(`Failed to export ${property.address}:`, error);
+          failCount++;
+        }
+      }
+
+      toast({
+        title: 'Batch Export Complete',
+        description: `Successfully exported ${successCount} reports${failCount > 0 ? `, ${failCount} failed` : ''}`,
+      });
+    } catch (error: any) {
+      console.error('Batch Export Error:', error);
+      toast({
+        title: 'Batch Export Failed',
+        description: error.message || 'Failed to export all properties',
         variant: 'destructive',
       });
     } finally {
@@ -634,6 +757,25 @@ export const CompsAnalysis = () => {
               <Download className="w-4 h-4 mr-2" />
             )}
             Export PDF com Imagens
+          </Button>
+          <Button
+            onClick={() => exportAllFiltered(false)}
+            disabled={exportingPDF || properties.length === 0}
+            variant="outline"
+            className="border-green-500 text-green-600 hover:bg-green-50"
+          >
+            {exportingPDF ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Export All Filtered ({properties.filter(property => {
+              if (offerStatusFilter === 'all') return true;
+              if (offerStatusFilter === 'approved') return property.approval_status === 'approved';
+              if (offerStatusFilter === 'manual') return property.cash_offer_amount > 0 && property.approval_status !== 'approved';
+              if (offerStatusFilter === 'none') return !property.cash_offer_amount || property.cash_offer_amount === 0;
+              return true;
+            }).length})
           </Button>
         </div>
       </div>
