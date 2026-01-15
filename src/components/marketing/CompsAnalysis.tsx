@@ -57,6 +57,7 @@ import { format } from 'date-fns';
 import { exportCompsToPDF, exportCompsToSimplePDF } from '@/utils/pdfExport';
 import { CompsMap } from './CompsMap';
 import { CompsComparison } from './CompsComparison';
+import { CompsDataService } from '@/services/compsDataService';
 
 interface Property {
   id: string;
@@ -67,6 +68,8 @@ interface Property {
   estimated_value: number;
   cash_offer_amount: number;
   property_image_url?: string | null;
+  approval_status?: string | null;
+  approved_at?: string | null;
 }
 
 interface ComparableProperty {
@@ -146,26 +149,38 @@ export const CompsAnalysis = () => {
   // Geocode subject property and comparables when they change
   useEffect(() => {
     const geocodeAll = async () => {
+      console.log('🗺️ Starting geocoding process...');
+
       if (selectedProperty) {
         const fullAddress = `${selectedProperty.address}, ${selectedProperty.city}, ${selectedProperty.state} ${selectedProperty.zip_code}`;
+        console.log('🏠 Geocoding subject property:', fullAddress);
         await geocodeAddress(fullAddress);
       }
 
-      for (const comp of comparables) {
+      console.log(`📊 Geocoding ${comparables.length} comparables...`);
+      for (let i = 0; i < comparables.length; i++) {
+        const comp = comparables[i];
+        console.log(`  ${i + 1}/${comparables.length}:`, comp.address);
         await geocodeAddress(comp.address);
         // Add small delay to respect Nominatim's rate limit (1 request per second)
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (i < comparables.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1100));
+        }
       }
+
+      console.log('✅ Geocoding complete!');
     };
 
-    geocodeAll();
+    if (selectedProperty || comparables.length > 0) {
+      geocodeAll();
+    }
   }, [selectedProperty, comparables]);
 
   const fetchProperties = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('properties')
-        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount, property_image_url')
+        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount, property_image_url, approval_status, approved_at')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -185,10 +200,12 @@ export const CompsAnalysis = () => {
   const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
     // Check cache first
     if (geocodedLocations[address]) {
+      console.log('📍 Using cached location for:', address);
       return geocodedLocations[address];
     }
 
     try {
+      console.log('🌐 Geocoding:', address);
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
         {
@@ -205,6 +222,8 @@ export const CompsAnalysis = () => {
           lng: parseFloat(data[0].lon)
         };
 
+        console.log('✅ Geocoded:', address, location);
+
         // Cache the result
         setGeocodedLocations(prev => ({
           ...prev,
@@ -212,9 +231,11 @@ export const CompsAnalysis = () => {
         }));
 
         return location;
+      } else {
+        console.warn('❌ No results for:', address);
       }
     } catch (error) {
-      console.error('Geocoding error:', error);
+      console.error('❌ Geocoding error:', error);
     }
 
     return null;
@@ -226,6 +247,15 @@ export const CompsAnalysis = () => {
       // Generate sample comparables data (for demo/testing)
       const baseValue = property.estimated_value || 250000;
       const variance = baseValue * 0.15; // 15% variance
+
+      // Real addresses in Orlando area for demo purposes
+      const sampleAddresses = [
+        `100 S Eola Dr, Orlando, FL 32801`,
+        `400 W Church St, Orlando, FL 32801`,
+        `555 N Orange Ave, Orlando, FL 32801`,
+        `1000 E Colonial Dr, Orlando, FL 32803`,
+        `2000 S Orange Ave, Orlando, FL 32806`,
+      ];
 
       const comps: ComparableProperty[] = Array.from({ length: 5 }, (_, i) => {
         const sqft = 1200 + Math.floor(Math.random() * 800);
@@ -249,7 +279,7 @@ export const CompsAnalysis = () => {
 
         return {
           id: `comp-${i}`,
-          address: `${Math.floor(Math.random() * 9999)} ${['N', 'S', 'E', 'W'][i % 4]} ${['Evergreen', 'Hubert', 'Main', 'Oak', 'Pine'][i % 5]} ${['St', 'Ave', 'Ter', 'Dr', 'Ln'][i % 5]}`,
+          address: sampleAddresses[i],
           saleDate: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
           salePrice,
           sqft,
@@ -626,14 +656,25 @@ export const CompsAnalysis = () => {
             <SelectContent>
               {properties.map((property) => {
                 const hasOffer = property.cash_offer_amount && property.cash_offer_amount > 0;
+                const isApproved = property.approval_status === 'approved';
+                const offerValue = `$${Math.round(property.cash_offer_amount / 1000)}K`;
+
                 return (
                   <SelectItem key={property.id} value={property.id}>
                     <div className="flex items-center justify-between w-full gap-3">
                       <span>{property.address}, {property.city}, {property.state}</span>
                       {hasOffer ? (
-                        <Badge variant="default" className="ml-2 bg-green-600">
-                          ${Math.round(property.cash_offer_amount / 1000)}K
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {isApproved ? (
+                            <Badge variant="default" className="ml-2 bg-blue-600">
+                              ✓ {offerValue} Aprovado
+                            </Badge>
+                          ) : (
+                            <Badge variant="default" className="ml-2 bg-amber-600">
+                              ✎ {offerValue} Manual
+                            </Badge>
+                          )}
+                        </div>
                       ) : (
                         <Badge variant="outline" className="ml-2">
                           Sem oferta
