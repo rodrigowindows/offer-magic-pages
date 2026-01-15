@@ -3,6 +3,8 @@
  * HTML email template for property cash offers
  */
 
+import { generateQRCodeUrl, getQRCodeWithFallbacks } from './qrCodeGenerator';
+
 interface EmailTemplateProps {
   property: {
     address: string;
@@ -54,6 +56,9 @@ export const generatePropertyOfferEmail = ({
 
   const propertySlug = createPropertySlug(property.address, property.city);
   const offerUrl = propertyUrl || `${window.location.origin}/property/${propertySlug}?src=email`;
+
+  // Generate QR code with fallbacks
+  const qrCodes = getQRCodeWithFallbacks(offerUrl, 200);
 
   return `
 <!DOCTYPE html>
@@ -344,14 +349,14 @@ export const generatePropertyOfferEmail = ({
             ` : ''}
 
             <div style="text-align: center; margin: 30px 0;">
-                <a href="${acceptUrl}" class="cta-button" style="color: white; text-decoration: none;">
-                    ✅ Accept This Offer
+                <a href="${offerUrl}" class="cta-button" style="color: white; text-decoration: none;">
+                    ✅ I'm Interested
                 </a>
             </div>
 
             <div class="secondary-buttons">
-                <a href="${questionsUrl}" class="secondary-button" style="color: #374151; text-decoration: none;">
-                    📞 I Have Questions
+                <a href="tel:786-882-8251" class="secondary-button" style="color: #374151; text-decoration: none;">
+                    📞 Call: (786) 882-8251
                 </a>
                 <a href="${pdfUrl}" class="secondary-button" style="color: #374151; text-decoration: none;">
                     📄 Download PDF
@@ -360,16 +365,18 @@ export const generatePropertyOfferEmail = ({
 
             <!-- QR Code and Property Link Section -->
             <div class="qr-section">
-                <h4 style="margin: 0 0 10px 0; color: #1f2937;">Scan to view your personalized offer page:</h4>
-                ${qrCodeUrl ? `
+                <h4 style="margin: 0 0 10px 0; color: #1f2937;">📱 Scan to view offer:</h4>
                 <div class="qr-code">
-                    <img src="${qrCodeUrl}" alt="QR Code for offer page" style="max-width: 150px; height: auto;" />
+                    <img
+                        src="${qrCodes.primary}"
+                        alt="QR Code"
+                        style="max-width: 200px; height: 200px; border: 2px solid #e5e7eb; border-radius: 8px; padding: 10px; background: white;"
+                        onerror="this.onerror=null; this.src='${qrCodes.fallback1}';"
+                    />
                 </div>
-                ` : ''}
-                <p style="margin: 10px 0; color: #6b7280;">Or click here:</p>
-                <a href="${offerUrl}" style="color: #3b82f6; text-decoration: underline; word-break: break-all;">
-                    View Full Offer Details
-                </a>
+                <p style="margin: 10px 0 5px 0; font-size: 12px; color: #6b7280;">
+                    Or click: <a href="${offerUrl}" style="color: #10b981; text-decoration: none; font-weight: 600; display: block; margin-top: 5px; word-break: break-all;">${offerUrl}</a>
+                </p>
             </div>
 
             <div class="next-steps">

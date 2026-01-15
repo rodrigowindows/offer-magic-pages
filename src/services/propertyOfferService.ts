@@ -56,9 +56,9 @@ export class PropertyOfferService {
    */
   static generateQRCodeUrl(offerUrl: string): string {
     // Using QR Server API to generate QR codes
-    // In production, you might want to use a different service or generate locally
+    // Using 200x200 for better quality and adding error correction
     const encodedUrl = encodeURIComponent(offerUrl);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=M&margin=10&data=${encodedUrl}`;
   }
 
   /**

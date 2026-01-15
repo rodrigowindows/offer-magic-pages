@@ -61,37 +61,69 @@ const ContactFormModal = ({
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Track inquiry submission
-    await trackInquiry();
+    try {
+      // Save lead to database
+      const { supabase } = await import("@/integrations/supabase/client");
 
-    // Track form submission with GA4
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'form_submission', {
-        property_address: formData.propertyAddress,
-        form_name: 'cash_offer_request_modal',
-        form_type: 'interested_button'
+      const { data, error } = await supabase
+        .from('property_leads')
+        .insert({
+          email: formData.email,
+          phone: formData.phone,
+          property_id: propertyId || null,
+          full_name: null, // Can be collected if needed
+          status: 'new',
+          interest_level: 'high',
+          ip_address: null, // Can be detected if needed
+          user_agent: navigator.userAgent,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving lead:', error);
+        throw error;
+      }
+
+      console.log('✅ Lead saved successfully:', data);
+
+      // Track inquiry submission
+      await trackInquiry();
+
+      // Track form submission with GA4
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'form_submission', {
+          property_address: formData.propertyAddress,
+          form_name: 'cash_offer_request_modal',
+          form_type: 'interested_button'
+        });
+      }
+
+      toast({
+        title: "Thank you for your interest! 🎉",
+        description: "We'll contact you within 24 hours with your personalized cash offer.",
       });
+
+      // Call onSubmit callback if provided (for A/B test tracking)
+      onSubmit?.();
+
+      setFormData({
+        email: "",
+        phone: "",
+        propertyAddress: propertyAddress
+      });
+
+      setOpen(false);
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit form. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    toast({
-      title: "Thank you for your interest! 🎉",
-      description: "We'll contact you within 24 hours with your personalized cash offer.",
-    });
-
-    // Call onSubmit callback if provided (for A/B test tracking)
-    onSubmit?.();
-
-    setIsSubmitting(false);
-    setFormData({
-      email: "",
-      phone: "",
-      propertyAddress: propertyAddress
-    });
-
-    setOpen(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

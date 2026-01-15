@@ -624,11 +624,25 @@ export const CompsAnalysis = () => {
               <SelectValue placeholder="Select a property..." />
             </SelectTrigger>
             <SelectContent>
-              {properties.map((property) => (
-                <SelectItem key={property.id} value={property.id}>
-                  {property.address}, {property.city}, {property.state}
-                </SelectItem>
-              ))}
+              {properties.map((property) => {
+                const hasOffer = property.cash_offer_amount && property.cash_offer_amount > 0;
+                return (
+                  <SelectItem key={property.id} value={property.id}>
+                    <div className="flex items-center justify-between w-full gap-3">
+                      <span>{property.address}, {property.city}, {property.state}</span>
+                      {hasOffer ? (
+                        <Badge variant="default" className="ml-2 bg-green-600">
+                          ${Math.round(property.cash_offer_amount / 1000)}K
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="ml-2">
+                          Sem oferta
+                        </Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
 
