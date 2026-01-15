@@ -125,6 +125,8 @@ export const CompsAnalysis = () => {
   const [filterUnits, setFilterUnits] = useState<string>('all');
   const [filterCondition, setFilterCondition] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'capRate' | 'price' | 'date' | 'noi'>('date');
+  const [offerStatusFilter, setOfferStatusFilter] = useState<'all' | 'approved' | 'manual' | 'none'>('all');
+  const [showOnlyApproved, setShowOnlyApproved] = useState(false);
   // Comparison
   const [selectedCompsForComparison, setSelectedCompsForComparison] = useState<string[]>([]);
   // Geocoding
@@ -643,6 +645,40 @@ export const CompsAnalysis = () => {
           <CardDescription>Select a property to analyze</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Filter Tabs */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button
+              variant={offerStatusFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setOfferStatusFilter('all')}
+            >
+              Todas ({properties.length})
+            </Button>
+            <Button
+              variant={offerStatusFilter === 'approved' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setOfferStatusFilter('approved')}
+              className={offerStatusFilter === 'approved' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+            >
+              ✓ Aprovadas ({properties.filter(p => p.approval_status === 'approved').length})
+            </Button>
+            <Button
+              variant={offerStatusFilter === 'manual' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setOfferStatusFilter('manual')}
+              className={offerStatusFilter === 'manual' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+            >
+              ✎ Manuais ({properties.filter(p => p.cash_offer_amount > 0 && p.approval_status !== 'approved').length})
+            </Button>
+            <Button
+              variant={offerStatusFilter === 'none' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setOfferStatusFilter('none')}
+            >
+              Sem Oferta ({properties.filter(p => !p.cash_offer_amount || p.cash_offer_amount === 0).length})
+            </Button>
+          </div>
+
           <Select
             value={selectedProperty?.id}
             onValueChange={(value) => {
@@ -654,7 +690,13 @@ export const CompsAnalysis = () => {
               <SelectValue placeholder="Select a property..." />
             </SelectTrigger>
             <SelectContent>
-              {properties.map((property) => {
+              {properties.filter(property => {
+                if (offerStatusFilter === 'all') return true;
+                if (offerStatusFilter === 'approved') return property.approval_status === 'approved';
+                if (offerStatusFilter === 'manual') return property.cash_offer_amount > 0 && property.approval_status !== 'approved';
+                if (offerStatusFilter === 'none') return !property.cash_offer_amount || property.cash_offer_amount === 0;
+                return true;
+              }).map((property) => {
                 const hasOffer = property.cash_offer_amount && property.cash_offer_amount > 0;
                 const isApproved = property.approval_status === 'approved';
                 const offerValue = `$${Math.round(property.cash_offer_amount / 1000)}K`;

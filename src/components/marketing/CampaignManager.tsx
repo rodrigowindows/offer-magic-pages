@@ -304,10 +304,9 @@ export const CampaignManager = () => {
     const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
 
-    // Generate trackable link if tracking ID is provided
-    const trackablePropertyUrl = trackingId
-      ? `${window.location.origin}/track/click?tid=${trackingId}&url=${encodeURIComponent(propertyUrl)}`
-      : propertyUrl;
+    // Use direct property URL without wrapping in tracking redirect
+    // Tracking is handled via pixel and analytics, not URL redirect
+    const trackablePropertyUrl = propertyUrl;
 
     const trackingPixel = trackingId ? `<img src="${window.location.origin}/track/open?tid=${trackingId}" width="1" height="1" style="display:none;" alt="" />` : '';
     const unsubscribeUrl = `${window.location.origin}/unsubscribe?property=${prop.id}`;

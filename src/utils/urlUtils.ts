@@ -40,6 +40,8 @@ export const generatePropertyUrl = (
 
 /**
  * Gera URL de tracking para cliques em links
+ * Note: Tracking is now handled via pixel and analytics, not URL redirect
+ * Returns direct property URL for better user experience
  */
 export const generateTrackableUrl = (
   property: {
@@ -52,12 +54,8 @@ export const generateTrackableUrl = (
   sourceChannel: 'sms' | 'email' | 'call' = 'sms',
   trackingId?: string
 ): string => {
+  // Always return direct property URL
+  // Tracking is handled via pixel and analytics, not URL redirect
   const propertyUrl = generatePropertyUrl(property, sourceChannel);
-
-  if (trackingId) {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/functions/v1/track-link-click?id=${trackingId}&redirect=${encodeURIComponent(propertyUrl)}`;
-  }
-
   return propertyUrl;
 };
