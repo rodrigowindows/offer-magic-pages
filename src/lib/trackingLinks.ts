@@ -9,19 +9,19 @@ export interface TrackableLink {
 }
 
 /**
- * Generate a trackable link that goes through our edge function
- * When clicked, it will update the campaign_logs table and redirect
+ * Generate a trackable link
+ * Note: Tracking is now handled via pixel and analytics, not URL redirect
+ * Returns direct URL for better user experience
  */
 export function generateTrackableLink(
   originalUrl: string,
   trackingId: string
 ): TrackableLink {
-  const encodedRedirect = encodeURIComponent(originalUrl);
-  const trackingUrl = `${SUPABASE_URL}/functions/v1/track-link-click?id=${trackingId}&redirect=${encodedRedirect}`;
-  
+  // Return direct URL instead of wrapping in tracking redirect
+  // Tracking is handled via pixel and analytics
   return {
     originalUrl,
-    trackingUrl,
+    trackingUrl: originalUrl, // Use direct URL instead of redirect
     trackingId,
   };
 }
