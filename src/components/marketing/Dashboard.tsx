@@ -10,41 +10,19 @@ import { useNavigate } from 'react-router-dom';
 import {
   Send,
   History,
-  MessageSquare,
-  Mail,
-  Phone,
-  TrendingUp,
-  Users,
   CheckCircle2,
   XCircle,
-  TestTube2,
   Settings,
   Rocket,
 } from 'lucide-react';
-import { useMemo, useEffect } from 'react';
-import { TestModeToggle } from './TestModeToggle';
-import { QuickApiTest } from './QuickApiTest';
-import { CreateTestProperty } from './CreateTestProperty';
-import { ClickTrackingDashboard } from '../ClickTrackingDashboard';
+import { useMemo } from 'react';
 import { LeadScoringDashboard } from '../LeadScoringDashboard';
 import { AutomatedSequences } from '../AutomatedSequences';
-import SmartScheduling from '../SmartScheduling';
-import { RealTimeNotifications } from '../RealTimeNotifications';
-import { ROIAnalytics } from '../ROIAnalytics';
-import { ExternalToolsIntegration } from '../ExternalToolsIntegration';
 import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
-import { RealTimeClickNotifications } from '../RealTimeClickNotifications';
-import { RetellWebhookTester } from './RetellWebhookTester';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
   const history = useMarketingStore((state) => state.history);
-  const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
-  const settings = useMarketingStore((state) => state.settings);
-
-  // Console de debug - mostra estado atual
-  useEffect(() => {
-  }, [history, testMode, settings]);
 
   // Estatísticas computadas
   const stats = useMemo(() => {
@@ -83,52 +61,21 @@ export const Dashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Marketing Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your marketing communications
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Follow-ups & Analytics</h1>
+          <p className="text-muted-foreground">
+            Track campaign performance and manage automated follow-ups
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/marketing/settings')}
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Settings
+        </Button>
       </div>
-
-      {/* Test Mode Toggle - Destaque */}
-      <Card className={testMode ? 'border-orange-500 bg-orange-50/50' : 'border-green-500 bg-green-50/50'}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                {testMode ? (
-                  <TestTube2 className="w-5 h-5 text-orange-600" />
-                ) : (
-                  <Send className="w-5 h-5 text-green-600" />
-                )}
-                Test Mode Configuration
-              </CardTitle>
-              <CardDescription>
-                {testMode
-                  ? 'Communications are currently simulated (safe for testing)'
-                  : 'Communications will be sent LIVE to real recipients'}
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/marketing/settings')}
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <TestModeToggle />
-        </CardContent>
-      </Card>
-
-      {/* Quick API Test - Prominent */}
-      <QuickApiTest />
-
-      {/* Create Test Property - For Testing */}
-      <CreateTestProperty />
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -170,14 +117,6 @@ export const Dashboard = () => {
 
       {/* Campaign Performance Dashboard - Main Analytics */}
       <CampaignPerformanceDashboard />
-
-      {/* Real-time Click Notifications */}
-      <RealTimeClickNotifications />
-
-      {/* Retell AI Webhook Tester */}
-      <RetellWebhookTester />
-
-
 
       {/* Recent Communications */}
       <Card>
@@ -236,71 +175,11 @@ export const Dashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Click Tracking Analytics */}
-      <ClickTrackingDashboard />
-
       {/* Lead Scoring & Analytics */}
       <LeadScoringDashboard />
 
       {/* Automated Sequences */}
       <AutomatedSequences />
-
-      {/* Smart Scheduling */}
-      <SmartScheduling />
-
-      {/* Real-time Notifications */}
-      <RealTimeNotifications />
-
-      {/* ROI Analytics & Reports */}
-      <ROIAnalytics />
-
-      {/* External Tools Integration */}
-      <ExternalToolsIntegration />
-
-      {/* Console de Debug - Estado do Sistema */}
-      <Card className="border-blue-500/50 bg-slate-50 dark:bg-slate-900">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-mono text-sm">
-            <span className="text-blue-600">{'>'}</span> Sistema Console
-          </CardTitle>
-          <CardDescription>
-            Estado em tempo real do Marketing System (abra DevTools Console para mais detalhes)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 font-mono text-xs">
-            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
-              <span className="text-muted-foreground">Test Mode:</span>
-              <span className={testMode ? 'text-orange-600 font-bold' : 'text-green-600 font-bold'}>
-                {testMode ? '🧪 ATIVO (Safe)' : '🚀 DESATIVADO (Live)'}
-              </span>
-            </div>
-            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
-              <span className="text-muted-foreground">Total Communications:</span>
-              <span className="font-bold">{stats.total}</span>
-            </div>
-            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
-              <span className="text-muted-foreground">Test/Production Split:</span>
-              <span className="font-bold">
-                {stats.testCommunications} test / {stats.prodCommunications} prod
-              </span>
-            </div>
-            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
-              <span className="text-muted-foreground">Success Rate:</span>
-              <span className="text-green-600 font-bold">{stats.successRate}%</span>
-            </div>
-            <div className="flex justify-between p-2 bg-white dark:bg-slate-800 rounded border">
-              <span className="text-muted-foreground">API Endpoint:</span>
-              <span className="text-xs text-blue-600 truncate">{settings.api.marketing_url}</span>
-            </div>
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-800">
-              <p className="text-blue-800 dark:text-blue-200 text-xs">
-                💡 <strong>Dica:</strong> Abra o Console do navegador (F12) para ver logs detalhados em tempo real
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   Mail,
   RefreshCw,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -45,6 +46,7 @@ interface Property {
   max_offer_amount?: number;
   estimated_value?: number;
   skip_trace_data?: any;
+  approval_status?: 'pending' | 'approved' | 'rejected';
 }
 
 export const LetterGenerator = () => {
@@ -54,7 +56,11 @@ export const LetterGenerator = () => {
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [loading, setLoading] = useState(false);
   const [previewProperty, setPreviewProperty] = useState<Property | null>(null);
-  const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [cityFilter, setCityFilter] = useState<string>('all');
+  const [minOffer, setMinOffer] = useState<string>('');
+  const [maxOffer, setMaxOffer] = useState<string>('');
+  const { toast} = useToast();
 
   useEffect(() => {
     fetchProperties();
@@ -103,16 +109,55 @@ export const LetterGenerator = () => {
     setSelectedProperties(new Set());
   };
 
-  const getFilteredProperties = () => {
-    if (!searchTerm) return properties;
+  const clearFilters = () => {
+    setStatusFilter('all');
+    setCityFilter('all');
+    setMinOffer('');
+    setMaxOffer('');
+    setSearchTerm('');
+  };
 
-    const term = searchTerm.toLowerCase();
-    return properties.filter(p =>
-      p.address?.toLowerCase().includes(term) ||
-      p.city?.toLowerCase().includes(term) ||
-      p.owner_name?.toLowerCase().includes(term) ||
-      p.owner_phone?.includes(term)
-    );
+  const hasActiveFilters = statusFilter !== 'all' || cityFilter !== 'all' || minOffer || maxOffer || searchTerm;
+
+  const getFilteredProperties = () => {
+    let filtered = properties;
+
+    // Apply search term filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(p =>
+        p.address?.toLowerCase().includes(term) ||
+        p.city?.toLowerCase().includes(term) ||
+        p.owner_name?.toLowerCase().includes(term) ||
+        p.owner_phone?.includes(term)
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(p => p.approval_status === statusFilter);
+    }
+
+    // Apply city filter
+    if (cityFilter !== 'all') {
+      filtered = filtered.filter(p => p.city === cityFilter);
+    }
+
+    // Apply offer range filters
+    if (minOffer) {
+      const minValue = Number(minOffer);
+      filtered = filtered.filter(p =>
+        (p.cash_offer_amount || p.min_offer_amount || 0) >= minValue
+      );
+    }
+    if (maxOffer) {
+      const maxValue = Number(maxOffer);
+      filtered = filtered.filter(p =>
+        (p.cash_offer_amount || p.max_offer_amount || 0) <= maxValue
+      );
+    }
+
+    return filtered;
   };
 
   const getOwnerName = (property: Property): string => {
@@ -158,6 +203,9 @@ export const LetterGenerator = () => {
   const filteredProperties = getFilteredProperties();
   const selectedCount = selectedProperties.size;
 
+  // Get unique cities for filter dropdown
+  const uniqueCities = Array.from(new Set(properties.map(p => p.city).filter(Boolean))).sort();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -187,25 +235,99 @@ export const LetterGenerator = () => {
       {/* Actions Bar */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by address, city, owner name, phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <div className="space-y-4">
+            {/* Search and Selection Row */}
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by address, city, owner name, phone..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="default" size="default" onClick={selectAll}>
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Select All ({filteredProperties.length})
+                </Button>
+                <Button variant="outline" size="default" onClick={deselectAll}>
+                  Deselect All
+                </Button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={selectAll}>
-                Select All ({filteredProperties.length})
-              </Button>
-              <Button variant="outline" size="sm" onClick={deselectAll}>
-                Deselect All
-              </Button>
+
+            {/* Filters Row */}
+            <div className="pt-4 border-t">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-foreground">Filters</h3>
+                {hasActiveFilters && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    <X className="w-4 h-4 mr-1" />
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Status Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* City Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">City</Label>
+                  <Select value={cityFilter} onValueChange={setCityFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Cities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Cities</SelectItem>
+                      {uniqueCities.map(city => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Min Offer Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Min Offer</Label>
+                  <Input
+                    type="number"
+                    placeholder="$0"
+                    value={minOffer}
+                    onChange={(e) => setMinOffer(e.target.value)}
+                  />
+                </div>
+
+                {/* Max Offer Filter */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Max Offer</Label>
+                  <Input
+                    type="number"
+                    placeholder="No limit"
+                    value={maxOffer}
+                    onChange={(e) => setMaxOffer(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -271,7 +393,7 @@ export const LetterGenerator = () => {
                           <p className="text-sm text-muted-foreground">
                             {property.city}, {property.state} {property.zip_code}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <Badge variant="secondary" className="text-xs">
                               {ownerName}
                             </Badge>
@@ -282,6 +404,21 @@ export const LetterGenerator = () => {
                             ) : (
                               <Badge variant="outline" className="text-xs">
                                 No offer yet
+                              </Badge>
+                            )}
+                            {property.approval_status === 'approved' && (
+                              <Badge variant="default" className="text-xs bg-green-600">
+                                ✓ Approved
+                              </Badge>
+                            )}
+                            {property.approval_status === 'pending' && (
+                              <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-600">
+                                ⏳ Pending
+                              </Badge>
+                            )}
+                            {property.approval_status === 'rejected' && (
+                              <Badge variant="outline" className="text-xs text-red-600 border-red-600">
+                                ✗ Rejected
                               </Badge>
                             )}
                           </div>

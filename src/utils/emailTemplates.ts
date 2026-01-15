@@ -352,13 +352,13 @@ export const generatePropertyOfferEmail = ({
             </div>
             ` : ''}
 
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="${offerUrl}" class="cta-button" style="color: white; text-decoration: none;">
+            <div style="text-align: center; margin: 30px 0; clear: both;">
+                <a href="${offerUrl}" class="cta-button" style="color: white; text-decoration: none; display: block;">
                     ✅ I'm Interested
                 </a>
             </div>
 
-            <div class="secondary-buttons">
+            <div class="secondary-buttons" style="clear: both; margin-top: 20px;">
                 <a href="tel:786-882-8251" class="secondary-button" style="color: #374151; text-decoration: none;">
                     📞 Call: (786) 882-8251
                 </a>

@@ -33,6 +33,7 @@ const ContactFormModal = ({
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     phone: "",
     propertyAddress: propertyAddress
@@ -71,8 +72,9 @@ const ContactFormModal = ({
           email: formData.email,
           phone: formData.phone,
           property_id: propertyId || null,
-          full_name: null, // Can be collected if needed
+          full_name: formData.name || 'Not Provided',
           status: 'new',
+          selling_timeline: 'exploring', // Default value required by schema
           interest_level: 'high',
           ip_address: null, // Can be detected if needed
           user_agent: navigator.userAgent,
@@ -108,6 +110,7 @@ const ContactFormModal = ({
       onSubmit?.();
 
       setFormData({
+        name: "",
         email: "",
         phone: "",
         propertyAddress: propertyAddress
@@ -161,6 +164,23 @@ const ContactFormModal = ({
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
           <div className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="name" className="text-base font-semibold flex items-center gap-2">
+                <Check className="w-4 h-4 text-primary" />
+                Your Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="John Doe"
+                className="h-12 text-base"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email" className="text-base font-semibold flex items-center gap-2">
                 <Mail className="w-4 h-4 text-primary" />
                 Email Address *
@@ -174,7 +194,6 @@ const ContactFormModal = ({
                 onChange={handleChange}
                 placeholder="your@email.com"
                 className="h-12 text-base"
-                autoFocus
               />
             </div>
 
