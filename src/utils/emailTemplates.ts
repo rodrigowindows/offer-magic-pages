@@ -145,12 +145,16 @@ export const generatePropertyOfferEmail = ({
             margin: 20px 0;
             width: 100%;
             box-sizing: border-box;
+            position: relative;
+            z-index: 1;
         }
         .secondary-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin: 20px 0;
+            position: relative;
+            z-index: 2;
         }
         .secondary-button {
             display: inline-block;

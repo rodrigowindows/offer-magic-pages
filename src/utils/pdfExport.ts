@@ -359,3 +359,215 @@ export const exportCompsToSimplePDF = (
   const filename = `CMA_${property.address.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
   doc.save(filename);
 };
+
+/**
+ * Export consolidated PDF with multiple properties and their comparables
+ */
+export const exportConsolidatedCompsPDF = async (
+  properties: PropertyData[],
+  getComparablesForProperty: (property: PropertyData) => Promise<{ comparables: ComparableProperty[], analysis: MarketAnalysis }>,
+  onProgress?: (current: number, total: number) => void
+) => {
+  const doc = new jsPDF();
+  let pageNumber = 1;
+
+  // Cover page
+  doc.setFontSize(28);
+  doc.setTextColor(37, 99, 235);
+  doc.text('MyLocalInvest', 105, 100, { align: 'center' });
+
+  doc.setFontSize(18);
+  doc.setTextColor(15, 23, 42);
+  doc.text('Consolidated CMA Report', 105, 115, { align: 'center' });
+
+  doc.setFontSize(12);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`${properties.length} Properties Analyzed`, 105, 125, { align: 'center' });
+  doc.text(format(new Date(), 'MMMM dd, yyyy'), 105, 135, { align: 'center' });
+
+  addFooter(doc, pageNumber++);
+
+  // Process each property
+  for (let i = 0; i < properties.length; i++) {
+    const property = properties[i];
+
+    // Progress callback
+    if (onProgress) {
+      onProgress(i + 1, properties.length);
+    }
+
+    // New page for each property
+    doc.addPage();
+
+    addHeader(doc, `Property ${i + 1} of ${properties.length}`);
+    let currentY = 65;
+
+    // Property info section with photo
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Subject Property', 20, currentY);
+    currentY += 8;
+
+    // Property details box
+    doc.setFillColor(249, 250, 251);
+    doc.rect(20, currentY, 170, 45, 'F');
+
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42);
+    doc.setFont(undefined, 'bold');
+    doc.text(property.address, 25, currentY + 8);
+
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`${property.city}, ${property.state} ${property.zip_code}`, 25, currentY + 15);
+
+    // Property details
+    doc.setFontSize(9);
+    doc.text(`Estimated Value: $${property.estimated_value.toLocaleString()}`, 25, currentY + 25);
+    doc.text(`Current Offer: $${property.cash_offer_amount.toLocaleString()}`, 25, currentY + 32);
+
+    // Add property image if available
+    if (property.property_image_url) {
+      try {
+        const imageData = await loadImageAsBase64(property.property_image_url);
+        if (imageData) {
+          doc.addImage(imageData, 'JPEG', 130, currentY + 3, 55, 38);
+        } else {
+          // Placeholder if image fails
+          doc.setDrawColor(200, 200, 200);
+          doc.rect(130, currentY + 3, 55, 38);
+          doc.setFontSize(8);
+          doc.setTextColor(150, 150, 150);
+          doc.text('No Image', 157.5, currentY + 23, { align: 'center' });
+        }
+      } catch (error) {
+        console.error('Error adding image:', error);
+      }
+    } else {
+      // No image placeholder
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(130, currentY + 3, 55, 38);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text('No Image Available', 157.5, currentY + 23, { align: 'center' });
+    }
+
+    currentY += 52;
+
+    // Get comparables for this property
+    try {
+      const { comparables, analysis } = await getComparablesForProperty(property);
+
+      // Analysis summary cards
+      const cardWidth = 38;
+      const cardHeight = 18;
+      const cardSpacing = 5;
+
+      // Card 1: Avg Sale Price
+      doc.setFillColor(239, 246, 255);
+      doc.rect(20, currentY, cardWidth, cardHeight, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Avg Sale Price', 22, currentY + 5);
+      doc.setFontSize(11);
+      doc.setTextColor(37, 99, 235);
+      doc.text(`$${Math.round(analysis.avgSalePrice / 1000)}K`, 22, currentY + 13);
+
+      // Card 2: Avg $/Sqft
+      doc.setFillColor(239, 246, 255);
+      doc.rect(20 + cardWidth + cardSpacing, currentY, cardWidth, cardHeight, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Avg $/Sqft', 22 + cardWidth + cardSpacing, currentY + 5);
+      doc.setFontSize(11);
+      doc.setTextColor(37, 99, 235);
+      doc.text(`$${analysis.avgPricePerSqft}`, 22 + cardWidth + cardSpacing, currentY + 13);
+
+      // Card 3: Suggested Value Range
+      doc.setFillColor(239, 246, 255);
+      doc.rect(20 + (cardWidth + cardSpacing) * 2, currentY, cardWidth + 20, cardHeight, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Suggested Value', 22 + (cardWidth + cardSpacing) * 2, currentY + 5);
+      doc.setFontSize(9);
+      doc.setTextColor(37, 99, 235);
+      doc.text(
+        `$${Math.round(analysis.suggestedValueMin / 1000)}K - $${Math.round(analysis.suggestedValueMax / 1000)}K`,
+        22 + (cardWidth + cardSpacing) * 2,
+        currentY + 13
+      );
+
+      // Card 4: Market Trend
+      doc.setFillColor(239, 246, 255);
+      doc.rect(20 + (cardWidth + cardSpacing) * 2 + cardWidth + 25, currentY, cardWidth - 10, cardHeight, 'F');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Trend', 22 + (cardWidth + cardSpacing) * 2 + cardWidth + 25, currentY + 5);
+      doc.setFontSize(10);
+      const trendColor = analysis.marketTrend === 'up' ? [34, 197, 94] : analysis.marketTrend === 'down' ? [239, 68, 68] : [100, 116, 139];
+      doc.setTextColor(trendColor[0], trendColor[1], trendColor[2]);
+      doc.text(
+        `${analysis.trendPercentage > 0 ? '+' : ''}${analysis.trendPercentage}%`,
+        22 + (cardWidth + cardSpacing) * 2 + cardWidth + 25,
+        currentY + 13
+      );
+
+      currentY += 25;
+
+      // Comparables table
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Comparable Sales', 20, currentY);
+      currentY += 3;
+
+      const tableData = comparables.map((comp, index) => [
+        `#${index + 1}`,
+        comp.address.length > 30 ? comp.address.substring(0, 27) + '...' : comp.address,
+        format(comp.saleDate, 'MM/dd/yy'),
+        `$${Math.round(comp.salePrice / 1000)}K`,
+        comp.sqft.toLocaleString(),
+        `$${comp.pricePerSqft}`,
+        `${comp.beds}/${comp.baths}`,
+        `${comp.distanceMiles.toFixed(1)}mi`,
+      ]);
+
+      autoTable(doc, {
+        startY: currentY,
+        head: [['#', 'Address', 'Date', 'Price', 'Sqft', '$/Sqft', 'Bd/Ba', 'Dist']],
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: [255, 255, 255],
+          fontSize: 8,
+        },
+        bodyStyles: {
+          fontSize: 8,
+        },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 55 },
+          2: { cellWidth: 22 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 18 },
+          5: { cellWidth: 18 },
+          6: { cellWidth: 15 },
+          7: { cellWidth: 15 },
+        },
+      });
+
+    } catch (error) {
+      console.error(`Error processing property ${property.address}:`, error);
+      doc.setFontSize(10);
+      doc.setTextColor(239, 68, 68);
+      doc.text('Error loading comparables for this property', 20, currentY);
+    }
+
+    addFooter(doc, pageNumber++);
+  }
+
+  // Save the consolidated PDF
+  const filename = `Consolidated_CMA_${properties.length}_Properties_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+  doc.save(filename);
+};

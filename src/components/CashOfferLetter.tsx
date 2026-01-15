@@ -37,7 +37,7 @@ const content = {
     benefit4: "You pick the closing date",
     cta: "Claim Your Cash Offer Today",
     ctaDescription: "Call now for your free, no-obligation consultation",
-    orText: "or scan to view online",
+    orText: "or scan QR code for details",
     scanToView: "Scan for instant offer details",
     since: "Trusted Miami Investors Since 2015",
     footer: "Zero commissions • Zero closing costs • 100% confidential",
@@ -61,7 +61,7 @@ const content = {
     benefit4: "Usted elige la fecha de cierre",
     cta: "Reclame Su Oferta Hoy",
     ctaDescription: "Llame ahora para su consulta gratuita y sin compromiso",
-    orText: "o escanee para ver en línea",
+    orText: "o escanee código QR para detalles",
     scanToView: "Escanee para ver detalles",
     since: "Inversionistas de Miami Desde 2015",
     footer: "Cero comisiones • Cero costos de cierre • 100% confidencial",
@@ -127,19 +127,19 @@ export const CashOfferLetter = ({
         <p className="text-sm opacity-90">{t.since}</p>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-8 space-y-6">
         {/* Personalized Greeting & Property */}
-        <div className="text-center space-y-1">
+        <div className="text-center space-y-2">
           {ownerName && (
-            <p className="text-lg text-muted-foreground">{t.dear} {ownerName},</p>
+            <p className="text-lg text-muted-foreground mb-2">{t.dear} {ownerName},</p>
           )}
           <h1 className="text-2xl font-bold text-foreground">{t.headline}</h1>
-          <p className="text-base text-muted-foreground">{t.subheadline}</p>
-          <p className="text-sm font-medium text-primary mt-2">{fullAddress}</p>
+          <p className="text-base text-muted-foreground mt-2">{t.subheadline}</p>
+          <p className="text-sm font-medium text-primary mt-3">{fullAddress}</p>
         </div>
 
         {/* Main Offer Box with Urgency */}
-        <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary rounded-xl p-5 text-center">
+        <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary rounded-xl p-6 text-center mt-6">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {t.urgency}
@@ -153,46 +153,46 @@ export const CashOfferLetter = ({
         </div>
 
         {/* Trust Badges Row */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-muted/50 rounded-lg p-2">
-            <Clock className="h-4 w-4 mx-auto text-primary mb-1" />
-            <p className="text-xs font-medium text-foreground">{t.fastClose}</p>
+        <div className="grid grid-cols-3 gap-3 text-center mt-6">
+          <div className="bg-muted/50 rounded-lg p-3">
+            <Clock className="h-5 w-5 mx-auto text-primary mb-2" />
+            <p className="text-xs font-medium text-foreground leading-relaxed">{t.fastClose}</p>
           </div>
-          <div className="bg-muted/50 rounded-lg p-2">
-            <Shield className="h-4 w-4 mx-auto text-primary mb-1" />
-            <p className="text-xs font-medium text-foreground">{t.guarantee}</p>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <Shield className="h-5 w-5 mx-auto text-primary mb-2" />
+            <p className="text-xs font-medium text-foreground leading-relaxed">{t.guarantee}</p>
           </div>
-          <div className="bg-muted/50 rounded-lg p-2">
-            <CheckCircle2 className="h-4 w-4 mx-auto text-primary mb-1" />
-            <p className="text-xs font-medium text-foreground">{t.noCost}</p>
+          <div className="bg-muted/50 rounded-lg p-3">
+            <CheckCircle2 className="h-5 w-5 mx-auto text-primary mb-2" />
+            <p className="text-xs font-medium text-foreground leading-relaxed">{t.noCost}</p>
           </div>
         </div>
 
         {/* Benefits Grid */}
-        <div className="space-y-1">
-          <h2 className="text-sm font-bold text-foreground text-center">{t.weHelpYou}</h2>
-          <div className="grid grid-cols-2 gap-1 text-xs">
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
-              <span>{t.benefit1}</span>
+        <div className="space-y-3 mt-6">
+          <h2 className="text-base font-bold text-foreground text-center mb-3">{t.weHelpYou}</h2>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+              <span className="leading-relaxed">{t.benefit1}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
-              <span>{t.benefit2}</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+              <span className="leading-relaxed">{t.benefit2}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
-              <span>{t.benefit3}</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+              <span className="leading-relaxed">{t.benefit3}</span>
             </div>
-            <div className="flex items-center gap-1">
-              <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />
-              <span>{t.benefit4}</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+              <span className="leading-relaxed">{t.benefit4}</span>
             </div>
           </div>
         </div>
 
         {/* Testimonial */}
-        <div className="bg-muted/30 border border-border rounded-lg p-3 text-center">
+        <div className="bg-muted/30 border border-border rounded-lg p-4 text-center mt-6">
           <div className="flex justify-center gap-0.5 mb-1">
             {[...Array(5)].map((_, i) => (
               <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -203,29 +203,29 @@ export const CashOfferLetter = ({
         </div>
 
         {/* CTA Section */}
-        <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center space-y-2">
-          <h2 className="text-lg font-bold">{t.cta}</h2>
-          <div className="flex items-center justify-center gap-2 text-xl font-bold">
-            <Phone className="h-5 w-5" />
-            {phone}
+        <div className="bg-primary text-primary-foreground rounded-xl p-6 text-center space-y-4">
+          <h2 className="text-xl font-bold mb-4">{t.cta}</h2>
+
+          {/* Phone Number - Large and Prominent */}
+          <div className="space-y-3">
+            <p className="text-sm opacity-90">{t.ctaDescription}</p>
+            <div className="bg-white/10 rounded-lg py-4 px-6">
+              <p className="text-xs opacity-75 mb-2">Call Now:</p>
+              <div className="flex items-center justify-center gap-3">
+                <Phone className="h-7 w-7" />
+                <span className="text-3xl font-bold tracking-wider">{phone}</span>
+              </div>
+            </div>
           </div>
-          <p className="text-xs opacity-90">{t.ctaDescription}</p>
-          
+
           {/* QR Code */}
-          <div className="pt-2 border-t border-primary-foreground/20 mt-3">
-            <p className="text-xs opacity-75 mb-2">{t.orText}</p>
-            <div className="flex flex-col items-center gap-2">
-              <div className="bg-white p-3 rounded-lg">
+          <div className="pt-4 border-t border-primary-foreground/20 mt-4">
+            <p className="text-sm opacity-90 mb-3">{t.orText}</p>
+            <div className="flex flex-col items-center gap-3">
+              <div className="bg-white p-4 rounded-xl shadow-lg">
                 <QRCodeSVG value={offerUrl} size={140} level="H" />
               </div>
-              <a
-                href={offerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-xs mt-1"
-              >
-                View Full Offer Details
-              </a>
+              <p className="text-xs opacity-75 max-w-xs break-all">{offerUrl}</p>
             </div>
           </div>
         </div>

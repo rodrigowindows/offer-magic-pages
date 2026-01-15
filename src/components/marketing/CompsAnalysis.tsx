@@ -54,7 +54,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { exportCompsToPDF, exportCompsToSimplePDF } from '@/utils/pdfExport';
+import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
 import { CompsMapboxMap } from './CompsMapboxMap';
 import { CompsComparison } from './CompsComparison';
 import { CompsDataService } from '@/services/compsDataService';
