@@ -94,38 +94,10 @@ export class CompsDataService {
     state: string,
     limit: number
   ): Promise<ComparableData[]> {
-    try {
-      const { data, error } = await supabase
-        .from('comparables')
-        .select('*')
-        .eq('city', city)
-        .eq('state', state)
-        .order('sale_date', { ascending: false })
-        .limit(limit);
-
-      if (error) throw error;
-
-      return (data || []).map(comp => ({
-        address: comp.address,
-        city: comp.city,
-        state: comp.state,
-        zipCode: comp.zip_code || '',
-        saleDate: comp.sale_date,
-        salePrice: Number(comp.sale_price),
-        beds: comp.beds || 0,
-        baths: comp.baths || 0,
-        sqft: comp.sqft,
-        yearBuilt: comp.year_built || 0,
-        propertyType: 'Single Family',
-        latitude: comp.latitude ? Number(comp.latitude) : undefined,
-        longitude: comp.longitude ? Number(comp.longitude) : undefined,
-        distance: comp.distance_miles ? Number(comp.distance_miles) : undefined,
-        source: 'manual' as const,
-      }));
-    } catch (error) {
-      console.error('Database query error:', error);
-      return [];
-    }
+    // Note: 'comparables' table doesn't exist in the database schema
+    // Returning empty array - use external APIs or create the table
+    console.log('📊 Database comparables not available - using external APIs');
+    return [];
   }
 
   /**
@@ -318,37 +290,9 @@ export class CompsDataService {
    * Save comparables to database for caching
    */
   private static async saveToDatabase(comps: ComparableData[]): Promise<void> {
-    try {
-      const records = comps.map(comp => ({
-        address: comp.address,
-        city: comp.city,
-        state: comp.state,
-        zip_code: comp.zipCode,
-        sale_date: comp.saleDate,
-        sale_price: comp.salePrice,
-        beds: comp.beds,
-        baths: comp.baths,
-        sqft: comp.sqft,
-        year_built: comp.yearBuilt,
-        latitude: comp.latitude,
-        longitude: comp.longitude,
-        distance_miles: comp.distance,
-        source: comp.source,
-      }));
-
-      const { error } = await supabase.from('comparables').upsert(records, {
-        onConflict: 'address,city,sale_date',
-        ignoreDuplicates: true,
-      });
-
-      if (error) {
-        console.warn('Failed to cache comps:', error);
-      } else {
-        console.log(`💾 Cached ${records.length} comps to database`);
-      }
-    } catch (error) {
-      console.error('Database save error:', error);
-    }
+    // Note: 'comparables' table doesn't exist in the database schema
+    // Skip saving - would need to create table first
+    console.log(`📊 Skipping cache save - comparables table not available (${comps.length} comps)`);
   }
 
   /**
