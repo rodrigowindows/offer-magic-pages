@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ABTestWrapper } from "@/components/ABTestWrapper";
-import { PropertyCommunicationHistory } from "@/components/PropertyCommunicationHistory";
 import { PropertyPageFollowUp } from "@/components/PropertyPageFollowUp";
 interface PropertyData {
   id: string;
@@ -111,6 +110,8 @@ const Property = () => {
 
       // 🔥 UPDATE campaign_logs when someone clicks the link from email/sms
       if (eventType === 'page_view' && (source === 'email' || source === 'sms' || source === 'call')) {
+        console.log('🔍 Looking for campaign log...', { propertyId, source });
+
         // Find the most recent campaign log for this property and channel
         const { data: campaignLog, error: fetchError } = await supabase
           .from('campaign_logs')
@@ -121,7 +122,11 @@ const Property = () => {
           .limit(1)
           .maybeSingle();
 
-        if (!fetchError && campaignLog) {
+        if (fetchError) {
+          console.error('❌ Error fetching campaign_logs:', fetchError);
+        } else if (campaignLog) {
+          console.log('📧 Found campaign log:', campaignLog);
+
           // Update the campaign log to mark link as clicked
           const { error: updateError } = await supabase
             .from('campaign_logs')
@@ -133,12 +138,30 @@ const Property = () => {
             .eq('id', campaignLog.id);
 
           if (updateError) {
-            console.error('Error updating campaign_logs:', updateError);
+            console.error('❌ Error updating campaign_logs:', updateError);
           } else {
             console.log('✅ Campaign click tracked successfully!', {
               campaignLogId: campaignLog.id,
               clickCount: (campaignLog.click_count || 0) + 1,
             });
+          }
+        } else {
+          console.warn('⚠️ No campaign log found for this property and source. Creating new click record...');
+
+          // If no campaign log exists, create a click record in campaign_clicks table
+          const { error: clickError } = await supabase
+            .from('campaign_clicks')
+            .insert({
+              property_id: propertyId,
+              click_source: source,
+              user_agent: navigator.userAgent,
+              referrer: document.referrer || 'direct',
+            });
+
+          if (clickError) {
+            console.error('❌ Error creating campaign_clicks:', clickError);
+          } else {
+            console.log('✅ Click recorded in campaign_clicks table');
           }
         }
       }
@@ -205,7 +228,6 @@ const Property = () => {
         ownerName={property.owner_name}
       />
       <ABTestWrapper property={property} />
-      <PropertyCommunicationHistory propertyId={property.id} />
     </>
   );
 };
