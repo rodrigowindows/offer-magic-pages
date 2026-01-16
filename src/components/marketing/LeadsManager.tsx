@@ -87,7 +87,8 @@ export const LeadsManager = () => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      // 1. Fetch form submissions from property_leads
+      const { data: formLeads, error: formError } = await supabase
         .from('property_leads')
         .select(`
           *,
@@ -100,14 +101,101 @@ export const LeadsManager = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (formError) throw formError;
 
-      setLeads(data || []);
-      calculateStats(data || []);
+      // 2. Fetch clicks from campaign_logs (link_clicked = true)
+      const { data: campaignClicks, error: clickError } = await supabase
+        .from('campaign_logs')
+        .select(`
+          id,
+          property_id,
+          channel,
+          link_clicked,
+          click_count,
+          sent_at,
+          first_response_at,
+          properties (
+            id,
+            address,
+            city,
+            state,
+            zip_code,
+            owner_name,
+            owner_phone,
+            owner_email,
+            cash_offer_amount,
+            skip_trace_data
+          )
+        `)
+        .eq('link_clicked', true)
+        .order('sent_at', { ascending: false });
+
+      if (clickError) {
+        console.error('Error fetching campaign clicks:', clickError);
+      }
+
+      // 3. Convert campaign clicks to Lead format
+      const clickLeads: Lead[] = (campaignClicks || [])
+        .filter(click => click.properties) // Only clicks with valid properties
+        .map(click => {
+          const prop = click.properties!;
+          // Get owner name from skip_trace_data or owner_name
+          let ownerName = prop.owner_name || 'Unknown';
+          if (prop.skip_trace_data) {
+            if (prop.skip_trace_data.owner_name) {
+              ownerName = prop.skip_trace_data.owner_name;
+            } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
+              ownerName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
+            }
+          }
+
+          return {
+            id: click.id,
+            full_name: ownerName,
+            email: prop.owner_email || prop.skip_trace_data?.email1 || '',
+            phone: prop.owner_phone || prop.skip_trace_data?.phone1 || '',
+            property_id: click.property_id,
+            selling_timeline: 'exploring', // Default for click-based leads
+            status: 'new', // Default status for clicks
+            created_at: click.first_response_at || click.sent_at,
+            updated_at: click.first_response_at || click.sent_at,
+            contacted: false,
+            contacted_at: null,
+            notes: `Clicou no link via ${click.channel} (${click.click_count || 1} cliques)`,
+            properties: {
+              address: prop.address,
+              city: prop.city,
+              state: prop.state,
+              cash_offer_amount: prop.cash_offer_amount || 0,
+            },
+          };
+        });
+
+      // 4. Combine both sources (form leads + click leads)
+      // Remove duplicates based on property_id (prefer form submissions)
+      const allLeads = [...(formLeads || []), ...clickLeads];
+      const uniqueLeads = allLeads.reduce((acc, lead) => {
+        const existingIndex = acc.findIndex(l => l.property_id === lead.property_id);
+        if (existingIndex === -1) {
+          acc.push(lead);
+        } else {
+          // Keep form submission over click if both exist
+          if (!acc[existingIndex].property_id || lead.property_id) {
+            // If existing has no property_id or current has property_id, replace
+            if (formLeads?.some(fl => fl.id === lead.id)) {
+              acc[existingIndex] = lead;
+            }
+          }
+        }
+        return acc;
+      }, [] as Lead[]);
+
+      setLeads(uniqueLeads);
+      calculateStats(uniqueLeads);
 
       toast({
         title: 'Leads carregados',
-        description: `${data?.length || 0} leads encontrados`,
+        description: `${uniqueLeads.length} leads encontrados (${formLeads?.length || 0} formulários + ${clickLeads.length} cliques)`,
       });
     } catch (error: any) {
       console.error('Error fetching leads:', error);
