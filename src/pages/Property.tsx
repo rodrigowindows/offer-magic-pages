@@ -108,6 +108,40 @@ const Property = () => {
         country: ipData?.country_name || null,
         device_type: deviceType,
       });
+
+      // 🔥 UPDATE campaign_logs when someone clicks the link from email/sms
+      if (eventType === 'page_view' && (source === 'email' || source === 'sms' || source === 'call')) {
+        // Find the most recent campaign log for this property and channel
+        const { data: campaignLog, error: fetchError } = await supabase
+          .from('campaign_logs')
+          .select('id, click_count')
+          .eq('property_id', propertyId)
+          .eq('channel', source)
+          .order('sent_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (!fetchError && campaignLog) {
+          // Update the campaign log to mark link as clicked
+          const { error: updateError } = await supabase
+            .from('campaign_logs')
+            .update({
+              link_clicked: true,
+              click_count: (campaignLog.click_count || 0) + 1,
+              first_response_at: campaignLog.click_count ? undefined : new Date().toISOString(),
+            })
+            .eq('id', campaignLog.id);
+
+          if (updateError) {
+            console.error('Error updating campaign_logs:', updateError);
+          } else {
+            console.log('✅ Campaign click tracked successfully!', {
+              campaignLogId: campaignLog.id,
+              clickCount: (campaignLog.click_count || 0) + 1,
+            });
+          }
+        }
+      }
     } catch (error) {
       console.error('Error tracking analytics:', error);
     }
