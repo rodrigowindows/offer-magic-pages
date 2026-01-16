@@ -350,10 +350,32 @@ export const LetterGenerator = () => {
       {/* Property List */}
       <Card>
         <CardHeader>
-          <CardTitle>Properties</CardTitle>
-          <CardDescription>
-            Select properties to generate letters ({filteredProperties.length} found)
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={filteredProperties.length > 0 && selectedProperties.size === filteredProperties.length}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    selectAll();
+                  } else {
+                    deselectAll();
+                  }
+                }}
+                className="mt-1"
+              />
+              <div>
+                <CardTitle>Properties</CardTitle>
+                <CardDescription>
+                  Select properties to generate letters ({filteredProperties.length} found)
+                </CardDescription>
+              </div>
+            </div>
+            {selectedCount > 0 && (
+              <Badge variant="default" className="text-sm">
+                {selectedCount} selected
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
