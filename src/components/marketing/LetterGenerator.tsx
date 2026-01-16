@@ -38,15 +38,14 @@ interface Property {
   city: string;
   state: string;
   zip_code: string;
-  owner_name?: string;
-  owner_phone?: string;
-  owner_email?: string;
-  cash_offer_amount?: number;
-  min_offer_amount?: number;
-  max_offer_amount?: number;
-  estimated_value?: number;
-  skip_trace_data?: any;
-  approval_status?: 'pending' | 'approved' | 'rejected';
+  owner_name?: string | null;
+  owner_phone?: string | null;
+  email1?: string | null;
+  cash_offer_amount?: number | null;
+  estimated_value?: number | null;
+  matched_first_name?: string | null;
+  matched_last_name?: string | null;
+  approval_status?: string | null;
 }
 
 export const LetterGenerator = () => {
@@ -147,13 +146,13 @@ export const LetterGenerator = () => {
     if (minOffer) {
       const minValue = Number(minOffer);
       filtered = filtered.filter(p =>
-        (p.cash_offer_amount || p.min_offer_amount || 0) >= minValue
+        (p.cash_offer_amount || 0) >= minValue
       );
     }
     if (maxOffer) {
       const maxValue = Number(maxOffer);
       filtered = filtered.filter(p =>
-        (p.cash_offer_amount || p.max_offer_amount || 0) <= maxValue
+        (p.cash_offer_amount || 0) <= maxValue
       );
     }
 
@@ -161,13 +160,9 @@ export const LetterGenerator = () => {
   };
 
   const getOwnerName = (property: Property): string => {
-    // Try skip_trace_data first
-    if (property.skip_trace_data) {
-      const skipTrace = property.skip_trace_data;
-      if (skipTrace.owner_name) return skipTrace.owner_name;
-      if (skipTrace.first_name && skipTrace.last_name) {
-        return `${skipTrace.first_name} ${skipTrace.last_name}`;
-      }
+    // Try matched names first
+    if (property.matched_first_name && property.matched_last_name) {
+      return `${property.matched_first_name} ${property.matched_last_name}`;
     }
     // Fallback to property.owner_name
     return property.owner_name || 'Homeowner';
@@ -371,7 +366,7 @@ export const LetterGenerator = () => {
             {filteredProperties.map((property) => {
               const isSelected = selectedProperties.has(property.id);
               const ownerName = getOwnerName(property);
-              const hasOffer = property.cash_offer_amount || property.min_offer_amount;
+              const hasOffer = property.cash_offer_amount;
 
               return (
                 <div
@@ -399,7 +394,7 @@ export const LetterGenerator = () => {
                             </Badge>
                             {hasOffer ? (
                               <Badge variant="default" className="text-xs">
-                                Offer: ${(property.cash_offer_amount || property.min_offer_amount)?.toLocaleString()}
+                                Offer: ${property.cash_offer_amount?.toLocaleString()}
                               </Badge>
                             ) : (
                               <Badge variant="outline" className="text-xs">
@@ -476,14 +471,12 @@ export const LetterGenerator = () => {
               propertySlug={previewProperty.slug}
               ownerName={getOwnerName(previewProperty)}
               phone={previewProperty.owner_phone}
-              email={previewProperty.owner_email}
+              email={previewProperty.email1}
               source="letter"
               language={language}
               offerConfig={{
-                type: previewProperty.min_offer_amount ? 'range' : 'fixed',
+                type: 'fixed',
                 fixedAmount: previewProperty.cash_offer_amount,
-                rangeMin: previewProperty.min_offer_amount,
-                rangeMax: previewProperty.max_offer_amount,
                 estimatedValue: previewProperty.estimated_value || 0,
               }}
             />
@@ -508,14 +501,12 @@ export const LetterGenerator = () => {
                 propertySlug={property.slug}
                 ownerName={getOwnerName(property)}
                 phone={property.owner_phone}
-                email={property.owner_email}
+                email={property.email1}
                 source="letter"
                 language={language}
                 offerConfig={{
-                  type: property.min_offer_amount ? 'range' : 'fixed',
+                  type: 'fixed',
                   fixedAmount: property.cash_offer_amount,
-                  rangeMin: property.min_offer_amount,
-                  rangeMax: property.max_offer_amount,
                   estimatedValue: property.estimated_value || 0,
                 }}
               />
