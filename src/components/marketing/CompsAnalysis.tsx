@@ -52,6 +52,7 @@ import {
   Edit2,
   Star,
   ArrowUpDown,
+  CheckCircle2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
