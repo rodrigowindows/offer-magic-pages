@@ -122,9 +122,11 @@ export const LeadsManager = () => {
             zip_code,
             owner_name,
             owner_phone,
-            owner_email,
-            cash_offer_amount,
-            skip_trace_data
+            email1,
+            phone1,
+            matched_first_name,
+            matched_last_name,
+            cash_offer_amount
           )
         `)
         .eq('link_clicked', true)
@@ -138,22 +140,18 @@ export const LeadsManager = () => {
       const clickLeads: Lead[] = (campaignClicks || [])
         .filter(click => click.properties) // Only clicks with valid properties
         .map(click => {
-          const prop = click.properties!;
-          // Get owner name from skip_trace_data or owner_name
+          const prop = click.properties as any;
+          // Get owner name
           let ownerName = prop.owner_name || 'Unknown';
-          if (prop.skip_trace_data) {
-            if (prop.skip_trace_data.owner_name) {
-              ownerName = prop.skip_trace_data.owner_name;
-            } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
-              ownerName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
-            }
+          if (prop.matched_first_name && prop.matched_last_name) {
+            ownerName = `${prop.matched_first_name} ${prop.matched_last_name}`;
           }
 
           return {
             id: click.id,
             full_name: ownerName,
-            email: prop.owner_email || prop.skip_trace_data?.email1 || '',
-            phone: prop.owner_phone || prop.skip_trace_data?.phone1 || '',
+            email: prop.email1 || '',
+            phone: prop.owner_phone || prop.phone1 || '',
             property_id: click.property_id,
             selling_timeline: 'exploring', // Default for click-based leads
             status: 'new', // Default status for clicks
