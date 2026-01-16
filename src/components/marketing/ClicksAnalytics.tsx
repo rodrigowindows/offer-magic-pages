@@ -95,7 +95,7 @@ export const ClicksAnalytics = () => {
             zip_code,
             owner_name,
             owner_phone,
-            owner_email,
+            email1,
             skip_trace_data
           )
         `)
@@ -168,7 +168,7 @@ export const ClicksAnalytics = () => {
           country: c.country,
           property_address: prop ? `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}` : null,
           contact_name: contactName,
-          contact_email: prop?.owner_email || prop?.skip_trace_data?.email1 || null,
+          contact_email: prop?.email1 || prop?.skip_trace_data?.email1 || null,
           contact_phone: prop?.owner_phone || prop?.skip_trace_data?.phone1 || null,
         };
       });
