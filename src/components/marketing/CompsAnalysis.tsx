@@ -1046,10 +1046,13 @@ export const CompsAnalysis = () => {
                       onClick={async () => {
                         if (!selectedProperty) return;
                         try {
+                          // Store notes in property_notes table instead of properties.notes
                           const { error } = await supabase
-                            .from('properties')
-                            .update({ notes: analysisNotes })
-                            .eq('id', selectedProperty.id);
+                            .from('property_notes')
+                            .insert({ 
+                              property_id: selectedProperty.id,
+                              note_text: analysisNotes 
+                            });
 
                           if (error) throw error;
 
