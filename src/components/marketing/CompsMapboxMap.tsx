@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MapPin, Star, Home, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ComparableProperty {
   id: string;
@@ -37,19 +38,50 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingToken, setIsLoadingToken] = useState(true);
   const [geocodingProgress, setGeocodingProgress] = useState({ current: 0, total: 0 });
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [showTokenInput, setShowTokenInput] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
 
-  // Initialize token from localStorage on mount
+  // Initialize token from system secrets first, then localStorage
   useEffect(() => {
-    const storedToken = localStorage.getItem('mapbox_token');
-    if (storedToken && storedToken.trim()) {
-      setMapboxToken(storedToken.trim());
-      setShowTokenInput(false);
-    } else {
-      setShowTokenInput(true);
-    }
+    const fetchToken = async () => {
+      setIsLoadingToken(true);
+      setTokenError(null);
+      
+      try {
+        // Try to get token from edge function (system secrets)
+        const { data, error } = await supabase.functions.invoke('get-mapbox-token');
+        
+        if (!error && data?.token) {
+          console.log('✅ Mapbox token loaded from system secrets');
+          setMapboxToken(data.token);
+          setShowTokenInput(false);
+          setIsLoadingToken(false);
+          return;
+        }
+        
+        console.log('⚠️ Could not load token from secrets, checking localStorage...');
+      } catch (err) {
+        console.log('⚠️ Edge function error, checking localStorage...', err);
+      }
+      
+      // Fallback to localStorage
+      const storedToken = localStorage.getItem('mapbox_token');
+      if (storedToken && storedToken.trim()) {
+        console.log('✅ Mapbox token loaded from localStorage');
+        setMapboxToken(storedToken.trim());
+        setShowTokenInput(false);
+      } else {
+        console.log('❌ No Mapbox token found, showing input');
+        setShowTokenInput(true);
+      }
+      
+      setIsLoadingToken(false);
+    };
+    
+    fetchToken();
   }, []);
 
   const handleTokenSubmit = () => {
@@ -206,6 +238,25 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
       }
     };
   }, [mapboxToken, showTokenInput, subjectProperty, comparables]);
+
+  if (isLoadingToken) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="w-5 h-5" />
+            Comparable Properties Map
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[200px]">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">Carregando configurações do mapa...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (showTokenInput) {
     return (
