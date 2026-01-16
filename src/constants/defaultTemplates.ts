@@ -75,13 +75,29 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
           <p style="font-size: 12px; color: #666; margin: 5px 0 0;">Estimated Property Value: {estimated_value}</p>
         </div>
         <p style="font-size: 16px; color: #333; line-height: 1.6;">This offer is valid for 7 days. Contact us to discuss!</p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="tel:{phone}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Call Us: {phone}</a>
-        </div>
+
+        <!-- Primary CTA Button with Table -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+          <tr>
+            <td align="center">
+              <a href="{property_url}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View Full Offer Details</a>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Secondary Button with Table -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+          <tr>
+            <td align="center">
+              <a href="tel:{phone}" style="background-color: #28a745; color: #ffffff; padding: 12px 35px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Call Us: {phone}</a>
+            </td>
+          </tr>
+        </table>
+
         <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
           <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">Scan to view your personalized offer page:</p>
           <img src="{qr_code_url}" alt="QR Code" style="width: 200px; height: 200px; margin: 0 auto; display: block; border: 4px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
-          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or click here: <a href="{property_url}" style="color: #667eea; text-decoration: none; font-weight: bold;">View Full Offer Details</a></p>
+          <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or visit: <a href="{property_url}" style="color: #667eea; text-decoration: none; font-weight: 600; word-break: break-all;">{property_url}</a></p>
         </div>
       </td>
     </tr>
@@ -128,13 +144,29 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
       <p style="margin: 5px 0 0; color: #666;">Still valid for the next few days</p>
     </div>
     <p>We're ready to move forward quickly and can close in as little as 7 days. Are you ready to sell?</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="tel:{phone}" style="background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">Call Now: {phone}</a>
-    </div>
+
+    <!-- Primary CTA Button -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+      <tr>
+        <td align="center">
+          <a href="{property_url}" style="background-color: #4CAF50; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">View Full Offer Details</a>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Secondary Button -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+      <tr>
+        <td align="center">
+          <a href="tel:{phone}" style="background-color: #667eea; color: white; padding: 12px 35px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">Call Now: {phone}</a>
+        </td>
+      </tr>
+    </table>
+
     <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f0f8ff; border-radius: 8px;">
-      <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">View your complete offer details:</p>
+      <p style="font-size: 14px; color: #666; margin: 0 0 15px 0;">Scan to view your complete offer details:</p>
       <img src="{qr_code_url}" alt="QR Code" style="width: 180px; height: 180px; margin: 0 auto; display: block; border: 3px solid #4CAF50;" />
-      <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;"><a href="{property_url}" style="color: #4CAF50; text-decoration: none; font-weight: bold;">Click here to view online</a></p>
+      <p style="font-size: 12px; color: #999; margin: 15px 0 0 0;">Or visit: <a href="{property_url}" style="color: #4CAF50; text-decoration: none; font-weight: 600; word-break: break-all;">{property_url}</a></p>
     </div>
     <p>Best regards,<br><strong>{seller_name}</strong><br>{company_name}</p>
     <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">

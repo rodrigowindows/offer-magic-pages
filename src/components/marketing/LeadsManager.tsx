@@ -122,10 +122,8 @@ export const LeadsManager = () => {
             zip_code,
             owner_name,
             owner_phone,
-            email1,
-            phone1,
-            matched_first_name,
-            matched_last_name,
+            owner_email,
+            skip_trace_data,
             cash_offer_amount
           )
         `)
@@ -136,22 +134,53 @@ export const LeadsManager = () => {
         console.error('Error fetching campaign clicks:', clickError);
       }
 
-      // 3. Convert campaign clicks to Lead format
+      // 3. Fetch clicks from campaign_clicks table (alternative source)
+      const { data: directClicks, error: directClickError } = await supabase
+        .from('campaign_clicks')
+        .select(`
+          id,
+          property_id,
+          click_source,
+          clicked_at,
+          properties (
+            id,
+            address,
+            city,
+            state,
+            zip_code,
+            owner_name,
+            owner_phone,
+            owner_email,
+            skip_trace_data,
+            cash_offer_amount
+          )
+        `)
+        .order('clicked_at', { ascending: false });
+
+      if (directClickError) {
+        console.error('Error fetching direct clicks:', directClickError);
+      }
+
+      // 4. Convert campaign clicks to Lead format
       const clickLeads: Lead[] = (campaignClicks || [])
         .filter(click => click.properties) // Only clicks with valid properties
         .map(click => {
           const prop = click.properties as any;
-          // Get owner name
+          // Get owner name from skip_trace_data or owner_name
           let ownerName = prop.owner_name || 'Unknown';
-          if (prop.matched_first_name && prop.matched_last_name) {
-            ownerName = `${prop.matched_first_name} ${prop.matched_last_name}`;
+          if (prop.skip_trace_data) {
+            if (prop.skip_trace_data.owner_name) {
+              ownerName = prop.skip_trace_data.owner_name;
+            } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
+              ownerName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
+            }
           }
 
           return {
             id: click.id,
             full_name: ownerName,
-            email: prop.email1 || '',
-            phone: prop.owner_phone || prop.phone1 || '',
+            email: prop.owner_email || prop.skip_trace_data?.email1 || '',
+            phone: prop.owner_phone || prop.skip_trace_data?.phone1 || '',
             property_id: click.property_id,
             selling_timeline: 'exploring', // Default for click-based leads
             status: 'new', // Default status for clicks
@@ -169,9 +198,45 @@ export const LeadsManager = () => {
           };
         });
 
-      // 4. Combine both sources (form leads + click leads)
+      // 5. Convert direct clicks to Lead format
+      const directClickLeads: Lead[] = (directClicks || [])
+        .filter(click => click.properties)
+        .map(click => {
+          const prop = click.properties as any;
+          let ownerName = prop.owner_name || 'Unknown';
+          if (prop.skip_trace_data) {
+            if (prop.skip_trace_data.owner_name) {
+              ownerName = prop.skip_trace_data.owner_name;
+            } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
+              ownerName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
+            }
+          }
+
+          return {
+            id: click.id,
+            full_name: ownerName,
+            email: prop.owner_email || prop.skip_trace_data?.email1 || '',
+            phone: prop.owner_phone || prop.skip_trace_data?.phone1 || '',
+            property_id: click.property_id,
+            selling_timeline: 'exploring',
+            status: 'new',
+            created_at: click.clicked_at,
+            updated_at: click.clicked_at,
+            contacted: false,
+            contacted_at: null,
+            notes: `Clicou no link via ${click.click_source}`,
+            properties: {
+              address: prop.address,
+              city: prop.city,
+              state: prop.state,
+              cash_offer_amount: prop.cash_offer_amount || 0,
+            },
+          };
+        });
+
+      // 6. Combine all sources (form leads + campaign clicks + direct clicks)
       // Remove duplicates based on property_id (prefer form submissions)
-      const allLeads = [...(formLeads || []), ...clickLeads];
+      const allLeads = [...(formLeads || []), ...clickLeads, ...directClickLeads];
       const uniqueLeads = allLeads.reduce((acc, lead) => {
         const existingIndex = acc.findIndex(l => l.property_id === lead.property_id);
         if (existingIndex === -1) {
@@ -191,9 +256,10 @@ export const LeadsManager = () => {
       setLeads(uniqueLeads);
       calculateStats(uniqueLeads);
 
+      const totalClicks = clickLeads.length + directClickLeads.length;
       toast({
         title: 'Leads carregados',
-        description: `${uniqueLeads.length} leads encontrados (${formLeads?.length || 0} formulários + ${clickLeads.length} cliques)`,
+        description: `${uniqueLeads.length} leads encontrados (${formLeads?.length || 0} formulários + ${totalClicks} cliques)`,
       });
     } catch (error: any) {
       console.error('Error fetching leads:', error);

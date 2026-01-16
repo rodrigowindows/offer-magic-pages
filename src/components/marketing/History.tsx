@@ -29,6 +29,12 @@ import {
   TestTube2,
   Calendar,
   RefreshCw,
+  Eye,
+  AlertCircle,
+  Clock,
+  Send,
+  MailOpen,
+  MousePointerClick,
 } from 'lucide-react';
 
 interface CampaignLog {
@@ -43,6 +49,10 @@ interface CampaignLog {
   tracking_id: string;
   metadata: any;
   campaign_type: string;
+  html_content?: string | null;
+  status?: string | null;
+  api_response?: any;
+  api_status?: number | null;
 }
 
 export const History = () => {
@@ -263,6 +273,7 @@ export const History = () => {
 // Componente individual de histórico
 const HistoryItem = ({ item }: { item: CampaignLog }) => {
   const [expanded, setExpanded] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const channelIcons: Record<string, any> = {
     sms: MessageSquare,
@@ -272,41 +283,68 @@ const HistoryItem = ({ item }: { item: CampaignLog }) => {
 
   const Icon = item.channel ? channelIcons[item.channel] : MessageSquare;
 
+  // Status icon and color
+  const getStatusInfo = () => {
+    const status = item.status || 'sent';
+    switch (status) {
+      case 'delivered':
+        return { icon: CheckCircle2, color: 'text-green-500', label: 'Delivered', bg: 'bg-green-50' };
+      case 'opened':
+        return { icon: MailOpen, color: 'text-blue-500', label: 'Opened', bg: 'bg-blue-50' };
+      case 'clicked':
+        return { icon: MousePointerClick, color: 'text-purple-500', label: 'Clicked', bg: 'bg-purple-50' };
+      case 'bounced':
+        return { icon: XCircle, color: 'text-orange-500', label: 'Bounced', bg: 'bg-orange-50' };
+      case 'failed':
+        return { icon: AlertCircle, color: 'text-red-500', label: 'Failed', bg: 'bg-red-50' };
+      case 'sent':
+      default:
+        return { icon: Send, color: 'text-gray-500', label: 'Sent', bg: 'bg-gray-50' };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+  const StatusIcon = statusInfo.icon;
+
   return (
     <Card>
       <CardContent className="pt-6">
-        <div
-          className="cursor-pointer"
-          onClick={() => setExpanded(!expanded)}
-        >
+        <div>
           {/* Header Row */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-              <div>
-                <div className="font-medium flex items-center gap-2">
-                  {item.recipient_name || 'Unknown'}
-                  <Badge variant="outline" className="capitalize">
-                    {item.campaign_type}
-                  </Badge>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {item.recipient_phone && item.recipient_phone}
-                  {item.recipient_email && (item.recipient_phone ? ` • ${item.recipient_email}` : item.recipient_email)}
+          <div
+            className="cursor-pointer"
+            onClick={() => setExpanded(!expanded)}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <StatusIcon className={`w-5 h-5 ${statusInfo.color} flex-shrink-0`} />
+                <div>
+                  <div className="font-medium flex items-center gap-2">
+                    {item.recipient_name || 'Unknown'}
+                    <Badge variant="outline" className="capitalize">
+                      {item.campaign_type}
+                    </Badge>
+                    <Badge className={`${statusInfo.bg} ${statusInfo.color} border-0`}>
+                      {statusInfo.label}
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {item.recipient_phone && item.recipient_phone}
+                    {item.recipient_email && (item.recipient_phone ? ` • ${item.recipient_email}` : item.recipient_email)}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="text-right flex-shrink-0">
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
-                <Calendar className="w-3 h-3" />
-                {new Date(item.sent_at).toLocaleDateString()}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {new Date(item.sent_at).toLocaleTimeString()}
+              <div className="text-right flex-shrink-0">
+                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(item.sent_at).toLocaleDateString()}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {new Date(item.sent_at).toLocaleTimeString()}
+                </div>
               </div>
             </div>
-          </div>
 
           {/* Channel Badge */}
           {item.channel && (
@@ -322,10 +360,52 @@ const HistoryItem = ({ item }: { item: CampaignLog }) => {
               )}
             </div>
           )}
+          </div>
 
           {/* Expanded Details */}
           {expanded && (
-            <div className="mt-4 pt-4 border-t space-y-3">
+            <div className="mt-4 pt-4 border-t space-y-4">
+              {/* Content Preview */}
+              {item.html_content && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold">Content Preview:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPreview(!showPreview);
+                      }}
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      {showPreview ? 'Hide' : 'Show'} Preview
+                    </Button>
+                  </div>
+                  {showPreview && (
+                    <div className="border rounded-lg p-4 bg-white max-h-96 overflow-auto">
+                      <div dangerouslySetInnerHTML={{ __html: item.html_content }} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* API Response */}
+              {item.api_response && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm font-semibold">API Response:</span>
+                    <Badge variant={item.api_status === 200 || item.api_status === 201 ? 'default' : 'destructive'}>
+                      Status: {item.api_status || 'N/A'}
+                    </Badge>
+                  </div>
+                  <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-48">
+                    {JSON.stringify(item.api_response, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              {/* Property Address */}
               {item.property_address && (
                 <div>
                   <span className="text-sm font-medium">Property Address: </span>
@@ -335,6 +415,7 @@ const HistoryItem = ({ item }: { item: CampaignLog }) => {
                 </div>
               )}
 
+              {/* Email Subject */}
               {item.metadata?.subject && (
                 <div>
                   <span className="text-sm font-medium">Email Subject: </span>
@@ -344,6 +425,7 @@ const HistoryItem = ({ item }: { item: CampaignLog }) => {
                 </div>
               )}
 
+              {/* Tracking ID */}
               {item.tracking_id && (
                 <div>
                   <span className="text-sm font-medium">Tracking ID: </span>
@@ -353,13 +435,16 @@ const HistoryItem = ({ item }: { item: CampaignLog }) => {
                 </div>
               )}
 
-              {item.metadata && (
-                <div>
-                  <span className="text-sm font-medium">Metadata: </span>
+              {/* Other Metadata */}
+              {item.metadata && Object.keys(item.metadata).length > 0 && (
+                <details className="text-sm">
+                  <summary className="cursor-pointer font-medium hover:text-primary">
+                    Additional Metadata
+                  </summary>
                   <pre className="text-xs bg-muted p-3 rounded mt-2 overflow-auto">
                     {JSON.stringify(item.metadata, null, 2)}
                   </pre>
-                </div>
+                </details>
               )}
             </div>
           )}

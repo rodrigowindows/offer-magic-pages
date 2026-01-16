@@ -42,6 +42,10 @@ interface ClickAnalytic {
   ip_address?: string | null;
   city?: string | null;
   country?: string | null;
+  property_address?: string | null;
+  contact_name?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
 }
 
 interface ClickMetrics {
@@ -79,10 +83,22 @@ export const ClicksAnalytics = () => {
         dateFilter.setDate(dateFilter.getDate() - parseInt(dateRange));
       }
 
-      // Fetch analytics data
+      // Fetch analytics data with property and contact info
       let query = supabase
         .from('property_analytics')
-        .select('*')
+        .select(`
+          *,
+          properties (
+            address,
+            city,
+            state,
+            zip_code,
+            owner_name,
+            owner_phone,
+            owner_email,
+            skip_trace_data
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (dateFilter) {
@@ -126,18 +142,36 @@ export const ClicksAnalytics = () => {
       });
 
       // Map clicks to ClickAnalytic type
-      const mappedClicks: ClickAnalytic[] = clicks.map((c) => ({
-        id: c.id,
-        property_id: c.property_id,
-        event_type: c.event_type,
-        referrer: c.referrer,
-        user_agent: c.user_agent,
-        created_at: c.created_at || '',
-        device_type: c.device_type,
-        ip_address: c.ip_address,
-        city: c.city,
-        country: c.country,
-      }));
+      const mappedClicks: ClickAnalytic[] = clicks.map((c) => {
+        const prop = (c as any).properties;
+
+        // Get contact name from skip_trace_data or owner_name
+        let contactName = prop?.owner_name || null;
+        if (prop?.skip_trace_data) {
+          if (prop.skip_trace_data.owner_name) {
+            contactName = prop.skip_trace_data.owner_name;
+          } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
+            contactName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
+          }
+        }
+
+        return {
+          id: c.id,
+          property_id: c.property_id,
+          event_type: c.event_type,
+          referrer: c.referrer,
+          user_agent: c.user_agent,
+          created_at: c.created_at || '',
+          device_type: c.device_type,
+          ip_address: c.ip_address,
+          city: c.city,
+          country: c.country,
+          property_address: prop ? `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}` : null,
+          contact_name: contactName,
+          contact_email: prop?.owner_email || prop?.skip_trace_data?.email1 || null,
+          contact_phone: prop?.owner_phone || prop?.skip_trace_data?.phone1 || null,
+        };
+      });
 
       setMetrics({
         total: clicks.length,
@@ -425,6 +459,39 @@ export const ClicksAnalytics = () => {
                         {timeAgo.text}
                       </Badge>
                       <div className="flex-1 min-w-0">
+                        {/* Property Address - DESTACADO */}
+                        {click.property_address && (
+                          <div className="mb-3 pb-2 border-b">
+                            <div className="font-semibold text-sm text-primary flex items-center gap-2">
+                              🏠 {click.property_address}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Contact Information - DESTACADO */}
+                        {(click.contact_name || click.contact_email || click.contact_phone) && (
+                          <div className="mb-3 pb-2 border-b bg-blue-50 dark:bg-blue-950 px-3 py-2 rounded-lg">
+                            <div className="font-medium text-sm mb-1">👤 Contact Info:</div>
+                            <div className="flex flex-wrap gap-3 text-xs">
+                              {click.contact_name && (
+                                <span className="font-medium">
+                                  {click.contact_name}
+                                </span>
+                              )}
+                              {click.contact_email && (
+                                <a href={`mailto:${click.contact_email}`} className="text-blue-600 hover:underline">
+                                  ✉️ {click.contact_email}
+                                </a>
+                              )}
+                              {click.contact_phone && (
+                                <a href={`tel:${click.contact_phone}`} className="text-green-600 hover:underline">
+                                  📞 {click.contact_phone}
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Badges Row */}
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <Badge variant="default" className="capitalize text-xs">
