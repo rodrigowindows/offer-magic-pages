@@ -35,6 +35,7 @@ interface ClickAnalytic {
   id: string;
   property_id: string | null;
   event_type: string;
+  source: string;
   referrer: string | null;
   user_agent: string | null;
   created_at: string;
@@ -108,8 +109,10 @@ export const ClicksAnalytics = () => {
         query = query.gte('created_at', dateFilter.toISOString());
       }
 
-      // Note: source filter not applied as property_analytics doesn't have source column
-      // Filter will be applied client-side based on referrer
+      // Apply source filter using the source column
+      if (sourceFilter !== 'all') {
+        query = query.eq('source', sourceFilter);
+      }
 
       const { data, error } = await query.limit(1000);
 
@@ -124,23 +127,15 @@ export const ClicksAnalytics = () => {
       });
 
       // Process metrics
-      let clicks = data || [];
-
-      // Apply client-side source filter based on referrer
-      if (sourceFilter !== 'all') {
-        clicks = clicks.filter((click) => {
-          const source = click.referrer || 'direct';
-          return source.toLowerCase().includes(sourceFilter.toLowerCase());
-        });
-      }
+      const clicks = data || [];
 
       const bySource: Record<string, number> = {};
       const byCampaign: Record<string, number> = {};
       const byDate: Record<string, number> = {};
 
       clicks.forEach((click) => {
-        // Count by source (use referrer since source column doesn't exist)
-        const source = click.referrer || 'direct';
+        // Count by source (use the source column)
+        const source = (click as any).source || 'direct';
         bySource[source] = (bySource[source] || 0) + 1;
 
         // Count by event_type (campaign_name column doesn't exist)
@@ -167,6 +162,7 @@ export const ClicksAnalytics = () => {
           id: c.id,
           property_id: c.property_id,
           event_type: c.event_type,
+          source: (c as any).source || 'direct',
           referrer: c.referrer,
           user_agent: c.user_agent,
           created_at: c.created_at || '',
@@ -210,6 +206,8 @@ export const ClicksAnalytics = () => {
         return Mail;
       case 'call':
         return Phone;
+      case 'carta':
+        return Mail; // Use Mail icon for letters too
       default:
         return MousePointerClick;
     }
@@ -223,6 +221,8 @@ export const ClicksAnalytics = () => {
         return 'text-green-600';
       case 'call':
         return 'text-purple-600';
+      case 'carta':
+        return 'text-orange-600';
       default:
         return 'text-gray-600';
     }
@@ -265,9 +265,10 @@ export const ClicksAnalytics = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Sources</SelectItem>
-              <SelectItem value="sms">SMS Only</SelectItem>
+            <SelectItem value="all">All Sources</SelectItem>
               <SelectItem value="email">Email Only</SelectItem>
+              <SelectItem value="sms">SMS Only</SelectItem>
+              <SelectItem value="carta">Carta Only</SelectItem>
               <SelectItem value="call">Call Only</SelectItem>
               <SelectItem value="direct">Direct Only</SelectItem>
             </SelectContent>
@@ -456,7 +457,7 @@ export const ClicksAnalytics = () => {
         <CardContent>
           <div className="space-y-4">
             {metrics.recentClicks.map((click) => {
-              const source = click.referrer || 'direct';
+              const source = click.source || 'direct';
               const Icon = getSourceIcon(source);
               const timeAgo = getTimeAgo(click.created_at);
               return (
