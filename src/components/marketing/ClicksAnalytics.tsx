@@ -96,8 +96,10 @@ export const ClicksAnalytics = () => {
             state,
             zip_code,
             owner_name,
-            owner_phone,
-            owner_email
+            phone1,
+            email1,
+            matched_first_name,
+            matched_last_name
           )
         `)
         .order('created_at', { ascending: false });
@@ -154,10 +156,12 @@ export const ClicksAnalytics = () => {
       const mappedClicks: ClickAnalytic[] = clicks.map((c) => {
         const prop = (c as any).properties;
 
-        // Use contact info from URL params or property data
-        const contactName = c.contact_name || prop?.owner_name || null;
-        const contactEmail = c.contact_email || prop?.owner_email || null;
-        const contactPhone = c.contact_phone || prop?.owner_phone || null;
+        // Use contact info from property data
+        const contactName = prop?.owner_name || (prop?.matched_first_name && prop?.matched_last_name 
+          ? `${prop.matched_first_name} ${prop.matched_last_name}` 
+          : null);
+        const contactEmail = prop?.email1 || null;
+        const contactPhone = prop?.phone1 || null;
 
         return {
           id: c.id,
