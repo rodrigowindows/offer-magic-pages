@@ -95,19 +95,10 @@ const Property = () => {
         },
       });
 
-      // Save to property_analytics table with all new fields
+      // Save to property_analytics table with existing columns only
       const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
         property_id: propertyId,
         event_type: eventType,
-        source: source,
-        campaign_name: campaign,
-        contact_phone: contactPhone,
-        contact_email: contactEmail,
-        contact_name: contactName,
-        property_address: property?.address || null,
-        utm_source: utmSource,
-        utm_medium: utmMedium,
-        utm_campaign: utmCampaign,
         referrer: document.referrer || 'direct',
         user_agent: navigator.userAgent,
         ip_address: ipData?.ip || null,
@@ -160,23 +151,7 @@ const Property = () => {
             });
           }
         } else {
-          console.warn('⚠️ No campaign log found for this property and source. Creating new click record...');
-
-          // If no campaign log exists, create a click record in campaign_clicks table
-          const { error: clickError } = await supabase
-            .from('campaign_clicks')
-            .insert({
-              property_id: propertyId,
-              click_source: source,
-              user_agent: navigator.userAgent,
-              referrer: document.referrer || 'direct',
-            });
-
-          if (clickError) {
-            console.error('❌ Error creating campaign_clicks:', clickError);
-          } else {
-            console.log('✅ Click recorded in campaign_clicks table');
-          }
+          console.warn('⚠️ No campaign log found for this property and source');
         }
       }
     } catch (error) {

@@ -121,6 +121,10 @@ export const LeadsManager = () => {
           click_count,
           sent_at,
           first_response_at,
+          recipient_name,
+          recipient_email,
+          recipient_phone,
+          property_address,
           properties (
             id,
             address,
@@ -128,9 +132,10 @@ export const LeadsManager = () => {
             state,
             zip_code,
             owner_name,
-            owner_phone,
-            owner_email,
-            skip_trace_data,
+            phone1,
+            email1,
+            matched_first_name,
+            matched_last_name,
             cash_offer_amount
           )
         `)
@@ -143,57 +148,26 @@ export const LeadsManager = () => {
         console.log('✅ [LeadsManager] Campaign clicks fetched:', campaignClicks?.length || 0);
       }
 
-      // 3. Fetch clicks from campaign_clicks table (alternative source)
-      console.log('👆 [LeadsManager] Fetching direct clicks...');
-      const { data: directClicks, error: directClickError } = await supabase
-        .from('campaign_clicks')
-        .select(`
-          id,
-          property_id,
-          click_source,
-          clicked_at,
-          properties (
-            id,
-            address,
-            city,
-            state,
-            zip_code,
-            owner_name,
-            owner_phone,
-            owner_email,
-            skip_trace_data,
-            cash_offer_amount
-          )
-        `)
-        .order('clicked_at', { ascending: false });
-
-      if (directClickError) {
-        console.error('❌ [LeadsManager] Error fetching direct clicks:', directClickError);
-      } else {
-        console.log('✅ [LeadsManager] Direct clicks fetched:', directClicks?.length || 0);
-      }
-
-      // 4. Convert campaign clicks to Lead format
+      // 3. Convert campaign clicks to Lead format
       console.log('🔄 [LeadsManager] Converting clicks to leads...');
       const clickLeads: Lead[] = (campaignClicks || [])
-        .filter(click => click.properties) // Only clicks with valid properties
         .map(click => {
           const prop = click.properties as any;
-          // Get owner name from skip_trace_data or owner_name
-          let ownerName = prop.owner_name || 'Unknown';
-          if (prop.skip_trace_data) {
-            if (prop.skip_trace_data.owner_name) {
-              ownerName = prop.skip_trace_data.owner_name;
-            } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
-              ownerName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
+          // Get owner name from recipient_name, property, or matched names
+          let ownerName = click.recipient_name || 'Unknown';
+          if (ownerName === 'Unknown' && prop) {
+            if (prop.matched_first_name && prop.matched_last_name) {
+              ownerName = `${prop.matched_first_name} ${prop.matched_last_name}`;
+            } else if (prop.owner_name) {
+              ownerName = prop.owner_name;
             }
           }
 
           return {
             id: click.id,
             full_name: ownerName,
-            email: prop.owner_email || prop.skip_trace_data?.email1 || '',
-            phone: prop.owner_phone || prop.skip_trace_data?.phone1 || '',
+            email: click.recipient_email || prop?.email1 || '',
+            phone: click.recipient_phone || prop?.phone1 || '',
             property_id: click.property_id,
             selling_timeline: 'exploring', // Default for click-based leads
             status: 'new', // Default status for clicks
@@ -202,54 +176,23 @@ export const LeadsManager = () => {
             contacted: false,
             contacted_at: null,
             notes: `Clicou no link via ${click.channel} (${click.click_count || 1} cliques)`,
-            properties: {
+            properties: prop ? {
               address: prop.address,
               city: prop.city,
               state: prop.state,
               cash_offer_amount: prop.cash_offer_amount || 0,
+            } : {
+              address: click.property_address || 'Unknown',
+              city: '',
+              state: '',
+              cash_offer_amount: 0,
             },
           };
         });
 
-      // 5. Convert direct clicks to Lead format
-      const directClickLeads: Lead[] = (directClicks || [])
-        .filter(click => click.properties)
-        .map(click => {
-          const prop = click.properties as any;
-          let ownerName = prop.owner_name || 'Unknown';
-          if (prop.skip_trace_data) {
-            if (prop.skip_trace_data.owner_name) {
-              ownerName = prop.skip_trace_data.owner_name;
-            } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
-              ownerName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
-            }
-          }
-
-          return {
-            id: click.id,
-            full_name: ownerName,
-            email: prop.owner_email || prop.skip_trace_data?.email1 || '',
-            phone: prop.owner_phone || prop.skip_trace_data?.phone1 || '',
-            property_id: click.property_id,
-            selling_timeline: 'exploring',
-            status: 'new',
-            created_at: click.clicked_at,
-            updated_at: click.clicked_at,
-            contacted: false,
-            contacted_at: null,
-            notes: `Clicou no link via ${click.click_source}`,
-            properties: {
-              address: prop.address,
-              city: prop.city,
-              state: prop.state,
-              cash_offer_amount: prop.cash_offer_amount || 0,
-            },
-          };
-        });
-
-      // 6. Combine all sources (form leads + campaign clicks + direct clicks)
+      // 4. Combine all sources (form leads + campaign clicks)
       // Remove duplicates based on property_id (prefer form submissions)
-      const allLeads = [...(formLeads || []), ...clickLeads, ...directClickLeads];
+      const allLeads = [...(formLeads || []), ...clickLeads];
       const uniqueLeads = allLeads.reduce((acc, lead) => {
         const existingIndex = acc.findIndex(l => l.property_id === lead.property_id);
         if (existingIndex === -1) {
@@ -269,19 +212,16 @@ export const LeadsManager = () => {
       setLeads(uniqueLeads);
       calculateStats(uniqueLeads);
 
-      const totalClicks = clickLeads.length + directClickLeads.length;
-
       console.log('📊 [LeadsManager] Final summary:', {
         formLeads: formLeads?.length || 0,
         campaignClickLeads: clickLeads.length,
-        directClickLeads: directClickLeads.length,
         totalBeforeDedupe: allLeads.length,
         uniqueLeads: uniqueLeads.length
       });
 
       toast({
         title: 'Leads carregados',
-        description: `${uniqueLeads.length} leads encontrados (${formLeads?.length || 0} formulários + ${totalClicks} cliques)`,
+        description: `${uniqueLeads.length} leads encontrados (${formLeads?.length || 0} formulários + ${clickLeads.length} cliques)`,
       });
     } catch (error: any) {
       console.error('❌ [LeadsManager] Fatal error fetching leads:', error);
