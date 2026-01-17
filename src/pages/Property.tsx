@@ -95,7 +95,12 @@ const Property = () => {
         },
       });
 
-      // Save to property_analytics table with existing columns only
+      // Determine source type: email, sms, carta, call, or direct
+      const sourceType = source === 'email' || source === 'sms' || source === 'carta' || source === 'call' 
+        ? source 
+        : 'direct';
+
+      // Save to property_analytics table with source column
       const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
         property_id: propertyId,
         event_type: eventType,
@@ -105,6 +110,7 @@ const Property = () => {
         city: ipData?.city || null,
         country: ipData?.country_name || null,
         device_type: deviceType,
+        source: sourceType,
       }).select();
 
       if (analyticsError) {

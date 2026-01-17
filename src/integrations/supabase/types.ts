@@ -1588,6 +1588,7 @@ export type Database = {
           ip_address: string | null
           property_id: string
           referrer: string | null
+          source: string | null
           user_agent: string | null
         }
         Insert: {
@@ -1600,6 +1601,7 @@ export type Database = {
           ip_address?: string | null
           property_id: string
           referrer?: string | null
+          source?: string | null
           user_agent?: string | null
         }
         Update: {
@@ -1612,6 +1614,7 @@ export type Database = {
           ip_address?: string | null
           property_id?: string
           referrer?: string | null
+          source?: string | null
           user_agent?: string | null
         }
         Relationships: [
