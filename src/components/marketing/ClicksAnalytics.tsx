@@ -76,6 +76,8 @@ export const ClicksAnalytics = () => {
   const fetchClicksData = async () => {
     setLoading(true);
     try {
+      console.log('🔍 [ClicksAnalytics] Fetching clicks data...', { dateRange, sourceFilter });
+
       // Calculate date filter
       let dateFilter: Date | null = null;
       if (dateRange !== 'all') {
@@ -95,8 +97,7 @@ export const ClicksAnalytics = () => {
             zip_code,
             owner_name,
             owner_phone,
-            email1,
-            skip_trace_data
+            owner_email
           )
         `)
         .order('created_at', { ascending: false });
@@ -110,7 +111,15 @@ export const ClicksAnalytics = () => {
 
       const { data, error } = await query.limit(1000);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [ClicksAnalytics] Error fetching data:', error);
+        throw error;
+      }
+
+      console.log('✅ [ClicksAnalytics] Data fetched:', {
+        totalRecords: data?.length || 0,
+        sample: data?.[0]
+      });
 
       // Process metrics
       let clicks = data || [];
@@ -145,15 +154,10 @@ export const ClicksAnalytics = () => {
       const mappedClicks: ClickAnalytic[] = clicks.map((c) => {
         const prop = (c as any).properties;
 
-        // Get contact name from skip_trace_data or owner_name
-        let contactName = prop?.owner_name || null;
-        if (prop?.skip_trace_data) {
-          if (prop.skip_trace_data.owner_name) {
-            contactName = prop.skip_trace_data.owner_name;
-          } else if (prop.skip_trace_data.first_name && prop.skip_trace_data.last_name) {
-            contactName = `${prop.skip_trace_data.first_name} ${prop.skip_trace_data.last_name}`;
-          }
-        }
+        // Use contact info from URL params or property data
+        const contactName = c.contact_name || prop?.owner_name || null;
+        const contactEmail = c.contact_email || prop?.owner_email || null;
+        const contactPhone = c.contact_phone || prop?.owner_phone || null;
 
         return {
           id: c.id,
@@ -168,9 +172,16 @@ export const ClicksAnalytics = () => {
           country: c.country,
           property_address: prop ? `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}` : null,
           contact_name: contactName,
-          contact_email: prop?.email1 || prop?.skip_trace_data?.email1 || null,
-          contact_phone: prop?.owner_phone || prop?.skip_trace_data?.phone1 || null,
+          contact_email: contactEmail,
+          contact_phone: contactPhone,
         };
+      });
+
+      console.log('📊 [ClicksAnalytics] Final metrics:', {
+        total: clicks.length,
+        sourcesCount: Object.keys(bySource).length,
+        campaignsCount: Object.keys(byCampaign).length,
+        recentClicksCount: mappedClicks.slice(0, 20).length
       });
 
       setMetrics({
@@ -181,7 +192,7 @@ export const ClicksAnalytics = () => {
         recentClicks: mappedClicks.slice(0, 20),
       });
     } catch (error) {
-      console.error('Error fetching clicks data:', error);
+      console.error('❌ [ClicksAnalytics] Fatal error:', error);
     } finally {
       setLoading(false);
     }

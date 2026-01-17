@@ -86,8 +86,10 @@ export const LeadsManager = () => {
   const fetchLeads = async () => {
     try {
       setLoading(true);
+      console.log('🔍 [LeadsManager] Starting to fetch leads...');
 
       // 1. Fetch form submissions from property_leads
+      console.log('📝 [LeadsManager] Fetching form submissions...');
       const { data: formLeads, error: formError } = await supabase
         .from('property_leads')
         .select(`
@@ -101,9 +103,14 @@ export const LeadsManager = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (formError) throw formError;
+      if (formError) {
+        console.error('❌ [LeadsManager] Error fetching form leads:', formError);
+        throw formError;
+      }
+      console.log('✅ [LeadsManager] Form leads fetched:', formLeads?.length || 0);
 
       // 2. Fetch clicks from campaign_logs (link_clicked = true)
+      console.log('🖱️ [LeadsManager] Fetching campaign clicks...');
       const { data: campaignClicks, error: clickError } = await supabase
         .from('campaign_logs')
         .select(`
@@ -131,10 +138,13 @@ export const LeadsManager = () => {
         .order('sent_at', { ascending: false });
 
       if (clickError) {
-        console.error('Error fetching campaign clicks:', clickError);
+        console.error('❌ [LeadsManager] Error fetching campaign clicks:', clickError);
+      } else {
+        console.log('✅ [LeadsManager] Campaign clicks fetched:', campaignClicks?.length || 0);
       }
 
       // 3. Fetch clicks from campaign_clicks table (alternative source)
+      console.log('👆 [LeadsManager] Fetching direct clicks...');
       const { data: directClicks, error: directClickError } = await supabase
         .from('campaign_clicks')
         .select(`
@@ -158,10 +168,13 @@ export const LeadsManager = () => {
         .order('clicked_at', { ascending: false });
 
       if (directClickError) {
-        console.error('Error fetching direct clicks:', directClickError);
+        console.error('❌ [LeadsManager] Error fetching direct clicks:', directClickError);
+      } else {
+        console.log('✅ [LeadsManager] Direct clicks fetched:', directClicks?.length || 0);
       }
 
       // 4. Convert campaign clicks to Lead format
+      console.log('🔄 [LeadsManager] Converting clicks to leads...');
       const clickLeads: Lead[] = (campaignClicks || [])
         .filter(click => click.properties) // Only clicks with valid properties
         .map(click => {
@@ -257,12 +270,21 @@ export const LeadsManager = () => {
       calculateStats(uniqueLeads);
 
       const totalClicks = clickLeads.length + directClickLeads.length;
+
+      console.log('📊 [LeadsManager] Final summary:', {
+        formLeads: formLeads?.length || 0,
+        campaignClickLeads: clickLeads.length,
+        directClickLeads: directClickLeads.length,
+        totalBeforeDedupe: allLeads.length,
+        uniqueLeads: uniqueLeads.length
+      });
+
       toast({
         title: 'Leads carregados',
         description: `${uniqueLeads.length} leads encontrados (${formLeads?.length || 0} formulários + ${totalClicks} cliques)`,
       });
     } catch (error: any) {
-      console.error('Error fetching leads:', error);
+      console.error('❌ [LeadsManager] Fatal error fetching leads:', error);
       toast({
         title: 'Erro ao carregar leads',
         description: error.message,

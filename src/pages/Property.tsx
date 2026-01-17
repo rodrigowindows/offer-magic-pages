@@ -45,6 +45,14 @@ const Property = () => {
       const utmMedium = searchParams.get('utm_medium');
       const utmCampaign = searchParams.get('utm_campaign');
 
+      console.log('📊 [Property] Track Analytics Called:', {
+        propertyId,
+        eventType,
+        source,
+        campaign,
+        hasContact: !!(contactPhone || contactEmail || contactName)
+      });
+
       // Get IP and location from ipapi.co (free tier: 1000 requests/day)
       let ipData = null;
       try {
@@ -88,7 +96,7 @@ const Property = () => {
       });
 
       // Save to property_analytics table with all new fields
-      await supabase.from('property_analytics').insert({
+      const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
         property_id: propertyId,
         event_type: eventType,
         source: source,
@@ -106,7 +114,13 @@ const Property = () => {
         city: ipData?.city || null,
         country: ipData?.country_name || null,
         device_type: deviceType,
-      });
+      }).select();
+
+      if (analyticsError) {
+        console.error('❌ [Property] Error saving to property_analytics:', analyticsError);
+      } else {
+        console.log('✅ [Property] Analytics saved:', analyticsData);
+      }
 
       // 🔥 UPDATE campaign_logs when someone clicks the link from email/sms
       if (eventType === 'page_view' && (source === 'email' || source === 'sms' || source === 'call')) {
