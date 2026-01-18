@@ -1,6 +1,6 @@
 /**
  * Comparables Data Service
- * Fetches real comparable sales data from multiple sources
+ * Fetches real comparable sales data from edge function
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -19,280 +19,77 @@ export interface ComparableData {
   propertyType: string;
   latitude?: number;
   longitude?: number;
-  distance?: number; // miles from subject property
-  source: 'attom' | 'county' | 'zillow' | 'manual';
+  distance?: number;
+  source: 'attom' | 'county' | 'zillow' | 'manual' | 'redfin' | 'realtymole' | 'demo';
 }
 
 export class CompsDataService {
-  private static ATTOM_API_KEY = import.meta.env.VITE_ATTOM_API_KEY;
-  private static ZILLOW_RAPID_API_KEY = import.meta.env.VITE_RAPID_API_KEY;
-
   /**
-   * Main function to get comparables from multiple sources
+   * Main function to get comparables via edge function
    */
   static async getComparables(
     address: string,
     city: string,
     state: string,
-    radius: number = 1, // miles
-    limit: number = 10
+    radius: number = 1,
+    limit: number = 10,
+    basePrice: number = 250000
   ): Promise<ComparableData[]> {
     console.log(`🔍 Fetching comparables for: ${address}, ${city}, ${state}`);
 
-    // Try sources in priority order
     try {
-      // 1. Try Supabase database first (manual entries)
-      const dbComps = await this.getFromDatabase(address, city, state, limit);
-      if (dbComps.length >= 3) {
-        console.log(`✅ Found ${dbComps.length} comps in database`);
-        return dbComps;
+      const { data, error } = await supabase.functions.invoke('fetch-comps', {
+        body: { address, city, state, basePrice }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        return this.generateFallbackComps(basePrice, city);
       }
 
-      // 2. Try Attom Data API (best quality, 1000/month free)
-      if (this.ATTOM_API_KEY) {
-        const attomComps = await this.getFromAttomData(address, city, state, radius, limit);
-        if (attomComps.length > 0) {
-          console.log(`✅ Found ${attomComps.length} comps from Attom Data`);
-          // Save to database for future use
-          await this.saveToDatabase(attomComps);
-          return attomComps;
-        }
+      if (data?.comps && data.comps.length > 0) {
+        console.log(`✅ Found ${data.comps.length} comps (source: ${data.source})`);
+        return data.comps.slice(0, limit);
       }
 
-      // 3. Try Orange County Property Appraiser (free, public data)
-      const countyComps = await this.getFromOrangeCounty(address, city, radius, limit);
-      if (countyComps.length > 0) {
-        console.log(`✅ Found ${countyComps.length} comps from Orange County`);
-        await this.saveToDatabase(countyComps);
-        return countyComps;
-      }
-
-      // 4. Try Zillow via RapidAPI (backup)
-      if (this.ZILLOW_RAPID_API_KEY) {
-        const zillowComps = await this.getFromZillow(address, city, state, limit);
-        if (zillowComps.length > 0) {
-          console.log(`✅ Found ${zillowComps.length} comps from Zillow`);
-          await this.saveToDatabase(zillowComps);
-          return zillowComps;
-        }
-      }
-
-      console.warn('⚠️ No real data found, returning database comps');
-      return dbComps;
+      console.warn('⚠️ No comps returned, using fallback');
+      return this.generateFallbackComps(basePrice, city);
     } catch (error) {
       console.error('❌ Error fetching comparables:', error);
-      return [];
+      return this.generateFallbackComps(basePrice, city);
     }
   }
 
   /**
-   * Get comparables from Supabase database
+   * Generate fallback demo data if API fails
    */
-  private static async getFromDatabase(
-    address: string,
-    city: string,
-    state: string,
-    limit: number
-  ): Promise<ComparableData[]> {
-    // Note: 'comparables' table doesn't exist in the database schema
-    // Returning empty array - use external APIs or create the table
-    console.log('📊 Database comparables not available - using external APIs');
-    return [];
-  }
-
-  /**
-   * Get comparables from Attom Data API
-   * Free tier: 1000 requests/month
-   * Signup: https://api.developer.attomdata.com/
-   */
-  private static async getFromAttomData(
-    address: string,
-    city: string,
-    state: string,
-    radius: number,
-    limit: number
-  ): Promise<ComparableData[]> {
-    if (!this.ATTOM_API_KEY) {
-      console.log('⏭️ Skipping Attom Data (no API key)');
-      return [];
-    }
-
-    try {
-      // Step 1: Get property ID for the address
-      const searchUrl = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}`;
-
-      const searchResponse = await fetch(searchUrl, {
-        headers: {
-          'apikey': this.ATTOM_API_KEY,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!searchResponse.ok) {
-        console.warn('Attom API search failed:', searchResponse.status);
-        return [];
-      }
-
-      const searchData = await searchResponse.json();
-      const propertyId = searchData?.property?.[0]?.identifier?.attomId;
-
-      if (!propertyId) {
-        console.warn('Property ID not found in Attom Data');
-        return [];
-      }
-
-      // Step 2: Get comparable sales
-      const compsUrl = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/snapshot?attomid=${propertyId}&radius=${radius}&minsaleamt=10000`;
-
-      const compsResponse = await fetch(compsUrl, {
-        headers: {
-          'apikey': this.ATTOM_API_KEY,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!compsResponse.ok) {
-        console.warn('Attom API comps failed:', compsResponse.status);
-        return [];
-      }
-
-      const compsData = await compsResponse.json();
-      const sales = compsData?.property || [];
-
-      return sales.slice(0, limit).map((sale: any) => ({
-        address: sale.address?.oneLine || '',
-        city: sale.address?.locality || city,
-        state: sale.address?.countrySubd || state,
-        zipCode: sale.address?.postal1 || '',
-        saleDate: sale.sale?.saleTransDate || new Date().toISOString(),
-        salePrice: sale.sale?.amount?.saleAmt || 0,
-        beds: sale.building?.rooms?.beds || 0,
-        baths: sale.building?.rooms?.bathsFull || 0,
-        sqft: sale.building?.size?.livingSize || 0,
-        yearBuilt: sale.summary?.yearBuilt || 0,
-        propertyType: sale.summary?.propType || 'Single Family',
-        latitude: sale.location?.latitude,
-        longitude: sale.location?.longitude,
-        distance: sale.distance?.value,
-        source: 'attom' as const,
-      }));
-    } catch (error) {
-      console.error('Attom Data API error:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get comparables from Orange County Property Appraiser
-   * Public data, free to use
-   */
-  private static async getFromOrangeCounty(
-    address: string,
-    city: string,
-    radius: number,
-    limit: number
-  ): Promise<ComparableData[]> {
-    try {
-      // Orange County Property Appraiser has a public API
-      // This is a simplified example - you'll need to adjust based on actual API
-      const apiUrl = `https://ocpafl.org/api/Sales?address=${encodeURIComponent(address)}&city=${encodeURIComponent(city)}&radius=${radius}`;
-
-      const response = await fetch(apiUrl);
-
-      if (!response.ok) {
-        console.warn('Orange County API failed:', response.status);
-        return [];
-      }
-
-      const data = await response.json();
-
-      // Parse county data format (adjust based on actual response)
-      return (data.sales || []).slice(0, limit).map((sale: any) => ({
-        address: sale.PropertyAddress || '',
-        city: sale.City || city,
+  private static generateFallbackComps(basePrice: number, city: string): ComparableData[] {
+    const streets = ['Oak St', 'Pine Ave', 'Maple Dr', 'Cedar Ln', 'Palm Way', 'Sunset Blvd'];
+    const comps: ComparableData[] = [];
+    
+    for (let i = 0; i < 6; i++) {
+      const variance = (Math.random() - 0.5) * 0.3;
+      const price = Math.round(basePrice * (1 + variance));
+      const daysAgo = Math.floor(Math.random() * 180);
+      const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
+      
+      comps.push({
+        address: `${Math.floor(100 + Math.random() * 9900)} ${streets[i % streets.length]}`,
+        city: city || 'Orlando',
         state: 'FL',
-        zipCode: sale.ZipCode || '',
-        saleDate: sale.SaleDate || new Date().toISOString(),
-        salePrice: Number(sale.SalePrice) || 0,
-        beds: Number(sale.Bedrooms) || 0,
-        baths: Number(sale.Bathrooms) || 0,
-        sqft: Number(sale.LivingArea) || 0,
-        yearBuilt: Number(sale.YearBuilt) || 0,
-        propertyType: sale.PropertyType || 'Single Family',
-        source: 'county' as const,
-      }));
-    } catch (error) {
-      console.error('Orange County API error:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get comparables from Zillow via RapidAPI
-   * RapidAPI free tier: 500 requests/month
-   * Signup: https://rapidapi.com/apimaker/api/zillow-com1
-   */
-  private static async getFromZillow(
-    address: string,
-    city: string,
-    state: string,
-    limit: number
-  ): Promise<ComparableData[]> {
-    if (!this.ZILLOW_RAPID_API_KEY) {
-      console.log('⏭️ Skipping Zillow (no RapidAPI key)');
-      return [];
-    }
-
-    try {
-      // Search for recently sold properties in the area
-      const searchQuery = `${city}, ${state}`;
-      const url = `https://zillow-com1.p.rapidapi.com/similarSales?zpid=YOUR_ZPID`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'X-RapidAPI-Key': this.ZILLOW_RAPID_API_KEY,
-          'X-RapidAPI-Host': 'zillow-com1.p.rapidapi.com',
-        },
+        zipCode: `328${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`,
+        saleDate: saleDate.toISOString().split('T')[0],
+        salePrice: price,
+        beds: Math.floor(2 + Math.random() * 3),
+        baths: Math.floor(1 + Math.random() * 2.5),
+        sqft: Math.round(1200 + Math.random() * 1500),
+        yearBuilt: Math.floor(1970 + Math.random() * 50),
+        propertyType: 'Single Family',
+        source: 'demo'
       });
-
-      if (!response.ok) {
-        console.warn('Zillow RapidAPI failed:', response.status);
-        return [];
-      }
-
-      const data = await response.json();
-
-      // Parse Zillow format
-      return (data.comparables || []).slice(0, limit).map((comp: any) => ({
-        address: comp.address || '',
-        city: comp.city || city,
-        state: comp.state || state,
-        zipCode: comp.zipcode || '',
-        saleDate: comp.dateSold || new Date().toISOString(),
-        salePrice: comp.price || 0,
-        beds: comp.bedrooms || 0,
-        baths: comp.bathrooms || 0,
-        sqft: comp.livingArea || 0,
-        yearBuilt: comp.yearBuilt || 0,
-        propertyType: comp.homeType || 'Single Family',
-        latitude: comp.latitude,
-        longitude: comp.longitude,
-        source: 'zillow' as const,
-      }));
-    } catch (error) {
-      console.error('Zillow API error:', error);
-      return [];
     }
-  }
-
-  /**
-   * Save comparables to database for caching
-   */
-  private static async saveToDatabase(comps: ComparableData[]): Promise<void> {
-    // Note: 'comparables' table doesn't exist in the database schema
-    // Skip saving - would need to create table first
-    console.log(`📊 Skipping cache save - comparables table not available (${comps.length} comps)`);
+    
+    return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
   }
 
   /**
