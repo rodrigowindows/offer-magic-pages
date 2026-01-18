@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.retell-webhook-handler]
 verify_jwt = false
+
+[functions.fetch-comps]
+verify_jwt = false
