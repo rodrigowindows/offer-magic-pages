@@ -5,6 +5,16 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Simple in-memory cache (5 minutes TTL)
+interface CacheEntry {
+  data: ComparableData[];
+  timestamp: number;
+  source: string;
+}
+
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export interface ComparableData {
   address: string;
   city: string;
@@ -20,12 +30,48 @@ export interface ComparableData {
   latitude?: number;
   longitude?: number;
   distance?: number;
-  source: 'attom' | 'county' | 'zillow' | 'manual' | 'redfin' | 'realtymole' | 'demo';
+  source: 'attom' | 'county' | 'county-csv' | 'zillow' | 'zillow-api' | 'manual' | 'redfin' | 'realtymole' | 'demo';
 }
 
 export class CompsDataService {
   /**
-   * Main function to get comparables via edge function
+   * Clear cache (useful for testing or forcing refresh)
+   */
+  static clearCache() {
+    cache.clear();
+    console.log('🗑️ Comps cache cleared');
+  }
+
+  /**
+   * Get current data source status
+   */
+  static async getDataSourceStatus(): Promise<{ source: string; count: number; apiKeysConfigured: any }> {
+    try {
+      const { data } = await supabase.functions.invoke('fetch-comps', {
+        body: {
+          address: 'test',
+          city: 'Orlando',
+          state: 'FL',
+          basePrice: 250000
+        }
+      });
+
+      return {
+        source: data?.source || 'unknown',
+        count: data?.count || 0,
+        apiKeysConfigured: data?.apiKeysConfigured || { attom: false, rapidapi: false }
+      };
+    } catch {
+      return {
+        source: 'error',
+        count: 0,
+        apiKeysConfigured: { attom: false, rapidapi: false }
+      };
+    }
+  }
+
+  /**
+   * Main function to get comparables via edge function (with cache)
    */
   static async getComparables(
     address: string,
@@ -33,13 +79,29 @@ export class CompsDataService {
     state: string,
     radius: number = 1,
     limit: number = 10,
-    basePrice: number = 250000
+    basePrice: number = 250000,
+    useCache: boolean = true
   ): Promise<ComparableData[]> {
-    console.log(`🔍 Fetching comparables for: ${address}, ${city}, ${state}`);
+    // Get saved radius from localStorage if not provided
+    const savedRadius = localStorage.getItem('comps_search_radius');
+    const searchRadius = savedRadius ? parseFloat(savedRadius) : radius;
+
+    const cacheKey = `${address}-${city}-${state}-${basePrice}-${searchRadius}`;
+
+    // Check cache first
+    if (useCache) {
+      const cached = cache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log(`💾 Cache hit for ${address} (source: ${cached.source}, radius: ${searchRadius}mi)`);
+        return cached.data.slice(0, limit);
+      }
+    }
+
+    console.log(`🔍 Fetching comparables for: ${address}, ${city}, ${state} (radius: ${searchRadius}mi)`);
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-comps', {
-        body: { address, city, state, basePrice }
+        body: { address, city, state, basePrice, radius: searchRadius }
       });
 
       if (error) {
@@ -49,7 +111,21 @@ export class CompsDataService {
 
       if (data?.comps && data.comps.length > 0) {
         console.log(`✅ Found ${data.comps.length} comps (source: ${data.source})`);
-        return data.comps.slice(0, limit);
+
+        // Cache the results
+        cache.set(cacheKey, {
+          data: data.comps,
+          timestamp: Date.now(),
+          source: data.source
+        });
+
+        // Return with metadata
+        const compsWithSource = data.comps.map((comp: any) => ({
+          ...comp,
+          source: comp.source || data.source // Preserve individual source or use global
+        }));
+
+        return compsWithSource.slice(0, limit);
       }
 
       console.warn('⚠️ No comps returned, using fallback');

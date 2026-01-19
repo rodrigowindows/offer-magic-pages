@@ -5,6 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// API Keys from environment (all have free tiers!)
+const ATTOM_API_KEY = Deno.env.get('ATTOM_API_KEY') || ''; // 1000 free requests/month
+const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY') || ''; // 100 free requests/month
+
 interface ComparableData {
   address: string;
   city: string;
@@ -59,251 +63,204 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6): 
   return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
 }
 
-// Fetch from Orange County Property Appraiser (FREE - Public data for Orlando/FL)
-async function fetchFromOrangeCounty(address: string, city: string): Promise<ComparableData[]> {
+// ===== OPTION 1: Attom Data API (FREE TIER - 1000 requests/month) =====
+// Sign up at https://api.developer.attomdata.com/
+async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1): Promise<ComparableData[]> {
+  if (!ATTOM_API_KEY) {
+    console.log('⚠️ Attom API key not configured');
+    return [];
+  }
+
   try {
-    console.log('🍊 Trying Orange County Property Appraiser API...');
-    
-    // Extract street name for search
-    const streetParts = address.split(' ').slice(1).join(' ');
-    const searchTerm = streetParts || address;
-    
-    // Orange County CAMA API - public endpoint
-    const url = `https://www.ocpafl.org/api/sales/search?streetName=${encodeURIComponent(searchTerm)}&limit=15`;
-    
-    console.log('Orange County URL:', url);
-    
+    console.log(`🏠 Trying Attom Data API (1000 free/month, radius: ${radius}mi)...`);
+
+    const url = `https://api.attomdata.com/propertyapi/v1.0.0/salescomparable/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}&maxComps=10`;
+
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
+        'apikey': ATTOM_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      console.log('❌ Attom API status:', response.status, await response.text());
+      return [];
+    }
+
+    const data = await response.json();
+
+    if (!data.property || !Array.isArray(data.property)) {
+      console.log('⚠️ No comps from Attom');
+      return [];
+    }
+
+    const comps: ComparableData[] = data.property.map((prop: any) => {
+      const sale = prop.sale || {};
+      const building = prop.building || {};
+      const addr = prop.address || {};
+
+      return {
+        address: `${addr.line1 || ''}`,
+        city: addr.locality || city,
+        state: addr.countrySubd || state,
+        zipCode: addr.postal1 || '',
+        saleDate: sale.saleTransDate || new Date().toISOString().split('T')[0],
+        salePrice: parseInt(sale.saleAmt) || 0,
+        beds: parseInt(building.rooms?.beds) || 3,
+        baths: parseInt(building.rooms?.bathsTotal) || 2,
+        sqft: parseInt(building.size?.livingSize) || 1500,
+        yearBuilt: parseInt(building.summary?.yearBuilt) || 2000,
+        propertyType: building.summary?.propertyType || 'Single Family',
+        source: 'attom'
+      };
+    });
+
+    const validComps = comps.filter(c => c.salePrice > 0);
+    console.log(`✅ Found ${validComps.length} comps from Attom Data`);
+    return validComps;
+  } catch (error) {
+    console.error('❌ Attom error:', error);
+    return [];
+  }
+}
+
+// ===== OPTION 2: Orange County CSV Scraper (100% FREE - Public Records) =====
+async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<ComparableData[]> {
+  try {
+    console.log('🍊 Trying Orange County Public CSV...');
+
+    // Orange County provides monthly CSV exports of all sales
+    const csvUrl = 'https://www.ocpafl.org/downloads/sales.csv';
+
+    const response = await fetch(csvUrl, {
+      headers: {
         'User-Agent': 'Mozilla/5.0',
       },
     });
-    
-    if (!response.ok) {
-      console.log('Orange County API status:', response.status);
-      // Try alternative endpoint
-      return await fetchFromOrangeCountyAlternative(city);
-    }
-    
-    const data = await response.json();
-    console.log('Orange County raw data:', JSON.stringify(data).slice(0, 500));
-    
-    if (!data || !Array.isArray(data.results)) {
-      return [];
-    }
-    
-    const comps: ComparableData[] = data.results.map((sale: any) => ({
-      address: sale.siteAddress || sale.address || '',
-      city: sale.city || city || 'Orlando',
-      state: 'FL',
-      zipCode: sale.zipCode || sale.zip || '',
-      saleDate: sale.saleDate || sale.recordingDate || new Date().toISOString().split('T')[0],
-      salePrice: parseInt(sale.salePrice || sale.price) || 0,
-      beds: parseInt(sale.bedrooms || sale.beds) || 3,
-      baths: parseFloat(sale.bathrooms || sale.baths) || 2,
-      sqft: parseInt(sale.livingArea || sale.sqft || sale.squareFeet) || 1500,
-      yearBuilt: parseInt(sale.yearBuilt || sale.effectiveYear) || 2000,
-      propertyType: sale.propertyType || 'Single Family',
-      source: 'county'
-    }));
-    
-    console.log(`🍊 Found ${comps.length} comps from Orange County`);
-    return comps.filter(c => c.salePrice > 0);
-  } catch (error) {
-    console.error('Orange County error:', error);
-    return [];
-  }
-}
 
-// Alternative: Fetch recent sales by city from public records
-async function fetchFromOrangeCountyAlternative(city: string): Promise<ComparableData[]> {
-  try {
-    console.log('🍊 Trying Orange County alternative search by city...');
-    
-    const url = `https://www.ocpafl.org/api/sales/recent?city=${encodeURIComponent(city || 'Orlando')}&days=90&limit=20`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-    
     if (!response.ok) {
-      console.log('Alternative endpoint status:', response.status);
+      console.log('❌ CSV download failed:', response.status);
       return [];
     }
-    
-    const data = await response.json();
-    
-    if (!data || !Array.isArray(data)) {
-      return [];
-    }
-    
-    return data.slice(0, 10).map((sale: any) => ({
-      address: sale.siteAddress || sale.address || '',
-      city: sale.city || city || 'Orlando',
-      state: 'FL',
-      zipCode: sale.zipCode || '',
-      saleDate: sale.saleDate || new Date().toISOString().split('T')[0],
-      salePrice: parseInt(sale.salePrice) || 0,
-      beds: parseInt(sale.bedrooms) || 3,
-      baths: parseFloat(sale.bathrooms) || 2,
-      sqft: parseInt(sale.livingArea) || 1500,
-      yearBuilt: parseInt(sale.yearBuilt) || 2000,
-      propertyType: 'Single Family',
-      source: 'county'
-    })).filter((c: ComparableData) => c.salePrice > 0);
-  } catch (error) {
-    console.error('Alternative search error:', error);
-    return [];
-  }
-}
 
-// Fetch from Zillow public search (no API key required)
-async function fetchFromZillowPublic(city: string, state: string, basePrice: number): Promise<ComparableData[]> {
-  try {
-    console.log('🏠 Trying Zillow public search...');
-    
-    const minPrice = Math.round(basePrice * 0.7);
-    const maxPrice = Math.round(basePrice * 1.3);
-    
-    // Zillow public search API
-    const url = `https://www.zillow.com/search/GetSearchPageState.htm?searchQueryState={"pagination":{},"mapBounds":{"west":-81.9,"east":-81.1,"south":28.2,"north":28.8},"regionSelection":[{"regionId":13121,"regionType":6}],"isMapVisible":true,"filterState":{"sortSelection":{"value":"days"},"isAllHomes":{"value":true},"price":{"min":${minPrice},"max":${maxPrice}},"daysOnZillow":{"value":"90"}},"isListVisible":true}`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      },
-    });
-    
-    if (!response.ok) {
-      console.log('Zillow status:', response.status);
+    const csvText = await response.text();
+    const lines = csvText.split('\n');
+
+    if (lines.length < 2) {
+      console.log('⚠️ Empty CSV');
       return [];
     }
-    
-    const data = await response.json();
-    const results = data?.cat1?.searchResults?.listResults || [];
-    
-    const comps: ComparableData[] = results.slice(0, 10).map((item: any) => ({
-      address: item.address || '',
-      city: city || 'Orlando',
-      state: state || 'FL',
-      zipCode: item.addressZipcode || '',
-      saleDate: item.dateSold || new Date().toISOString().split('T')[0],
-      salePrice: item.soldPrice || item.price || item.unformattedPrice || 0,
-      beds: item.beds || 3,
-      baths: item.baths || 2,
-      sqft: item.area || 1500,
-      yearBuilt: 2000,
-      propertyType: 'Single Family',
-      source: 'zillow'
-    }));
-    
-    console.log(`🏠 Found ${comps.length} comps from Zillow`);
-    return comps.filter(c => c.salePrice > 0);
-  } catch (error) {
-    console.error('Zillow error:', error);
-    return [];
-  }
-}
 
-// Use Nominatim to get nearby addresses and simulate realistic local comps
-async function fetchNearbyProperties(address: string, city: string, state: string, basePrice: number): Promise<ComparableData[]> {
-  try {
-    console.log('📍 Using geolocation to find nearby properties...');
-    
-    // Get coordinates for the address
-    const geoUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(`${address}, ${city}, ${state}`)}`;
-    
-    const geoResponse = await fetch(geoUrl, {
-      headers: { 'User-Agent': 'PropertyCompsApp/1.0' }
-    });
-    
-    if (!geoResponse.ok) return [];
-    
-    const geoData = await geoResponse.json();
-    if (!geoData.length) return [];
-    
-    const { lat, lon } = geoData[0];
-    console.log(`📍 Found location: ${lat}, ${lon}`);
-    
-    // Search for nearby residential buildings
-    const nearbyUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=17&addressdetails=1`;
-    
-    // Generate realistic comps based on location
+    // Parse header
+    const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
+
+    // Parse rows and filter
     const comps: ComparableData[] = [];
-    const streets = await fetchNearbyStreets(parseFloat(lat), parseFloat(lon));
-    
-    for (let i = 0; i < 6; i++) {
-      const variance = (Math.random() - 0.5) * 0.25;
-      const price = Math.round(basePrice * (1 + variance));
-      const daysAgo = Math.floor(Math.random() * 120) + 30;
-      const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-      
-      comps.push({
-        address: streets[i] || `${Math.floor(100 + Math.random() * 900)} ${city} St`,
-        city: city,
-        state: state,
-        zipCode: geoData[0].address?.postcode || '32803',
-        saleDate: saleDate.toISOString().split('T')[0],
-        salePrice: price,
-        beds: Math.floor(2 + Math.random() * 3),
-        baths: Math.floor(1 + Math.random() * 2.5),
-        sqft: Math.round(1200 + Math.random() * 1200),
-        yearBuilt: Math.floor(1980 + Math.random() * 40),
-        propertyType: 'Single Family',
-        source: 'geo'
+    const searchCity = city.toLowerCase();
+    const searchStreet = address.split(' ').slice(1).join(' ').toLowerCase();
+
+    for (let i = 1; i < Math.min(lines.length, 5000); i++) {
+      const values = lines[i].split(',');
+      if (values.length < headers.length) continue;
+
+      const row: any = {};
+      headers.forEach((header, idx) => {
+        row[header] = values[idx]?.trim() || '';
       });
+
+      // Filter by city and nearby streets
+      const rowCity = (row.city || row.situs_city || '').toLowerCase();
+      const rowAddress = (row.address || row.situs_address || '').toLowerCase();
+
+      if (rowCity.includes(searchCity) || searchCity.includes(rowCity)) {
+        const salePrice = parseInt(row.sale_price || row.price || row.sale_amount || '0');
+
+        if (salePrice > 10000) { // Filter out $1 sales
+          comps.push({
+            address: row.address || row.situs_address || '',
+            city: row.city || row.situs_city || city,
+            state: 'FL',
+            zipCode: row.zip || row.zipcode || '',
+            saleDate: row.sale_date || row.recording_date || new Date().toISOString().split('T')[0],
+            salePrice,
+            beds: parseInt(row.bedrooms || row.beds || '3'),
+            baths: parseFloat(row.bathrooms || row.baths || '2'),
+            sqft: parseInt(row.living_area || row.sqft || row.square_feet || '1500'),
+            yearBuilt: parseInt(row.year_built || row.effective_year || '2000'),
+            propertyType: row.property_type || 'Single Family',
+            source: 'county-csv'
+          });
+        }
+      }
+
+      if (comps.length >= 15) break; // Got enough
     }
-    
-    console.log(`📍 Generated ${comps.length} geo-based comps`);
+
+    console.log(`✅ Found ${comps.length} comps from Orange County CSV`);
     return comps;
   } catch (error) {
-    console.error('Geolocation error:', error);
+    console.error('❌ CSV parsing error:', error);
     return [];
   }
 }
 
-// Get nearby street names using OpenStreetMap
-async function fetchNearbyStreets(lat: number, lon: number): Promise<string[]> {
+// ===== OPTION 3: Zillow via RapidAPI (FREE TIER - 100 requests/month) =====
+// Sign up at https://rapidapi.com/apimaker/api/zillow-com1
+async function fetchFromZillowRapidAPI(address: string, city: string, state: string): Promise<ComparableData[]> {
+  if (!RAPIDAPI_KEY) {
+    console.log('⚠️ RapidAPI key not configured');
+    return [];
+  }
+
   try {
-    const offsets = [
-      [0.001, 0], [-0.001, 0], [0, 0.001], [0, -0.001],
-      [0.002, 0.001], [-0.002, -0.001]
-    ];
-    
-    const streets: string[] = [];
-    
-    for (const [dLat, dLon] of offsets.slice(0, 6)) {
-      try {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat + dLat}&lon=${lon + dLon}&zoom=18&addressdetails=1`;
-        const response = await fetch(url, {
-          headers: { 'User-Agent': 'PropertyCompsApp/1.0' }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const road = data.address?.road || data.address?.street;
-          const houseNumber = Math.floor(100 + Math.random() * 9000);
-          if (road) {
-            streets.push(`${houseNumber} ${road}`);
-          }
-        }
-        
-        // Rate limiting for Nominatim
-        await new Promise(r => setTimeout(r, 200));
-      } catch (e) {
-        continue;
-      }
+    console.log('🏠 Trying Zillow via RapidAPI (100 free/month)...');
+
+    const url = `https://zillow-com1.p.rapidapi.com/similarSales?zpid=0&location=${encodeURIComponent(address + ', ' + city + ', ' + state)}`;
+
+    const response = await fetch(url, {
+      headers: {
+        'X-RapidAPI-Key': RAPIDAPI_KEY,
+        'X-RapidAPI-Host': 'zillow-com1.p.rapidapi.com',
+      },
+    });
+
+    if (!response.ok) {
+      console.log('❌ RapidAPI status:', response.status);
+      return [];
     }
-    
-    return streets;
+
+    const data = await response.json();
+
+    if (!data.comparables || !Array.isArray(data.comparables)) {
+      console.log('⚠️ No comparables from Zillow');
+      return [];
+    }
+
+    const comps: ComparableData[] = data.comparables.map((comp: any) => ({
+      address: comp.address?.streetAddress || '',
+      city: comp.address?.city || city,
+      state: comp.address?.state || state,
+      zipCode: comp.address?.zipcode || '',
+      saleDate: comp.dateSold || new Date().toISOString().split('T')[0],
+      salePrice: comp.price || 0,
+      beds: comp.bedrooms || 3,
+      baths: comp.bathrooms || 2,
+      sqft: comp.livingArea || 1500,
+      yearBuilt: comp.yearBuilt || 2000,
+      propertyType: comp.homeType || 'Single Family',
+      source: 'zillow-api'
+    }));
+
+    const validComps = comps.filter(c => c.salePrice > 0);
+    console.log(`✅ Found ${validComps.length} comps from Zillow RapidAPI`);
+    return validComps;
   } catch (error) {
+    console.error('❌ RapidAPI error:', error);
     return [];
   }
 }
+
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -312,70 +269,89 @@ serve(async (req) => {
 
   try {
     const { address, city, state, basePrice } = await req.json();
-    
+
     console.log(`🔍 Fetching comps for: ${address}, ${city}, ${state}, basePrice: $${basePrice}`);
-    
+    console.log(`🔑 API Keys configured: Attom=${!!ATTOM_API_KEY}, RapidAPI=${!!RAPIDAPI_KEY}`);
+
     let comps: ComparableData[] = [];
     let source = 'demo';
-    
-    // 1. Try Orange County API (works for Orlando/FL)
+
+    // ===== CASCATA DE FONTES (tentativas em ordem de qualidade) =====
+
+    // 1️⃣ Try Attom Data API (BEST - Real MLS data, 1000 free/month)
+    if (ATTOM_API_KEY && comps.length < 3) {
+      console.log('1️⃣ Trying Attom Data API...');
+      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL');
+      if (attomComps.length > 0) {
+        comps = attomComps;
+        source = 'attom';
+        console.log(`✅ SUCCESS: Got ${comps.length} comps from Attom Data (MLS)`);
+      }
+    }
+
+    // 2️⃣ Try Zillow RapidAPI (GOOD - 100 free/month)
+    if (RAPIDAPI_KEY && comps.length < 3) {
+      console.log('2️⃣ Trying Zillow RapidAPI...');
+      const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
+      if (zillowApiComps.length > 0) {
+        comps = [...comps, ...zillowApiComps];
+        source = comps[0]?.source || 'zillow-api';
+        console.log(`✅ SUCCESS: Got ${zillowApiComps.length} comps from Zillow API`);
+      }
+    }
+
+    // 3️⃣ Try Orange County CSV (100% FREE - Public records for Orlando/FL)
     if ((city?.toLowerCase().includes('orlando') || state === 'FL') && comps.length < 3) {
-      const countyComps = await fetchFromOrangeCounty(address, city);
+      console.log('3️⃣ Trying Orange County Public CSV...');
+      const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
       if (countyComps.length > 0) {
-        comps = countyComps;
-        source = 'county';
-        console.log(`✅ Got ${comps.length} comps from Orange County`);
+        comps = [...comps, ...countyComps];
+        source = comps[0]?.source || 'county-csv';
+        console.log(`✅ SUCCESS: Got ${countyComps.length} comps from Orange County CSV`);
       }
     }
-    
-    // 2. Try Zillow public search
+
+    // 4️⃣ Fallback to realistic demo data
     if (comps.length < 3) {
-      const zillowComps = await fetchFromZillowPublic(city || 'Orlando', state || 'FL', basePrice || 250000);
-      if (zillowComps.length > 0) {
-        comps = [...comps, ...zillowComps].slice(0, 10);
-        source = comps[0]?.source || 'zillow';
-        console.log(`✅ Added ${zillowComps.length} comps from Zillow`);
-      }
-    }
-    
-    // 3. Try geo-based nearby properties
-    if (comps.length < 3) {
-      const geoComps = await fetchNearbyProperties(address, city || 'Orlando', state || 'FL', basePrice || 250000);
-      if (geoComps.length > 0) {
-        comps = [...comps, ...geoComps].slice(0, 10);
-        source = comps[0]?.source || 'geo';
-        console.log(`✅ Added ${geoComps.length} geo-based comps`);
-      }
-    }
-    
-    // 4. Fallback to demo data
-    if (comps.length < 3) {
-      console.log('⚠️ Using demo data - no real comps found');
+      console.log('⚠️ No real data sources available - using realistic demo data');
+      console.log('💡 To get real data:');
+      console.log('   - Sign up for Attom Data: https://api.developer.attomdata.com/ (1000 free/month)');
+      console.log('   - Sign up for RapidAPI: https://rapidapi.com/apimaker/api/zillow-com1 (100 free/month)');
+      console.log('   - Add ATTOM_API_KEY and RAPIDAPI_KEY to Supabase Edge Function secrets');
+
       comps = generateDemoComps(basePrice || 250000, city || 'Orlando', 6);
       source = 'demo';
     }
-    
-    // Filter and sort
-    comps = comps
-      .filter(c => c.salePrice > 0)
+
+    // Filter, deduplicate, and sort
+    const uniqueComps = Array.from(
+      new Map(comps.map(c => [`${c.address}-${c.salePrice}`, c])).values()
+    );
+
+    const sortedComps = uniqueComps
+      .filter(c => c.salePrice > 10000) // Filter out suspicious $1 sales
       .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
       .slice(0, 10);
-    
-    console.log(`✅ Returning ${comps.length} comps (source: ${source})`);
-    
-    return new Response(JSON.stringify({ 
-      success: true, 
-      comps,
+
+    console.log(`✅ Returning ${sortedComps.length} comps (source: ${source})`);
+
+    return new Response(JSON.stringify({
+      success: true,
+      comps: sortedComps,
       source,
-      count: comps.length
+      count: sortedComps.length,
+      apiKeysConfigured: {
+        attom: !!ATTOM_API_KEY,
+        rapidapi: !!RAPIDAPI_KEY
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Fatal Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ 
-      success: false, 
+    return new Response(JSON.stringify({
+      success: false,
       error: errorMessage,
       comps: generateDemoComps(250000, 'Orlando', 6),
       source: 'demo'

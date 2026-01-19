@@ -22,8 +22,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMarketingStore } from '@/store/marketingStore';
 import { toast } from 'sonner';
-import { Settings as SettingsIcon, Building2, Cpu, Zap, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Cpu, Zap, Save, Database, Link } from 'lucide-react';
 import type { MarketingSettings } from '@/types/marketing.types';
+import { CompsApiSettings } from '@/components/CompsApiSettings';
+import { ManualCompsManager } from '@/components/ManualCompsManager';
 
 // Schema de validação
 const settingsSchema = z.object({
@@ -120,7 +122,7 @@ export const Settings = () => {
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Tabs defaultValue="company" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="company">
               <Building2 className="w-4 h-4 mr-2" />
               Company
@@ -132,6 +134,14 @@ export const Settings = () => {
             <TabsTrigger value="api">
               <Zap className="w-4 h-4 mr-2" />
               API
+            </TabsTrigger>
+            <TabsTrigger value="comps">
+              <Database className="w-4 h-4 mr-2" />
+              Comps API
+            </TabsTrigger>
+            <TabsTrigger value="manual-comps">
+              <Link className="w-4 h-4 mr-2" />
+              Manual Comps
             </TabsTrigger>
             <TabsTrigger value="defaults">
               <SettingsIcon className="w-4 h-4 mr-2" />
@@ -317,6 +327,11 @@ export const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Comps API Settings */}
+          <TabsContent value="comps">
+            <CompsApiSettings />
           </TabsContent>
 
           {/* Default Settings */}
