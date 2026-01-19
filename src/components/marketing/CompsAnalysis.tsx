@@ -62,6 +62,7 @@ import { format } from 'date-fns';
 import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
 import { CompsMapboxMap } from './CompsMapboxMap';
 import { CompsComparison } from './CompsComparison';
+import { CompsComparisonGrid } from './CompsComparisonGrid';
 import { CompsDataService } from '@/services/compsDataService';
 import { CompsApiSettings } from '@/components/CompsApiSettings';
 import { ManualCompsManager } from '@/components/ManualCompsManager';
@@ -838,8 +839,89 @@ export const CompsAnalysis = () => {
         </div>
       </div>
 
-      {/* Property Selector */}
+      {/* Discovery Banner - Show when using demo data */}
+      {dataSource === 'demo' && (
+        <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+          <AlertCircle className="w-4 h-4" />
+          <AlertTitle className="flex items-center gap-2">
+            <span>🎭 Você está usando dados demo</span>
+          </AlertTitle>
+          <AlertDescription className="mt-2">
+            <p className="mb-3">Configure APIs grátis para obter dados reais de MLS, Zillow e registros públicos</p>
+            <div className="flex gap-2">
+              <Dialog open={showApiConfig} onOpenChange={setShowApiConfig}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configurar APIs Agora
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configurar APIs de Comps</DialogTitle>
+                    <DialogDescription>
+                      Configure suas chaves de API para obter dados reais de comparáveis
+                    </DialogDescription>
+                  </DialogHeader>
+                  <CompsApiSettings />
+                </DialogContent>
+              </Dialog>
+              <Button size="sm" variant="outline" onClick={() => setActiveTab('manual')}>
+                <LinkIcon className="w-4 h-4 mr-2" />
+                Ou Use Links Manuais
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Search Radius Filter */}
       <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="flex items-center gap-3">
+              <Label className="font-semibold">📍 Raio de Busca:</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0.5"
+                  max="10"
+                  step="0.5"
+                  value={searchRadius}
+                  onChange={(e) => handleRadiusChange(parseFloat(e.target.value) || 1)}
+                  className="w-24"
+                />
+                <span className="text-sm font-medium">{searchRadius === 1 ? 'milha' : 'milhas'}</span>
+                <span className="text-xs text-muted-foreground">
+                  ({(searchRadius * 1.609).toFixed(1)} km)
+                </span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground">
+                💡 Define a distância máxima para buscar comparáveis próximos à propriedade
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs: Auto vs Manual */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'auto' | 'manual')}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="auto">
+            <Database className="w-4 h-4 mr-2" />
+            Busca Automática (APIs)
+          </TabsTrigger>
+          <TabsTrigger value="manual">
+            <LinkIcon className="w-4 h-4 mr-2" />
+            Links Salvos (Manual)
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="auto" className="space-y-6 mt-6">
+          {/* Property Selector */}
+          <Card>
         <CardHeader>
           <CardTitle>Subject Property</CardTitle>
           <CardDescription>Select a property to analyze</CardDescription>
@@ -1281,6 +1363,24 @@ export const CompsAnalysis = () => {
         />
       )}
 
+      {/* Professional Comparison Grid */}
+      {selectedProperty && comparables.length > 0 && (
+        <CompsComparisonGrid
+          subjectProperty={{
+            address: selectedProperty.address,
+            salePrice: selectedProperty.estimated_value,
+          }}
+          comparables={comparables.slice(0, 5).map(comp => ({
+            ...comp,
+            isBest: getBestComp()?.id === comp.id,
+          }))}
+          onAdjustmentChange={(compId, adjustments) => {
+            console.log(`Adjustments for ${compId}:`, adjustments);
+            // Could save adjustments to database or update local state
+          }}
+        />
+      )}
+
       {/* Comparable Properties Table */}
       {comparables.length > 0 && (
         <Card>
@@ -1515,6 +1615,13 @@ export const CompsAnalysis = () => {
           </CardContent>
         </Card>
       )}
+      </TabsContent>
+
+      {/* Manual Comps Tab */}
+      <TabsContent value="manual" className="mt-6">
+        <ManualCompsManager />
+      </TabsContent>
+    </Tabs>
     </div>
   );
 };
