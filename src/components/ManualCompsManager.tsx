@@ -397,7 +397,7 @@ export const ManualCompsManager = () => {
             </Table>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       {/* Exemplos de como usar */}
       <Card className="border-gray-200 bg-gray-50">
