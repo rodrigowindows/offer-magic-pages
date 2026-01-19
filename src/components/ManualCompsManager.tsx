@@ -3,7 +3,7 @@
  * Permite salvar links do Trulia, Zillow, Redfin, etc.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -111,7 +111,7 @@ export const ManualCompsManager = () => {
   };
 
   // Carregar links salvos do localStorage
-  useState(() => {
+  useEffect(() => {
     const saved = localStorage.getItem('manual_comps_links');
     if (saved) {
       try {
@@ -120,7 +120,7 @@ export const ManualCompsManager = () => {
         console.error('Error loading saved links:', e);
       }
     }
-  });
+  }, []);
 
   // Deletar link
   const handleDelete = (id: string) => {
