@@ -1430,11 +1430,25 @@ export const CompsAnalysis = () => {
         <CompsComparisonGrid
           subjectProperty={{
             address: selectedProperty.address,
-            salePrice: selectedProperty.estimated_value,
+            estimatedValue: selectedProperty.estimated_value,
+            beds: 3, // Default values - could be fetched from property data
+            baths: 2,
+            sqft: comparables[0]?.sqft || 1500,
+            yearBuilt: comparables[0]?.yearBuilt || 2000,
+            lotSize: comparables[0]?.lotSize,
           }}
           comparables={comparables.slice(0, 5).map(comp => ({
-            ...comp,
+            id: comp.id,
+            address: comp.address,
+            salePrice: comp.salePrice,
+            saleDate: comp.saleDate.toISOString(),
+            beds: comp.beds,
+            baths: comp.baths,
+            sqft: comp.sqft,
+            yearBuilt: comp.yearBuilt,
+            lotSize: comp.lotSize,
             isBest: getBestComp()?.id === comp.id,
+            distance: comp.distanceMiles,
           }))}
           onAdjustmentChange={(compId, adjustments) => {
             console.log(`Adjustments for ${compId}:`, adjustments);
