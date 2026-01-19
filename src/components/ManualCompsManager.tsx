@@ -17,7 +17,8 @@ import {
   Trash2,
   ExternalLink,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import {
   Table,
@@ -56,8 +57,40 @@ export const ManualCompsManager = () => {
     return 'other';
   };
 
-  // Salvar link
-  const handleSaveLink = () => {
+  // Carregar links do Supabase
+  const loadLinks = async () => {
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setSavedLinks([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('manual_comps_links')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setSavedLinks(data || []);
+    } catch (error) {
+      console.error('Error loading links:', error);
+      toast({
+        title: '❌ Erro ao carregar',
+        description: 'Não foi possível carregar os links salvos',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Salvar link no Supabase
+  const handleSaveLink = async () => {
     if (!propertyAddress.trim()) {
       toast({
         title: '⚠️ Endereço necessário',
@@ -88,54 +121,81 @@ export const ManualCompsManager = () => {
       return;
     }
 
-    const newLink: SavedCompsLink = {
-      id: crypto.randomUUID(),
-      property_address: propertyAddress.trim(),
-      url: compsUrl.trim(),
-      source: detectSource(compsUrl),
-      notes: notes.trim() || undefined,
-      created_at: new Date()
-    };
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    setSavedLinks([newLink, ...savedLinks]);
+      if (!user) {
+        toast({
+          title: '⚠️ Não autenticado',
+          description: 'Faça login para salvar links',
+          variant: 'destructive'
+        });
+        return;
+      }
 
-    // Salvar no localStorage
-    const existing = JSON.parse(localStorage.getItem('manual_comps_links') || '[]');
-    localStorage.setItem('manual_comps_links', JSON.stringify([newLink, ...existing]));
+      const { error } = await supabase
+        .from('manual_comps_links')
+        .insert([{
+          property_address: propertyAddress.trim(),
+          url: compsUrl.trim(),
+          source: detectSource(compsUrl),
+          notes: notes.trim() || null,
+          user_id: user.id
+        }]);
 
-    toast({
-      title: '✅ Link salvo!',
-      description: `Link de comps salvo para ${propertyAddress}`,
-    });
+      if (error) throw error;
 
-    // Limpar formulário
-    setPropertyAddress('');
-    setCompsUrl('');
-    setNotes('');
+      toast({
+        title: '✅ Link salvo!',
+        description: `Link de comps salvo para ${propertyAddress}`,
+      });
+
+      // Limpar formulário e recarregar lista
+      setPropertyAddress('');
+      setCompsUrl('');
+      setNotes('');
+      loadLinks();
+    } catch (error) {
+      console.error('Error saving link:', error);
+      toast({
+        title: '❌ Erro ao salvar',
+        description: 'Não foi possível salvar o link',
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Carregar links salvos do localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('manual_comps_links');
-    if (saved) {
-      try {
-        setSavedLinks(JSON.parse(saved));
-      } catch (e) {
-        console.error('Error loading saved links:', e);
-      }
-    }
+    loadLinks();
   }, []);
 
-  // Deletar link
-  const handleDelete = (id: string) => {
-    const updated = savedLinks.filter(link => link.id !== id);
-    setSavedLinks(updated);
-    localStorage.setItem('manual_comps_links', JSON.stringify(updated));
+  // Deletar link do Supabase
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('manual_comps_links')
+        .delete()
+        .eq('id', id);
 
-    toast({
-      title: '🗑️ Link removido',
-      description: 'Link de comps removido',
-    });
+      if (error) throw error;
+
+      toast({
+        title: '🗑️ Link removido',
+        description: 'Link de comps removido',
+      });
+
+      loadLinks();
+    } catch (error) {
+      console.error('Error deleting link:', error);
+      toast({
+        title: '❌ Erro ao remover',
+        description: 'Não foi possível remover o link',
+        variant: 'destructive'
+      });
+    }
   };
 
   // Copiar link
@@ -206,6 +266,7 @@ export const ManualCompsManager = () => {
               placeholder="Ex: 1025 S Washington Ave, Orlando, FL"
               value={propertyAddress}
               onChange={(e) => setPropertyAddress(e.target.value)}
+              disabled={saving}
             />
           </div>
 
@@ -218,6 +279,7 @@ export const ManualCompsManager = () => {
               placeholder="Ex: https://www.trulia.com/sold/Orlando,FL/..."
               value={compsUrl}
               onChange={(e) => setCompsUrl(e.target.value)}
+              disabled={saving}
             />
             <p className="text-xs text-muted-foreground">
               💡 Dica: Abra Trulia/Zillow, busque vendas recentes próximas, copie a URL
@@ -233,18 +295,34 @@ export const ManualCompsManager = () => {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
+              disabled={saving}
             />
           </div>
 
-          <Button onClick={handleSaveLink} className="w-full">
-            <Plus className="w-4 h-4 mr-2" />
-            Salvar Link
+          <Button onClick={handleSaveLink} className="w-full" disabled={saving}>
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4 mr-2" />
+                Salvar Link
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
 
       {/* Lista de links salvos */}
-      {savedLinks.length > 0 && (
+      {loading ? (
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      ) : savedLinks.length > 0 ? (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
