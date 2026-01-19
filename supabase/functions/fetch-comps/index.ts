@@ -268,9 +268,9 @@ serve(async (req) => {
   }
 
   try {
-    const { address, city, state, basePrice } = await req.json();
+    const { address, city, state, basePrice, radius = 1 } = await req.json();
 
-    console.log(`🔍 Fetching comps for: ${address}, ${city}, ${state}, basePrice: $${basePrice}`);
+    console.log(`🔍 Fetching comps for: ${address}, ${city}, ${state}, basePrice: $${basePrice}, radius: ${radius}mi`);
     console.log(`🔑 API Keys configured: Attom=${!!ATTOM_API_KEY}, RapidAPI=${!!RAPIDAPI_KEY}`);
 
     let comps: ComparableData[] = [];
@@ -281,7 +281,7 @@ serve(async (req) => {
     // 1️⃣ Try Attom Data API (BEST - Real MLS data, 1000 free/month)
     if (ATTOM_API_KEY && comps.length < 3) {
       console.log('1️⃣ Trying Attom Data API...');
-      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL');
+      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius);
       if (attomComps.length > 0) {
         comps = attomComps;
         source = 'attom';
