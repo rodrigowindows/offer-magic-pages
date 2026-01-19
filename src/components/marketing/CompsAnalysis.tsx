@@ -292,6 +292,68 @@ export const CompsAnalysis = () => {
   const generateComparables = async (property: Property) => {
     setLoading(true);
     try {
+      // Try to fetch real data first using CompsDataService
+      console.log('🔍 Fetching comps using CompsDataService...');
+
+      const realComps = await CompsDataService.getComparables(
+        property.address,
+        property.city,
+        property.state,
+        searchRadius,
+        10,
+        property.estimated_value || 250000
+      );
+
+      // Check if we got real data
+      if (realComps && realComps.length > 0) {
+        const source = (realComps[0] as any).source || 'demo';
+        setDataSource(source);
+        console.log(`✅ Got ${realComps.length} comps from source: ${source}`);
+
+        // Convert to ComparableProperty format
+        const formattedComps: ComparableProperty[] = realComps.map((comp, i) => {
+          const sqft = comp.sqft || 1500;
+          const salePrice = comp.salePrice || 250000;
+          const pricePerSqft = Math.round(salePrice / sqft);
+          const units = 1;
+          const rentPerUnit = Math.round((salePrice * 0.008) / units);
+          const totalRent = rentPerUnit * units;
+          const expenseRatio = 0.55;
+          const noi = Math.round(totalRent * 12 * (1 - expenseRatio));
+          const capRate = salePrice > 0 ? (noi / salePrice) * 100 : 0;
+
+          return {
+            id: `comp-${i}`,
+            address: comp.address,
+            saleDate: new Date(comp.saleDate),
+            salePrice,
+            sqft,
+            beds: comp.beds || 3,
+            baths: comp.baths || 2,
+            yearBuilt: comp.yearBuilt || 2000,
+            lotSize: 5000,
+            distanceMiles: comp.distance || 0.5,
+            daysOnMarket: 30,
+            adjustment: 0,
+            pricePerSqft,
+            units,
+            totalRent,
+            rentPerUnit,
+            expenseRatio: Math.round(expenseRatio * 100) / 100,
+            noi,
+            capRate: Math.round(capRate * 100) / 100,
+            condition: 'good' as const,
+          };
+        });
+
+        setComparables(formattedComps);
+        return;
+      }
+
+      // Fallback to demo data if API returns nothing
+      console.log('⚠️ No real data available, using demo data...');
+      setDataSource('demo');
+
       // Generate sample comparables data (for demo/testing)
       const baseValue = property.estimated_value || 250000;
       const variance = baseValue * 0.15; // 15% variance
