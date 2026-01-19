@@ -334,6 +334,11 @@ export const Settings = () => {
             <CompsApiSettings />
           </TabsContent>
 
+          {/* Manual Comps Settings */}
+          <TabsContent value="manual-comps">
+            <ManualCompsManager />
+          </TabsContent>
+
           {/* Default Settings */}
           <TabsContent value="defaults">
             <Card>
