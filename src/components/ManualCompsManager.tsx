@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Link,
   Plus,
@@ -32,8 +33,9 @@ interface SavedCompsLink {
   property_address: string;
   url: string;
   source: 'trulia' | 'zillow' | 'redfin' | 'realtor' | 'other';
-  notes?: string;
-  created_at: Date;
+  notes?: string | null;
+  created_at: string;
+  user_id?: string;
 }
 
 export const ManualCompsManager = () => {
@@ -42,6 +44,8 @@ export const ManualCompsManager = () => {
   const [compsUrl, setCompsUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [savedLinks, setSavedLinks] = useState<SavedCompsLink[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Detectar fonte do link
   const detectSource = (url: string): SavedCompsLink['source'] => {

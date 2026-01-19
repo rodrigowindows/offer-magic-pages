@@ -48,6 +48,10 @@ import {
   Share2,
   MessageSquare,
   Percent,
+  Settings,
+  Database,
+  Link as LinkIcon,
+  AlertCircle,
   Target,
   Edit2,
   Star,
@@ -59,6 +63,11 @@ import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } 
 import { CompsMapboxMap } from './CompsMapboxMap';
 import { CompsComparison } from './CompsComparison';
 import { CompsDataService } from '@/services/compsDataService';
+import { CompsApiSettings } from '@/components/CompsApiSettings';
+import { ManualCompsManager } from '@/components/ManualCompsManager';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface Property {
   id: string;
@@ -132,6 +141,14 @@ export const CompsAnalysis = () => {
   const [selectedCompsForComparison, setSelectedCompsForComparison] = useState<string[]>([]);
   // Geocoding
   const [geocodedLocations, setGeocodedLocations] = useState<Record<string, { lat: number; lng: number }>>({});
+  // UX Improvements
+  const [showApiConfig, setShowApiConfig] = useState(false);
+  const [searchRadius, setSearchRadius] = useState(() => {
+    const saved = localStorage.getItem('comps_search_radius');
+    return saved ? parseFloat(saved) : 1;
+  });
+  const [dataSource, setDataSource] = useState<string>('demo');
+  const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto');
 
   useEffect(() => {
     fetchProperties();
@@ -743,6 +760,15 @@ export const CompsAnalysis = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleRadiusChange = (value: number) => {
+    setSearchRadius(value);
+    localStorage.setItem('comps_search_radius', value.toString());
+    toast({
+      title: '✅ Raio atualizado',
+      description: `Raio de busca definido para ${value} milha(s)`,
+    });
   };
 
   return (
