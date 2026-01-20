@@ -18,7 +18,9 @@ import {
   ExternalLink,
   Copy,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Home,
+  Filter
 } from 'lucide-react';
 import {
   Table,
@@ -28,10 +30,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface SavedCompsLink {
   id: string;
   property_address: string;
+  property_id?: string | null;
   url: string;
   source: 'trulia' | 'zillow' | 'redfin' | 'realtor' | 'other';
   notes?: string | null;
@@ -39,14 +50,56 @@ interface SavedCompsLink {
   user_id?: string;
 }
 
+interface Property {
+  id: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  estimated_value?: number;
+  cash_offer_amount?: number;
+}
+
 export const ManualCompsManager = () => {
   const { toast } = useToast();
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [propertyAddress, setPropertyAddress] = useState('');
   const [compsUrl, setCompsUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [savedLinks, setSavedLinks] = useState<SavedCompsLink[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [filterPropertyId, setFilterPropertyId] = useState<string>('all');
+
+  // Carregar propriedades
+  const loadProperties = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+      setProperties(data || []);
+    } catch (error) {
+      console.error('Error loading properties:', error);
+    }
+  };
+
+  // Ao selecionar propriedade, preencher endereço
+  const handlePropertySelect = (propertyId: string) => {
+    setSelectedPropertyId(propertyId);
+    if (propertyId === 'manual') {
+      setPropertyAddress('');
+      return;
+    }
+    const property = properties.find(p => p.id === propertyId);
+    if (property) {
+      setPropertyAddress(`${property.address}, ${property.city}, ${property.state} ${property.zip_code}`);
+    }
+  };
 
   // Detectar fonte do link
   const detectSource = (url: string): SavedCompsLink['source'] => {
@@ -139,6 +192,7 @@ export const ManualCompsManager = () => {
         .from('manual_comps_links' as any)
         .insert([{
           property_address: propertyAddress.trim(),
+          property_id: selectedPropertyId && selectedPropertyId !== 'manual' ? selectedPropertyId : null,
           url: compsUrl.trim(),
           source: detectSource(compsUrl),
           notes: notes.trim() || null,
@@ -153,6 +207,7 @@ export const ManualCompsManager = () => {
       });
 
       // Limpar formulário e recarregar lista
+      setSelectedPropertyId('');
       setPropertyAddress('');
       setCompsUrl('');
       setNotes('');
@@ -170,8 +225,15 @@ export const ManualCompsManager = () => {
   };
 
   useEffect(() => {
+    loadProperties();
     loadLinks();
   }, []);
+
+  // Filtrar links salvos
+  const getFilteredLinks = () => {
+    if (filterPropertyId === 'all') return savedLinks;
+    return savedLinks.filter(link => link.property_id === filterPropertyId);
+  };
 
   // Deletar link do Supabase
   const handleDelete = async (id: string) => {
@@ -259,6 +321,45 @@ export const ManualCompsManager = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Seleção de Propriedade */}
+          <div className="space-y-2">
+            <Label htmlFor="property-select">Propriedade</Label>
+            <Select value={selectedPropertyId} onValueChange={handlePropertySelect}>
+              <SelectTrigger id="property-select" disabled={saving}>
+                <SelectValue placeholder="Selecione uma propriedade ou digite manualmente" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">
+                  <div className="flex items-center gap-2">
+                    <Home className="w-4 h-4" />
+                    Digite Manualmente
+                  </div>
+                </SelectItem>
+                {properties.length > 0 && (
+                  <>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      Suas Propriedades
+                    </div>
+                    {properties.map(property => (
+                      <SelectItem key={property.id} value={property.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{property.address}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {property.city}, {property.state} {property.zip_code}
+                            {property.estimated_value && ` • $${property.estimated_value.toLocaleString()}`}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              💡 Selecione uma propriedade existente ou digite manualmente
+            </p>
+          </div>
+
           {/* Endereço da propriedade */}
           <div className="space-y-2">
             <Label htmlFor="property-address">Endereço da Propriedade</Label>
@@ -267,8 +368,14 @@ export const ManualCompsManager = () => {
               placeholder="Ex: 1025 S Washington Ave, Orlando, FL"
               value={propertyAddress}
               onChange={(e) => setPropertyAddress(e.target.value)}
-              disabled={saving}
+              disabled={saving || (selectedPropertyId && selectedPropertyId !== 'manual')}
             />
+            {selectedPropertyId && selectedPropertyId !== 'manual' && (
+              <p className="text-xs text-green-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                Endereço preenchido automaticamente
+              </p>
+            )}
           </div>
 
           {/* URL do site de comps */}
@@ -326,13 +433,37 @@ export const ManualCompsManager = () => {
       ) : savedLinks.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              Links Salvos ({savedLinks.length})
-            </CardTitle>
-            <CardDescription>
-              Seus links de comps salvos
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  Links Salvos ({getFilteredLinks().length}{filterPropertyId !== 'all' && ` de ${savedLinks.length}`})
+                </CardTitle>
+                <CardDescription>
+                  Seus links de comps salvos
+                </CardDescription>
+              </div>
+
+              {/* Filtro por propriedade */}
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <Select value={filterPropertyId} onValueChange={setFilterPropertyId}>
+                  <SelectTrigger className="w-[250px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as Propriedades</SelectItem>
+                    {properties.filter(p =>
+                      savedLinks.some(link => link.property_id === p.id)
+                    ).map(property => (
+                      <SelectItem key={property.id} value={property.id}>
+                        {property.address}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -346,7 +477,7 @@ export const ManualCompsManager = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {savedLinks.map((link) => (
+                {getFilteredLinks().map((link) => (
                   <TableRow key={link.id}>
                     <TableCell className="font-medium">
                       {link.property_address}

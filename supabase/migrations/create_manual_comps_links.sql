@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.manual_comps_links (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   property_address TEXT NOT NULL,
+  property_id UUID REFERENCES public.properties(id) ON DELETE CASCADE,
   url TEXT NOT NULL,
   source TEXT NOT NULL CHECK (source IN ('trulia', 'zillow', 'redfin', 'realtor', 'other')),
   notes TEXT,
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.manual_comps_links (
 
 -- Create index for faster queries
 CREATE INDEX IF NOT EXISTS idx_manual_comps_links_property_address ON public.manual_comps_links(property_address);
+CREATE INDEX IF NOT EXISTS idx_manual_comps_links_property_id ON public.manual_comps_links(property_id);
 CREATE INDEX IF NOT EXISTS idx_manual_comps_links_user_id ON public.manual_comps_links(user_id);
 CREATE INDEX IF NOT EXISTS idx_manual_comps_links_created_at ON public.manual_comps_links(created_at DESC);
 
