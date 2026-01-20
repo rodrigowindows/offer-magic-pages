@@ -116,6 +116,16 @@ interface ComparableProperty {
     propertyType: number;
     bedrooms: number;
   };
+  // Adjustments
+  adjustments?: {
+    conditionAdjustment: number; // %
+    poolAdjustment: number; // $
+    garageSpaces: number;
+    recentRenovation: number; // $
+    lotSizeAdjustment: number; // $/sqft
+    customAdjustments: Array<{ name: string; amount: number; }>;
+  };
+  adjustedPrice?: number;
 }
 
 interface MarketAnalysis {
@@ -215,6 +225,40 @@ const getScoreBadge = (score: number) => {
   } else {
     return { label: 'Fair', color: 'bg-yellow-600', textColor: 'text-white' };
   }
+};
+
+/**
+ * Calculate adjusted price based on manual adjustments
+ */
+const calculateAdjustedPrice = (
+  basePrice: number,
+  adjustments: ComparableProperty['adjustments']
+): number => {
+  if (!adjustments) return basePrice;
+
+  let adjusted = basePrice;
+
+  // Condition adjustment (percentage)
+  adjusted *= (1 + adjustments.conditionAdjustment / 100);
+
+  // Pool adjustment (dollar amount)
+  adjusted += adjustments.poolAdjustment;
+
+  // Garage (dollar per space)
+  adjusted += adjustments.garageSpaces * 10000;
+
+  // Recent renovation
+  adjusted += adjustments.recentRenovation;
+
+  // Lot size adjustment
+  adjusted += adjustments.lotSizeAdjustment;
+
+  // Custom adjustments
+  adjustments.customAdjustments.forEach(adj => {
+    adjusted += adj.amount;
+  });
+
+  return Math.round(adjusted);
 };
 
 export const CompsAnalysis = () => {
@@ -1629,6 +1673,7 @@ export const CompsAnalysis = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12">Compare</TableHead>
+                    <TableHead>Quality</TableHead>
                     <TableHead>Address</TableHead>
                     <TableHead>Sale Date</TableHead>
                     <TableHead className="text-right">Price/Unit</TableHead>
@@ -1658,6 +1703,18 @@ export const CompsAnalysis = () => {
                           onChange={() => toggleCompForComparison(comp.id)}
                           className="w-4 h-4 cursor-pointer"
                         />
+                      </TableCell>
+                      <TableCell>
+                        {comp.qualityScore !== undefined && (
+                          <div className="flex flex-col gap-1">
+                            <Badge className={`${getScoreBadge(comp.qualityScore).color} ${getScoreBadge(comp.qualityScore).textColor} text-xs justify-center`}>
+                              {getScoreBadge(comp.qualityScore).label}
+                            </Badge>
+                            <div className="text-xs font-bold text-center">
+                              {comp.qualityScore.toFixed(1)}/10
+                            </div>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
