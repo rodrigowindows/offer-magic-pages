@@ -107,6 +107,15 @@ interface ComparableProperty {
   noi?: number;
   capRate?: number;
   condition?: 'reformed' | 'good' | 'needs_work' | 'as-is';
+  // Quality scoring
+  qualityScore?: number;
+  scoreBreakdown?: {
+    proximity: number;
+    sqftSimilarity: number;
+    recency: number;
+    propertyType: number;
+    bedrooms: number;
+  };
 }
 
 interface MarketAnalysis {
@@ -121,6 +130,92 @@ interface MarketAnalysis {
   avgNOI?: number;
   avgRentPerUnit?: number;
 }
+
+/**
+ * Calculate quality score for a comparable property (1-10)
+ * Based on: proximity, sqft similarity, recency, property type match, bedroom match
+ */
+const calculateCompScore = (
+  comp: ComparableProperty,
+  subject: { sqft: number; beds: number; units?: number }
+): { score: number; breakdown: any } => {
+  let totalScore = 0;
+  const breakdown = {
+    proximity: 0,
+    sqftSimilarity: 0,
+    recency: 0,
+    propertyType: 0,
+    bedrooms: 0,
+  };
+
+  // 1. Proximity Score (0-3 points)
+  if (comp.distanceMiles <= 0.25) {
+    breakdown.proximity = 3;
+  } else if (comp.distanceMiles <= 0.5) {
+    breakdown.proximity = 2.5;
+  } else if (comp.distanceMiles <= 1) {
+    breakdown.proximity = 2;
+  } else if (comp.distanceMiles <= 2) {
+    breakdown.proximity = 1;
+  } else {
+    breakdown.proximity = 0.5;
+  }
+
+  // 2. Sqft Similarity (0-3 points)
+  const sqftDiff = Math.abs(comp.sqft - subject.sqft) / subject.sqft;
+  if (sqftDiff <= 0.10) {
+    breakdown.sqftSimilarity = 3; // ±10%
+  } else if (sqftDiff <= 0.20) {
+    breakdown.sqftSimilarity = 2; // ±20%
+  } else if (sqftDiff <= 0.30) {
+    breakdown.sqftSimilarity = 1; // ±30%
+  } else {
+    breakdown.sqftSimilarity = 0.5;
+  }
+
+  // 3. Recency (0-2 points)
+  const monthsAgo = (new Date().getTime() - new Date(comp.saleDate).getTime()) / (1000 * 60 * 60 * 24 * 30);
+  if (monthsAgo <= 3) {
+    breakdown.recency = 2; // ≤3 months
+  } else if (monthsAgo <= 6) {
+    breakdown.recency = 1.5; // ≤6 months
+  } else if (monthsAgo <= 12) {
+    breakdown.recency = 1; // ≤12 months
+  } else {
+    breakdown.recency = 0.5;
+  }
+
+  // 4. Property Type Match (0-1 point)
+  const isMultiFamily = (subject.units && subject.units > 1) || false;
+  const compIsMultiFamily = (comp.units && comp.units > 1) || false;
+  if (isMultiFamily === compIsMultiFamily) {
+    breakdown.propertyType = 1;
+  }
+
+  // 5. Bedroom Match (0-1 point)
+  if (comp.beds === subject.beds) {
+    breakdown.bedrooms = 1;
+  } else if (Math.abs(comp.beds - subject.beds) === 1) {
+    breakdown.bedrooms = 0.5;
+  }
+
+  totalScore = Object.values(breakdown).reduce((sum, val) => sum + val, 0);
+
+  return { score: Math.min(10, totalScore), breakdown };
+};
+
+/**
+ * Get quality badge info based on score
+ */
+const getScoreBadge = (score: number) => {
+  if (score >= 8) {
+    return { label: 'Excellent', color: 'bg-green-600', textColor: 'text-white' };
+  } else if (score >= 5) {
+    return { label: 'Good', color: 'bg-blue-600', textColor: 'text-white' };
+  } else {
+    return { label: 'Fair', color: 'bg-yellow-600', textColor: 'text-white' };
+  }
+};
 
 export const CompsAnalysis = () => {
   const { toast } = useToast();
@@ -269,7 +364,7 @@ export const CompsAnalysis = () => {
           const noi = Math.round(totalRent * 12 * (1 - expenseRatio));
           const capRate = salePrice > 0 ? (noi / salePrice) * 100 : 0;
 
-          return {
+          const comparable: ComparableProperty = {
             id: `comp-${i}`,
             address: comp.address,
             saleDate: new Date(comp.saleDate),
@@ -291,7 +386,27 @@ export const CompsAnalysis = () => {
             capRate: Math.round(capRate * 100) / 100,
             condition: 'good' as const,
           };
+
+          // Calculate quality score
+          const scoring = calculateCompScore(comparable, {
+            sqft: property.estimated_value ? 1500 : sqft, // Assume 1500 if no data
+            beds: 3, // Default assumption
+            units: 1,
+          });
+
+          comparable.qualityScore = Math.round(scoring.score * 10) / 10;
+          comparable.scoreBreakdown = scoring.breakdown;
+
+          return comparable;
         });
+
+        // Sort by quality score (highest first)
+        formattedComps.sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0));
+
+        console.log('📊 Comps with scores:', formattedComps.map(c => ({
+          address: c.address,
+          score: c.qualityScore
+        })));
 
         setComparables(formattedComps);
         return;
