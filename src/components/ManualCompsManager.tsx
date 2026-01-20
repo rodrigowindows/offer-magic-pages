@@ -60,7 +60,11 @@ interface Property {
   cash_offer_amount?: number;
 }
 
-export const ManualCompsManager = () => {
+interface ManualCompsManagerProps {
+  preSelectedPropertyId?: string;
+}
+
+export const ManualCompsManager = ({ preSelectedPropertyId }: ManualCompsManagerProps = {}) => {
   const { toast } = useToast();
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [propertyAddress, setPropertyAddress] = useState('');
@@ -228,6 +232,22 @@ export const ManualCompsManager = () => {
     loadProperties();
     loadLinks();
   }, []);
+
+  // Auto-select property if passed from parent
+  useEffect(() => {
+    if (preSelectedPropertyId && properties.length > 0) {
+      const property = properties.find(p => p.id === preSelectedPropertyId);
+      if (property) {
+        setSelectedPropertyId(preSelectedPropertyId);
+        setPropertyAddress(`${property.address}, ${property.city}, ${property.state} ${property.zip_code}`);
+        setFilterPropertyId(preSelectedPropertyId);
+        toast({
+          title: '✅ Propriedade pré-selecionada',
+          description: property.address,
+        });
+      }
+    }
+  }, [preSelectedPropertyId, properties]);
 
   // Filtrar links salvos
   const getFilteredLinks = () => {

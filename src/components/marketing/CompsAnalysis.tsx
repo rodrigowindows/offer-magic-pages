@@ -1642,7 +1642,7 @@ export const CompsAnalysis = () => {
 
       {/* Manual Comps Tab */}
       <TabsContent value="manual" className="mt-6">
-        <ManualCompsManager />
+        <ManualCompsManager preSelectedPropertyId={selectedProperty?.id} />
       </TabsContent>
     </Tabs>
     </div>
