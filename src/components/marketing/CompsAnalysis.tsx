@@ -69,6 +69,8 @@ import { ManualCompsManager } from '@/components/ManualCompsManager';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { geocodeAddress } from '@/services/geocodingService';
+import { loadGeocodeCache } from '@/utils/geocodingCache';
 
 interface Property {
   id: string;
@@ -140,8 +142,15 @@ export const CompsAnalysis = () => {
   const [showOnlyApproved, setShowOnlyApproved] = useState(false);
   // Comparison
   const [selectedCompsForComparison, setSelectedCompsForComparison] = useState<string[]>([]);
-  // Geocoding
-  const [geocodedLocations, setGeocodedLocations] = useState<Record<string, { lat: number; lng: number }>>({});
+  // Geocoding with persistent cache
+  const [geocodedLocations, setGeocodedLocations] = useState<Record<string, { lat: number; lng: number }>>(() => {
+    const cache = loadGeocodeCache();
+    const simplified: Record<string, { lat: number; lng: number }> = {};
+    Object.entries(cache).forEach(([key, value]) => {
+      simplified[key] = { lat: value.lat, lng: value.lng };
+    });
+    return simplified;
+  });
   // UX Improvements
   const [showApiConfig, setShowApiConfig] = useState(false);
   const [searchRadius, setSearchRadius] = useState(() => {
@@ -217,77 +226,6 @@ export const CompsAnalysis = () => {
     }
   };
 
-  // Geocode address using Google Maps Geocoding API with Nominatim fallback
-  const geocodeAddress = async (address: string): Promise<{ lat: number; lng: number } | null> => {
-    // Check cache first
-    if (geocodedLocations[address]) {
-      console.log('📍 Using cached location for:', address);
-      return geocodedLocations[address];
-    }
-
-    try {
-      console.log('🌐 Geocoding:', address);
-
-      // Try Google Maps Geocoding API first (more reliable for US addresses)
-      const googleApiKey = 'AIzaSyDWr6TkYH9wh46YXzmoMjQVJ8_pVtqYytQ';
-      const googleResponse = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${googleApiKey}`
-      );
-      const googleData = await googleResponse.json();
-
-      if (googleData.status === 'OK' && googleData.results.length > 0) {
-        const location = {
-          lat: googleData.results[0].geometry.location.lat,
-          lng: googleData.results[0].geometry.location.lng
-        };
-
-        console.log('✅ Geocoded (Google):', address, location);
-
-        // Cache the result
-        setGeocodedLocations(prev => ({
-          ...prev,
-          [address]: location
-        }));
-
-        return location;
-      } else {
-        console.warn('⚠️ Google geocoding failed:', googleData.status);
-
-        // Fallback to Nominatim
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-          {
-            headers: {
-              'User-Agent': 'MyLocalInvest-CompsAnalysis/1.0'
-            }
-          }
-        );
-        const data = await response.json();
-
-        if (data && data.length > 0) {
-          const location = {
-            lat: parseFloat(data[0].lat),
-            lng: parseFloat(data[0].lon)
-          };
-
-          console.log('✅ Geocoded (Nominatim):', address, location);
-
-          setGeocodedLocations(prev => ({
-            ...prev,
-            [address]: location
-          }));
-
-          return location;
-        } else {
-          console.warn('❌ No results for:', address);
-        }
-      }
-    } catch (error) {
-      console.error('❌ Geocoding error:', error);
-    }
-
-    return null;
-  };
 
   const generateComparables = async (property: Property) => {
     setLoading(true);
