@@ -65,7 +65,7 @@ export const geocodeAddress = async (
         lng: data.lng,
       };
 
-      console.log(\`✅ Geocoded (\${data.source}):\`, address, location);
+      console.log(`✅ Geocoded (${data.source}):`, address, location);
 
       // Cache the result
       geocodeCache.set(cacheKey, location);
@@ -96,7 +96,7 @@ export const geocodeAddresses = async (
 ): Promise<Record<string, GeocodeResult>> => {
   const results: Record<string, GeocodeResult> = {};
 
-  console.log(\`🗺️ Geocoding \${addresses.length} addresses...\`);
+  console.log(`🗺️ Geocoding ${addresses.length} addresses...`);
 
   for (let i = 0; i < addresses.length; i++) {
     const address = addresses[i];
@@ -118,13 +118,13 @@ export const geocodeAddresses = async (
         onProgress(i + 1, addresses.length);
       }
 
-      console.log(\`  Progress: \${i + 1}/\${addresses.length}\`);
+      console.log(`  Progress: ${i + 1}/${addresses.length}`);
     } catch (error) {
-      console.error(\`❌ Failed to geocode \${address}:\`, error);
+      console.error(`❌ Failed to geocode ${address}:`, error);
     }
   }
 
-  console.log(\`✅ Geocoding complete! \${Object.keys(results).length}/\${addresses.length} successful\`);
+  console.log(`✅ Geocoding complete! ${Object.keys(results).length}/${addresses.length} successful`);
 
   return results;
 };
