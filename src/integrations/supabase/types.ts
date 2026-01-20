@@ -147,6 +147,7 @@ export type Database = {
           click_count: number | null
           clicked_at: string | null
           first_response_at: string | null
+          html_content: string | null
           id: string
           link_clicked: boolean | null
           metadata: Json | null
@@ -157,6 +158,7 @@ export type Database = {
           recipient_phone: string | null
           response_time_seconds: number | null
           sent_at: string
+          status: string | null
           tracking_id: string
         }
         Insert: {
@@ -167,6 +169,7 @@ export type Database = {
           click_count?: number | null
           clicked_at?: string | null
           first_response_at?: string | null
+          html_content?: string | null
           id?: string
           link_clicked?: boolean | null
           metadata?: Json | null
@@ -177,6 +180,7 @@ export type Database = {
           recipient_phone?: string | null
           response_time_seconds?: number | null
           sent_at?: string
+          status?: string | null
           tracking_id?: string
         }
         Update: {
@@ -187,6 +191,7 @@ export type Database = {
           click_count?: number | null
           clicked_at?: string | null
           first_response_at?: string | null
+          html_content?: string | null
           id?: string
           link_clicked?: boolean | null
           metadata?: Json | null
@@ -197,6 +202,7 @@ export type Database = {
           recipient_phone?: string | null
           response_time_seconds?: number | null
           sent_at?: string
+          status?: string | null
           tracking_id?: string
         }
         Relationships: [
@@ -393,6 +399,7 @@ export type Database = {
           id: string
           notes: string | null
           property_address: string
+          property_id: string | null
           source: string
           updated_at: string
           url: string
@@ -403,6 +410,7 @@ export type Database = {
           id?: string
           notes?: string | null
           property_address: string
+          property_id?: string | null
           source: string
           updated_at?: string
           url: string
@@ -413,12 +421,21 @@ export type Database = {
           id?: string
           notes?: string | null
           property_address?: string
+          property_id?: string | null
           source?: string
           updated_at?: string
           url?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "manual_comps_links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
