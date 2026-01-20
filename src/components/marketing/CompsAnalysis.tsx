@@ -306,12 +306,8 @@ export const CompsAnalysis = () => {
     return saved ? parseFloat(saved) : 1;
   });
   const [dataSource, setDataSource] = useState<string>('demo');
-<<<<<<< Updated upstream
   const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined'>('auto');
-=======
-  const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto');
   const [manualLinksCount, setManualLinksCount] = useState<number>(0);
->>>>>>> Stashed changes
 
   useEffect(() => {
     fetchProperties();
