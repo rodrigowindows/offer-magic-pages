@@ -71,6 +71,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { geocodeAddress } from '@/services/geocodingService';
 import { loadGeocodeCache } from '@/utils/geocodingCache';
+import { AdjustmentCalculator } from '@/components/AdjustmentCalculator';
 
 interface Property {
   id: string;
@@ -1074,16 +1075,20 @@ export const CompsAnalysis = () => {
         </CardContent>
       </Card>
 
-      {/* Tabs: Auto vs Manual */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'auto' | 'manual')}>
-        <TabsList className="grid w-full grid-cols-2">
+      {/* Tabs: Auto vs Manual vs Combined */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'auto' | 'manual' | 'combined')}>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="auto">
             <Database className="w-4 h-4 mr-2" />
-            Busca Automática (APIs)
+            API Comps
           </TabsTrigger>
           <TabsTrigger value="manual">
             <LinkIcon className="w-4 h-4 mr-2" />
-            Links Salvos (Manual)
+            Manual Links
+          </TabsTrigger>
+          <TabsTrigger value="combined">
+            <Target className="w-4 h-4 mr-2" />
+            Combined View
           </TabsTrigger>
         </TabsList>
 
@@ -1685,6 +1690,8 @@ export const CompsAnalysis = () => {
                     <TableHead className="text-right">NOI</TableHead>
                     <TableHead className="text-right">Cap Rate</TableHead>
                     <TableHead>Condition</TableHead>
+                    <TableHead className="text-right">Adjusted $</TableHead>
+                    <TableHead className="w-20">Adjust</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1768,6 +1775,30 @@ export const CompsAnalysis = () => {
                            comp.condition === 'needs_work' ? 'Precisa Reforma' : 'As-is'}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-right">
+                        {comp.adjustedPrice ? (
+                          <div className="flex flex-col">
+                            <span className="font-bold text-green-600">
+                              ${comp.adjustedPrice.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {((comp.adjustedPrice - comp.salePrice) / comp.salePrice * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full"
+                          title="Coming soon: Adjust comp value based on condition, amenities, etc."
+                        >
+                          <Calculator className="w-3 h-3" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   )})}
 
@@ -1815,6 +1846,279 @@ export const CompsAnalysis = () => {
       {/* Manual Comps Tab */}
       <TabsContent value="manual" className="mt-6">
         <ManualCompsManager preSelectedPropertyId={selectedProperty?.id} />
+      </TabsContent>
+
+      {/* Combined View Tab */}
+      <TabsContent value="combined" className="space-y-6 mt-6">
+        <Card className="border-purple-200 bg-purple-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Combined Analysis View
+            </CardTitle>
+            <CardDescription>
+              Visualize API Comps and Manual Links together for comprehensive market analysis
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {!selectedProperty ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Calculator className="w-12 h-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">No Property Selected</h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                Select a property from the Auto tab to view combined analysis
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Combined Stats Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Data Sources Summary</CardTitle>
+                <CardDescription>Overview of all available comparable data</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Database className="w-5 h-5 text-blue-600" />
+                      <h4 className="font-semibold text-blue-900">API Comps</h4>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-600">{comparables.length}</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Source: {dataSource === 'demo' ? 'Demo Data' : 'Live API'}
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <LinkIcon className="w-5 h-5 text-amber-600" />
+                      <h4 className="font-semibold text-amber-900">Manual Links</h4>
+                    </div>
+                    <p className="text-2xl font-bold text-amber-600">
+                      {/* This will be populated via useState from ManualCompsManager data */}
+                      0
+                    </p>
+                    <p className="text-xs text-amber-700 mt-1">Saved external links</p>
+                  </div>
+
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="w-5 h-5 text-purple-600" />
+                      <h4 className="font-semibold text-purple-900">Total Sources</h4>
+                    </div>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {comparables.length}
+                    </p>
+                    <p className="text-xs text-purple-700 mt-1">Combined data points</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* API Comps Section */}
+            {comparables.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Database className="w-5 h-5 text-blue-600" />
+                        API-Sourced Comparables ({comparables.length})
+                      </CardTitle>
+                      <CardDescription>
+                        Automated comparable sales from MLS/API data
+                      </CardDescription>
+                    </div>
+                    <Badge className="bg-blue-600 text-white">
+                      {dataSource === 'demo' ? '🎭 Demo' : '✓ Live'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Quality</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Sale Date</TableHead>
+                          <TableHead className="text-right">Sale Price</TableHead>
+                          <TableHead className="text-right">Sqft</TableHead>
+                          <TableHead className="text-right">$/Sqft</TableHead>
+                          <TableHead>Beds/Ba</TableHead>
+                          <TableHead className="text-right">Distance</TableHead>
+                          <TableHead className="text-right">Cap Rate</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {comparables.slice(0, 5).map((comp) => (
+                          <TableRow key={comp.id}>
+                            <TableCell>
+                              {comp.qualityScore !== undefined && (
+                                <div className="flex flex-col gap-1">
+                                  <Badge className={`${getScoreBadge(comp.qualityScore).color} ${getScoreBadge(comp.qualityScore).textColor} text-xs justify-center`}>
+                                    {getScoreBadge(comp.qualityScore).label}
+                                  </Badge>
+                                  <div className="text-xs font-bold text-center">
+                                    {comp.qualityScore.toFixed(1)}/10
+                                  </div>
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-muted-foreground" />
+                                {comp.address}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {format(comp.saleDate, 'MMM dd, yyyy')}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              ${comp.salePrice.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {comp.sqft.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              ${comp.pricePerSqft}
+                            </TableCell>
+                            <TableCell>
+                              {comp.beds}/{comp.baths}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {comp.distanceMiles.toFixed(2)} mi
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant={comp.capRate && comp.capRate > 6 ? "default" : "secondary"}>
+                                {comp.capRate ? `${comp.capRate}%` : '-'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Manual Links Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LinkIcon className="w-5 h-5 text-amber-600" />
+                  Manual Comp Links
+                </CardTitle>
+                <CardDescription>
+                  External links to Zillow, Trulia, Redfin, etc.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ManualCompsManager preSelectedPropertyId={selectedProperty?.id} />
+              </CardContent>
+            </Card>
+
+            {/* Combined Analysis Summary */}
+            {analysis && (
+              <Card className="border-purple-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calculator className="w-5 h-5 text-purple-600" />
+                    Combined Analysis Summary
+                  </CardTitle>
+                  <CardDescription>
+                    Market analysis based on API comparables
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Avg Sale Price</p>
+                      <p className="text-2xl font-bold">${analysis.avgSalePrice.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Price Range</p>
+                      <p className="text-lg font-bold">
+                        ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-1">Market Trend</p>
+                      <div className="flex items-center gap-2">
+                        {analysis.marketTrend === 'up' ? (
+                          <TrendingUp className="w-5 h-5 text-green-500" />
+                        ) : analysis.marketTrend === 'down' ? (
+                          <TrendingDown className="w-5 h-5 text-red-500" />
+                        ) : (
+                          <div className="w-5 h-5 bg-gray-300 rounded-full" />
+                        )}
+                        <span className="text-lg font-bold">
+                          {analysis.trendPercentage > 0 ? '+' : ''}{analysis.trendPercentage}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-start gap-2">
+                      <Info className="w-5 h-5 text-purple-600 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium mb-1 text-purple-900">Combined View Benefits</p>
+                        <ul className="text-purple-800 space-y-1">
+                          <li>• API Comps provide structured data with metrics (Cap Rate, NOI, etc.)</li>
+                          <li>• Manual Links allow you to reference specific listings on major platforms</li>
+                          <li>• Use both sources to validate your analysis and build comprehensive reports</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action Buttons */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-wrap gap-3">
+                <Button
+                  onClick={() => setActiveTab('auto')}
+                  variant="outline"
+                  className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  <Database className="w-4 h-4 mr-2" />
+                  View API Comps Tab
+                </Button>
+                <Button
+                  onClick={() => setActiveTab('manual')}
+                  variant="outline"
+                  className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                >
+                  <LinkIcon className="w-4 h-4 mr-2" />
+                  Add Manual Links
+                </Button>
+                <Button
+                  onClick={() => exportToPDF(true)}
+                  disabled={!selectedProperty || exportingPDF}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {exportingPDF ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Export Combined Report
+                </Button>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </TabsContent>
     </Tabs>
     </div>
