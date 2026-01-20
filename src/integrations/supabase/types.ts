@@ -387,6 +387,39 @@ export type Database = {
           },
         ]
       }
+      manual_comps_links: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          property_address: string
+          source: string
+          updated_at: string
+          url: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_address: string
+          source: string
+          updated_at?: string
+          url: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          property_address?: string
+          source?: string
+          updated_at?: string
+          url?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
