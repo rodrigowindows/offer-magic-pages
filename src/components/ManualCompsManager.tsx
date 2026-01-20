@@ -68,15 +68,16 @@ export const ManualCompsManager = () => {
         return;
       }
 
+      // Using explicit query since types may not be updated yet
       const { data, error } = await supabase
-        .from('manual_comps_links')
+        .from('manual_comps_links' as any)
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setSavedLinks(data || []);
+      setSavedLinks((data as unknown as SavedCompsLink[]) || []);
     } catch (error) {
       console.error('Error loading links:', error);
       toast({
@@ -135,7 +136,7 @@ export const ManualCompsManager = () => {
       }
 
       const { error } = await supabase
-        .from('manual_comps_links')
+        .from('manual_comps_links' as any)
         .insert([{
           property_address: propertyAddress.trim(),
           url: compsUrl.trim(),
@@ -176,7 +177,7 @@ export const ManualCompsManager = () => {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from('manual_comps_links')
+        .from('manual_comps_links' as any)
         .delete()
         .eq('id', id);
 
