@@ -84,6 +84,14 @@ interface Property {
   property_image_url?: string | null;
   approval_status?: string | null;
   approved_at?: string | null;
+  // Physical characteristics
+  sqft?: number | null;
+  beds?: number | null;
+  baths?: number | null;
+  year_built?: number | null;
+  lot_size?: number | null;
+  property_type?: string | null;
+  condition?: string | null;
 }
 
 interface ComparableProperty {
@@ -298,7 +306,12 @@ export const CompsAnalysis = () => {
     return saved ? parseFloat(saved) : 1;
   });
   const [dataSource, setDataSource] = useState<string>('demo');
+<<<<<<< Updated upstream
   const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined'>('auto');
+=======
+  const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto');
+  const [manualLinksCount, setManualLinksCount] = useState<number>(0);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     fetchProperties();
@@ -307,8 +320,32 @@ export const CompsAnalysis = () => {
   useEffect(() => {
     if (selectedProperty) {
       generateComparables(selectedProperty);
+      loadManualLinksCount(selectedProperty.id);
     }
   }, [selectedProperty]);
+
+  // Load manual links count for selected property
+  const loadManualLinksCount = async (propertyId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setManualLinksCount(0);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from('manual_comps_links')
+        .select('*', { count: 'exact', head: true })
+        .eq('property_id', propertyId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setManualLinksCount(count || 0);
+    } catch (error) {
+      console.error('Error loading manual links count:', error);
+      setManualLinksCount(0);
+    }
+  };
 
   useEffect(() => {
     if (comparables.length > 0) {
@@ -359,7 +396,7 @@ export const CompsAnalysis = () => {
     try {
       const { data, error} = await supabase
         .from('properties')
-        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount, property_image_url, approval_status, approved_at')
+        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount, property_image_url, approval_status, approved_at, sqft, beds, baths, year_built, lot_size, property_type, condition')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -432,10 +469,10 @@ export const CompsAnalysis = () => {
             condition: 'good' as const,
           };
 
-          // Calculate quality score
+          // Calculate quality score using real property data when available
           const scoring = calculateCompScore(comparable, {
-            sqft: property.estimated_value ? 1500 : sqft, // Assume 1500 if no data
-            beds: 3, // Default assumption
+            sqft: property.sqft || 1500, // Use real sqft or default to 1500
+            beds: property.beds || 3, // Use real beds or default to 3
             units: 1,
           });
 
@@ -742,18 +779,46 @@ export const CompsAnalysis = () => {
   };
 
   const saveReport = async () => {
-    if (!selectedProperty || comparables.length === 0) return;
+    if (!selectedProperty || comparables.length === 0 || !analysis) return;
 
     try {
-      // In production, save to property_comps table
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to save reports',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Save to comps_analysis_history table
+      const { error } = await supabase
+        .from('comps_analysis_history')
+        .insert({
+          property_id: selectedProperty.id,
+          analyst_user_id: user.id,
+          comparables_data: comparables,
+          market_analysis: analysis,
+          suggested_value_min: analysis.suggestedValueMin,
+          suggested_value_max: analysis.suggestedValueMax,
+          notes: analysisNotes || null,
+          search_radius_miles: searchRadius,
+          data_source: dataSource,
+        });
+
+      if (error) throw error;
+
       toast({
-        title: 'Success',
-        description: 'Comp report saved successfully',
+        title: '✅ Análise Salva',
+        description: 'Relatório de comps salvo no histórico com sucesso',
       });
     } catch (error: any) {
+      console.error('Error saving report:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save report',
+        title: '❌ Erro ao Salvar',
+        description: error.message || 'Falha ao salvar relatório',
         variant: 'destructive',
       });
     }
@@ -1899,8 +1964,7 @@ export const CompsAnalysis = () => {
                       <h4 className="font-semibold text-amber-900">Manual Links</h4>
                     </div>
                     <p className="text-2xl font-bold text-amber-600">
-                      {/* This will be populated via useState from ManualCompsManager data */}
-                      0
+                      {manualLinksCount}
                     </p>
                     <p className="text-xs text-amber-700 mt-1">Saved external links</p>
                   </div>
@@ -1911,7 +1975,7 @@ export const CompsAnalysis = () => {
                       <h4 className="font-semibold text-purple-900">Total Sources</h4>
                     </div>
                     <p className="text-2xl font-bold text-purple-600">
-                      {comparables.length}
+                      {comparables.length + manualLinksCount}
                     </p>
                     <p className="text-xs text-purple-700 mt-1">Combined data points</p>
                   </div>

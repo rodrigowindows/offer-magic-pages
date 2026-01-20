@@ -138,22 +138,33 @@ export class CompsDataService {
 
   /**
    * Generate fallback demo data if API fails
+   * Uses real addresses in Orlando area with accurate coordinates
    */
   private static generateFallbackComps(basePrice: number, city: string): ComparableData[] {
-    const streets = ['Oak St', 'Pine Ave', 'Maple Dr', 'Cedar Ln', 'Palm Way', 'Sunset Blvd'];
+    // Real addresses in Orlando with actual lat/lng for accurate map display
+    const orlandoAddresses = [
+      { address: '100 S Eola Dr', zip: '32801', lat: 28.5421, lng: -81.3776 },
+      { address: '400 W Church St', zip: '32801', lat: 28.5396, lng: -81.3825 },
+      { address: '555 N Orange Ave', zip: '32801', lat: 28.5478, lng: -81.3792 },
+      { address: '1000 E Colonial Dr', zip: '32803', lat: 28.5536, lng: -81.3621 },
+      { address: '2000 S Orange Ave', zip: '32806', lat: 28.5189, lng: -81.3728 },
+      { address: '850 N Mills Ave', zip: '32803', lat: 28.5523, lng: -81.3598 },
+    ];
+
     const comps: ComparableData[] = [];
-    
-    for (let i = 0; i < 6; i++) {
+
+    for (let i = 0; i < orlandoAddresses.length; i++) {
       const variance = (Math.random() - 0.5) * 0.3;
       const price = Math.round(basePrice * (1 + variance));
       const daysAgo = Math.floor(Math.random() * 180);
       const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-      
+      const location = orlandoAddresses[i];
+
       comps.push({
-        address: `${Math.floor(100 + Math.random() * 9900)} ${streets[i % streets.length]}`,
+        address: `${location.address}, ${city || 'Orlando'}, FL ${location.zip}`,
         city: city || 'Orlando',
         state: 'FL',
-        zipCode: `328${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`,
+        zipCode: location.zip,
         saleDate: saleDate.toISOString().split('T')[0],
         salePrice: price,
         beds: Math.floor(2 + Math.random() * 3),
@@ -161,10 +172,13 @@ export class CompsDataService {
         sqft: Math.round(1200 + Math.random() * 1500),
         yearBuilt: Math.floor(1970 + Math.random() * 50),
         propertyType: 'Single Family',
+        latitude: location.lat,
+        longitude: location.lng,
+        distance: 0.1 + Math.random() * 0.9, // 0.1-1.0 miles
         source: 'demo'
       });
     }
-    
+
     return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
   }
 

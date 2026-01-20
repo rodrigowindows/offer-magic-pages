@@ -182,7 +182,18 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
 
       for (let i = 0; i < comparables.length; i++) {
         const comp = comparables[i];
-        const coords = await geocodeAddress(comp.address);
+
+        // Use existing coordinates if available (from API/demo data), otherwise geocode
+        let coords: [number, number] | null = null;
+        if (comp.latitude && comp.longitude) {
+          coords = [comp.longitude, comp.latitude];
+          console.log(`✅ Using cached coordinates for ${comp.address}`);
+        } else {
+          coords = await geocodeAddress(comp.address);
+          // Small delay to avoid rate limits only when geocoding
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
         setGeocodingProgress(prev => ({ ...prev, current: prev.current + 1 }));
 
         if (coords) {
@@ -214,9 +225,6 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
             )
             .addTo(newMap);
         }
-
-        // Small delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       // Fit map to show all markers

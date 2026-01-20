@@ -241,10 +241,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId }: ManualCompsManager
         setSelectedPropertyId(preSelectedPropertyId);
         setPropertyAddress(`${property.address}, ${property.city}, ${property.state} ${property.zip_code}`);
         setFilterPropertyId(preSelectedPropertyId);
-        toast({
-          title: '✅ Propriedade pré-selecionada',
-          description: property.address,
-        });
       }
     }
   }, [preSelectedPropertyId, properties]);
@@ -315,19 +311,36 @@ export const ManualCompsManager = ({ preSelectedPropertyId }: ManualCompsManager
 
   return (
     <div className="space-y-6">
-      {/* Informação */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Link className="w-5 h-5" />
-            Opção Manual - Simples e Rápido
-          </CardTitle>
-          <CardDescription>
-            Salve links de páginas de comparáveis do Trulia, Zillow, Redfin, etc.
-            Sem necessidade de API keys ou configurações complexas.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      {/* Informação - only show if NOT pre-selected */}
+      {!preSelectedPropertyId && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Link className="w-5 h-5" />
+              Opção Manual - Simples e Rápido
+            </CardTitle>
+            <CardDescription>
+              Salve links de páginas de comparáveis do Trulia, Zillow, Redfin, etc.
+              Sem necessidade de API keys ou configurações complexas.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
+      {/* Simplified header when property is pre-selected */}
+      {preSelectedPropertyId && (
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              Adicionar Comps Manuais para esta Propriedade
+            </CardTitle>
+            <CardDescription>
+              Cole links de comparáveis do Zillow, Trulia, Redfin, etc. para complementar a análise automática
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       {/* Formulário para adicionar link */}
       <Card>
@@ -337,66 +350,85 @@ export const ManualCompsManager = ({ preSelectedPropertyId }: ManualCompsManager
             Adicionar Link de Comps
           </CardTitle>
           <CardDescription>
-            Cole o link da página de comps do Trulia, Zillow ou outro site
+            {preSelectedPropertyId
+              ? 'Cole o link da página de comps para a propriedade selecionada'
+              : 'Selecione uma propriedade e cole o link da página de comps'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Seleção de Propriedade */}
-          <div className="space-y-2">
-            <Label htmlFor="property-select">Propriedade</Label>
-            <Select value={selectedPropertyId} onValueChange={handlePropertySelect}>
-              <SelectTrigger id="property-select" disabled={saving}>
-                <SelectValue placeholder="Selecione uma propriedade ou digite manualmente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">
-                  <div className="flex items-center gap-2">
-                    <Home className="w-4 h-4" />
-                    Digite Manualmente
-                  </div>
-                </SelectItem>
-                {properties.length > 0 && (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                      Suas Propriedades
-                    </div>
-                    {properties.map(property => (
-                      <SelectItem key={property.id} value={property.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{property.address}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {property.city}, {property.state} {property.zip_code}
-                            {property.estimated_value && ` • $${property.estimated_value.toLocaleString()}`}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              💡 Selecione uma propriedade existente ou digite manualmente
-            </p>
-          </div>
-
-          {/* Endereço da propriedade */}
-          <div className="space-y-2">
-            <Label htmlFor="property-address">Endereço da Propriedade</Label>
-            <Input
-              id="property-address"
-              placeholder="Ex: 1025 S Washington Ave, Orlando, FL"
-              value={propertyAddress}
-              onChange={(e) => setPropertyAddress(e.target.value)}
-              disabled={saving || (selectedPropertyId && selectedPropertyId !== 'manual')}
-            />
-            {selectedPropertyId && selectedPropertyId !== 'manual' && (
-              <p className="text-xs text-green-600 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                Endereço preenchido automaticamente
+          {/* Property info - read-only if pre-selected */}
+          {preSelectedPropertyId ? (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Home className="w-5 h-5 text-green-600" />
+                <Label className="text-green-900 font-semibold">Propriedade Selecionada</Label>
+              </div>
+              <p className="text-lg font-bold text-green-800">{propertyAddress}</p>
+              <p className="text-xs text-green-700 mt-1">
+                ✓ Propriedade selecionada automaticamente da aba Auto
               </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* Seleção de Propriedade - only if NOT pre-selected */}
+              <div className="space-y-2">
+                <Label htmlFor="property-select">Propriedade</Label>
+                <Select value={selectedPropertyId} onValueChange={handlePropertySelect}>
+                  <SelectTrigger id="property-select" disabled={saving}>
+                    <SelectValue placeholder="Selecione uma propriedade ou digite manualmente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">
+                      <div className="flex items-center gap-2">
+                        <Home className="w-4 h-4" />
+                        Digite Manualmente
+                      </div>
+                    </SelectItem>
+                    {properties.length > 0 && (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                          Suas Propriedades
+                        </div>
+                        {properties.map(property => (
+                          <SelectItem key={property.id} value={property.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{property.address}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {property.city}, {property.state} {property.zip_code}
+                                {property.estimated_value && ` • $${property.estimated_value.toLocaleString()}`}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  💡 Selecione uma propriedade existente ou digite manualmente
+                </p>
+              </div>
+
+              {/* Endereço da propriedade */}
+              <div className="space-y-2">
+                <Label htmlFor="property-address">Endereço da Propriedade</Label>
+                <Input
+                  id="property-address"
+                  placeholder="Ex: 1025 S Washington Ave, Orlando, FL"
+                  value={propertyAddress}
+                  onChange={(e) => setPropertyAddress(e.target.value)}
+                  disabled={saving || (selectedPropertyId && selectedPropertyId !== 'manual')}
+                />
+                {selectedPropertyId && selectedPropertyId !== 'manual' && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Endereço preenchido automaticamente
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {/* URL do site de comps */}
           <div className="space-y-2">
