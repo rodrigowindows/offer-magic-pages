@@ -184,18 +184,27 @@ export const CompsAnalysis = () => {
       if (selectedProperty) {
         const fullAddress = `${selectedProperty.address}, ${selectedProperty.city}, ${selectedProperty.state} ${selectedProperty.zip_code}`;
         console.log('🏠 Geocoding subject property:', fullAddress);
-        await geocodeAddress(fullAddress);
+        const location = await geocodeAddress(fullAddress);
+        if (location) {
+          setGeocodedLocations(prev => ({
+            ...prev,
+            [fullAddress]: location
+          }));
+        }
       }
 
       console.log(`📊 Geocoding ${comparables.length} comparables...`);
       for (let i = 0; i < comparables.length; i++) {
         const comp = comparables[i];
         console.log(`  ${i + 1}/${comparables.length}:`, comp.address);
-        await geocodeAddress(comp.address);
-        // Add small delay to be respectful to API (Google allows more requests)
-        if (i < comparables.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 300));
+        const location = await geocodeAddress(comp.address);
+        if (location) {
+          setGeocodedLocations(prev => ({
+            ...prev,
+            [comp.address]: location
+          }));
         }
+        // Service handles rate limiting automatically (1 req/sec)
       }
 
       console.log('✅ Geocoding complete!');
