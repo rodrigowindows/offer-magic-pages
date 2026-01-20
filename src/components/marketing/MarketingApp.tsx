@@ -76,14 +76,19 @@ export const MarketingApp = () => {
  */
 
 const MarketingAppContent = () => {
+  const location = useLocation();
+
   // Enable keyboard shortcuts
   useKeyboardShortcuts();
 
-  // Health check on mount
+  // Health check on mount - SKIP for comps page (doesn't need marketing API)
   const { performHealthCheck } = useMarketing();
   useEffect(() => {
-    performHealthCheck();
-  }, []);
+    const isCompsPage = location.pathname.includes('/comps');
+    if (!isCompsPage) {
+      performHealthCheck();
+    }
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-background">
