@@ -298,7 +298,7 @@ export const CompsAnalysis = () => {
     return saved ? parseFloat(saved) : 1;
   });
   const [dataSource, setDataSource] = useState<string>('demo');
-  const [activeTab, setActiveTab] = useState<'auto' | 'manual'>('auto');
+  const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined'>('auto');
 
   useEffect(() => {
     fetchProperties();
