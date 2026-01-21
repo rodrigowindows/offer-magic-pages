@@ -57,8 +57,14 @@ import {
   Star,
   ArrowUpDown,
   CheckCircle2,
+  Copy,
+  ChevronRight,
+  History,
+  RotateCcw,
+  Clock,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
 import { CompsMapboxMap } from './CompsMapboxMap';
 import { CompsComparison } from './CompsComparison';
@@ -85,13 +91,26 @@ interface Property {
   approval_status?: string | null;
   approved_at?: string | null;
   // Physical characteristics
-  sqft?: number | null;
-  beds?: number | null;
-  baths?: number | null;
+  square_feet?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
   year_built?: number | null;
   lot_size?: number | null;
   property_type?: string | null;
-  condition?: string | null;
+  // Analysis metadata
+  comps_count?: number;
+  last_analysis_date?: string | null;
+  analysis_status?: 'complete' | 'partial' | 'pending';
+}
+
+interface OfferHistoryItem {
+  id: string;
+  property_id: string;
+  previous_amount: number | null;
+  new_amount: number;
+  changed_by: string;
+  changed_at: string;
+  notes: string | null;
 }
 
 interface ComparableProperty {
@@ -308,6 +327,12 @@ export const CompsAnalysis = () => {
   const [dataSource, setDataSource] = useState<string>('demo');
   const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined'>('auto');
   const [manualLinksCount, setManualLinksCount] = useState<number>(0);
+  const [offerHistory, setOfferHistory] = useState<OfferHistoryItem[]>([]);
+  const [showOfferHistory, setShowOfferHistory] = useState(false);
+  const [analysisHistory, setAnalysisHistory] = useState<any[]>([]);
+  const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
+  const [loadingComps, setLoadingComps] = useState(false);
+  const [manualComps, setManualComps] = useState<any[]>([]);
 
   useEffect(() => {
     fetchProperties();
@@ -317,6 +342,8 @@ export const CompsAnalysis = () => {
     if (selectedProperty) {
       generateComparables(selectedProperty);
       loadManualLinksCount(selectedProperty.id);
+      loadOfferHistory(selectedProperty.id);
+      loadAnalysisHistory(selectedProperty.id);
     }
   }, [selectedProperty]);
 
@@ -326,20 +353,64 @@ export const CompsAnalysis = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setManualLinksCount(0);
+        setManualComps([]);
         return;
       }
 
-      const { count, error } = await supabase
+      const { data, count, error } = await supabase
         .from('manual_comps_links')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .eq('property_id', propertyId)
         .eq('user_id', user.id);
 
       if (error) throw error;
       setManualLinksCount(count || 0);
+      setManualComps(data || []);
     } catch (error) {
       console.error('Error loading manual links count:', error);
       setManualLinksCount(0);
+      setManualComps([]);
+    }
+  };
+
+  // Load offer history for selected property
+  const loadOfferHistory = async (propertyId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('property_offer_history')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('changed_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setOfferHistory(data || []);
+    } catch (error) {
+      console.error('Error loading offer history:', error);
+      setOfferHistory([]);
+    }
+  };
+
+  const loadAnalysisHistory = async (propertyId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setAnalysisHistory([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('comps_analysis_history')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setAnalysisHistory(data || []);
+    } catch (error) {
+      console.error('Error loading analysis history:', error);
+      setAnalysisHistory([]);
     }
   };
 
@@ -392,13 +463,60 @@ export const CompsAnalysis = () => {
     try {
       const { data, error} = await supabase
         .from('properties')
-        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount, property_image_url, approval_status, approved_at, sqft, beds, baths, year_built, lot_size, property_type, condition')
+        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount, property_image_url, approval_status, approved_at, square_feet, bedrooms, bathrooms, year_built, lot_size, property_type')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(100);
 
       if (error) throw error;
-      setProperties(data || []);
+
+      // Enrich properties with analysis metadata
+      const enrichedProperties = await Promise.all((data || []).map(async (property) => {
+        try {
+          // Get analysis history count
+          const { data: historyData } = await supabase
+            .from('comps_analysis_history')
+            .select('created_at, analysis_data')
+            .eq('property_id', property.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          const lastAnalysis = historyData?.[0];
+          let compsCount = 0;
+          let analysisStatus: 'complete' | 'partial' | 'pending' = 'pending';
+
+          if (lastAnalysis?.analysis_data) {
+            const analysisData = typeof lastAnalysis.analysis_data === 'string'
+              ? JSON.parse(lastAnalysis.analysis_data)
+              : lastAnalysis.analysis_data;
+            compsCount = analysisData.comps?.length || 0;
+
+            // Determine status based on comps count and data completeness
+            if (compsCount >= 5 && analysisData.avgSalePrice) {
+              analysisStatus = 'complete';
+            } else if (compsCount > 0) {
+              analysisStatus = 'partial';
+            }
+          }
+
+          return {
+            ...property,
+            comps_count: compsCount,
+            last_analysis_date: lastAnalysis?.created_at || null,
+            analysis_status: analysisStatus,
+          };
+        } catch (err) {
+          console.error('Error enriching property:', err);
+          return {
+            ...property,
+            comps_count: 0,
+            last_analysis_date: null,
+            analysis_status: 'pending' as const,
+          };
+        }
+      }));
+
+      setProperties(enrichedProperties);
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -467,8 +585,8 @@ export const CompsAnalysis = () => {
 
           // Calculate quality score using real property data when available
           const scoring = calculateCompScore(comparable, {
-            sqft: property.sqft || 1500, // Use real sqft or default to 1500
-            beds: property.beds || 3, // Use real beds or default to 3
+            sqft: property.square_feet || 1500, // Use real sqft or default to 1500
+            beds: property.bedrooms || 3, // Use real beds or default to 3
             units: 1,
           });
 
@@ -824,12 +942,33 @@ export const CompsAnalysis = () => {
     if (!selectedProperty) return;
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const previousAmount = selectedProperty.cash_offer_amount;
+
+      // Update property offer
       const { error } = await supabase
         .from('properties')
         .update({ cash_offer_amount: newOffer })
         .eq('id', selectedProperty.id);
 
       if (error) throw error;
+
+      // Save to history
+      const { error: historyError } = await supabase
+        .from('property_offer_history')
+        .insert({
+          property_id: selectedProperty.id,
+          previous_amount: previousAmount,
+          new_amount: newOffer,
+          changed_by: user.id,
+        });
+
+      if (historyError) console.error('Error saving to history:', historyError);
+
+      // Reload history
+      loadOfferHistory(selectedProperty.id);
 
       // Update local state
       setSelectedProperty({ ...selectedProperty, cash_offer_amount: newOffer });
@@ -1002,8 +1141,39 @@ export const CompsAnalysis = () => {
     });
   };
 
+  // Data Quality Banner Component
+  const DataQualityBanner = ({ source, count }: { source: string; count: number }) => {
+    const qualityConfig = {
+      attom: { label: 'MLS Real', color: 'bg-green-500', textColor: 'text-green-700', icon: '✓', bgColor: 'bg-green-50' },
+      zillow: { label: 'Zillow API', color: 'bg-blue-500', textColor: 'text-blue-700', icon: '◉', bgColor: 'bg-blue-50' },
+      csv: { label: 'Registros Públicos', color: 'bg-yellow-500', textColor: 'text-yellow-700', icon: '◐', bgColor: 'bg-yellow-50' },
+      demo: { label: 'Dados Demo', color: 'bg-red-500', textColor: 'text-red-700', icon: '⚠', bgColor: 'bg-red-50' },
+    }[source] || { label: 'Desconhecido', color: 'bg-gray-500', textColor: 'text-gray-700', icon: '?', bgColor: 'bg-gray-50' };
+
+    return (
+      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${qualityConfig.bgColor} border border-${qualityConfig.color.replace('bg-', '')}`}>
+        <span className={`w-3 h-3 rounded-full ${qualityConfig.color}`}></span>
+        <span className={`font-semibold ${qualityConfig.textColor}`}>
+          {qualityConfig.icon} {count} comps via {qualityConfig.label}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <button
+          onClick={() => window.location.href = '/marketing'}
+          className="hover:text-foreground transition"
+        >
+          Marketing
+        </button>
+        <ChevronRight className="w-4 h-4" />
+        <span className="text-foreground font-medium">Comps Analysis</span>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -1020,10 +1190,56 @@ export const CompsAnalysis = () => {
             <Share2 className="w-4 h-4 mr-2" />
             Compartilhar
           </Button>
-          <Button onClick={saveReport} variant="outline" disabled={!selectedProperty}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Report
-          </Button>
+
+          {/* Save Report with Notes Dialog */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={!selectedProperty || !analysis}>
+                <Save className="w-4 h-4 mr-2" />
+                Save Report
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Save Analysis Report</DialogTitle>
+                <DialogDescription>
+                  Add optional notes about this analysis before saving to history
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="analysis-notes">Analysis Notes (Optional)</Label>
+                  <Textarea
+                    id="analysis-notes"
+                    placeholder="Add observations about this analysis, market conditions, adjustments made, etc..."
+                    value={analysisNotes}
+                    onChange={(e) => setAnalysisNotes(e.target.value)}
+                    rows={4}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    These notes will be saved with the analysis for future reference
+                  </p>
+                </div>
+                {selectedProperty && analysis && (
+                  <div className="p-3 bg-muted rounded-lg text-sm">
+                    <p className="font-semibold mb-1">Report Summary:</p>
+                    <p>Property: {selectedProperty.address}</p>
+                    <p>Comps: {comparables.length}</p>
+                    <p>Suggested Value: ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setAnalysisNotes('')}>
+                  Clear Notes
+                </Button>
+                <Button onClick={saveReport} className="bg-green-600 hover:bg-green-700">
+                  <Save className="w-4 h-4 mr-2" />
+                  Save to History
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button
             onClick={() => exportToPDF(false)}
             variant="outline"
@@ -1068,6 +1284,253 @@ export const CompsAnalysis = () => {
           </Button>
         </div>
       </div>
+
+      {/* Executive Summary */}
+      {selectedProperty && analysis && comparables.length > 0 && (
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Resumo Executivo</h3>
+              <DataQualityBanner source={dataSource} count={comparables.length} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-sm text-muted-foreground mb-1">Média de Vendas</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  ${analysis.avgSalePrice.toLocaleString()}
+                </div>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-sm text-muted-foreground mb-1">Preço/sqft</div>
+                <div className="text-2xl font-bold text-green-600">
+                  ${analysis.avgPricePerSqft.toFixed(0)}/sqft
+                </div>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-sm text-muted-foreground mb-1">Valor Sugerido</div>
+                <div className="text-xl font-bold text-indigo-600">
+                  ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}
+                </div>
+              </div>
+              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-sm text-muted-foreground mb-1">Comps Encontrados</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {comparables.length}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  via {dataSource === 'attom' ? 'MLS Real' : dataSource === 'zillow' ? 'Zillow' : dataSource === 'csv' ? 'CSV' : 'Demo'}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Quick Actions Bar */}
+      {selectedProperty && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={async () => {
+                  setLoadingComps(true);
+                  await fetchComparables();
+                  setLoadingComps(false);
+                }}
+                variant="outline"
+                disabled={loadingComps}
+                className="flex items-center gap-2"
+              >
+                {loadingComps ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Atualizar Comps
+              </Button>
+
+              <Dialog open={showApiConfig} onOpenChange={setShowApiConfig}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Configurar API
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configurar APIs de Comps</DialogTitle>
+                    <DialogDescription>
+                      Configure suas chaves de API para obter dados reais de comparáveis
+                    </DialogDescription>
+                  </DialogHeader>
+                  <CompsApiSettings />
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                onClick={() => exportToPDF(true)}
+                variant="outline"
+                disabled={!analysis || exportingPDF}
+                className="flex items-center gap-2"
+              >
+                {exportingPDF ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileText className="w-4 h-4" />
+                )}
+                Exportar PDF
+              </Button>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    disabled={!analysis}
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Salvar Análise
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Salvar Análise</DialogTitle>
+                    <DialogDescription>
+                      Adicione notas sobre esta análise antes de salvar
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="quick-notes">Notas da Análise</Label>
+                      <Textarea
+                        id="quick-notes"
+                        placeholder="Observações sobre mercado, ajustes, condições..."
+                        value={analysisNotes}
+                        onChange={(e) => setAnalysisNotes(e.target.value)}
+                        rows={4}
+                      />
+                    </div>
+                    {analysis && (
+                      <div className="p-3 bg-muted rounded-lg text-sm">
+                        <p className="font-semibold mb-1">Resumo:</p>
+                        <p>Propriedade: {selectedProperty.address}</p>
+                        <p>Comps: {comparables.length}</p>
+                        <p>Valor: ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button onClick={saveReport} className="bg-green-600 hover:bg-green-700">
+                      <Save className="w-4 h-4 mr-2" />
+                      Salvar
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Analysis History */}
+      {selectedProperty && analysisHistory.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-blue-600" />
+                <h3 className="text-lg font-semibold">Histórico de Análises</h3>
+                <Badge variant="secondary">{analysisHistory.length}</Badge>
+              </div>
+              <Dialog open={showAnalysisHistory} onOpenChange={setShowAnalysisHistory}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Clock className="w-4 h-4 mr-2" />
+                    Ver Tudo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Histórico Completo de Análises</DialogTitle>
+                    <DialogDescription>
+                      {selectedProperty.address}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    {analysisHistory.map((item, index) => (
+                      <Card key={item.id}>
+                        <CardContent className="pt-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <Badge variant={index === 0 ? "default" : "secondary"}>
+                                {index === 0 ? 'Mais Recente' : format(new Date(item.created_at), 'dd/MM/yyyy HH:mm')}
+                              </Badge>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {format(new Date(item.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                              </p>
+                            </div>
+                            <Badge variant="outline">
+                              {item.data_source === 'attom' ? 'MLS' : item.data_source === 'zillow' ? 'Zillow' : item.data_source === 'csv' ? 'CSV' : 'Demo'}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4 mb-3">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Valor Mínimo</p>
+                              <p className="text-lg font-bold text-blue-600">
+                                ${item.suggested_value_min?.toLocaleString() || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Valor Máximo</p>
+                              <p className="text-lg font-bold text-green-600">
+                                ${item.suggested_value_max?.toLocaleString() || 'N/A'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Comps</p>
+                              <p className="text-lg font-bold">
+                                {JSON.parse(item.comparables_data || '[]').length}
+                              </p>
+                            </div>
+                          </div>
+                          {item.notes && (
+                            <div className="p-3 bg-muted rounded-lg mt-3">
+                              <p className="text-sm font-semibold mb-1">Notas:</p>
+                              <p className="text-sm text-muted-foreground">{item.notes}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {analysisHistory.slice(0, 3).map((item, index) => (
+                <div key={item.id} className="p-4 border rounded-lg bg-white hover:bg-gray-50 transition">
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">
+                      {index === 0 ? 'Atual' : format(new Date(item.created_at), 'dd/MM')}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {item.data_source === 'attom' ? 'MLS' : item.data_source}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-green-600">
+                      ${item.suggested_value_min?.toLocaleString()} - ${item.suggested_value_max?.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {JSON.parse(item.comparables_data || '[]').length} comparáveis
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Discovery Banner - Show when using demo data */}
       {dataSource === 'demo' && (
@@ -1217,27 +1680,51 @@ export const CompsAnalysis = () => {
                 const isApproved = property.approval_status === 'approved';
                 const offerValue = `$${Math.round(property.cash_offer_amount / 1000)}K`;
 
+                // Analysis status badge
+                const getAnalysisBadge = () => {
+                  if (property.analysis_status === 'complete') {
+                    return (
+                      <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">
+                        ✓ {property.comps_count} comps
+                      </Badge>
+                    );
+                  } else if (property.analysis_status === 'partial') {
+                    return (
+                      <Badge variant="outline" className="text-amber-700 border-amber-400 text-xs">
+                        ~ {property.comps_count} comps
+                      </Badge>
+                    );
+                  } else {
+                    return (
+                      <Badge variant="outline" className="text-gray-500 border-gray-300 text-xs">
+                        Pendente
+                      </Badge>
+                    );
+                  }
+                };
+
                 return (
                   <SelectItem key={property.id} value={property.id}>
-                    <div className="flex items-center justify-between w-full gap-3">
-                      <span>{property.address}, {property.city}, {property.state}</span>
-                      {hasOffer ? (
-                        <div className="flex items-center gap-2">
-                          {isApproved ? (
-                            <Badge variant="default" className="ml-2 bg-blue-600">
-                              ✓ {offerValue} Aprovado
+                    <div className="flex items-center justify-between w-full gap-2">
+                      <span className="flex-1 truncate">{property.address}, {property.city}, {property.state}</span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {getAnalysisBadge()}
+                        {hasOffer ? (
+                          isApproved ? (
+                            <Badge variant="default" className="bg-blue-600 text-xs">
+                              ✓ {offerValue}
                             </Badge>
                           ) : (
-                            <Badge variant="default" className="ml-2 bg-amber-600">
-                              ✎ {offerValue} Manual
+                            <Badge variant="default" className="bg-amber-600 text-xs">
+                              ✎ {offerValue}
                             </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <Badge variant="outline" className="ml-2">
-                          Sem oferta
-                        </Badge>
-                      )}
+                          )
+                        ) : (
+                          <Badge variant="outline" className="text-gray-500 text-xs">
+                            Sem oferta
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </SelectItem>
                 );
@@ -1245,12 +1732,78 @@ export const CompsAnalysis = () => {
             </SelectContent>
           </Select>
 
-          {selectedProperty && (
+          {/* Analysis Status Indicator */}
+          {selectedProperty && !loading && selectedProperty.last_analysis_date && (
+            <div className={`mt-4 p-3 border rounded-lg ${
+              selectedProperty.analysis_status === 'complete'
+                ? 'bg-green-50 border-green-200'
+                : selectedProperty.analysis_status === 'partial'
+                ? 'bg-amber-50 border-amber-200'
+                : 'bg-gray-50 border-gray-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className={`w-4 h-4 ${
+                    selectedProperty.analysis_status === 'complete'
+                      ? 'text-green-600'
+                      : 'text-amber-600'
+                  }`} />
+                  <div>
+                    <p className={`text-sm font-medium ${
+                      selectedProperty.analysis_status === 'complete'
+                        ? 'text-green-900'
+                        : 'text-amber-900'
+                    }`}>
+                      {selectedProperty.analysis_status === 'complete'
+                        ? '✓ Análise Completa'
+                        : '~ Análise Parcial'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedProperty.comps_count} comparáveis • Última análise: {format(new Date(selectedProperty.last_analysis_date), 'dd/MM/yyyy HH:mm')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && selectedProperty && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                <div>
+                  <p className="font-semibold text-blue-900">Buscando comparáveis...</p>
+                  <p className="text-sm text-blue-700">Analisando propriedades próximas a {selectedProperty.address}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedProperty && !loading && (
             <>
               <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Address</p>
-                  <p className="font-medium">{selectedProperty.address}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{selectedProperty.address}</p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        const fullAddress = `${selectedProperty.address}, ${selectedProperty.city}, ${selectedProperty.state} ${selectedProperty.zip_code}`;
+                        navigator.clipboard.writeText(fullAddress);
+                        toast({
+                          title: '📋 Copiado!',
+                          description: 'Endereço copiado para área de transferência',
+                        });
+                      }}
+                      title="Copiar endereço completo"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">City</p>
@@ -1262,47 +1815,170 @@ export const CompsAnalysis = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm text-muted-foreground">Current Offer</p>
-                  <div className="flex items-center gap-2">
-                    {editingOffer ? (
-                      <>
-                        <Input
-                          type="number"
-                          value={newOfferAmount}
-                          onChange={(e) => setNewOfferAmount(Number(e.target.value))}
-                          className="w-32"
-                          autoFocus
-                        />
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                          onClick={() => updatePropertyOffer(newOfferAmount)}
-                        >
-                          Save
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => setEditingOffer(false)}>
-                          Cancel
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-medium text-lg">${selectedProperty.cash_offer_amount.toLocaleString()}</p>
+                  {selectedProperty.cash_offer_amount > 0 ? (
+                    <div className="flex items-center gap-2">
+                      {editingOffer ? (
+                        <>
+                          <Input
+                            type="number"
+                            value={newOfferAmount}
+                            onChange={(e) => setNewOfferAmount(Number(e.target.value))}
+                            className="w-32"
+                            autoFocus
+                          />
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => updatePropertyOffer(newOfferAmount)}
+                          >
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingOffer(false)}>
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-lg">${selectedProperty.cash_offer_amount.toLocaleString()}</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                            onClick={() => {
+                              setNewOfferAmount(selectedProperty.cash_offer_amount);
+                              setEditingOffer(true);
+                            }}
+                          >
+                            <Edit2 className="w-4 h-4 mr-1" />
+                            Editar Oferta
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      {editingOffer ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            value={newOfferAmount}
+                            onChange={(e) => setNewOfferAmount(Number(e.target.value))}
+                            className="w-32"
+                            placeholder="Enter offer"
+                            autoFocus
+                          />
+                          <Button
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => updatePropertyOffer(newOfferAmount)}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                            Create
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingOffer(false)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                          className="border-green-500 text-green-600 hover:bg-green-50"
                           onClick={() => {
-                            setNewOfferAmount(selectedProperty.cash_offer_amount);
+                            setNewOfferAmount(analysis?.avgSalePrice || selectedProperty.estimated_value);
                             setEditingOffer(true);
                           }}
                         >
-                          <Edit2 className="w-4 h-4 mr-1" />
-                          Editar Oferta
+                          <Plus className="w-4 h-4 mr-1" />
+                          Add Offer
                         </Button>
-                      </>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Offer History */}
+              {selectedProperty.cash_offer_amount > 0 && offerHistory.length > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <History className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">
+                        {offerHistory.length} mudança{offerHistory.length !== 1 ? 's' : ''} de oferta
+                      </span>
+                    </div>
+                    <Dialog open={showOfferHistory} onOpenChange={setShowOfferHistory}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="text-xs">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Ver Histórico
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[600px] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Histórico de Ofertas</DialogTitle>
+                          <DialogDescription>
+                            {selectedProperty.address}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-3">
+                          {offerHistory.map((item, index) => (
+                            <div
+                              key={item.id}
+                              className="p-4 border rounded-lg bg-white hover:bg-gray-50 transition"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Badge variant={index === 0 ? "default" : "secondary"}>
+                                      {index === 0 ? 'Atual' : `#${index + 1}`}
+                                    </Badge>
+                                    <span className="text-sm text-muted-foreground">
+                                      {format(new Date(item.changed_at), 'dd/MM/yyyy HH:mm')}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {item.previous_amount !== null && (
+                                      <>
+                                        <span className="text-lg line-through text-gray-400">
+                                          ${item.previous_amount.toLocaleString()}
+                                        </span>
+                                        <span className="text-muted-foreground">→</span>
+                                      </>
+                                    )}
+                                    <span className="text-xl font-bold text-green-600">
+                                      ${item.new_amount.toLocaleString()}
+                                    </span>
+                                  </div>
+                                </div>
+                                {index > 0 && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      if (confirm(`Reverter para oferta de $${item.new_amount.toLocaleString()}?`)) {
+                                        updatePropertyOffer(item.new_amount);
+                                        setShowOfferHistory(false);
+                                      }
+                                    }}
+                                  >
+                                    <RotateCcw className="w-4 h-4 mr-1" />
+                                    Reverter
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-1">
+                    Última mudança: {format(new Date(offerHistory[0].changed_at), 'dd/MM/yyyy HH:mm')}
+                  </p>
+                </div>
+              )}
 
               {/* Quick Actions for Offer */}
               {analysis && (
@@ -1906,7 +2582,14 @@ export const CompsAnalysis = () => {
 
       {/* Manual Comps Tab */}
       <TabsContent value="manual" className="mt-6">
-        <ManualCompsManager preSelectedPropertyId={selectedProperty?.id} />
+        <ManualCompsManager
+          preSelectedPropertyId={selectedProperty?.id}
+          onLinkAdded={() => {
+            if (selectedProperty) {
+              loadManualLinksCount(selectedProperty.id);
+            }
+          }}
+        />
       </TabsContent>
 
       {/* Combined View Tab */}
@@ -2067,19 +2750,92 @@ export const CompsAnalysis = () => {
               </Card>
             )}
 
-            {/* Manual Links Section */}
+            {/* Manual Comps Section - Show saved links */}
+            {manualComps.length > 0 && (
+              <Card className="border-amber-200">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <LinkIcon className="w-5 h-5 text-amber-600" />
+                        Manual Comp Links ({manualComps.length})
+                      </CardTitle>
+                      <CardDescription>
+                        External links you've saved for comparison
+                      </CardDescription>
+                    </div>
+                    <Badge className="bg-amber-600 text-white">
+                      📎 Manual
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {manualComps.map((comp) => (
+                      <div key={comp.id} className="p-4 border border-amber-200 rounded-lg bg-amber-50 hover:bg-amber-100 transition">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge className="bg-amber-600 text-white text-xs">Manual</Badge>
+                              <span className="text-sm font-medium">{comp.source || 'External Link'}</span>
+                            </div>
+                            <a
+                              href={comp.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-sm break-all"
+                            >
+                              {comp.url}
+                            </a>
+                            {comp.notes && (
+                              <p className="text-sm text-muted-foreground mt-2">{comp.notes}</p>
+                            )}
+                            {comp.estimated_price && (
+                              <div className="mt-2">
+                                <span className="text-sm text-muted-foreground">Estimated Price: </span>
+                                <span className="text-sm font-semibold text-green-600">
+                                  ${comp.estimated_price.toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            asChild
+                          >
+                            <a href={comp.url} target="_blank" rel="noopener noreferrer">
+                              <LinkIcon className="w-4 h-4" />
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Manual Links Manager */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <LinkIcon className="w-5 h-5 text-amber-600" />
-                  Manual Comp Links
+                  <Plus className="w-5 h-5 text-amber-600" />
+                  Add Manual Comp Links
                 </CardTitle>
                 <CardDescription>
-                  External links to Zillow, Trulia, Redfin, etc.
+                  Add external links to Zillow, Trulia, Redfin, etc.
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ManualCompsManager preSelectedPropertyId={selectedProperty?.id} />
+                <ManualCompsManager
+                  preSelectedPropertyId={selectedProperty?.id}
+                  onLinkAdded={() => {
+                    if (selectedProperty) {
+                      loadManualLinksCount(selectedProperty.id);
+                    }
+                  }}
+                />
               </CardContent>
             </Card>
 
