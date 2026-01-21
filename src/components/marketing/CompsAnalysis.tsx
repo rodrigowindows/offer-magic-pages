@@ -59,6 +59,7 @@ import {
   CheckCircle2,
   Copy,
   ChevronRight,
+  ChevronDown,
   History,
   RotateCcw,
   Clock,
@@ -75,6 +76,13 @@ import { ManualCompsManager } from '@/components/ManualCompsManager';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { geocodeAddress } from '@/services/geocodingService';
 import { loadGeocodeCache } from '@/utils/geocodingCache';
 import { AdjustmentCalculator } from '@/components/AdjustmentCalculator';
@@ -914,6 +922,12 @@ export const CompsAnalysis = () => {
           property_id: selectedProperty.id,
           analyst_user_id: user.id,
           comparables_data: comparables,
+          analysis_data: {
+            comps: comparables,
+            avgSalePrice: analysis.avgSalePrice,
+            avgPricePerSqft: analysis.avgPricePerSqft,
+            marketTrend: analysis.marketTrend,
+          },
           market_analysis: analysis,
           suggested_value_min: analysis.suggestedValueMin,
           suggested_value_max: analysis.suggestedValueMax,
@@ -923,6 +937,10 @@ export const CompsAnalysis = () => {
         });
 
       if (error) throw error;
+
+      // Reload analysis history and properties to update metadata
+      await loadAnalysisHistory(selectedProperty.id);
+      await fetchProperties();
 
       toast({
         title: '✅ Análise Salva',
@@ -1174,8 +1192,8 @@ export const CompsAnalysis = () => {
         <span className="text-foreground font-medium">Comps Analysis</span>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Simplified Header */}
+      <div className="space-y-4">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Home className="w-8 h-8" />
@@ -1185,114 +1203,150 @@ export const CompsAnalysis = () => {
             Analyze comparable sales to determine fair market value
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={shareReport} variant="outline" disabled={!selectedProperty}>
-            <Share2 className="w-4 h-4 mr-2" />
-            Compartilhar
-          </Button>
 
-          {/* Save Report with Notes Dialog */}
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline" disabled={!selectedProperty || !analysis}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Report
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Save Analysis Report</DialogTitle>
-                <DialogDescription>
-                  Add optional notes about this analysis before saving to history
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="analysis-notes">Analysis Notes (Optional)</Label>
-                  <Textarea
-                    id="analysis-notes"
-                    placeholder="Add observations about this analysis, market conditions, adjustments made, etc..."
-                    value={analysisNotes}
-                    onChange={(e) => setAnalysisNotes(e.target.value)}
-                    rows={4}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    These notes will be saved with the analysis for future reference
-                  </p>
-                </div>
-                {selectedProperty && analysis && (
-                  <div className="p-3 bg-muted rounded-lg text-sm">
-                    <p className="font-semibold mb-1">Report Summary:</p>
-                    <p>Property: {selectedProperty.address}</p>
-                    <p>Comps: {comparables.length}</p>
-                    <p>Suggested Value: ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setAnalysisNotes('')}>
-                  Clear Notes
-                </Button>
-                <Button onClick={saveReport} className="bg-green-600 hover:bg-green-700">
-                  <Save className="w-4 h-4 mr-2" />
-                  Save to History
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-          <Button
-            onClick={() => exportToPDF(false)}
-            variant="outline"
-            disabled={!selectedProperty || exportingPDF}
-          >
-            {exportingPDF ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <FileText className="w-4 h-4 mr-2" />
-            )}
-            Quick PDF
-          </Button>
-          <Button
-            onClick={() => exportToPDF(true)}
-            disabled={!selectedProperty || exportingPDF}
-          >
-            {exportingPDF ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4 mr-2" />
-            )}
-            Export PDF com Imagens
-          </Button>
-          <Button
-            onClick={() => exportAllFiltered(false)}
-            disabled={exportingPDF || properties.length === 0}
-            variant="outline"
-            className="border-green-500 text-green-600 hover:bg-green-50"
-          >
-            {exportingPDF ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4 mr-2" />
-            )}
-            Export All Filtered ({properties.filter(property => {
-              if (offerStatusFilter === 'all') return true;
-              if (offerStatusFilter === 'approved') return property.approval_status === 'approved';
-              if (offerStatusFilter === 'manual') return property.cash_offer_amount > 0 && property.approval_status !== 'approved';
-              if (offerStatusFilter === 'none') return !property.cash_offer_amount || property.cash_offer_amount === 0;
-              return true;
-            }).length})
-          </Button>
-        </div>
+        {/* Main Tabs - Moved to top for better visibility */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'auto' | 'manual' | 'combined')} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="auto" className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              <span className="hidden sm:inline">API Comps</span>
+              <span className="sm:hidden">API</span>
+            </TabsTrigger>
+            <TabsTrigger value="manual" className="flex items-center gap-2">
+              <LinkIcon className="w-4 h-4" />
+              <span className="hidden sm:inline">Manual</span>
+              <span className="sm:hidden">Manual</span>
+            </TabsTrigger>
+            <TabsTrigger value="combined" className="flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:inline">Combined</span>
+              <span className="sm:hidden">Both</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {/* Executive Summary */}
+      {/* Executive Summary with Actions */}
       {selectedProperty && analysis && comparables.length > 0 && (
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
           <CardContent className="pt-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Resumo Executivo</h3>
-              <DataQualityBanner source={dataSource} count={comparables.length} />
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-semibold text-gray-900">Resumo Executivo</h3>
+                <DataQualityBanner source={dataSource} count={comparables.length} />
+              </div>
+
+              {/* Action Buttons - Consolidated */}
+              <div className="flex gap-2">
+                <Button
+                  onClick={async () => {
+                    setLoadingComps(true);
+                    await fetchComparables();
+                    setLoadingComps(false);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  disabled={loadingComps}
+                >
+                  {loadingComps ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                  )}
+                  Refresh
+                </Button>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Save Analysis Report</DialogTitle>
+                      <DialogDescription>
+                        Add optional notes about this analysis
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="save-notes">Analysis Notes</Label>
+                        <Textarea
+                          id="save-notes"
+                          placeholder="Market conditions, adjustments made, observations..."
+                          value={analysisNotes}
+                          onChange={(e) => setAnalysisNotes(e.target.value)}
+                          rows={4}
+                        />
+                      </div>
+                      {analysis && (
+                        <div className="p-3 bg-muted rounded-lg text-sm">
+                          <p className="font-semibold mb-1">Summary:</p>
+                          <p>Property: {selectedProperty.address}</p>
+                          <p>Comps: {comparables.length}</p>
+                          <p>Value: ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}</p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setAnalysisNotes('')}>
+                        Clear
+                      </Button>
+                      <Button onClick={saveReport} className="bg-green-600 hover:bg-green-700">
+                        <Save className="w-4 h-4 mr-2" />
+                        Save
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={exportingPDF}>
+                      {exportingPDF ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4 mr-2" />
+                      )}
+                      Export
+                      <ChevronDown className="w-4 h-4 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => exportToPDF(false)} disabled={exportingPDF}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Quick PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => exportToPDF(true)} disabled={exportingPDF}>
+                      <Download className="w-4 h-4 mr-2" />
+                      PDF with Images
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => exportAllFiltered(false)}
+                      disabled={exportingPDF || properties.length === 0}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Export All Filtered ({properties.filter(property => {
+                        if (offerStatusFilter === 'all') return true;
+                        if (offerStatusFilter === 'approved') return property.approval_status === 'approved';
+                        if (offerStatusFilter === 'manual') return property.cash_offer_amount > 0 && property.approval_status !== 'approved';
+                        if (offerStatusFilter === 'none') return !property.cash_offer_amount || property.cash_offer_amount === 0;
+                        return true;
+                      }).length})
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button onClick={shareReport} variant="outline" size="sm">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+              </div>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-white rounded-lg shadow-sm">
                 <div className="text-sm text-muted-foreground mb-1">Média de Vendas</div>
@@ -1326,211 +1380,111 @@ export const CompsAnalysis = () => {
         </Card>
       )}
 
-      {/* Quick Actions Bar */}
-      {selectedProperty && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-2">
-              <Button
-                onClick={async () => {
-                  setLoadingComps(true);
-                  await fetchComparables();
-                  setLoadingComps(false);
-                }}
-                variant="outline"
-                disabled={loadingComps}
-                className="flex items-center gap-2"
-              >
-                {loadingComps ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="w-4 h-4" />
-                )}
-                Atualizar Comps
-              </Button>
-
-              <Dialog open={showApiConfig} onOpenChange={setShowApiConfig}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Configurar API
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Configurar APIs de Comps</DialogTitle>
-                    <DialogDescription>
-                      Configure suas chaves de API para obter dados reais de comparáveis
-                    </DialogDescription>
-                  </DialogHeader>
-                  <CompsApiSettings />
-                </DialogContent>
-              </Dialog>
-
-              <Button
-                onClick={() => exportToPDF(true)}
-                variant="outline"
-                disabled={!analysis || exportingPDF}
-                className="flex items-center gap-2"
-              >
-                {exportingPDF ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileText className="w-4 h-4" />
-                )}
-                Exportar PDF
-              </Button>
-
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={!analysis}
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    Salvar Análise
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Salvar Análise</DialogTitle>
-                    <DialogDescription>
-                      Adicione notas sobre esta análise antes de salvar
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="quick-notes">Notas da Análise</Label>
-                      <Textarea
-                        id="quick-notes"
-                        placeholder="Observações sobre mercado, ajustes, condições..."
-                        value={analysisNotes}
-                        onChange={(e) => setAnalysisNotes(e.target.value)}
-                        rows={4}
-                      />
-                    </div>
-                    {analysis && (
-                      <div className="p-3 bg-muted rounded-lg text-sm">
-                        <p className="font-semibold mb-1">Resumo:</p>
-                        <p>Propriedade: {selectedProperty.address}</p>
-                        <p>Comps: {comparables.length}</p>
-                        <p>Valor: ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button onClick={saveReport} className="bg-green-600 hover:bg-green-700">
-                      <Save className="w-4 h-4 mr-2" />
-                      Salvar
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Analysis History */}
+      {/* Layout: Summary + History in 2 columns on desktop */}
       {selectedProperty && analysisHistory.length > 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold">Histórico de Análises</h3>
-                <Badge variant="secondary">{analysisHistory.length}</Badge>
-              </div>
-              <Dialog open={showAnalysisHistory} onOpenChange={setShowAnalysisHistory}>
-                <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <Clock className="w-4 h-4 mr-2" />
-                    Ver Tudo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Histórico Completo de Análises</DialogTitle>
-                    <DialogDescription>
-                      {selectedProperty.address}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    {analysisHistory.map((item, index) => (
-                      <Card key={item.id}>
-                        <CardContent className="pt-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <Badge variant={index === 0 ? "default" : "secondary"}>
-                                {index === 0 ? 'Mais Recente' : format(new Date(item.created_at), 'dd/MM/yyyy HH:mm')}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Analysis History - Compact sidebar */}
+          <Card className="lg:col-span-1">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <History className="w-5 h-5 text-blue-600" />
+                  <h3 className="font-semibold">Histórico</h3>
+                  <Badge variant="secondary" className="text-xs">{analysisHistory.length}</Badge>
+                </div>
+                <Dialog open={showAnalysisHistory} onOpenChange={setShowAnalysisHistory}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="ghost">
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Histórico Completo de Análises</DialogTitle>
+                      <DialogDescription>
+                        {selectedProperty.address}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      {analysisHistory.map((item, index) => (
+                        <Card key={item.id}>
+                          <CardContent className="pt-4">
+                            <div className="flex items-start justify-between mb-3">
+                              <div>
+                                <Badge variant={index === 0 ? "default" : "secondary"}>
+                                  {index === 0 ? 'Mais Recente' : format(new Date(item.created_at), 'dd/MM/yyyy HH:mm')}
+                                </Badge>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {format(new Date(item.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                                </p>
+                              </div>
+                              <Badge variant="outline">
+                                {item.data_source === 'attom' ? 'MLS' : item.data_source === 'zillow' ? 'Zillow' : item.data_source === 'csv' ? 'CSV' : 'Demo'}
                               </Badge>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {format(new Date(item.created_at), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
-                              </p>
                             </div>
-                            <Badge variant="outline">
-                              {item.data_source === 'attom' ? 'MLS' : item.data_source === 'zillow' ? 'Zillow' : item.data_source === 'csv' ? 'CSV' : 'Demo'}
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-3 gap-4 mb-3">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Valor Mínimo</p>
-                              <p className="text-lg font-bold text-blue-600">
-                                ${item.suggested_value_min?.toLocaleString() || 'N/A'}
-                              </p>
+                            <div className="grid grid-cols-3 gap-4 mb-3">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Valor Mínimo</p>
+                                <p className="text-lg font-bold text-blue-600">
+                                  ${item.suggested_value_min?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Valor Máximo</p>
+                                <p className="text-lg font-bold text-green-600">
+                                  ${item.suggested_value_max?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">Comps</p>
+                                <p className="text-lg font-bold">
+                                  {JSON.parse(item.comparables_data || '[]').length}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Valor Máximo</p>
-                              <p className="text-lg font-bold text-green-600">
-                                ${item.suggested_value_max?.toLocaleString() || 'N/A'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Comps</p>
-                              <p className="text-lg font-bold">
-                                {JSON.parse(item.comparables_data || '[]').length}
-                              </p>
-                            </div>
-                          </div>
-                          {item.notes && (
-                            <div className="p-3 bg-muted rounded-lg mt-3">
-                              <p className="text-sm font-semibold mb-1">Notas:</p>
-                              <p className="text-sm text-muted-foreground">{item.notes}</p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {analysisHistory.slice(0, 3).map((item, index) => (
-                <div key={item.id} className="p-4 border rounded-lg bg-white hover:bg-gray-50 transition">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">
-                      {index === 0 ? 'Atual' : format(new Date(item.created_at), 'dd/MM')}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">
-                      {item.data_source === 'attom' ? 'MLS' : item.data_source}
-                    </span>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-green-600">
+                            {item.notes && (
+                              <div className="p-3 bg-muted rounded-lg mt-3">
+                                <p className="text-sm font-semibold mb-1">Notas:</p>
+                                <p className="text-sm text-muted-foreground">{item.notes}</p>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="space-y-2">
+                {analysisHistory.slice(0, 3).map((item, index) => (
+                  <div key={item.id} className="p-3 border rounded-lg bg-white hover:bg-gray-50 transition cursor-pointer" onClick={() => setShowAnalysisHistory(true)}>
+                    <div className="flex items-center justify-between mb-1">
+                      <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">
+                        {index === 0 ? 'Atual' : format(new Date(item.created_at), 'dd/MM')}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {item.data_source === 'attom' ? 'MLS' : item.data_source}
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-green-600">
                       ${item.suggested_value_min?.toLocaleString()} - ${item.suggested_value_max?.toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {JSON.parse(item.comparables_data || '[]').length} comparáveis
+                      {JSON.parse(item.comparables_data || '[]').length} comps
                     </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Main Content Area */}
+          <div className="lg:col-span-2">
+            {/* Content will go here */}
+          </div>
+        </div>
       )}
+
 
       {/* Discovery Banner - Show when using demo data */}
       {dataSource === 'demo' && (
@@ -1599,24 +1553,8 @@ export const CompsAnalysis = () => {
         </CardContent>
       </Card>
 
-      {/* Tabs: Auto vs Manual vs Combined */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'auto' | 'manual' | 'combined')}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="auto">
-            <Database className="w-4 h-4 mr-2" />
-            API Comps
-          </TabsTrigger>
-          <TabsTrigger value="manual">
-            <LinkIcon className="w-4 h-4 mr-2" />
-            Manual Links
-          </TabsTrigger>
-          <TabsTrigger value="combined">
-            <Target className="w-4 h-4 mr-2" />
-            Combined View
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="auto" className="space-y-6 mt-6">
+      {/* Tab Content - Tabs moved to header */}
+        <TabsContent value="auto" className="space-y-6">
           {/* Property Selector */}
           <Card>
         <CardHeader>
@@ -2215,6 +2153,92 @@ export const CompsAnalysis = () => {
         </div>
       )}
 
+      {/* Bulk Actions Card */}
+      {selectedCompsForComparison.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                <div>
+                  <h3 className="font-semibold text-blue-900">
+                    {selectedCompsForComparison.length} Comparável{selectedCompsForComparison.length > 1 ? 'is' : ''} Selecionado{selectedCompsForComparison.length > 1 ? 's' : ''}
+                  </h3>
+                  <p className="text-sm text-blue-700">
+                    Ações em massa disponíveis para os comps selecionados
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    if (!selectedProperty || !analysis) return;
+                    const selectedComps = comparables.filter(c => selectedCompsForComparison.includes(c.id));
+                    const avgPrice = selectedComps.reduce((sum, c) => sum + c.salePrice, 0) / selectedComps.length;
+                    try {
+                      setExportingPDF(true);
+                      await exportCompsToPDF(selectedProperty, selectedComps, {
+                        ...analysis,
+                        avgSalePrice: avgPrice,
+                      });
+                      toast({
+                        title: '✅ PDF Gerado',
+                        description: `PDF com ${selectedComps.length} comps (Média: $${Math.round(avgPrice).toLocaleString()})`,
+                      });
+                    } catch (error: any) {
+                      toast({
+                        title: '❌ Erro ao Exportar',
+                        description: error.message,
+                        variant: 'destructive',
+                      });
+                    } finally {
+                      setExportingPDF(false);
+                    }
+                  }}
+                  disabled={exportingPDF}
+                  className="bg-white"
+                >
+                  {exportingPDF ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Exportar PDF
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const selectedComps = comparables.filter(c => selectedCompsForComparison.includes(c.id));
+                    const avgPrice = selectedComps.reduce((sum, c) => sum + c.salePrice, 0) / selectedComps.length;
+                    setNewOfferAmount(Math.round(avgPrice));
+                    setEditingOffer(true);
+                    toast({
+                      title: '💡 Oferta Sugerida',
+                      description: `Média dos ${selectedComps.length} comps: $${Math.round(avgPrice).toLocaleString()}`,
+                    });
+                  }}
+                  className="bg-white"
+                >
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Usar Média como Oferta
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setSelectedCompsForComparison([])}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Limpar Seleção
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Side-by-Side Comparison */}
       {selectedProperty && selectedCompsForComparison.length > 0 && (
         <CompsComparison
@@ -2394,7 +2418,50 @@ export const CompsAnalysis = () => {
                 </Button>
               )}
 
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center gap-2">
+                {/* Export Selected Comps */}
+                {selectedCompsForComparison.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-sm">
+                      {selectedCompsForComparison.length} selecionado{selectedCompsForComparison.length > 1 ? 's' : ''}
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        if (!selectedProperty || !analysis) return;
+                        const selectedComps = comparables.filter(c => selectedCompsForComparison.includes(c.id));
+                        try {
+                          setExportingPDF(true);
+                          await exportCompsToPDF(selectedProperty, selectedComps, {
+                            ...analysis,
+                            avgSalePrice: selectedComps.reduce((sum, c) => sum + c.salePrice, 0) / selectedComps.length,
+                          });
+                          toast({
+                            title: '✅ PDF Exportado',
+                            description: `PDF com ${selectedComps.length} comps selecionados`,
+                          });
+                        } catch (error: any) {
+                          toast({
+                            title: '❌ Erro',
+                            description: error.message,
+                            variant: 'destructive',
+                          });
+                        } finally {
+                          setExportingPDF(false);
+                        }
+                      }}
+                      disabled={exportingPDF}
+                    >
+                      {exportingPDF ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4 mr-2" />
+                      )}
+                      Exportar Selecionados
+                    </Button>
+                  </div>
+                )}
                 <Button
                   size="sm"
                   variant={selectedCompsForComparison.length === getFilteredComparables().length && getFilteredComparables().length > 0 ? "default" : "outline"}
@@ -2403,8 +2470,8 @@ export const CompsAnalysis = () => {
                 >
                   <CheckCircle2 className="w-4 h-4 mr-2" />
                   {selectedCompsForComparison.length === getFilteredComparables().length && getFilteredComparables().length > 0
-                    ? `Deselect All (${selectedCompsForComparison.length})`
-                    : `Select All (${getFilteredComparables().length})`}
+                    ? `Desmarcar (${selectedCompsForComparison.length})`
+                    : `Selecionar (${getFilteredComparables().length})`}
                 </Button>
               </div>
             </div>
