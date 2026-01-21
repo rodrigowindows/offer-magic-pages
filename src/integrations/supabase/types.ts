@@ -281,6 +281,56 @@ export type Database = {
         }
         Relationships: []
       }
+      comps_analysis_history: {
+        Row: {
+          analysis_data: Json
+          analyst_user_id: string | null
+          comparables_count: number | null
+          created_at: string
+          data_source: string | null
+          id: string
+          notes: string | null
+          property_id: string
+          search_radius_miles: number | null
+          suggested_value_max: number | null
+          suggested_value_min: number | null
+        }
+        Insert: {
+          analysis_data?: Json
+          analyst_user_id?: string | null
+          comparables_count?: number | null
+          created_at?: string
+          data_source?: string | null
+          id?: string
+          notes?: string | null
+          property_id: string
+          search_radius_miles?: number | null
+          suggested_value_max?: number | null
+          suggested_value_min?: number | null
+        }
+        Update: {
+          analysis_data?: Json
+          analyst_user_id?: string | null
+          comparables_count?: number | null
+          created_at?: string
+          data_source?: string | null
+          id?: string
+          notes?: string | null
+          property_id?: string
+          search_radius_miles?: number | null
+          suggested_value_max?: number | null
+          suggested_value_min?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comps_analysis_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_campaigns: {
         Row: {
           id: string
@@ -1776,6 +1826,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "property_notes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      property_offer_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          created_at: string
+          id: string
+          new_amount: number
+          notes: string | null
+          previous_amount: number | null
+          property_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_amount: number
+          notes?: string | null
+          previous_amount?: number | null
+          property_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_amount?: number
+          notes?: string | null
+          previous_amount?: number | null
+          property_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_offer_history_property_id_fkey"
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"

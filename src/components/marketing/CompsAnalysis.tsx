@@ -376,15 +376,15 @@ export const CompsAnalysis = () => {
   // Load offer history for selected property
   const loadOfferHistory = async (propertyId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('property_offer_history')
+      const { data, error } = await (supabase
+        .from('property_offer_history' as any)
         .select('*')
         .eq('property_id', propertyId)
         .order('changed_at', { ascending: false })
-        .limit(10);
+        .limit(10) as any);
 
       if (error) throw error;
-      setOfferHistory(data || []);
+      setOfferHistory((data as OfferHistoryItem[]) || []);
     } catch (error) {
       console.error('Error loading offer history:', error);
       setOfferHistory([]);
@@ -399,12 +399,12 @@ export const CompsAnalysis = () => {
         return;
       }
 
-      const { data, error } = await supabase
-        .from('comps_analysis_history')
+      const { data, error } = await (supabase
+        .from('comps_analysis_history' as any)
         .select('*')
         .eq('property_id', propertyId)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(5) as any);
 
       if (error) throw error;
       setAnalysisHistory(data || []);
@@ -474,14 +474,14 @@ export const CompsAnalysis = () => {
       const enrichedProperties = await Promise.all((data || []).map(async (property) => {
         try {
           // Get analysis history count
-          const { data: historyData } = await supabase
-            .from('comps_analysis_history')
+          const { data: historyData } = await (supabase
+            .from('comps_analysis_history' as any)
             .select('created_at, analysis_data')
             .eq('property_id', property.id)
             .order('created_at', { ascending: false })
-            .limit(1);
+            .limit(1) as any);
 
-          const lastAnalysis = historyData?.[0];
+          const lastAnalysis = historyData?.[0] as any;
           let compsCount = 0;
           let analysisStatus: 'complete' | 'partial' | 'pending' = 'pending';
 
@@ -908,19 +908,19 @@ export const CompsAnalysis = () => {
       }
 
       // Save to comps_analysis_history table
-      const { error } = await supabase
-        .from('comps_analysis_history')
+      const { error } = await (supabase
+        .from('comps_analysis_history' as any)
         .insert({
           property_id: selectedProperty.id,
           analyst_user_id: user.id,
-          comparables_data: comparables,
-          market_analysis: analysis,
+          analysis_data: { comps: comparables, analysis: analysis },
+          comparables_count: comparables.length,
           suggested_value_min: analysis.suggestedValueMin,
           suggested_value_max: analysis.suggestedValueMax,
           notes: analysisNotes || null,
           search_radius_miles: searchRadius,
           data_source: dataSource,
-        });
+        }) as any);
 
       if (error) throw error;
 
@@ -956,14 +956,14 @@ export const CompsAnalysis = () => {
       if (error) throw error;
 
       // Save to history
-      const { error: historyError } = await supabase
-        .from('property_offer_history')
+      const { error: historyError } = await (supabase
+        .from('property_offer_history' as any)
         .insert({
           property_id: selectedProperty.id,
           previous_amount: previousAmount,
           new_amount: newOffer,
           changed_by: user.id,
-        });
+        }) as any);
 
       if (historyError) console.error('Error saving to history:', historyError);
 
@@ -1333,8 +1333,9 @@ export const CompsAnalysis = () => {
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={async () => {
+                  if (!selectedProperty) return;
                   setLoadingComps(true);
-                  await fetchComparables();
+                  await generateComparables(selectedProperty);
                   setLoadingComps(false);
                 }}
                 variant="outline"
