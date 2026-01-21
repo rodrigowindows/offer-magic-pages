@@ -62,9 +62,10 @@ interface Property {
 
 interface ManualCompsManagerProps {
   preSelectedPropertyId?: string;
+  onLinkAdded?: () => void;
 }
 
-export const ManualCompsManager = ({ preSelectedPropertyId }: ManualCompsManagerProps = {}) => {
+export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: ManualCompsManagerProps = {}) => {
   const { toast } = useToast();
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [propertyAddress, setPropertyAddress] = useState('');
@@ -209,6 +210,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId }: ManualCompsManager
         title: '✅ Link salvo!',
         description: `Link de comps salvo para ${propertyAddress}`,
       });
+
+      // Call callback to refresh manual links count
+      onLinkAdded?.();
 
       // Limpar formulário e recarregar lista
       setSelectedPropertyId('');
