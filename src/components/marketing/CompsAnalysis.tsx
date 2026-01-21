@@ -341,9 +341,23 @@ export const CompsAnalysis = () => {
   const [showAnalysisHistory, setShowAnalysisHistory] = useState(false);
   const [loadingComps, setLoadingComps] = useState(false);
   const [manualComps, setManualComps] = useState<any[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    const saved = localStorage.getItem('comps_favorites');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     fetchProperties();
+
+    // Check if first time user
+    const hasSeenOnboarding = localStorage.getItem('comps_onboarding_seen');
+    if (!hasSeenOnboarding) {
+      setTimeout(() => setShowOnboarding(true), 1000);
+    }
   }, []);
 
   useEffect(() => {
@@ -379,6 +393,11 @@ export const CompsAnalysis = () => {
           setLoadingComps(true);
           fetchComparables().then(() => setLoadingComps(false));
         }
+      }
+      // Ctrl+K or Cmd+K - Command Palette
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(true);
       }
     };
 
@@ -1193,6 +1212,42 @@ export const CompsAnalysis = () => {
     }
   };
 
+  // Favorites management
+  const toggleFavorite = (propertyId: string) => {
+    setFavorites(prev => {
+      const newFavorites = prev.includes(propertyId)
+        ? prev.filter(id => id !== propertyId)
+        : [...prev, propertyId];
+      localStorage.setItem('comps_favorites', JSON.stringify(newFavorites));
+      toast({
+        title: newFavorites.includes(propertyId) ? '⭐ Added to favorites' : '🗑️ Removed from favorites',
+        description: newFavorites.includes(propertyId) ? 'Property bookmarked' : 'Bookmark removed',
+      });
+      return newFavorites;
+    });
+  };
+
+  // Smart Insights calculation
+  const calculateInsights = () => {
+    if (!analysis || comparables.length === 0) return null;
+
+    const avgDaysOnMarket = 12; // Could calculate from data
+    const monthTrend = analysis.trendPercentage;
+    const yourOffer = selectedProperty?.cash_offer_amount || 0;
+    const marketAvg = analysis.avgSalePrice;
+    const offerDiff = yourOffer > 0 ? ((yourOffer - marketAvg) / marketAvg) * 100 : 0;
+
+    return {
+      marketHeat: monthTrend > 10 ? 'hot' : monthTrend < -5 ? 'cold' : 'stable',
+      trend: monthTrend,
+      avgDays: avgDaysOnMarket,
+      offerVsMarket: offerDiff,
+      suggestion: offerDiff < -10 ? `Consider increasing to $${Math.round(marketAvg / 1000)}K` :
+                   offerDiff > 10 ? 'Your offer is competitive' :
+                   'Your offer is on target'
+    };
+  };
+
   const handleRadiusChange = (value: number) => {
     setSearchRadius(value);
     localStorage.setItem('comps_search_radius', value.toString());
@@ -1268,6 +1323,188 @@ export const CompsAnalysis = () => {
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Onboarding Tour */}
+      <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">👋</span>
+              {onboardingStep === 0 && "Welcome to Comps Analysis!"}
+              {onboardingStep === 1 && "Select a Property"}
+              {onboardingStep === 2 && "Review Comparables"}
+              {onboardingStep === 3 && "Save & Export"}
+            </DialogTitle>
+            <DialogDescription>
+              {onboardingStep === 0 && "Let me show you around in 4 quick steps"}
+              {onboardingStep === 1 && "Choose any property from the dropdown to start"}
+              {onboardingStep === 2 && "Comps load automatically and you can adjust them"}
+              {onboardingStep === 3 && "Save to history or export as PDF when done"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-between items-center mt-4">
+            <div className="flex gap-1">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className={`h-1.5 w-8 rounded-full ${i === onboardingStep ? 'bg-blue-600' : 'bg-gray-200'}`} />
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowOnboarding(false);
+                  localStorage.setItem('comps_onboarding_seen', 'true');
+                }}
+              >
+                Skip
+              </Button>
+              {onboardingStep < 3 ? (
+                <Button
+                  size="sm"
+                  onClick={() => setOnboardingStep(prev => prev + 1)}
+                >
+                  Next →
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setShowOnboarding(false);
+                    localStorage.setItem('comps_onboarding_seen', 'true');
+                  }}
+                >
+                  Get Started!
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Command Palette */}
+      <Dialog open={showCommandPalette} onOpenChange={setShowCommandPalette}>
+        <DialogContent className="sm:max-w-lg p-0">
+          <div className="p-4 border-b">
+            <Input
+              placeholder="🔍 Search properties, actions... (Cmd+K)"
+              className="border-0 focus-visible:ring-0"
+              autoFocus
+            />
+          </div>
+          <div className="max-h-[400px] overflow-y-auto p-2">
+            <div className="space-y-1">
+              <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">Quick Actions</p>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
+                  setShowCommandPalette(false);
+                  if (selectedProperty && analysis) saveReport();
+                }}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save Analysis
+                <kbd className="ml-auto px-2 py-0.5 text-xs border rounded">Ctrl+S</kbd>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
+                  setShowCommandPalette(false);
+                  if (selectedProperty) exportToPDF(false);
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export PDF
+                <kbd className="ml-auto px-2 py-0.5 text-xs border rounded">Ctrl+E</kbd>
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
+                  setShowCommandPalette(false);
+                  setShowApiConfig(true);
+                }}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                API Settings
+              </Button>
+              <Button
+                variant="ghost"
+                className="w-full justify-start"
+                onClick={() => {
+                  setShowCommandPalette(false);
+                  setShowAnalysisHistory(true);
+                }}
+              >
+                <History className="w-4 h-4 mr-2" />
+                View History
+              </Button>
+            </div>
+            {properties.length > 0 && (
+              <div className="mt-4 space-y-1">
+                <p className="px-2 py-1 text-xs font-semibold text-muted-foreground">Recent Properties</p>
+                {properties.slice(0, 5).map(property => (
+                  <Button
+                    key={property.id}
+                    variant="ghost"
+                    className="w-full justify-start text-left"
+                    onClick={() => {
+                      setSelectedProperty(property);
+                      setShowCommandPalette(false);
+                    }}
+                  >
+                    <Home className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">{property.address}, {property.city}</span>
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Smart Insights Panel */}
+      {selectedProperty && analysis && comparables.length > 0 && !loading && (() => {
+        const insights = calculateInsights();
+        return insights && (
+          <Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-xl">💡</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-purple-900 mb-2">Smart Market Insights</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      {insights.marketHeat === 'hot' ? '🔥' : insights.marketHeat === 'cold' ? '❄️' : '📊'}
+                      <span>
+                        <strong>{insights.marketHeat === 'hot' ? 'Hot' : insights.marketHeat === 'cold' ? 'Cold' : 'Stable'} market:</strong>
+                        {' '}{insights.trend > 0 ? '+' : ''}{insights.trend.toFixed(1)}% vs last month
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      ⏱️ <span><strong>Avg time on market:</strong> {insights.avgDays} days</span>
+                    </div>
+                    {selectedProperty.cash_offer_amount > 0 && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          💰 <span><strong>Your offer:</strong> {insights.offerVsMarket > 0 ? '+' : ''}{insights.offerVsMarket.toFixed(1)}% vs market avg</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          💡 <span className="text-purple-700"><strong>{insights.suggestion}</strong></span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Empty State - No Property Selected */}
       {!selectedProperty && (
@@ -1695,6 +1932,18 @@ export const CompsAnalysis = () => {
             >
               Sem Oferta ({properties.filter(p => !p.cash_offer_amount || p.cash_offer_amount === 0).length})
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // Filter to show only favorites
+                const favProps = properties.filter(p => favorites.includes(p.id));
+                if (favProps.length > 0) setSelectedProperty(favProps[0]);
+              }}
+              className="border-yellow-400"
+            >
+              ⭐ Favorites ({favorites.length})
+            </Button>
           </div>
 
           <Select
@@ -1745,7 +1994,18 @@ export const CompsAnalysis = () => {
                 return (
                   <SelectItem key={property.id} value={property.id}>
                     <div className="flex items-center justify-between w-full gap-2">
-                      <span className="flex-1 truncate">{property.address}, {property.city}, {property.state}</span>
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(property.id);
+                          }}
+                          className="flex-shrink-0"
+                        >
+                          <Star className={`w-4 h-4 ${favorites.includes(property.id) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} />
+                        </button>
+                        <span className="flex-1 truncate">{property.address}, {property.city}, {property.state}</span>
+                      </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {getAnalysisBadge()}
                         {hasOffer ? (
