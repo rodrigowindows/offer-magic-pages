@@ -64,7 +64,7 @@ import {
   RotateCcw,
   Clock,
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
 import { CompsMapboxMap } from './CompsMapboxMap';
@@ -354,6 +354,37 @@ export const CompsAnalysis = () => {
       loadAnalysisHistory(selectedProperty.id);
     }
   }, [selectedProperty]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S - Save analysis
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        if (selectedProperty && analysis && comparables.length > 0) {
+          saveReport();
+        }
+      }
+      // Ctrl+E or Cmd+E - Export PDF
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        if (selectedProperty && !exportingPDF) {
+          exportToPDF(false);
+        }
+      }
+      // Ctrl+R or Cmd+R - Refresh comps
+      if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+        e.preventDefault();
+        if (selectedProperty && !loadingComps) {
+          setLoadingComps(true);
+          fetchComparables().then(() => setLoadingComps(false));
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedProperty, analysis, comparables, exportingPDF, loadingComps]);
 
   // Load manual links count for selected property
   const loadManualLinksCount = async (propertyId: string) => {
@@ -942,9 +973,21 @@ export const CompsAnalysis = () => {
       await loadAnalysisHistory(selectedProperty.id);
       await fetchProperties();
 
+      // Clear notes after saving
+      setAnalysisNotes('');
+
       toast({
-        title: '✅ Análise Salva',
-        description: 'Relatório de comps salvo no histórico com sucesso',
+        title: '✅ Analysis Saved Successfully',
+        description: `Saved ${comparables.length} comps for ${selectedProperty.address}`,
+        action: (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAnalysisHistory(true)}
+          >
+            View History
+          </Button>
+        ),
       });
     } catch (error: any) {
       console.error('Error saving report:', error);
@@ -1226,9 +1269,67 @@ export const CompsAnalysis = () => {
         </Tabs>
       </div>
 
-      {/* Executive Summary with Actions */}
-      {selectedProperty && analysis && comparables.length > 0 && (
+      {/* Empty State - No Property Selected */}
+      {!selectedProperty && (
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-6">
+              <Home className="w-10 h-10 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-bold mb-2">No Property Selected</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-6">
+              Select a property from the dropdown below to start your comparative market analysis
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="outline" onClick={() => setActiveTab('auto')}>
+                <Database className="w-4 h-4 mr-2" />
+                Browse Properties
+              </Button>
+              <Dialog open={showApiConfig} onOpenChange={setShowApiConfig}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Configure APIs
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Configure Comps APIs</DialogTitle>
+                    <DialogDescription>
+                      Set up your API keys to get real MLS data
+                    </DialogDescription>
+                  </DialogHeader>
+                  <CompsApiSettings />
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading Skeleton */}
+      {selectedProperty && loading && (
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center mb-4">
+              <div className="h-6 w-48 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-32 bg-gray-200 rounded-full animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-4 bg-white rounded-lg shadow-sm">
+                  <div className="h-4 w-24 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                  <div className="h-8 w-32 bg-gray-300 rounded animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Executive Summary with Actions */}
+      {selectedProperty && analysis && comparables.length > 0 && !loading && (
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 animate-in fade-in slide-in-from-top-4 duration-500">
           <CardContent className="pt-6">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-3">
@@ -1347,32 +1448,32 @@ export const CompsAnalysis = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                <div className="text-sm text-muted-foreground mb-1">Média de Vendas</div>
-                <div className="text-2xl font-bold text-blue-600">
-                  ${analysis.avgSalePrice.toLocaleString()}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+              <div className="text-center p-3 md:p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-xs md:text-sm text-muted-foreground mb-1">Avg Sale</div>
+                <div className="text-lg md:text-2xl font-bold text-blue-600">
+                  ${(analysis.avgSalePrice / 1000).toFixed(0)}K
                 </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                <div className="text-sm text-muted-foreground mb-1">Preço/sqft</div>
-                <div className="text-2xl font-bold text-green-600">
-                  ${analysis.avgPricePerSqft.toFixed(0)}/sqft
+              <div className="text-center p-3 md:p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-xs md:text-sm text-muted-foreground mb-1">Price/sqft</div>
+                <div className="text-lg md:text-2xl font-bold text-green-600">
+                  ${analysis.avgPricePerSqft.toFixed(0)}
                 </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                <div className="text-sm text-muted-foreground mb-1">Valor Sugerido</div>
-                <div className="text-xl font-bold text-indigo-600">
-                  ${analysis.suggestedValueMin.toLocaleString()} - ${analysis.suggestedValueMax.toLocaleString()}
+              <div className="text-center p-3 md:p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-xs md:text-sm text-muted-foreground mb-1">Range</div>
+                <div className="text-sm md:text-xl font-bold text-indigo-600">
+                  ${(analysis.suggestedValueMin / 1000).toFixed(0)}K-${(analysis.suggestedValueMax / 1000).toFixed(0)}K
                 </div>
               </div>
-              <div className="text-center p-4 bg-white rounded-lg shadow-sm">
-                <div className="text-sm text-muted-foreground mb-1">Comps Encontrados</div>
-                <div className="text-2xl font-bold text-purple-600">
+              <div className="text-center p-3 md:p-4 bg-white rounded-lg shadow-sm">
+                <div className="text-xs md:text-sm text-muted-foreground mb-1">Comps</div>
+                <div className="text-lg md:text-2xl font-bold text-purple-600">
                   {comparables.length}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  via {dataSource === 'attom' ? 'MLS Real' : dataSource === 'zillow' ? 'Zillow' : dataSource === 'csv' ? 'CSV' : 'Demo'}
+                  {dataSource === 'attom' ? 'MLS' : dataSource === 'zillow' ? 'Zillow' : dataSource === 'csv' ? 'CSV' : 'Demo'}
                 </div>
               </div>
             </div>
@@ -1382,9 +1483,9 @@ export const CompsAnalysis = () => {
 
       {/* Layout: Summary + History in 2 columns on desktop */}
       {selectedProperty && analysisHistory.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
           {/* Analysis History - Compact sidebar */}
-          <Card className="lg:col-span-1">
+          <Card className="lg:col-span-1 transition-all hover:shadow-md">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -1460,7 +1561,7 @@ export const CompsAnalysis = () => {
                   <div key={item.id} className="p-3 border rounded-lg bg-white hover:bg-gray-50 transition cursor-pointer" onClick={() => setShowAnalysisHistory(true)}>
                     <div className="flex items-center justify-between mb-1">
                       <Badge variant={index === 0 ? "default" : "secondary"} className="text-xs">
-                        {index === 0 ? 'Atual' : format(new Date(item.created_at), 'dd/MM')}
+                        {index === 0 ? 'Current' : formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {item.data_source === 'attom' ? 'MLS' : item.data_source}
