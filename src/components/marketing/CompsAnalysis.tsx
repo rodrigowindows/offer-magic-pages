@@ -295,10 +295,9 @@ export const CompsAnalysis = () => {
       // Create cache key based on property and filters
       const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
       const cached = compsCache[cacheKey];
-      const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
-      // Check if we have valid cached data
-      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      // Check if we have valid cached data (cache never expires)
+      if (cached) {
         console.log('Using cached comparables for property:', property.address);
         setComparables(cached.comparables);
         setAnalysis(cached.analysis);
@@ -319,30 +318,36 @@ export const CompsAnalysis = () => {
       );
 
       if (compsData && compsData.length > 0) {
-        // Convert to ComparableProperty format
-        const formattedComps: ComparableProperty[] = compsData.map((comp, index) => ({
-          id: `comp-${index}`,
-          address: comp.address,
-          city: comp.city,
-          state: comp.state,
-          zip_code: comp.zipCode,
-          sale_price: comp.salePrice,
-          sale_date: comp.saleDate,
-          square_feet: comp.sqft,
-          bedrooms: comp.beds,
-          bathrooms: comp.baths,
-          price_per_sqft: comp.salePrice / comp.sqft,
-          distance: comp.distance,
-          similarity_score: 0.8, // TODO: calculate properly
-          property_type: comp.propertyType,
-          year_built: comp.yearBuilt,
-        }));
+        // Convert to ComparableProperty format with validation
+        const formattedComps: ComparableProperty[] = compsData
+          .filter(comp => comp.salePrice && comp.sqft && comp.sqft > 0) // Filter invalid data
+          .map((comp, index) => ({
+            id: `comp-${index}`,
+            address: comp.address || 'Unknown',
+            city: comp.city || property.city,
+            state: comp.state || property.state,
+            zip_code: comp.zipCode || '',
+            sale_price: Number(comp.salePrice) || 0,
+            sale_date: comp.saleDate || new Date().toISOString(),
+            square_feet: Number(comp.sqft) || 1,
+            bedrooms: Number(comp.beds) || 0,
+            bathrooms: Number(comp.baths) || 0,
+            price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+            distance: Number(comp.distance) || 0,
+            similarity_score: 0.8,
+            property_type: comp.propertyType || 'Single Family',
+            year_built: comp.yearBuilt || null,
+          }));
+
+        if (formattedComps.length === 0) {
+          throw new Error('No valid comparables found');
+        }
 
         setComparables(formattedComps);
 
-        // Calculate analysis
-        const avgPrice = formattedComps.reduce((sum, c) => sum + c.sale_price, 0) / formattedComps.length;
-        const avgPricePerSqft = formattedComps.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / formattedComps.length;
+        // Calculate analysis with safe defaults
+        const avgPrice = formattedComps.reduce((sum, c) => sum + (c.sale_price || 0), 0) / formattedComps.length || 0;
+        const avgPricePerSqft = formattedComps.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / formattedComps.length || 0;
 
         const calculatedAnalysis = {
           avgSalePrice: avgPrice,
@@ -544,12 +549,11 @@ export const CompsAnalysis = () => {
 
       // Function to get comparables for each property
       const getComparablesForProperty = async (property: Property) => {
-        // Check cache first
+        // Check cache first (cache never expires)
         const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
         const cached = compsCache[cacheKey];
-        const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
-        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        if (cached) {
           console.log('Using cached data for export:', property.address);
           return { comparables: cached.comparables, analysis: cached.analysis };
         }
@@ -570,24 +574,30 @@ export const CompsAnalysis = () => {
           property.estimated_value || 250000
         );
 
-        // Convert and calculate analysis
-        const formattedComps = compsData.map((comp: any, index: number) => ({
-          id: `comp-${index}`,
-          address: comp.address,
-          city: comp.city,
-          state: comp.state,
-          zipCode: comp.zipCode,
-          salePrice: comp.salePrice,
-          saleDate: comp.saleDate,
-          beds: comp.beds,
-          baths: comp.baths,
-          sqft: comp.sqft,
-          distance: comp.distance,
-          pricePerSqft: comp.salePrice / comp.sqft,
-        }));
+        // Convert and calculate analysis with validation
+        const formattedComps = compsData
+          .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0) // Filter invalid data
+          .map((comp: any, index: number) => ({
+            id: `comp-${index}`,
+            address: comp.address || 'Unknown',
+            city: comp.city || property.city,
+            state: comp.state || property.state,
+            zipCode: comp.zipCode || '',
+            salePrice: Number(comp.salePrice) || 0,
+            saleDate: comp.saleDate || new Date().toISOString(),
+            beds: Number(comp.beds) || 0,
+            baths: Number(comp.baths) || 0,
+            sqft: Number(comp.sqft) || 1,
+            distance: Number(comp.distance) || 0,
+            pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+          }));
 
-        const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + c.salePrice, 0) / formattedComps.length;
-        const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + c.pricePerSqft, 0) / formattedComps.length;
+        if (formattedComps.length === 0) {
+          throw new Error('No valid comparables found for this property');
+        }
+
+        const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + (c.salePrice || 0), 0) / formattedComps.length || 0;
+        const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || 0), 0) / formattedComps.length || 0;
 
         const calculatedAnalysis = {
           avgSalePrice,
