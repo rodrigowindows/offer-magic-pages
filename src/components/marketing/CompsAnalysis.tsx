@@ -11,6 +11,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -71,7 +72,8 @@ export const CompsAnalysis = () => {
   // Properties & Selection
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [propertyFilter, setPropertyFilter] = useState<'all' | 'approved' | 'manual' | 'none' | 'favorites'>('all');
+  const [propertyFilter, setPropertyFilter] = useState<'all' | 'approved' | 'pending' | 'rejected' | 'favorites'>('all');
+  const [approvalStatusFilter, setApprovalStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
 
   // Comparables & Analysis
   const [comparables, setComparables] = useState<ComparableProperty[]>([]);
@@ -264,35 +266,69 @@ export const CompsAnalysis = () => {
     try {
       setLoadingComps(true);
 
-      const result = await CompsDataService.getComparables(
-        property,
+      // Call CompsDataService with correct parameters
+      const compsData = await CompsDataService.getComparables(
+        property.address || '',
+        property.city || 'Orlando',
+        property.state || 'FL',
         compsFilters.maxDistance || 3,
-        dataSource
+        10, // limit
+        property.estimated_value || 250000
       );
 
-      if (result.success && result.data) {
-        setComparables(result.data.comparables);
-        setAnalysis(result.data.analysis);
-        setSmartInsights(computedInsights);
+      if (compsData && compsData.length > 0) {
+        // Convert to ComparableProperty format
+        const formattedComps: ComparableProperty[] = compsData.map((comp, index) => ({
+          id: `comp-${index}`,
+          address: comp.address,
+          city: comp.city,
+          state: comp.state,
+          zip_code: comp.zipCode,
+          sale_price: comp.salePrice,
+          sale_date: comp.saleDate,
+          square_feet: comp.sqft,
+          bedrooms: comp.beds,
+          bathrooms: comp.baths,
+          price_per_sqft: comp.salePrice / comp.sqft,
+          distance: comp.distance,
+          similarity_score: 0.8, // TODO: calculate properly
+          property_type: comp.propertyType,
+          year_built: comp.yearBuilt,
+        }));
+
+        setComparables(formattedComps);
+
+        // Calculate analysis
+        const avgPrice = formattedComps.reduce((sum, c) => sum + c.sale_price, 0) / formattedComps.length;
+        const avgPricePerSqft = formattedComps.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / formattedComps.length;
+
+        setAnalysis({
+          avgSalePrice: avgPrice,
+          avgPricePerSqft: avgPricePerSqft,
+          suggestedValueMin: avgPrice * 0.9,
+          suggestedValueMax: avgPrice * 1.1,
+          marketTrend: 'stable',
+          trendPercentage: 0,
+        });
 
         toast({
           title: 'Success',
-          description: `Found ${result.data.comparables.length} comparable properties`,
+          description: `Found ${formattedComps.length} comparable properties (source: ${compsData[0].source})`,
         });
       } else {
-        throw new Error(result.error || 'Failed to generate comparables');
+        throw new Error('No comparables found');
       }
     } catch (error) {
       console.error('Error generating comparables:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate comparables',
+        description: error instanceof Error ? error.message : 'Failed to generate comparables',
         variant: 'destructive',
       });
     } finally {
       setLoadingComps(false);
     }
-  }, [compsFilters.maxDistance, dataSource, toast, computedInsights]);
+  }, [compsFilters.maxDistance, toast]);
 
   /**
    * Load manual comps count
@@ -603,11 +639,56 @@ export const CompsAnalysis = () => {
         </Button>
       </div>
 
-      {/* Property Selection */}
+      {/* Property Selection with Status Filter */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-4">
+          {/* Approval Status Filter */}
+          <div className="flex items-center gap-4">
+            <Label className="text-sm font-medium">Filter by Status:</Label>
+            <div className="flex gap-2">
+              <Button
+                variant={approvalStatusFilter === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setApprovalStatusFilter('all')}
+              >
+                All ({properties.length})
+              </Button>
+              <Button
+                variant={approvalStatusFilter === 'approved' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setApprovalStatusFilter('approved')}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                ✓ Approved ({properties.filter(p => p.approval_status === 'approved').length})
+              </Button>
+              <Button
+                variant={approvalStatusFilter === 'pending' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setApprovalStatusFilter('pending')}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                ⏱ Pending ({properties.filter(p => !p.approval_status || p.approval_status === 'pending').length})
+              </Button>
+              <Button
+                variant={approvalStatusFilter === 'rejected' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setApprovalStatusFilter('rejected')}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                ✗ Rejected ({properties.filter(p => p.approval_status === 'rejected').length})
+              </Button>
+            </div>
+          </div>
+
+          {/* Property Selector */}
           <PropertySelector
-            properties={properties}
+            properties={properties.filter(p => {
+              if (approvalStatusFilter === 'all') return true;
+              if (approvalStatusFilter === 'approved') return p.approval_status === 'approved';
+              if (approvalStatusFilter === 'pending') return !p.approval_status || p.approval_status === 'pending';
+              if (approvalStatusFilter === 'rejected') return p.approval_status === 'rejected';
+              return true;
+            })}
             selectedProperty={selectedProperty}
             onSelectProperty={handleSelectProperty}
             favorites={favorites}
