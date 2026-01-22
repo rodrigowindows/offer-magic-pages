@@ -813,15 +813,19 @@ export const CompsAnalysis = () => {
               {editingOffer ? (
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <Input
-                      type="number"
-                      value={offerAmount}
-                      onChange={(e) => setOfferAmount(parseInt(e.target.value) || 0)}
-                      placeholder="Enter offer amount"
-                      className="text-lg"
-                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-green-700">$</span>
+                      <Input
+                        type="number"
+                        value={offerAmount}
+                        onChange={(e) => setOfferAmount(parseInt(e.target.value) || 0)}
+                        placeholder="0"
+                        className="text-lg font-semibold"
+                        autoFocus
+                      />
+                    </div>
                   </div>
-                  <Button onClick={saveOfferAmount} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={saveOfferAmount} className="bg-green-600 hover:bg-green-700 text-white">
                     <Save className="h-4 w-4 mr-1" />
                     Save
                   </Button>
@@ -833,10 +837,14 @@ export const CompsAnalysis = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="text-2xl font-bold text-green-700">
+                <div
+                  className="text-2xl font-bold text-green-700 cursor-pointer hover:bg-green-100 p-3 rounded-lg transition-colors border-2 border-dashed border-green-300"
+                  onClick={() => setEditingOffer(true)}
+                  title="Click to edit offer amount"
+                >
                   {selectedProperty.cash_offer_amount
                     ? `$${selectedProperty.cash_offer_amount.toLocaleString()}`
-                    : 'No offer set'}
+                    : '💰 Click to set offer amount'}
                 </div>
               )}
 
