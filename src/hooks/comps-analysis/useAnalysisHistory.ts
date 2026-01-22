@@ -31,6 +31,14 @@ export const useAnalysisHistory = (): UseAnalysisHistoryReturn => {
       setLoading(true);
       setError(null);
 
+      // Check if user is authenticated
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user) {
+        setHistory([]);
+        setLoading(false);
+        return;
+      }
+
       let query = supabase
         .from('comps_analysis_history')
         .select('*')
@@ -42,13 +50,16 @@ export const useAnalysisHistory = (): UseAnalysisHistoryReturn => {
 
       const { data, error: fetchError } = await query;
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching history:', fetchError);
+        setHistory([]);
+        return;
+      }
 
       setHistory(data || []);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch history';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      console.error('Error in fetchHistory:', err);
+      setHistory([]);
     } finally {
       setLoading(false);
     }
@@ -133,9 +144,15 @@ export const useAnalysisHistory = (): UseAnalysisHistoryReturn => {
     toast.info('Loading analysis from history...');
   }, []);
 
-  // Auto-fetch on mount
+  // Auto-fetch on mount (only if authenticated)
   useEffect(() => {
-    fetchHistory();
+    const checkAuthAndFetch = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (session.session?.user) {
+        fetchHistory();
+      }
+    };
+    checkAuthAndFetch();
   }, [fetchHistory]);
 
   return {
