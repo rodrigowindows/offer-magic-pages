@@ -1301,7 +1301,7 @@ export const CompsAnalysis = () => {
           </p>
         </div>
 
-        {/* Main Tabs - Moved to top for better visibility */}
+        {/* Main Tabs - Only TabsList here, content is outside */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'auto' | 'manual' | 'combined')} className="w-full">
           <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="auto" className="flex items-center gap-2">
@@ -1777,8 +1777,8 @@ export const CompsAnalysis = () => {
                               </div>
                               <div>
                                 <p className="text-xs text-muted-foreground">Comps</p>
-                                <p className="text-lg font-bold">
-                                  {JSON.parse(item.comparables_data || '[]').length}
+                              <p className="text-lg font-bold">
+                                  {item.comparables_count || (item.analysis_data?.comps?.length || 0)}
                                 </p>
                               </div>
                             </div>
@@ -1810,7 +1810,7 @@ export const CompsAnalysis = () => {
                       ${item.suggested_value_min?.toLocaleString()} - ${item.suggested_value_max?.toLocaleString()}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {JSON.parse(item.comparables_data || '[]').length} comps
+                      {item.comparables_count || (item.analysis_data?.comps?.length || 0)} comps
                     </p>
                   </div>
                 ))}
