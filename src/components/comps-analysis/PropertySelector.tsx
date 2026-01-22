@@ -32,7 +32,7 @@ export const PropertySelector = ({
       return favorites.has(property.id);
     }
     if (filter === 'approved') {
-      return property.comps_status === 'approved';
+      return property.comps_status === 'approved' || property.approval_status === 'approved';
     }
     if (filter === 'manual') {
       return property.comps_source === 'manual';
@@ -111,7 +111,7 @@ export const PropertySelector = ({
                   <span className="truncate flex-1">
                     {formatPropertyLabel(property)}
                   </span>
-                  {property.comps_status === 'approved' && (
+                  {(property.comps_status === 'approved' || property.approval_status === 'approved') && (
                     <span className="flex-shrink-0 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
                       ✓ Approved
                     </span>
