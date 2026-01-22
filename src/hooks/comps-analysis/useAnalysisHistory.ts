@@ -56,7 +56,22 @@ export const useAnalysisHistory = (): UseAnalysisHistoryReturn => {
         return;
       }
 
-      setHistory(data || []);
+      // Map database results to AnalysisHistoryItem type
+      const mappedData: AnalysisHistoryItem[] = (data || []).map((item) => ({
+        id: item.id,
+        property_id: item.property_id,
+        analyst_user_id: item.analyst_user_id,
+        analysis_data: (item.analysis_data as Record<string, unknown>) || {},
+        comparables_count: item.comparables_count,
+        suggested_value_min: item.suggested_value_min,
+        suggested_value_max: item.suggested_value_max,
+        notes: item.notes,
+        search_radius_miles: item.search_radius_miles,
+        data_source: item.data_source,
+        created_at: item.created_at,
+      }));
+
+      setHistory(mappedData);
     } catch (err) {
       console.error('Error in fetchHistory:', err);
       setHistory([]);
@@ -80,14 +95,21 @@ export const useAnalysisHistory = (): UseAnalysisHistoryReturn => {
         throw new Error('User not authenticated');
       }
 
-      const analysisData = {
-        ...data,
+      const insertData = {
+        property_id: data.property_id || '',
         analyst_user_id: userId,
+        analysis_data: data.analysis_data || {},
+        comparables_count: data.comparables_count || 0,
+        suggested_value_min: data.suggested_value_min || null,
+        suggested_value_max: data.suggested_value_max || null,
+        notes: data.notes || null,
+        search_radius_miles: data.search_radius_miles || null,
+        data_source: data.data_source || 'demo',
       };
 
       const { error: insertError } = await supabase
         .from('comps_analysis_history')
-        .insert([analysisData]);
+        .insert(insertData as any);
 
       if (insertError) throw insertError;
 

@@ -24,6 +24,7 @@ export type {
   AnalysisHistoryItem,
   OfferHistoryItem,
   SmartInsights as SmartInsightsType,
+  CompsFiltersConfig,
   OfferStatusFilter,
   TabType,
   SortBy,
@@ -31,12 +32,7 @@ export type {
 } from './types';
 
 // Component Props
-export type { OnboardingTourProps } from './OnboardingTour';
-export type { CommandPaletteProps } from './CommandPalette';
-export type { SmartInsightsProps } from './SmartInsights';
-export type { ExecutiveSummaryProps } from './ExecutiveSummary';
 export type { PropertySelectorProps } from './PropertySelector';
-export type { CompsFiltersProps, CompsFiltersConfig } from './CompsFilters';
 export type { CompsTableProps } from './CompsTable';
 export type { AnalysisHistoryProps } from './AnalysisHistory';
 export type { CompareDialogProps } from './CompareDialog';

@@ -67,8 +67,7 @@ export const AnalysisHistory = ({
   // Sort each property's history by date (newest first)
   Object.keys(historyByProperty).forEach((propertyId) => {
     historyByProperty[propertyId].sort((a, b) => {
-      return new Date(b.analysis_date || b.created_at).getTime() -
-             new Date(a.analysis_date || a.created_at).getTime();
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   });
 
@@ -125,7 +124,7 @@ export const AnalysisHistory = ({
                               <span className="text-sm font-medium">
                                 {item.comparables_count || 0} comparables
                               </span>
-                              {getSourceBadge(item.data_source)}
+                              {getSourceBadge(item.data_source || undefined)}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {formatDistanceToNow(new Date(item.created_at), {

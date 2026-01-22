@@ -246,11 +246,11 @@ export const CompsAnalysis = () => {
     return {
       marketHeat,
       trend: analysis.trendPercentage,
-      avgDaysOnMarket: Math.round(avgDaysOnMarket),
+      avgDays: Math.round(avgDaysOnMarket),
       offerVsMarket: selectedProperty.cash_offer_amount
         ? ((selectedProperty.cash_offer_amount / analysis.avgSalePrice - 1) * 100)
         : 0,
-      suggestions,
+      suggestion: suggestions.join('; '),
     };
   }, [analysis, selectedProperty, comparables]);
 
@@ -320,23 +320,32 @@ export const CompsAnalysis = () => {
       if (compsData && compsData.length > 0) {
         // Convert to ComparableProperty format with validation
         const formattedComps: ComparableProperty[] = compsData
-          .filter(comp => comp.salePrice && comp.sqft && comp.sqft > 0) // Filter invalid data
+          .filter(comp => comp.salePrice && comp.sqft && comp.sqft > 0)
           .map((comp, index) => ({
             id: `comp-${index}`,
             address: comp.address || 'Unknown',
             city: comp.city || property.city,
             state: comp.state || property.state,
-            zip_code: comp.zipCode || '',
+            zipCode: comp.zipCode || '',
+            salePrice: Number(comp.salePrice) || 0,
+            saleDate: comp.saleDate || new Date().toISOString(),
+            sqft: Number(comp.sqft) || 1,
+            beds: Number(comp.beds) || 0,
+            baths: Number(comp.baths) || 0,
+            pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+            distance: Number(comp.distance) || 0,
+            similarityScore: 0.8,
+            propertyType: comp.propertyType || 'Single Family',
+            yearBuilt: comp.yearBuilt || undefined,
+            // Legacy fields
             sale_price: Number(comp.salePrice) || 0,
             sale_date: comp.saleDate || new Date().toISOString(),
             square_feet: Number(comp.sqft) || 1,
             bedrooms: Number(comp.beds) || 0,
             bathrooms: Number(comp.baths) || 0,
             price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-            distance: Number(comp.distance) || 0,
             similarity_score: 0.8,
             property_type: comp.propertyType || 'Single Family',
-            year_built: comp.yearBuilt || null,
           }));
 
         if (formattedComps.length === 0) {
@@ -802,7 +811,7 @@ export const CompsAnalysis = () => {
         onExport={() => exportToPDF(false)}
         onOpenSettings={() => setShowApiConfig(true)}
         onOpenHistory={() => setActiveTab('auto')} // TODO: Add history tab
-        onSelectProperty={handleSelectProperty}
+        onSelectProperty={(p: Property) => handleSelectProperty(p.id)}
       />
 
       {/* Compare Dialog */}
@@ -1094,7 +1103,7 @@ export const CompsAnalysis = () => {
             {/* Manual Comps Tab */}
             <TabsContent value="manual">
               <ManualCompsManager
-                selectedProperty={selectedProperty}
+                preSelectedPropertyId={selectedProperty.id}
                 onCompsUpdated={() => loadManualLinksCount(selectedProperty.id)}
               />
             </TabsContent>
@@ -1124,18 +1133,16 @@ export const CompsAnalysis = () => {
       {/* API Settings Dialog */}
       {showApiConfig && (
         <CompsApiSettings
-          open={showApiConfig}
-          onOpenChange={setShowApiConfig}
+          onClose={() => setShowApiConfig(false)}
         />
       )}
 
       {/* Adjustment Calculator */}
       {showAdjustmentCalc && selectedProperty && (
         <AdjustmentCalculator
-          open={showAdjustmentCalc}
-          onOpenChange={setShowAdjustmentCalc}
-          subjectProperty={selectedProperty}
-          comparables={filteredComparables}
+          property={selectedProperty}
+          comparables={filteredComparables as any}
+          onClose={() => setShowAdjustmentCalc(false)}
         />
       )}
     </div>

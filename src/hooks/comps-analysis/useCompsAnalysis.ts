@@ -39,18 +39,65 @@ export const useCompsAnalysis = () => {
 
     setLoading(true);
     try {
-      const compsService = new CompsDataService();
-      const result = await compsService.searchComparables(
+      const result = await CompsDataService.getComparables(
         property.address,
         property.city || '',
         property.state || '',
-        property.zip_code || '',
-        radius
+        radius,
+        10,
+        property.estimated_value || 250000
       );
 
-      setComparables(result.comparables);
-      setAnalysis(result.analysis);
-      setDataSource(result.source);
+      // Map ComparableData to ComparableProperty
+      const mappedComparables: ComparableProperty[] = result.map((comp, index) => ({
+        id: `comp-${index}-${comp.address}`,
+        address: comp.address,
+        city: comp.city,
+        state: comp.state,
+        zipCode: comp.zipCode,
+        salePrice: comp.salePrice,
+        saleDate: comp.saleDate,
+        beds: comp.beds,
+        baths: comp.baths,
+        sqft: comp.sqft,
+        pricePerSqft: comp.sqft > 0 ? comp.salePrice / comp.sqft : 0,
+        distance: comp.distance || 0,
+        yearBuilt: comp.yearBuilt,
+        propertyType: comp.propertyType,
+        // Legacy fields
+        sale_price: comp.salePrice,
+        sale_date: comp.saleDate,
+        bedrooms: comp.beds,
+        bathrooms: comp.baths,
+        square_feet: comp.sqft,
+        price_per_sqft: comp.sqft > 0 ? comp.salePrice / comp.sqft : 0,
+        property_type: comp.propertyType,
+      }));
+
+      setComparables(mappedComparables);
+
+      // Calculate market analysis
+      if (mappedComparables.length > 0) {
+        const prices = mappedComparables.map(c => c.salePrice);
+        const pricesPerSqft = mappedComparables.map(c => c.pricePerSqft);
+        const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+        const avgPricePerSqft = pricesPerSqft.reduce((a, b) => a + b, 0) / pricesPerSqft.length;
+        const sortedPrices = [...prices].sort((a, b) => a - b);
+        const medianPrice = sortedPrices[Math.floor(sortedPrices.length / 2)];
+
+        setAnalysis({
+          avgSalePrice: avgPrice,
+          medianSalePrice: medianPrice,
+          avgPricePerSqft: avgPricePerSqft,
+          suggestedValueMin: avgPrice * 0.95,
+          suggestedValueMax: avgPrice * 1.05,
+          trendPercentage: 0,
+          marketTrend: 'stable',
+          comparablesCount: mappedComparables.length,
+        });
+      }
+
+      setDataSource('demo');
     } catch (error: any) {
       console.error('Error fetching comparables:', error);
       toast({
@@ -77,19 +124,21 @@ export const useCompsAnalysis = () => {
         return;
       }
 
+      const insertData = {
+        property_id: selectedProperty.id,
+        analyst_user_id: user.id,
+        analysis_data: { comps: comparables, analysis: analysis },
+        comparables_count: comparables.length,
+        suggested_value_min: analysis.suggestedValueMin,
+        suggested_value_max: analysis.suggestedValueMax,
+        notes: notes || null,
+        search_radius_miles: 1,
+        data_source: dataSource,
+      };
+
       const { error } = await supabase
         .from('comps_analysis_history')
-        .insert({
-          property_id: selectedProperty.id,
-          analyst_user_id: user.id,
-          analysis_data: { comps: comparables, analysis: analysis },
-          comparables_count: comparables.length,
-          suggested_value_min: analysis.suggestedValueMin,
-          suggested_value_max: analysis.suggestedValueMax,
-          notes: notes || null,
-          search_radius_miles: 1,
-          data_source: dataSource,
-        });
+        .insert(insertData as any);
 
       if (error) throw error;
 

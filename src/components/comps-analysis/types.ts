@@ -22,6 +22,10 @@ export interface Property {
   comps_count?: number;
   last_analysis_date?: string | null;
   analysis_status?: 'complete' | 'partial' | 'pending';
+  // Extended fields for PropertySelector
+  full_address?: string;
+  comps_status?: string;
+  comps_source?: string;
 }
 
 export interface ComparableProperty {
@@ -30,21 +34,38 @@ export interface ComparableProperty {
   city?: string;
   state?: string;
   zipCode?: string;
+  // Primary field names (camelCase)
   salePrice: number;
   saleDate: string;
   beds: number;
   baths: number;
   sqft: number;
+  pricePerSqft: number;
+  distance: number;
+  // Legacy field names for backward compatibility (snake_case)
+  sale_price?: number;
+  sale_date?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  square_feet?: number;
+  price_per_sqft?: number;
+  property_type?: string;
+  similarity_score?: number;
+  listing_url?: string;
+  days_on_market?: number;
+  // Additional fields
   lotSize?: number;
   yearBuilt?: number;
   propertyType?: string;
-  distance: number;
-  pricePerSqft: number;
   capRate?: number;
   noi?: number;
   units?: number;
   condition?: string;
   qualityScore?: number;
+  similarityScore?: number;
+  listingUrl?: string;
+  distanceMiles?: number;
+  adjustment?: number;
   adjustments?: {
     location?: number;
     size?: number;
@@ -70,10 +91,7 @@ export interface AnalysisHistoryItem {
   id: string;
   property_id: string;
   analyst_user_id: string | null;
-  analysis_data: {
-    comparables: ComparableProperty[];
-    analysis: MarketAnalysis;
-  };
+  analysis_data: Record<string, unknown>;
   comparables_count: number | null;
   suggested_value_min: number | null;
   suggested_value_max: number | null;
@@ -100,6 +118,25 @@ export interface SmartInsights {
   avgDays: number;
   offerVsMarket: number;
   suggestion: string;
+  avgDaysOnMarket?: number;
+}
+
+export interface CompsFiltersConfig {
+  maxDistance?: number;
+  minBeds?: number;
+  maxBeds?: number;
+  minBaths?: number;
+  maxBaths?: number;
+  minSqft?: number;
+  maxSqft?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  saleWithin?: number; // months
+  propertyType?: string;
+  propertyTypes?: string[];
+  condition?: string;
+  maxAge?: number;
+  minSaleDate?: string;
 }
 
 export type OfferStatusFilter = 'all' | 'approved' | 'manual' | 'none';
