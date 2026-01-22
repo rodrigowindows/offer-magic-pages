@@ -391,7 +391,7 @@ export const CompsAnalysis = () => {
         e.preventDefault();
         if (selectedProperty && !loadingComps) {
           setLoadingComps(true);
-          fetchComparables().then(() => setLoadingComps(false));
+          generateComparables(selectedProperty).then(() => setLoadingComps(false));
         }
       }
       // Ctrl+K or Cmd+K - Command Palette
@@ -966,19 +966,18 @@ export const CompsAnalysis = () => {
       }
 
       // Save to comps_analysis_history table
-      const { error } = await supabase
-        .from('comps_analysis_history')
+      const { error } = await (supabase
+        .from('comps_analysis_history') as any)
         .insert({
           property_id: selectedProperty.id,
           analyst_user_id: user.id,
-          comparables_data: comparables,
           analysis_data: {
             comps: comparables,
             avgSalePrice: analysis.avgSalePrice,
             avgPricePerSqft: analysis.avgPricePerSqft,
             marketTrend: analysis.marketTrend,
           },
-          market_analysis: analysis,
+          comparables_count: comparables.length,
           suggested_value_min: analysis.suggestedValueMin,
           suggested_value_max: analysis.suggestedValueMax,
           notes: analysisNotes || null,
@@ -1324,6 +1323,8 @@ export const CompsAnalysis = () => {
         </Tabs>
       </div>
 
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'auto' | 'manual' | 'combined')} className="w-full">
+
       {/* Onboarding Tour */}
       <Dialog open={showOnboarding} onOpenChange={setShowOnboarding}>
         <DialogContent className="sm:max-w-md">
@@ -1578,8 +1579,9 @@ export const CompsAnalysis = () => {
               <div className="flex gap-2">
                 <Button
                   onClick={async () => {
+                    if (!selectedProperty) return;
                     setLoadingComps(true);
-                    await fetchComparables();
+                    await generateComparables(selectedProperty);
                     setLoadingComps(false);
                   }}
                   variant="outline"
@@ -2729,7 +2731,7 @@ export const CompsAnalysis = () => {
                               <div className="flex justify-between"><span className="text-muted-foreground">Beds/Baths:</span><strong>{comp.beds}/{comp.baths}</strong></div>
                               <div className="flex justify-between"><span className="text-muted-foreground">Sqft:</span><strong>{comp.sqft.toLocaleString()}</strong></div>
                               <div className="flex justify-between"><span className="text-muted-foreground">$/Sqft:</span><strong>${comp.pricePerSqft.toFixed(0)}</strong></div>
-                              <div className="flex justify-between"><span className="text-muted-foreground">Distance:</span><strong>{comp.distance.toFixed(2)} mi</strong></div>
+                              <div className="flex justify-between"><span className="text-muted-foreground">Distance:</span><strong>{comp.distanceMiles?.toFixed(2) || 'N/A'} mi</strong></div>
                               <div className="flex justify-between"><span className="text-muted-foreground">Quality:</span><strong>{comp.qualityScore?.toFixed(1) || 'N/A'}/10</strong></div>
                             </CardContent>
                           </Card>
