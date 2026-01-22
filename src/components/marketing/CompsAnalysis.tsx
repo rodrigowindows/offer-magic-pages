@@ -639,17 +639,17 @@ export const CompsAnalysis = () => {
         </Button>
       </div>
 
-      {/* Property Selection with Status Filter */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          {/* Approval Status Filter */}
-          <div className="flex items-center gap-4">
-            <Label className="text-sm font-medium">Filter by Status:</Label>
-            <div className="flex gap-2">
+      {/* Status Filter Buttons */}
+      <Card className="border-2">
+        <CardContent className="pt-6">
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">Filter by Status:</Label>
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={approvalStatusFilter === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setApprovalStatusFilter('all')}
+                className={approvalStatusFilter === 'all' ? 'bg-blue-600 hover:bg-blue-700' : ''}
               >
                 All ({properties.length})
               </Button>
@@ -657,7 +657,7 @@ export const CompsAnalysis = () => {
                 variant={approvalStatusFilter === 'approved' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setApprovalStatusFilter('approved')}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className={approvalStatusFilter === 'approved' ? 'bg-green-600 hover:bg-green-700' : ''}
               >
                 ✓ Approved ({properties.filter(p => p.approval_status === 'approved').length})
               </Button>
@@ -665,7 +665,7 @@ export const CompsAnalysis = () => {
                 variant={approvalStatusFilter === 'pending' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setApprovalStatusFilter('pending')}
-                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                className={approvalStatusFilter === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
               >
                 ⏱ Pending ({properties.filter(p => !p.approval_status || p.approval_status === 'pending').length})
               </Button>
@@ -673,14 +673,18 @@ export const CompsAnalysis = () => {
                 variant={approvalStatusFilter === 'rejected' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setApprovalStatusFilter('rejected')}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className={approvalStatusFilter === 'rejected' ? 'bg-red-600 hover:bg-red-700' : ''}
               >
                 ✗ Rejected ({properties.filter(p => p.approval_status === 'rejected').length})
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Property Selector */}
+      {/* Property Selection */}
+      <Card>
+        <CardContent className="pt-6">
           <PropertySelector
             properties={properties.filter(p => {
               if (approvalStatusFilter === 'all') return true;
