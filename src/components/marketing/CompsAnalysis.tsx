@@ -200,6 +200,24 @@ export const CompsAnalysis = () => {
   }, [comparables, compsFilters]);
 
   /**
+   * Filtered properties based on status and offer filters
+   */
+  const filteredProperties = useMemo(() => {
+    return properties.filter(p => {
+      // Approval status filter
+      if (approvalStatusFilter === 'approved' && p.approval_status !== 'approved') return false;
+      if (approvalStatusFilter === 'pending' && p.approval_status !== 'pending' && p.approval_status != null) return false;
+      if (approvalStatusFilter === 'rejected' && p.approval_status !== 'rejected') return false;
+
+      // Offer filter
+      if (offerFilter === 'with-offer' && (!p.cash_offer_amount || p.cash_offer_amount === 0)) return false;
+      if (offerFilter === 'no-offer' && p.cash_offer_amount && p.cash_offer_amount > 0) return false;
+
+      return true;
+    });
+  }, [properties, approvalStatusFilter, offerFilter]);
+
+  /**
    * Generate smart insights based on analysis
    */
   const computedInsights = useMemo((): SmartInsightsType | null => {
@@ -475,16 +493,25 @@ export const CompsAnalysis = () => {
   }, [selectedProperty, comparables, analysis, toast]);
 
   /**
-   * Export all analyses
+   * Export all filtered properties to PDF
    */
   const exportAllAnalyses = useCallback(async () => {
+    if (filteredProperties.length === 0) {
+      toast({
+        title: 'No Properties',
+        description: 'No properties match the current filters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setExportingPDF(true);
-      await exportConsolidatedCompsPDF(properties, comparables);
+      await exportConsolidatedCompsPDF(filteredProperties, comparables);
 
       toast({
         title: 'Success',
-        description: 'Consolidated PDF exported',
+        description: `PDF exported with ${filteredProperties.length} filtered properties`,
       });
     } catch (error) {
       console.error('Error exporting consolidated PDF:', error);
@@ -496,7 +523,7 @@ export const CompsAnalysis = () => {
     } finally {
       setExportingPDF(false);
     }
-  }, [properties, comparables, toast]);
+  }, [filteredProperties, comparables, toast]);
 
   /**
    * Share analysis
@@ -770,18 +797,7 @@ export const CompsAnalysis = () => {
       <Card>
         <CardContent className="pt-6">
           <PropertySelector
-            properties={properties.filter(p => {
-              // Approval status filter
-              if (approvalStatusFilter === 'approved' && p.approval_status !== 'approved') return false;
-              if (approvalStatusFilter === 'pending' && p.approval_status !== 'pending' && p.approval_status != null) return false;
-              if (approvalStatusFilter === 'rejected' && p.approval_status !== 'rejected') return false;
-
-              // Offer filter
-              if (offerFilter === 'with-offer' && (!p.cash_offer_amount || p.cash_offer_amount === 0)) return false;
-              if (offerFilter === 'no-offer' && p.cash_offer_amount && p.cash_offer_amount > 0) return false;
-
-              return true;
-            })}
+            properties={filteredProperties}
             selectedProperty={selectedProperty}
             onSelectProperty={handleSelectProperty}
             favorites={favorites}
