@@ -659,7 +659,15 @@ export const CompsAnalysis = () => {
             baths: Number(comp.baths) || 0,
             sqft: Number(comp.sqft) || 1,
             distance: Number(comp.distance) || 0,
+            distanceMiles: Number(comp.distance) || 0, // PDF export compatibility
             pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+            // Legacy fields for PDF export
+            sale_price: Number(comp.salePrice) || 0,
+            sale_date: comp.saleDate || new Date().toISOString(),
+            square_feet: Number(comp.sqft) || 1,
+            bedrooms: Number(comp.beds) || 0,
+            bathrooms: Number(comp.baths) || 0,
+            price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
           }));
 
         if (formattedComps.length === 0) {
@@ -670,11 +678,11 @@ export const CompsAnalysis = () => {
         const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || 0), 0) / formattedComps.length || 0;
 
         const calculatedAnalysis = {
-          avgSalePrice,
-          medianSalePrice: avgSalePrice,
-          avgPricePerSqft,
-          suggestedValueMin: avgSalePrice * 0.95,
-          suggestedValueMax: avgSalePrice * 1.05,
+          avgSalePrice: avgSalePrice || 0,
+          medianSalePrice: avgSalePrice || 0,
+          avgPricePerSqft: avgPricePerSqft || 0,
+          suggestedValueMin: (avgSalePrice || 0) * 0.95,
+          suggestedValueMax: (avgSalePrice || 0) * 1.05,
           trendPercentage: 0,
           marketTrend: 'stable' as const,
           comparablesCount: formattedComps.length,

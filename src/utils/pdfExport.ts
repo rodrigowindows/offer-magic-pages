@@ -136,8 +136,8 @@ export const exportCompsToPDF = async (
 
     doc.text(`Address: ${property.address}`, 25, currentY + 2);
     doc.text(`City: ${property.city}, ${property.state} ${property.zip_code}`, 25, currentY + 9);
-    doc.text(`Estimated Value: $${property.estimated_value.toLocaleString()}`, 25, currentY + 16);
-    doc.text(`Current Offer: $${property.cash_offer_amount.toLocaleString()}`, 25, currentY + 23);
+    doc.text(`Estimated Value: $${(property.estimated_value || 0).toLocaleString()}`, 25, currentY + 16);
+    doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 23);
 
     currentY += 40;
 
@@ -183,7 +183,7 @@ export const exportCompsToPDF = async (
     doc.text('Avg Price/Sqft', 22 + cardWidth + cardSpacing, currentY + 5);
     doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
-    doc.text(`$${analysis.avgPricePerSqft}`, 22 + cardWidth + cardSpacing, currentY + 13);
+    doc.text(`$${Math.round(analysis.avgPricePerSqft || 0)}`, 22 + cardWidth + cardSpacing, currentY + 13);
 
     // Card 3: Value Range
     doc.setFillColor(239, 246, 255);
@@ -229,9 +229,9 @@ export const exportCompsToPDF = async (
       format(comp.saleDate, 'MM/dd/yyyy'),
       `$${comp.salePrice.toLocaleString()}`,
       comp.sqft.toLocaleString(),
-      `$${comp.pricePerSqft}`,
+      `$${Math.round(comp.pricePerSqft || 0)}`,
       `${comp.beds}/${comp.baths}`,
-      `${comp.distanceMiles.toFixed(2)} mi`,
+      `${(comp.distanceMiles || comp.distance || 0).toFixed(2)} mi`,
       comp.daysOnMarket || '-',
       comp.adjustment !== 0 ? `$${comp.adjustment.toLocaleString()}` : '-',
       `$${(comp.salePrice + comp.adjustment).toLocaleString()}`,
@@ -318,7 +318,7 @@ export const exportCompsToSimplePDF = (
   doc.setFontSize(10);
   doc.text(`${property.address}, ${property.city}, ${property.state}`, 20, currentY);
   currentY += 6;
-  doc.text(`Estimated Value: $${property.estimated_value.toLocaleString()}`, 20, currentY);
+  doc.text(`Estimated Value: $${(property.estimated_value || 0).toLocaleString()}`, 20, currentY);
   currentY += 15;
 
   // Market Analysis
@@ -327,23 +327,23 @@ export const exportCompsToSimplePDF = (
   currentY += 8;
 
   doc.setFontSize(10);
-  doc.text(`Average Sale Price: $${analysis.avgSalePrice.toLocaleString()}`, 20, currentY);
+  doc.text(`Average Sale Price: $${(analysis.avgSalePrice || 0).toLocaleString()}`, 20, currentY);
   currentY += 6;
-  doc.text(`Average $/Sqft: $${analysis.avgPricePerSqft}`, 20, currentY);
+  doc.text(`Average $/Sqft: $${Math.round(analysis.avgPricePerSqft || 0)}`, 20, currentY);
   currentY += 6;
-  doc.text(`Value Range: $${analysis.suggestedValueMin.toLocaleString()} - $${analysis.suggestedValueMax.toLocaleString()}`, 20, currentY);
+  doc.text(`Value Range: $${(analysis.suggestedValueMin || 0).toLocaleString()} - $${(analysis.suggestedValueMax || 0).toLocaleString()}`, 20, currentY);
   currentY += 6;
   doc.text(`Market Trend: ${analysis.marketTrend} (${analysis.trendPercentage}%)`, 20, currentY);
   currentY += 15;
 
   // Comparables Table
-  const tableData = comparables.map((comp, i) => [
-    `${i + 1}`,
+  const tableData = comparables.map((comp, index) => [
+    `#${index + 1}`,
     comp.address,
-    format(comp.saleDate, 'MM/dd/yy'),
+    format(comp.saleDate, 'MM/dd/yyyy'),
     `$${comp.salePrice.toLocaleString()}`,
     comp.sqft.toLocaleString(),
-    `$${comp.pricePerSqft}`,
+    `$${Math.round(comp.pricePerSqft || 0)}`,
     `${comp.beds}/${comp.baths}`,
   ]);
 
@@ -424,8 +424,8 @@ export const exportConsolidatedCompsPDF = async (
 
     // Property details
     doc.setFontSize(9);
-    doc.text(`Estimated Value: $${property.estimated_value.toLocaleString()}`, 25, currentY + 25);
-    doc.text(`Current Offer: $${property.cash_offer_amount.toLocaleString()}`, 25, currentY + 32);
+    doc.text(`Estimated Value: $${(property.estimated_value || 0).toLocaleString()}`, 25, currentY + 25);
+    doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 32);
 
     // Add property image if available
     if (property.property_image_url) {
@@ -472,7 +472,7 @@ export const exportConsolidatedCompsPDF = async (
       doc.text('Avg Sale Price', 22, currentY + 5);
       doc.setFontSize(11);
       doc.setTextColor(37, 99, 235);
-      doc.text(`$${Math.round(analysis.avgSalePrice / 1000)}K`, 22, currentY + 13);
+      doc.text(`$${Math.round((analysis.avgSalePrice || 0) / 1000)}K`, 22, currentY + 13);
 
       // Card 2: Avg $/Sqft
       doc.setFillColor(239, 246, 255);
@@ -482,7 +482,7 @@ export const exportConsolidatedCompsPDF = async (
       doc.text('Avg $/Sqft', 22 + cardWidth + cardSpacing, currentY + 5);
       doc.setFontSize(11);
       doc.setTextColor(37, 99, 235);
-      doc.text(`$${analysis.avgPricePerSqft}`, 22 + cardWidth + cardSpacing, currentY + 13);
+      doc.text(`$${Math.round(analysis.avgPricePerSqft || 0)}`, 22 + cardWidth + cardSpacing, currentY + 13);
 
       // Card 3: Suggested Value Range
       doc.setFillColor(239, 246, 255);
@@ -493,7 +493,7 @@ export const exportConsolidatedCompsPDF = async (
       doc.setFontSize(9);
       doc.setTextColor(37, 99, 235);
       doc.text(
-        `$${Math.round(analysis.suggestedValueMin / 1000)}K - $${Math.round(analysis.suggestedValueMax / 1000)}K`,
+        `$${Math.round((analysis.suggestedValueMin || 0) / 1000)}K - $${Math.round((analysis.suggestedValueMax || 0) / 1000)}K`,
         22 + (cardWidth + cardSpacing) * 2,
         currentY + 13
       );
@@ -508,7 +508,7 @@ export const exportConsolidatedCompsPDF = async (
       const trendColor = analysis.marketTrend === 'up' ? [34, 197, 94] : analysis.marketTrend === 'down' ? [239, 68, 68] : [100, 116, 139];
       doc.setTextColor(trendColor[0], trendColor[1], trendColor[2]);
       doc.text(
-        `${analysis.trendPercentage > 0 ? '+' : ''}${analysis.trendPercentage}%`,
+        `${(analysis.trendPercentage || 0) > 0 ? '+' : ''}${analysis.trendPercentage || 0}%`,
         22 + (cardWidth + cardSpacing) * 2 + cardWidth + 25,
         currentY + 13
       );
@@ -527,9 +527,9 @@ export const exportConsolidatedCompsPDF = async (
         format(comp.saleDate, 'MM/dd/yy'),
         `$${Math.round(comp.salePrice / 1000)}K`,
         comp.sqft.toLocaleString(),
-        `$${comp.pricePerSqft}`,
+        `$${Math.round(comp.pricePerSqft || 0)}`,
         `${comp.beds}/${comp.baths}`,
-        `${comp.distanceMiles.toFixed(1)}mi`,
+        `${(comp.distanceMiles || comp.distance || 0).toFixed(1)}mi`,
       ]);
 
       autoTable(doc, {
@@ -559,9 +559,21 @@ export const exportConsolidatedCompsPDF = async (
 
     } catch (error) {
       console.error(`Error processing property ${property.address}:`, error);
-      doc.setFontSize(10);
-      doc.setTextColor(239, 68, 68);
-      doc.text('Error loading comparables for this property', 20, currentY);
+      
+      // Show error message in PDF
+      doc.setFillColor(254, 242, 242);
+      doc.rect(20, currentY, 170, 40, 'F');
+      
+      doc.setFontSize(11);
+      doc.setTextColor(220, 38, 38);
+      doc.text('⚠ Unable to load comparables', 25, currentY + 12);
+      
+      doc.setFontSize(9);
+      doc.setTextColor(127, 29, 29);
+      doc.text('No comparable properties found for this address.', 25, currentY + 22);
+      doc.text('This property will be skipped in the analysis.', 25, currentY + 30);
+      
+      currentY += 45;
     }
 
     addFooter(doc, pageNumber++);
