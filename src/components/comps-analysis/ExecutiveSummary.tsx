@@ -146,6 +146,18 @@ export const ExecutiveSummary = ({
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
+
+            {/* Dedicated Export All Button */}
+            <Button
+              onClick={onExportAll}
+              variant="default"
+              size="sm"
+              disabled={exportingPDF}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              {exportingPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+              Export All Filtered
+            </Button>
           </div>
         </div>
 
