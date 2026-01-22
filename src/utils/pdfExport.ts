@@ -63,6 +63,54 @@ const loadImageAsBase64 = async (url: string): Promise<string | null> => {
 };
 
 /**
+ * Generate Mapbox Static Map URL with subject property and comparables
+ */
+const generateMapboxStaticMap = (
+  subjectProperty: PropertyData,
+  comparables: ComparableProperty[],
+  width: number = 600,
+  height: number = 400
+): string | null => {
+  try {
+    // Get token from localStorage
+    const mapboxToken = localStorage.getItem('mapbox_token');
+    if (!mapboxToken) {
+      console.warn('No Mapbox token found, skipping map generation');
+      return null;
+    }
+
+    // Build markers overlay
+    const markers: string[] = [];
+
+    // Subject property marker (large red pin)
+    markers.push('pin-l-home+ff0000()');
+
+    // Comparable markers (small blue pins) - limit to 10 to avoid URL length issues
+    const limitedComps = comparables.slice(0, 10);
+    limitedComps.forEach(() => {
+      markers.push('pin-s-circle+4299e1()');
+    });
+
+    // Use subject property address as center (Mapbox will geocode it)
+    const centerAddress = `${subjectProperty.address}, ${subjectProperty.city}, ${subjectProperty.state}`;
+    const encodedAddress = encodeURIComponent(centerAddress);
+
+    // Construct Static Map URL
+    // Format: https://api.mapbox.com/styles/v1/{username}/{style_id}/static/{overlay}/{lon},{lat},{zoom}/{width}x{height}
+    const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/` +
+      `${markers.join(',')}/` +
+      `${encodedAddress}/` +
+      `12/${width}x${height}@2x?` +
+      `access_token=${mapboxToken}`;
+
+    return mapUrl;
+  } catch (error) {
+    console.error('Error generating static map:', error);
+    return null;
+  }
+};
+
+/**
  * Add logo/header to PDF
  */
 const addHeader = (doc: jsPDF, reportTitle: string) => {
@@ -281,6 +329,55 @@ export const exportCompsToPDF = async (
         doc.text(note, 20, noteY);
         noteY += 5;
       });
+    }
+
+    // ===== LOCATION MAP (NEW PAGE) =====
+    doc.addPage();
+    addHeader(doc, property.address);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(15, 23, 42);
+    doc.text('Property Location & Comparables Map', 20, 65);
+    
+    // Try to add Mapbox static map
+    try {
+      const mapUrl = generateMapboxStaticMap(property, comparables, 550, 350);
+      if (mapUrl) {
+        const mapImageData = await loadImageAsBase64(mapUrl);
+        if (mapImageData) {
+          doc.addImage(mapImageData, 'PNG', 20, 75, 170, 110);
+          
+          // Add legend
+          doc.setFontSize(9);
+          doc.setTextColor(100, 116, 139);
+          doc.text('Legend:', 20, 192);
+          
+          // Red marker
+          doc.setFillColor(239, 68, 68);
+          doc.circle(25, 197, 2, 'F');
+          doc.text('Subject Property', 30, 198);
+          
+          // Blue marker
+          doc.setFillColor(66, 153, 225);
+          doc.circle(25, 202, 2, 'F');
+          doc.text('Comparable Properties (up to 10 shown)', 30, 203);
+        } else {
+          doc.setFontSize(10);
+          doc.setTextColor(156, 163, 175);
+          doc.text('Map unavailable - unable to load image', 20, 100);
+        }
+      } else {
+        doc.setFontSize(10);
+        doc.setTextColor(156, 163, 175);
+        doc.text('Map unavailable - Mapbox token not configured', 20, 100);
+        doc.setFontSize(8);
+        doc.text('To enable maps, add your Mapbox token in Settings', 20, 110);
+      }
+    } catch (mapError) {
+      console.error('Error adding map to PDF:', mapError);
+      doc.setFontSize(10);
+      doc.setTextColor(156, 163, 175);
+      doc.text('Map unavailable - error loading map', 20, 100);
     }
 
     // Add Footer
@@ -556,6 +653,26 @@ export const exportConsolidatedCompsPDF = async (
           7: { cellWidth: 15 },
         },
       });
+
+      // Add mini map if possible (small version for consolidated PDF)
+      const finalTableY = (doc as any).lastAutoTable?.finalY || currentY + 40;
+      
+      if (finalTableY < 200) {
+        try {
+          const mapUrl = generateMapboxStaticMap(property, comparables, 400, 200);
+          if (mapUrl) {
+            const mapImageData = await loadImageAsBase64(mapUrl);
+            if (mapImageData) {
+              doc.setFontSize(10);
+              doc.setTextColor(15, 23, 42);
+              doc.text('Location Map', 20, finalTableY + 8);
+              doc.addImage(mapImageData, 'PNG', 20, finalTableY + 12, 170, 85);
+            }
+          }
+        } catch (mapError) {
+          console.warn('Could not add map to consolidated PDF:', mapError);
+        }
+      }
 
     } catch (error) {
       console.error(`Error processing property ${property.address}:`, error);
