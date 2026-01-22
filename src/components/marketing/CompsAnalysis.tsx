@@ -73,7 +73,6 @@ export const CompsAnalysis = () => {
   // Properties & Selection
   const [properties, setProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [propertyFilter, setPropertyFilter] = useState<'all' | 'approved' | 'pending' | 'rejected' | 'favorites'>('all');
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [offerFilter, setOfferFilter] = useState<'all' | 'with-offer' | 'no-offer'>('all');
 
@@ -775,7 +774,7 @@ export const CompsAnalysis = () => {
             properties={properties.filter(p => {
               // Approval status filter
               if (approvalStatusFilter === 'approved' && p.approval_status !== 'approved') return false;
-              if (approvalStatusFilter === 'pending' && p.approval_status && p.approval_status !== 'pending') return false;
+              if (approvalStatusFilter === 'pending' && p.approval_status !== 'pending' && p.approval_status != null) return false;
               if (approvalStatusFilter === 'rejected' && p.approval_status !== 'rejected') return false;
 
               // Offer filter
@@ -788,7 +787,7 @@ export const CompsAnalysis = () => {
             onSelectProperty={handleSelectProperty}
             favorites={favorites}
             onToggleFavorite={toggleFavorite}
-            filter={propertyFilter}
+            filter="all"
           />
         </CardContent>
       </Card>
