@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save } from 'lucide-react';
+import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 // Modular Components - Phase 1
@@ -371,7 +371,7 @@ export const CompsAnalysis = () => {
 
         setAnalysis(calculatedAnalysis);
 
-        // Save to cache
+        // Save to memory cache
         const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
         setCompsCache(prev => ({
           ...prev,
@@ -381,6 +381,32 @@ export const CompsAnalysis = () => {
             timestamp: Date.now()
           }
         }));
+
+        // 💾 AUTO-SAVE to database cache for future exports
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase
+              .from('comps_analysis_history')
+              .insert({
+                property_id: property.id,
+                analyst_user_id: user.id,
+                analysis_data: {
+                  comparables: formattedComps.slice(0, 10), // Save top 10
+                  analysis: calculatedAnalysis,
+                },
+                comparables_count: formattedComps.length,
+                suggested_value_min: calculatedAnalysis.suggestedValueMin,
+                suggested_value_max: calculatedAnalysis.suggestedValueMax,
+                search_radius_miles: compsFilters.maxDistance || 3,
+                data_source: compsData[0].source || dataSource,
+                notes: 'Auto-saved on analysis generation',
+              });
+            console.log('✅ Auto-saved to database cache');
+          }
+        } catch (saveError) {
+          console.warn('Auto-save to database failed (non-critical):', saveError);
+        }
 
         toast({
           title: 'Success',
@@ -542,6 +568,7 @@ export const CompsAnalysis = () => {
 
   /**
    * Export all filtered properties to PDF
+   * Uses cache hierarchy: 1. Memory cache, 2. Database cache, 3. API call
    */
   const exportAllAnalyses = useCallback(async () => {
     if (filteredProperties.length === 0) {
@@ -558,22 +585,56 @@ export const CompsAnalysis = () => {
 
       // Function to get comparables for each property
       const getComparablesForProperty = async (property: Property) => {
-        // Check cache first (cache never expires)
+        // 1️⃣ Check MEMORY cache first (fastest)
         const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
         const cached = compsCache[cacheKey];
 
         if (cached) {
-          console.log('Using cached data for export:', property.address);
+          console.log('✅ Using MEMORY cache for export:', property.address);
           return { comparables: cached.comparables, analysis: cached.analysis };
         }
 
-        // Check if we already have comparables for this property (current selection)
+        // 2️⃣ Check if this is the currently selected property (already loaded)
         if (selectedProperty?.id === property.id && comparables.length > 0 && analysis) {
+          console.log('✅ Using CURRENT selection for export:', property.address);
           return { comparables, analysis };
         }
 
-        // Otherwise, fetch new comparables
-        console.log('Fetching new data for export:', property.address);
+        // 3️⃣ Check DATABASE cache (comps_analysis_history)
+        try {
+          const { data: historyData } = await supabase
+            .from('comps_analysis_history')
+            .select('*')
+            .eq('property_id', property.id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (historyData && historyData.length > 0) {
+            const savedAnalysis = historyData[0];
+            const analysisData = savedAnalysis.analysis_data as any;
+            
+            if (analysisData?.comparables && analysisData?.analysis) {
+              console.log('✅ Using DATABASE cache for export:', property.address);
+              
+              // Update memory cache for next time
+              setCompsCache(prev => ({
+                ...prev,
+                [cacheKey]: {
+                  comparables: analysisData.comparables,
+                  analysis: analysisData.analysis,
+                  timestamp: Date.now()
+                }
+              }));
+              
+              return { comparables: analysisData.comparables, analysis: analysisData.analysis };
+            }
+          }
+        } catch (dbError) {
+          console.warn('Database cache check failed:', dbError);
+        }
+
+        // 4️⃣ Fetch from API (last resort)
+        console.log('🔄 Fetching NEW data from API for export:', property.address);
         const compsData = await CompsDataService.getComparables(
           property.address || '',
           property.city || 'Orlando',
@@ -828,13 +889,24 @@ export const CompsAnalysis = () => {
           <h1 className="text-3xl font-bold">Comps Analysis</h1>
           <p className="text-muted-foreground">Comparative Market Analysis Tool</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowApiConfig(true)}
-        >
-          <AlertCircle className="h-4 w-4 mr-2" />
-          Settings
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={exportAllAnalyses}
+            variant="default"
+            disabled={exportingPDF || filteredProperties.length === 0}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            {exportingPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            Export All Filtered ({filteredProperties.length})
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowApiConfig(true)}
+          >
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
