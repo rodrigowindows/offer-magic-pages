@@ -10,7 +10,7 @@
     <!-- Header -->
     <tr>
       <td style="padding: 40px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">💰 Cash Offer for Your Property</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">💰 Personalized Offer for Your Property</h1>
       </td>
     </tr>
 
@@ -20,20 +20,13 @@
         <p style="font-size: 16px; color: #333; line-height: 1.6;">Dear {name},</p>
 
         <p style="font-size: 16px; color: #333; line-height: 1.6;">
-          We are pleased to present you with a <strong>cash offer</strong> for your property at:
+          We are pleased to present you with a <strong>personalized offer</strong> for your property at:
         </p>
 
         <!-- Property Address Box -->
         <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 15px; margin: 20px 0;">
           <p style="margin: 0; font-size: 18px; color: #333; font-weight: bold;">{address}</p>
           <p style="margin: 5px 0 0; color: #666;">{city}, {state} {zip_code}</p>
-        </div>
-
-        <!-- Cash Offer Amount -->
-        <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #e8f5e9; border-radius: 8px;">
-          <p style="font-size: 14px; color: #2e7d32; margin: 0; font-weight: 600;">OUR CASH OFFER</p>
-          <p style="font-size: 42px; color: #1b5e20; font-weight: bold; margin: 10px 0;">{cash_offer}</p>
-          <p style="font-size: 14px; color: #4caf50; margin: 5px 0 0;">Market Value: {estimated_value}</p>
         </div>
 
         <!-- Benefits -->
@@ -51,20 +44,24 @@
           This offer is <strong>valid for 7 days</strong>. No obligation to accept.
         </p>
 
-        <!-- Call to Action Button -->
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="{property_url}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
-            👉 View Complete Offer Details
-          </a>
-        </div>
-
-        <!-- Alternative: Call Us -->
-        <div style="text-align: center; margin: 20px 0;">
-          <p style="font-size: 14px; color: #666; margin: 0 0 10px;">Prefer to talk? Give us a call:</p>
-          <a href="tel:{phone}" style="background-color: #4caf50; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
-            📞 {phone}
-          </a>
-        </div>
+        <!-- Call to Action Buttons - Table Layout -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+          <tr>
+            <td align="center" style="padding: 10px;">
+              <a href="{property_url}" style="background-color: #667eea; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);">
+                👉 View Offer Details
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 10px;">
+              <p style="font-size: 14px; color: #666; margin: 0 0 10px;">Prefer to talk? Give us a call:</p>
+              <a href="tel:{phone}" style="background-color: #4caf50; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+                📞 {phone}
+              </a>
+            </td>
+          </tr>
+        </table>
 
         <!-- QR Code Section -->
         <div style="text-align: center; margin: 40px 0; padding: 25px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 12px;">
@@ -74,9 +71,6 @@
           <img src="{qr_code_url}" alt="QR Code" style="width: 220px; height: 220px; margin: 0 auto; display: block; border: 6px solid #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
           <p style="font-size: 13px; color: #666; margin: 15px 0 0;">
             Can't scan? <a href="{property_url}" style="color: #667eea; text-decoration: none; font-weight: bold;">Click here instead</a>
-          </p>
-          <p style="font-size: 12px; color: #999; margin: 5px 0 0;">
-            Or visit: {property_url}
           </p>
           <p style="font-size: 12px; color: #999; margin: 5px 0 0;">
             Or visit: <a href="{property_url}" style="color: #667eea; text-decoration: none;">{property_url}</a>
