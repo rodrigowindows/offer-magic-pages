@@ -86,7 +86,7 @@ export const CompsAnalysis = () => {
   const [smartInsights, setSmartInsights] = useState<SmartInsightsType | null>(null);
 
   // Cache for comparables to avoid redundant API calls
-  const [compsCache, setCompsCache] = useState<Map<string, { comparables: ComparableProperty[], analysis: MarketAnalysis, timestamp: number }>>(new Map());
+  const [compsCache, setCompsCache] = useState<Record<string, { comparables: ComparableProperty[], analysis: MarketAnalysis, timestamp: number }>>({});
 
   // Filters
   const [compsFilters, setCompsFilters] = useState<CompsFiltersConfig>({
@@ -294,7 +294,7 @@ export const CompsAnalysis = () => {
 
       // Create cache key based on property and filters
       const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
-      const cached = compsCache.get(cacheKey);
+      const cached = compsCache[cacheKey];
       const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
       // Check if we have valid cached data
@@ -359,10 +359,13 @@ export const CompsAnalysis = () => {
 
         // Save to cache
         const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
-        setCompsCache(prev => new Map(prev).set(cacheKey, {
-          comparables: formattedComps,
-          analysis: calculatedAnalysis,
-          timestamp: Date.now()
+        setCompsCache(prev => ({
+          ...prev,
+          [cacheKey]: {
+            comparables: formattedComps,
+            analysis: calculatedAnalysis,
+            timestamp: Date.now()
+          }
         }));
 
         toast({
@@ -543,7 +546,7 @@ export const CompsAnalysis = () => {
       const getComparablesForProperty = async (property: Property) => {
         // Check cache first
         const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
-        const cached = compsCache.get(cacheKey);
+        const cached = compsCache[cacheKey];
         const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
         if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
