@@ -519,9 +519,9 @@ export const CompsAnalysis = () => {
       setExportingPDF(true);
 
       if (withImages) {
-        await exportCompsToPDF(selectedProperty, comparables, analysis);
+        await exportCompsToPDF(selectedProperty, comparables as any, analysis);
       } else {
-        await exportCompsToSimplePDF(selectedProperty, comparables, analysis);
+        await exportCompsToSimplePDF(selectedProperty, comparables as any, analysis);
       }
 
       toast({
@@ -624,7 +624,7 @@ export const CompsAnalysis = () => {
 
       await exportConsolidatedCompsPDF(
         filteredProperties,
-        getComparablesForProperty,
+        getComparablesForProperty as any,
         (current, total) => {
           console.log(`Exporting ${current}/${total} properties...`);
         }
@@ -1104,7 +1104,7 @@ export const CompsAnalysis = () => {
             <TabsContent value="manual">
               <ManualCompsManager
                 preSelectedPropertyId={selectedProperty.id}
-                onCompsUpdated={() => loadManualLinksCount(selectedProperty.id)}
+                onLinkAdded={() => loadManualLinksCount(selectedProperty.id)}
               />
             </TabsContent>
 
@@ -1132,17 +1132,20 @@ export const CompsAnalysis = () => {
 
       {/* API Settings Dialog */}
       {showApiConfig && (
-        <CompsApiSettings
-          onClose={() => setShowApiConfig(false)}
-        />
+        <CompsApiSettings />
       )}
 
       {/* Adjustment Calculator */}
-      {showAdjustmentCalc && selectedProperty && (
+      {showAdjustmentCalc && selectedProperty && filteredComparables.length > 0 && (
         <AdjustmentCalculator
-          property={selectedProperty}
-          comparables={filteredComparables as any}
-          onClose={() => setShowAdjustmentCalc(false)}
+          open={showAdjustmentCalc}
+          onOpenChange={setShowAdjustmentCalc}
+          compAddress={filteredComparables[0]?.address || selectedProperty.address}
+          basePrice={filteredComparables[0]?.salePrice || filteredComparables[0]?.sale_price || selectedProperty.estimated_value}
+          onApplyAdjustments={(adjustedPrice, adjustments) => {
+            console.log('Adjusted price:', adjustedPrice, adjustments);
+            setShowAdjustmentCalc(false);
+          }}
         />
       )}
     </div>
