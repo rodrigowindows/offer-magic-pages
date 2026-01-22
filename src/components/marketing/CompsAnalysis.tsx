@@ -392,16 +392,16 @@ export const CompsAnalysis = () => {
                 property_id: property.id,
                 analyst_user_id: user.id,
                 analysis_data: {
-                  comparables: formattedComps.slice(0, 10), // Save top 10
+                  comparables: formattedComps.slice(0, 10),
                   analysis: calculatedAnalysis,
-                },
+                } as any,
                 comparables_count: formattedComps.length,
                 suggested_value_min: calculatedAnalysis.suggestedValueMin,
                 suggested_value_max: calculatedAnalysis.suggestedValueMax,
                 search_radius_miles: compsFilters.maxDistance || 3,
                 data_source: compsData[0].source || dataSource,
                 notes: 'Auto-saved on analysis generation',
-              });
+              } as any);
             console.log('✅ Auto-saved to database cache');
           }
         } catch (saveError) {

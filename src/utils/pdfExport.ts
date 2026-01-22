@@ -231,7 +231,7 @@ export const exportCompsToPDF = async (
       comp.sqft.toLocaleString(),
       `$${Math.round(comp.pricePerSqft || 0)}`,
       `${comp.beds}/${comp.baths}`,
-      `${(comp.distanceMiles || comp.distance || 0).toFixed(2)} mi`,
+      `${((comp as any).distanceMiles || (comp as any).distance || 0).toFixed(2)} mi`,
       comp.daysOnMarket || '-',
       comp.adjustment !== 0 ? `$${comp.adjustment.toLocaleString()}` : '-',
       `$${(comp.salePrice + comp.adjustment).toLocaleString()}`,
@@ -529,7 +529,7 @@ export const exportConsolidatedCompsPDF = async (
         comp.sqft.toLocaleString(),
         `$${Math.round(comp.pricePerSqft || 0)}`,
         `${comp.beds}/${comp.baths}`,
-        `${(comp.distanceMiles || comp.distance || 0).toFixed(1)}mi`,
+        `${((comp as any).distanceMiles || (comp as any).distance || 0).toFixed(1)}mi`,
       ]);
 
       autoTable(doc, {
