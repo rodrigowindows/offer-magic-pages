@@ -13,15 +13,27 @@ This directory contains the refactored Comps Analysis components, extracted from
 ```
 src/components/comps-analysis/
 ├── types.ts                  # 📋 Shared TypeScript types
+│
+├── PHASE 1 - Core UI Components
 ├── OnboardingTour.tsx        # 👋 Interactive tutorial (70 lines)
 ├── CommandPalette.tsx        # ⌨️  Cmd+K quick actions (80 lines)
 ├── SmartInsights.tsx         # 💡 AI market analysis (50 lines)
 ├── ExecutiveSummary.tsx      # 📊 Main metrics dashboard (150 lines)
+│
+├── PHASE 2 - Data Components
+├── PropertySelector.tsx      # 🏠 Property selection dropdown (130 lines)
+├── CompsFilters.tsx          # 🔍 Filtering controls (220 lines)
+├── CompsTable.tsx            # 📋 Comparables table (260 lines)
+├── AnalysisHistory.tsx       # 🕐 Historical analyses (180 lines)
+├── CompareDialog.tsx         # ⚖️  Side-by-side comparison (200 lines)
+│
 ├── index.ts                  # 🎁 Clean exports
 └── README.md                 # 📖 This file
 
 src/hooks/comps-analysis/
-└── useCompsAnalysis.ts       # 🎣 Custom hook for business logic (120 lines)
+├── useCompsAnalysis.ts       # 🎣 Business logic (120 lines)
+├── useAnalysisHistory.ts     # 📜 History management (140 lines)
+└── useFavorites.ts           # ⭐ Favorites with localStorage (100 lines)
 ```
 
 ---
@@ -156,6 +168,152 @@ src/hooks/comps-analysis/
 
 ---
 
+## 🧩 Phase 2 Components
+
+### `PropertySelector.tsx`
+**Purpose:** Property selection dropdown with filters and favorites
+
+**Props:**
+```typescript
+{
+  properties: Property[];
+  selectedProperty: Property | null;
+  onSelectProperty: (propertyId: string) => void;
+  favorites: Set<string>;
+  onToggleFavorite: (propertyId: string) => void;
+  filter?: 'all' | 'approved' | 'manual' | 'none' | 'favorites';
+}
+```
+
+**Features:**
+- Star icons for favorites
+- Filter by status (approved/manual/none)
+- Formatted property labels with details
+- Empty states for each filter
+
+### `CompsFilters.tsx`
+**Purpose:** Advanced filtering controls for comparables
+
+**Props:**
+```typescript
+{
+  filters: CompsFiltersConfig;
+  onFiltersChange: (filters: CompsFiltersConfig) => void;
+  onClearFilters: () => void;
+  totalComps: number;
+  filteredComps: number;
+}
+```
+
+**Features:**
+- Distance slider (0.5-10 miles)
+- Sale date range (3/6/12/24 months)
+- Property type selector
+- Expandable advanced filters (beds, baths, sqft, price)
+- Clear all button
+
+### `CompsTable.tsx`
+**Purpose:** Sortable table displaying comparable properties
+
+**Props:**
+```typescript
+{
+  comparables: ComparableProperty[];
+  onViewDetails?: (comp: ComparableProperty) => void;
+  onOpenMap?: (comp: ComparableProperty) => void;
+  onToggleFavorite?: (compId: string) => void;
+  favorites?: Set<string>;
+  highlightedCompId?: string;
+}
+```
+
+**Features:**
+- Sortable columns (distance, price, price/sqft, date, quality)
+- Quality badges (Excellent/Good/Fair/Low)
+- Star favorites
+- Action buttons (View, Map, External Link)
+- Relative time display
+
+### `AnalysisHistory.tsx`
+**Purpose:** Display and manage historical analyses
+
+**Props:**
+```typescript
+{
+  history: AnalysisHistoryItem[];
+  onLoadHistory: (item: AnalysisHistoryItem) => void;
+  onDeleteHistory: (itemId: string) => void;
+  onExportHistory: (item: AnalysisHistoryItem) => void;
+  currentPropertyId?: string;
+}
+```
+
+**Features:**
+- Grouped by property
+- Timeline with relative dates
+- Data source badges
+- Value range display
+- Load/Export/Delete actions
+
+### `CompareDialog.tsx`
+**Purpose:** Side-by-side comparison of multiple properties
+
+**Props:**
+```typescript
+{
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  comparables: ComparableProperty[];
+  onRemoveComparable: (compId: string) => void;
+  maxComparables?: number; // default: 4
+}
+```
+
+**Features:**
+- Side-by-side grid (up to 4 properties)
+- Comparison rows for all key metrics
+- Average statistics
+- Remove individual properties
+
+---
+
+## 🎣 Phase 2 Hooks
+
+### `useAnalysisHistory.ts`
+**Purpose:** Manage analysis history with Supabase
+
+**Returns:**
+```typescript
+{
+  history: AnalysisHistoryItem[];
+  loading: boolean;
+  error: string | null;
+  fetchHistory: (propertyId?: string) => Promise<void>;
+  saveAnalysis: (data: Partial<AnalysisHistoryItem>) => Promise<void>;
+  deleteHistory: (itemId: string) => Promise<void>;
+  loadHistoryItem: (item: AnalysisHistoryItem) => void;
+}
+```
+
+### `useFavorites.ts`
+**Purpose:** Manage favorites with localStorage persistence
+
+**Returns:**
+```typescript
+{
+  favorites: Set<string>;
+  isFavorite: (id: string) => boolean;
+  toggleFavorite: (id: string) => void;
+  addFavorite: (id: string) => void;
+  removeFavorite: (id: string) => void;
+  clearFavorites: () => void;
+  getFavoritesList: () => string[];
+  favoritesCount: number;
+}
+```
+
+---
+
 ## 🔄 Usage
 
 ### Basic Import
@@ -239,14 +397,14 @@ const MyComponent = () => {
 - [x] Create useCompsAnalysis hook
 - [x] Setup index.ts exports
 
-### ⏳ Phase 2: Additional Components (Next)
-- [ ] Extract PropertySelector
-- [ ] Extract CompsTable
-- [ ] Extract CompsFilters
-- [ ] Extract AnalysisHistory
-- [ ] Extract CompareDialog
-- [ ] Create useAnalysisHistory hook
-- [ ] Create useFavorites hook
+### ✅ Phase 2: Additional Components (Completed)
+- [x] Extract PropertySelector
+- [x] Extract CompsTable
+- [x] Extract CompsFilters
+- [x] Extract AnalysisHistory
+- [x] Extract CompareDialog
+- [x] Create useAnalysisHistory hook
+- [x] Create useFavorites hook
 
 ### 📅 Phase 3: Integration (Future)
 - [ ] Update main CompsAnalysis.tsx to use modules
@@ -332,5 +490,5 @@ npm test -- --coverage src/components/comps-analysis
 ---
 
 **Last Updated:** 2026-01-22
-**Status:** 🟡 Phase 1 Complete - Phase 2 In Progress
+**Status:** 🟢 Phase 1 & 2 Complete - Ready for Phase 3 Integration
 **Maintainer:** Development Team
