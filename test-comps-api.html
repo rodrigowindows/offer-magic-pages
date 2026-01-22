@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Comps API</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 4px;
+      border-left: 4px solid #4CAF50;
+    }
+    .error {
+      border-left-color: #f44336;
+      background: #ffebee;
+    }
+    .loading {
+      color: #666;
+      font-style: italic;
+    }
+    pre {
+      background: #263238;
+      color: #aed581;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .comp-card {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+    }
+    .comp-card h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    .comp-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      font-size: 13px;
+    }
+    .detail-item {
+      color: #666;
+    }
+    .detail-item strong {
+      color: #333;
+    }
+    .source-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .source-demo { background: #ffd54f; color: #000; }
+    .source-attom { background: #4caf50; color: white; }
+    .source-zillow { background: #2196f3; color: white; }
+    .source-county { background: #9c27b0; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏠 Test Comps API</h1>
+
+    <div class="form-group">
+      <label>Address:</label>
+      <input type="text" id="address" value="114 W CELESTE ST" placeholder="114 W CELESTE ST">
+    </div>
+
+    <div class="form-group">
+      <label>City:</label>
+      <input type="text" id="city" value="APOPKA" placeholder="APOPKA">
+    </div>
+
+    <div class="form-group">
+      <label>State:</label>
+      <input type="text" id="state" value="FL" placeholder="FL">
+    </div>
+
+    <div class="form-group">
+      <label>Base Price ($):</label>
+      <input type="number" id="basePrice" value="250000" placeholder="250000">
+    </div>
+
+    <div class="form-group">
+      <label>Radius (miles):</label>
+      <input type="number" id="radius" value="3" placeholder="3" step="0.5">
+    </div>
+
+    <button onclick="testAPI()" id="testBtn">🔍 Fetch Comparables</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    async function testAPI() {
+      const btn = document.getElementById('testBtn');
+      const resultDiv = document.getElementById('result');
+
+      // Get form values
+      const address = document.getElementById('address').value;
+      const city = document.getElementById('city').value;
+      const state = document.getElementById('state').value;
+      const basePrice = parseInt(document.getElementById('basePrice').value);
+      const radius = parseFloat(document.getElementById('radius').value);
+
+      // Disable button and show loading
+      btn.disabled = true;
+      resultDiv.innerHTML = '<div class="result loading">⏳ Fetching comparables...</div>';
+
+      try {
+        // IMPORTANT: Replace this URL with your actual Supabase project URL
+        const SUPABASE_URL = 'https://atwdkhlyrffbaugkaker.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0d2RraGx5cmZmYmF1Z2tha2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQyODUzODcsImV4cCI6MjA0OTg2MTM4N30.yMSiS4bnkjKQe9_YXAuAOLaZcHs8xpBmS2-qhkBw-Aw';
+
+        const url = `${SUPABASE_URL}/functions/v1/fetch-comps`;
+
+        console.log('📤 Sending request to:', url);
+        console.log('📤 Payload:', { address, city, state, basePrice, radius });
+
+        const startTime = Date.now();
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            address,
+            city,
+            state,
+            basePrice,
+            radius
+          })
+        });
+
+        const duration = Date.now() - startTime;
+
+        console.log('📥 Response status:', response.status);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('📥 Response data:', data);
+
+        // Display results
+        if (data.success && data.comps && data.comps.length > 0) {
+          let html = `
+            <div class="result">
+              <h3>✅ Success! Found ${data.comps.length} comparables</h3>
+              <p><strong>Source:</strong> <span class="source-badge source-${data.source}">${data.source}</span></p>
+              <p><strong>Response time:</strong> ${duration}ms</p>
+              <p><strong>API Keys configured:</strong> Attom: ${data.apiKeysConfigured?.attom ? '✅' : '❌'}, RapidAPI: ${data.apiKeysConfigured?.rapidapi ? '✅' : '❌'}</p>
+              <hr>
+              <h4>Comparables:</h4>
+          `;
+
+          data.comps.forEach((comp, i) => {
+            html += `
+              <div class="comp-card">
+                <h4>${i + 1}. ${comp.address}</h4>
+                <div class="comp-details">
+                  <div class="detail-item"><strong>Price:</strong> $${comp.salePrice.toLocaleString()}</div>
+                  <div class="detail-item"><strong>Beds:</strong> ${comp.beds}</div>
+                  <div class="detail-item"><strong>Baths:</strong> ${comp.baths}</div>
+                  <div class="detail-item"><strong>Sqft:</strong> ${comp.sqft.toLocaleString()}</div>
+                  <div class="detail-item"><strong>$/Sqft:</strong> $${Math.round(comp.salePrice / comp.sqft)}</div>
+                  <div class="detail-item"><strong>Sale Date:</strong> ${comp.saleDate}</div>
+                  <div class="detail-item"><strong>Year Built:</strong> ${comp.yearBuilt}</div>
+                  <div class="detail-item"><strong>Type:</strong> ${comp.propertyType}</div>
+                </div>
+              </div>
+            `;
+          });
+
+          html += `
+            <hr>
+            <details>
+              <summary style="cursor: pointer; margin-top: 15px;"><strong>📋 Full JSON Response</strong></summary>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </details>
+          `;
+
+          html += '</div>';
+          resultDiv.innerHTML = html;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="result error">
+              <h3>⚠️ No comparables found</h3>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('❌ Error:', error);
+        resultDiv.innerHTML = `
+          <div class="result error">
+            <h3>❌ Error</h3>
+            <p>${error.message}</p>
+            <pre>${error.stack || ''}</pre>
+          </div>
+        `;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Auto-run on page load for quick testing
+    // window.onload = () => testAPI();
+  </script>
+</body>
+</html>
