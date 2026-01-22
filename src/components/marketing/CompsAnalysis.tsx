@@ -2704,6 +2704,40 @@ export const CompsAnalysis = () => {
 
               {/* Quick Filters */}
               <div className="flex gap-2">
+                {selectedForComparison.length > 0 && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                        <Copy className="w-4 h-4 mr-2" />
+                        Compare ({selectedForComparison.length})
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Quick Compare</DialogTitle>
+                        <DialogDescription>Side-by-side comparison of selected properties</DialogDescription>
+                      </DialogHeader>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {comparables.filter(c => selectedForComparison.includes(c.id)).map((comp, idx) => (
+                          <Card key={comp.id} className={idx === 0 ? 'border-green-500 border-2' : ''}>
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-sm">{comp.address}</CardTitle>
+                              {idx === 0 && <Badge className="w-fit bg-green-600">Best Match</Badge>}
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                              <div className="flex justify-between"><span className="text-muted-foreground">Price:</span><strong>${comp.salePrice.toLocaleString()}</strong></div>
+                              <div className="flex justify-between"><span className="text-muted-foreground">Beds/Baths:</span><strong>{comp.beds}/{comp.baths}</strong></div>
+                              <div className="flex justify-between"><span className="text-muted-foreground">Sqft:</span><strong>{comp.sqft.toLocaleString()}</strong></div>
+                              <div className="flex justify-between"><span className="text-muted-foreground">$/Sqft:</span><strong>${comp.pricePerSqft.toFixed(0)}</strong></div>
+                              <div className="flex justify-between"><span className="text-muted-foreground">Distance:</span><strong>{comp.distance.toFixed(2)} mi</strong></div>
+                              <div className="flex justify-between"><span className="text-muted-foreground">Quality:</span><strong>{comp.qualityScore?.toFixed(1) || 'N/A'}/10</strong></div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
                 <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
                   <SelectTrigger className="w-[140px]">
                     <SelectValue placeholder="Sort by..." />

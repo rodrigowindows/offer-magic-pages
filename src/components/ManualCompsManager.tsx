@@ -335,14 +335,42 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       {preSelectedPropertyId && (
         <Card className="border-green-200 bg-green-50">
           <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Adicionar Comps Manuais para esta Propriedade
-            </CardTitle>
-            <CardDescription>
-              Cole links de comparáveis do Zillow, Trulia, Redfin, etc. para complementar a análise automática
-            </CardDescription>
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  Adicionar Comps Manuais para esta Propriedade
+                </CardTitle>
+                <CardDescription>
+                  Cole links de comparáveis do Zillow, Trulia, Redfin, etc. para complementar a análise automática
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-3 bg-white rounded-lg border">
+                <p className="text-xs text-muted-foreground mb-1">Endereço</p>
+                <p className="font-semibold text-sm">{propertyAddress}</p>
+              </div>
+              {properties.find(p => p.id === preSelectedPropertyId)?.estimated_value && (
+                <div className="p-3 bg-white rounded-lg border">
+                  <p className="text-xs text-muted-foreground mb-1">Valor Estimado</p>
+                  <p className="font-semibold text-green-600">
+                    ${properties.find(p => p.id === preSelectedPropertyId)!.estimated_value!.toLocaleString()}
+                  </p>
+                </div>
+              )}
+              {properties.find(p => p.id === preSelectedPropertyId)?.cash_offer_amount && properties.find(p => p.id === preSelectedPropertyId)!.cash_offer_amount! > 0 && (
+                <div className="p-3 bg-white rounded-lg border">
+                  <p className="text-xs text-muted-foreground mb-1">Oferta Atual</p>
+                  <p className="font-semibold text-blue-600">
+                    ${properties.find(p => p.id === preSelectedPropertyId)!.cash_offer_amount!.toLocaleString()}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
         </Card>
       )}
 
