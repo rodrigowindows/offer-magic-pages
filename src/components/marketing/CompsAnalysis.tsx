@@ -15,7 +15,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Map, BarChart3, History as HistoryIcon } from 'lucide-react';
+import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 // Modular Components - Phase 1
 import {
@@ -74,6 +75,11 @@ export const CompsAnalysis = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [propertyFilter, setPropertyFilter] = useState<'all' | 'approved' | 'pending' | 'rejected' | 'favorites'>('all');
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
+  const [offerFilter, setOfferFilter] = useState<'all' | 'with-offer' | 'no-offer'>('all');
+
+  // Offer Management
+  const [editingOffer, setEditingOffer] = useState(false);
+  const [offerAmount, setOfferAmount] = useState<number>(0);
 
   // Comparables & Analysis
   const [comparables, setComparables] = useState<ComparableProperty[]>([]);
@@ -397,6 +403,49 @@ export const CompsAnalysis = () => {
   }, [selectedProperty, analysis, comparables, dataSource, analysisNotes, saveToHistory, toast]);
 
   /**
+   * Save offer amount
+   */
+  const saveOfferAmount = useCallback(async () => {
+    if (!selectedProperty || offerAmount <= 0) {
+      toast({
+        title: 'Invalid Offer',
+        description: 'Please enter a valid offer amount',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ cash_offer_amount: offerAmount })
+        .eq('id', selectedProperty.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setSelectedProperty({ ...selectedProperty, cash_offer_amount: offerAmount });
+      setProperties(properties.map(p =>
+        p.id === selectedProperty.id ? { ...p, cash_offer_amount: offerAmount } : p
+      ));
+
+      setEditingOffer(false);
+
+      toast({
+        title: 'Success',
+        description: `Offer of $${offerAmount.toLocaleString()} saved`,
+      });
+    } catch (error) {
+      console.error('Error saving offer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save offer amount',
+        variant: 'destructive',
+      });
+    }
+  }, [selectedProperty, offerAmount, properties, toast]);
+
+  /**
    * Export to PDF
    */
   const exportToPDF = useCallback(async (withImages: boolean = false) => {
@@ -555,6 +604,9 @@ export const CompsAnalysis = () => {
     if (selectedProperty) {
       generateComparables(selectedProperty);
       loadManualLinksCount(selectedProperty.id);
+      // Load offer amount
+      setOfferAmount(selectedProperty.cash_offer_amount || 0);
+      setEditingOffer(false);
     }
   }, [selectedProperty, generateComparables, loadManualLinksCount]);
 
@@ -639,44 +691,78 @@ export const CompsAnalysis = () => {
         </Button>
       </div>
 
-      {/* Status Filter Buttons */}
-      <Card className="border-2">
+      {/* Filters */}
+      <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
         <CardContent className="pt-6">
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold">Filter by Status:</Label>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={approvalStatusFilter === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setApprovalStatusFilter('all')}
-                className={approvalStatusFilter === 'all' ? 'bg-blue-600 hover:bg-blue-700' : ''}
-              >
-                All ({properties.length})
-              </Button>
-              <Button
-                variant={approvalStatusFilter === 'approved' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setApprovalStatusFilter('approved')}
-                className={approvalStatusFilter === 'approved' ? 'bg-green-600 hover:bg-green-700' : ''}
-              >
-                ✓ Approved ({properties.filter(p => p.approval_status === 'approved').length})
-              </Button>
-              <Button
-                variant={approvalStatusFilter === 'pending' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setApprovalStatusFilter('pending')}
-                className={approvalStatusFilter === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
-              >
-                ⏱ Pending ({properties.filter(p => !p.approval_status || p.approval_status === 'pending').length})
-              </Button>
-              <Button
-                variant={approvalStatusFilter === 'rejected' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setApprovalStatusFilter('rejected')}
-                className={approvalStatusFilter === 'rejected' ? 'bg-red-600 hover:bg-red-700' : ''}
-              >
-                ✗ Rejected ({properties.filter(p => p.approval_status === 'rejected').length})
-              </Button>
+          <div className="space-y-4">
+            {/* Approval Status Filter */}
+            <div>
+              <Label className="text-sm font-semibold mb-2 block">Filter by Status:</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={approvalStatusFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setApprovalStatusFilter('all')}
+                  className={approvalStatusFilter === 'all' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                >
+                  All ({properties.length})
+                </Button>
+                <Button
+                  variant={approvalStatusFilter === 'approved' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setApprovalStatusFilter('approved')}
+                  className={approvalStatusFilter === 'approved' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                >
+                  ✓ Approved ({properties.filter(p => p.approval_status === 'approved').length})
+                </Button>
+                <Button
+                  variant={approvalStatusFilter === 'pending' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setApprovalStatusFilter('pending')}
+                  className={approvalStatusFilter === 'pending' ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : ''}
+                >
+                  ⏱ Pending ({properties.filter(p => !p.approval_status || p.approval_status === 'pending').length})
+                </Button>
+                <Button
+                  variant={approvalStatusFilter === 'rejected' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setApprovalStatusFilter('rejected')}
+                  className={approvalStatusFilter === 'rejected' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
+                >
+                  ✗ Rejected ({properties.filter(p => p.approval_status === 'rejected').length})
+                </Button>
+              </div>
+            </div>
+
+            {/* Offer Filter */}
+            <div className="border-t pt-3">
+              <Label className="text-sm font-semibold mb-2 block">Filter by Offer:</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={offerFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setOfferFilter('all')}
+                  className={offerFilter === 'all' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+                >
+                  All Properties
+                </Button>
+                <Button
+                  variant={offerFilter === 'with-offer' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setOfferFilter('with-offer')}
+                  className={offerFilter === 'with-offer' ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}
+                >
+                  💰 With Offer ({properties.filter(p => p.cash_offer_amount && p.cash_offer_amount > 0).length})
+                </Button>
+                <Button
+                  variant={offerFilter === 'no-offer' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setOfferFilter('no-offer')}
+                  className={offerFilter === 'no-offer' ? 'bg-gray-600 hover:bg-gray-700 text-white' : ''}
+                >
+                  📝 No Offer ({properties.filter(p => !p.cash_offer_amount || p.cash_offer_amount === 0).length})
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -687,10 +773,15 @@ export const CompsAnalysis = () => {
         <CardContent className="pt-6">
           <PropertySelector
             properties={properties.filter(p => {
-              if (approvalStatusFilter === 'all') return true;
-              if (approvalStatusFilter === 'approved') return p.approval_status === 'approved';
-              if (approvalStatusFilter === 'pending') return !p.approval_status || p.approval_status === 'pending';
-              if (approvalStatusFilter === 'rejected') return p.approval_status === 'rejected';
+              // Approval status filter
+              if (approvalStatusFilter === 'approved' && p.approval_status !== 'approved') return false;
+              if (approvalStatusFilter === 'pending' && p.approval_status && p.approval_status !== 'pending') return false;
+              if (approvalStatusFilter === 'rejected' && p.approval_status !== 'rejected') return false;
+
+              // Offer filter
+              if (offerFilter === 'with-offer' && (!p.cash_offer_amount || p.cash_offer_amount === 0)) return false;
+              if (offerFilter === 'no-offer' && p.cash_offer_amount && p.cash_offer_amount > 0) return false;
+
               return true;
             })}
             selectedProperty={selectedProperty}
@@ -701,6 +792,73 @@ export const CompsAnalysis = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Offer Management - Show when property is selected */}
+      {selectedProperty && (
+        <Card className="border-2 border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Cash Offer Amount:</Label>
+                {!editingOffer && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingOffer(true)}
+                  >
+                    <Edit2 className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                )}
+              </div>
+
+              {editingOffer ? (
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      type="number"
+                      value={offerAmount}
+                      onChange={(e) => setOfferAmount(parseInt(e.target.value) || 0)}
+                      placeholder="Enter offer amount"
+                      className="text-lg"
+                    />
+                  </div>
+                  <Button onClick={saveOfferAmount} className="bg-green-600 hover:bg-green-700">
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setEditingOffer(false);
+                    setOfferAmount(selectedProperty.cash_offer_amount || 0);
+                  }}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold text-green-700">
+                  {selectedProperty.cash_offer_amount
+                    ? `$${selectedProperty.cash_offer_amount.toLocaleString()}`
+                    : 'No offer set'}
+                </div>
+              )}
+
+              {analysis && selectedProperty.cash_offer_amount && selectedProperty.cash_offer_amount > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Offer vs Market Avg: {selectedProperty.cash_offer_amount < analysis.avgSalePrice ? (
+                    <span className="text-green-600 font-semibold">
+                      {((1 - selectedProperty.cash_offer_amount / analysis.avgSalePrice) * 100).toFixed(1)}% below market
+                    </span>
+                  ) : (
+                    <span className="text-red-600 font-semibold">
+                      {((selectedProperty.cash_offer_amount / analysis.avgSalePrice - 1) * 100).toFixed(1)}% above market
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* No Property Selected */}
       {!selectedProperty && (
