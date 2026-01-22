@@ -382,17 +382,16 @@ export const CompsAnalysis = () => {
 
     await saveToHistory({
       property_id: selectedProperty.id,
-      property_address: selectedProperty.address,
+      analysis_data: {
+        comparables: comparables.slice(0, 10), // Save top 10
+        analysis,
+      },
       comparables_count: comparables.length,
       suggested_value_min: analysis.suggestedValueMin,
       suggested_value_max: analysis.suggestedValueMax,
-      avg_price_per_sqft: analysis.avgPricePerSqft,
+      search_radius_miles: compsFilters.maxDistance || 3,
       data_source: dataSource,
       notes: analysisNotes,
-      analysis_data: {
-        analysis,
-        comparables: comparables.slice(0, 10), // Save top 10
-      },
     });
 
     toast({

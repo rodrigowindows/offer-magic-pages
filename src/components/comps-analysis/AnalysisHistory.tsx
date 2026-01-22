@@ -97,7 +97,7 @@ export const AnalysisHistory = ({
                 {/* Property Header */}
                 <div className="flex items-center gap-2 pb-2 border-b">
                   <h4 className="text-sm font-semibold flex-1">
-                    {items[0].property_address || 'Unknown Property'}
+                    Property ID: {propertyId.substring(0, 8)}...
                   </h4>
                   {propertyId === currentPropertyId && (
                     <Badge className="bg-green-100 text-green-800">Current</Badge>
@@ -128,7 +128,7 @@ export const AnalysisHistory = ({
                               {getSourceBadge(item.data_source)}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
-                              {formatDistanceToNow(new Date(item.analysis_date || item.created_at), {
+                              {formatDistanceToNow(new Date(item.created_at), {
                                 addSuffix: true,
                               })}
                             </div>

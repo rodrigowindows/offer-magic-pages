@@ -42,7 +42,7 @@ export const useAnalysisHistory = (): UseAnalysisHistoryReturn => {
       let query = supabase
         .from('comps_analysis_history')
         .select('*')
-        .order('analysis_date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (propertyId) {
         query = query.eq('property_id', propertyId);
@@ -83,7 +83,6 @@ export const useAnalysisHistory = (): UseAnalysisHistoryReturn => {
       const analysisData = {
         ...data,
         analyst_user_id: userId,
-        analysis_date: new Date().toISOString(),
       };
 
       const { error: insertError } = await supabase

@@ -69,17 +69,17 @@ export interface MarketAnalysis {
 export interface AnalysisHistoryItem {
   id: string;
   property_id: string;
-  analyst_user_id: string;
+  analyst_user_id: string | null;
   analysis_data: {
-    comps: ComparableProperty[];
+    comparables: ComparableProperty[];
     analysis: MarketAnalysis;
   };
-  comparables_count: number;
-  suggested_value_min: number;
-  suggested_value_max: number;
+  comparables_count: number | null;
+  suggested_value_min: number | null;
+  suggested_value_max: number | null;
   notes?: string | null;
-  search_radius_miles: number;
-  data_source: 'attom' | 'zillow' | 'csv' | 'demo';
+  search_radius_miles: number | null;
+  data_source: string | null;
   created_at: string;
 }
 
