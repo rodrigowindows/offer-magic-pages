@@ -85,6 +85,9 @@ export const CompsAnalysis = () => {
   const [analysis, setAnalysis] = useState<MarketAnalysis | null>(null);
   const [smartInsights, setSmartInsights] = useState<SmartInsightsType | null>(null);
 
+  // Cache for comparables to avoid redundant API calls
+  const [compsCache, setCompsCache] = useState<Map<string, { comparables: ComparableProperty[], analysis: MarketAnalysis, timestamp: number }>>(new Map());
+
   // Filters
   const [compsFilters, setCompsFilters] = useState<CompsFiltersConfig>({
     maxDistance: 3,
@@ -289,6 +292,22 @@ export const CompsAnalysis = () => {
     try {
       setLoadingComps(true);
 
+      // Create cache key based on property and filters
+      const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
+      const cached = compsCache.get(cacheKey);
+      const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+      // Check if we have valid cached data
+      if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        console.log('Using cached comparables for property:', property.address);
+        setComparables(cached.comparables);
+        setAnalysis(cached.analysis);
+        setLoadingComps(false);
+        return;
+      }
+
+      console.log('Fetching new comparables for property:', property.address);
+
       // Call CompsDataService with correct parameters
       const compsData = await CompsDataService.getComparables(
         property.address || '',
@@ -325,14 +344,26 @@ export const CompsAnalysis = () => {
         const avgPrice = formattedComps.reduce((sum, c) => sum + c.sale_price, 0) / formattedComps.length;
         const avgPricePerSqft = formattedComps.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / formattedComps.length;
 
-        setAnalysis({
+        const calculatedAnalysis = {
           avgSalePrice: avgPrice,
           avgPricePerSqft: avgPricePerSqft,
           suggestedValueMin: avgPrice * 0.9,
           suggestedValueMax: avgPrice * 1.1,
-          marketTrend: 'stable',
+          marketTrend: 'stable' as const,
           trendPercentage: 0,
-        });
+          medianSalePrice: avgPrice,
+          comparablesCount: formattedComps.length,
+        };
+
+        setAnalysis(calculatedAnalysis);
+
+        // Save to cache
+        const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
+        setCompsCache(prev => new Map(prev).set(cacheKey, {
+          comparables: formattedComps,
+          analysis: calculatedAnalysis,
+          timestamp: Date.now()
+        }));
 
         toast({
           title: 'Success',
@@ -351,7 +382,7 @@ export const CompsAnalysis = () => {
     } finally {
       setLoadingComps(false);
     }
-  }, [compsFilters.maxDistance, toast]);
+  }, [compsFilters.maxDistance, compsCache, toast]);
 
   /**
    * Load manual comps count
@@ -507,7 +538,75 @@ export const CompsAnalysis = () => {
 
     try {
       setExportingPDF(true);
-      await exportConsolidatedCompsPDF(filteredProperties, comparables);
+
+      // Function to get comparables for each property
+      const getComparablesForProperty = async (property: Property) => {
+        // Check cache first
+        const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
+        const cached = compsCache.get(cacheKey);
+        const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+        if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+          console.log('Using cached data for export:', property.address);
+          return { comparables: cached.comparables, analysis: cached.analysis };
+        }
+
+        // Check if we already have comparables for this property (current selection)
+        if (selectedProperty?.id === property.id && comparables.length > 0 && analysis) {
+          return { comparables, analysis };
+        }
+
+        // Otherwise, fetch new comparables
+        console.log('Fetching new data for export:', property.address);
+        const compsData = await CompsDataService.getComparables(
+          property.address || '',
+          property.city || 'Orlando',
+          property.state || 'FL',
+          compsFilters.maxDistance || 3,
+          10,
+          property.estimated_value || 250000
+        );
+
+        // Convert and calculate analysis
+        const formattedComps = compsData.map((comp: any, index: number) => ({
+          id: `comp-${index}`,
+          address: comp.address,
+          city: comp.city,
+          state: comp.state,
+          zipCode: comp.zipCode,
+          salePrice: comp.salePrice,
+          saleDate: comp.saleDate,
+          beds: comp.beds,
+          baths: comp.baths,
+          sqft: comp.sqft,
+          distance: comp.distance,
+          pricePerSqft: comp.salePrice / comp.sqft,
+        }));
+
+        const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + c.salePrice, 0) / formattedComps.length;
+        const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + c.pricePerSqft, 0) / formattedComps.length;
+
+        const calculatedAnalysis = {
+          avgSalePrice,
+          medianSalePrice: avgSalePrice,
+          avgPricePerSqft,
+          suggestedValueMin: avgSalePrice * 0.95,
+          suggestedValueMax: avgSalePrice * 1.05,
+          trendPercentage: 0,
+          marketTrend: 'stable' as const,
+          comparablesCount: formattedComps.length,
+        };
+
+        return { comparables: formattedComps, analysis: calculatedAnalysis };
+      };
+
+      await exportConsolidatedCompsPDF(
+        filteredProperties,
+        getComparablesForProperty,
+        (current, total) => {
+          console.log(`Exporting ${current}/${total} properties...`);
+        }
+      );
 
       toast({
         title: 'Success',
@@ -523,7 +622,7 @@ export const CompsAnalysis = () => {
     } finally {
       setExportingPDF(false);
     }
-  }, [filteredProperties, comparables, toast]);
+  }, [filteredProperties, selectedProperty, comparables, analysis, compsFilters, compsCache, toast]);
 
   /**
    * Share analysis
