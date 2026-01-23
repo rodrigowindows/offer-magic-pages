@@ -189,7 +189,10 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
           coords = [comp.longitude, comp.latitude];
           console.log(`✅ Using cached coordinates for ${comp.address}`);
         } else {
-          coords = await geocodeAddress(comp.address);
+          // Create full address with city/state for accurate geocoding
+          const fullCompAddress = `${comp.address}, ${subjectProperty.city}, ${subjectProperty.state} ${subjectProperty.zip_code}`;
+          console.log(`🔍 Geocoding: ${fullCompAddress}`);
+          coords = await geocodeAddress(fullCompAddress);
           // Small delay to avoid rate limits only when geocoding
           await new Promise(resolve => setTimeout(resolve, 100));
         }
@@ -217,6 +220,7 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
               new mapboxgl.Popup({ offset: 25 }).setHTML(
                 `<div class="p-2">
                   <p class="font-semibold">${comp.address}</p>
+                  <p class="text-sm text-gray-600">${subjectProperty.city}, ${subjectProperty.state}</p>
                   <p class="text-sm">Sale Price: $${comp.salePrice.toLocaleString()}</p>
                   ${comp.capRate ? `<p class="text-sm">Cap Rate: ${comp.capRate}%</p>` : ''}
                   ${isBest ? '<p class="text-xs text-green-600 font-semibold">Best Comp</p>' : ''}
