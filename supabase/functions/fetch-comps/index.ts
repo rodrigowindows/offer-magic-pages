@@ -22,17 +22,24 @@ interface ComparableData {
   yearBuilt: number;
   propertyType: string;
   source: string;
+  latitude?: number;
+  longitude?: number;
+  distance?: number;
 }
 
-// Generate realistic demo data based on property value
-function generateDemoComps(basePrice: number, city: string, count: number = 6): ComparableData[] {
+// Generate realistic demo data based on property value with coordinates
+function generateDemoComps(basePrice: number, city: string, count: number = 6, centerLat: number = 28.5383, centerLng: number = -81.3792): ComparableData[] {
   const streets = [
     'Oak St', 'Pine Ave', 'Maple Dr', 'Cedar Ln', 'Palm Way',
     'Sunset Blvd', 'Lake View Dr', 'Park Ave', 'Main St', 'Colonial Dr'
   ];
-  
+
   const comps: ComparableData[] = [];
-  
+
+  // Orlando default coordinates: 28.5383° N, 81.3792° W
+  // 0.01 degrees ≈ 1.1 km (0.7 miles)
+  const maxRadius = 0.02; // ~2.2 km radius
+
   for (let i = 0; i < count; i++) {
     const variance = (Math.random() - 0.5) * 0.3;
     const price = Math.round(basePrice * (1 + variance));
@@ -40,10 +47,17 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6): 
     const beds = Math.floor(2 + Math.random() * 3);
     const baths = Math.floor(1 + Math.random() * 2.5);
     const yearBuilt = Math.floor(1970 + Math.random() * 50);
-    
+
     const daysAgo = Math.floor(Math.random() * 180);
     const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-    
+
+    // Generate coordinates within small radius of center (±0.02 degrees)
+    const angle = Math.random() * 2 * Math.PI;
+    const radius = Math.random() * maxRadius;
+    const lat = centerLat + (radius * Math.cos(angle));
+    const lng = centerLng + (radius * Math.sin(angle));
+    const distance = Math.sqrt(Math.pow(lat - centerLat, 2) + Math.pow(lng - centerLng, 2)) * 111; // rough km conversion
+
     comps.push({
       address: `${Math.floor(100 + Math.random() * 9900)} ${streets[Math.floor(Math.random() * streets.length)]}`,
       city: city || 'Orlando',
@@ -56,10 +70,13 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6): 
       sqft,
       yearBuilt,
       propertyType: 'Single Family',
-      source: 'demo'
+      source: 'demo',
+      latitude: lat,
+      longitude: lng,
+      distance: Math.round(distance * 10) / 10 // Round to 1 decimal
     });
   }
-  
+
   return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
 }
 
