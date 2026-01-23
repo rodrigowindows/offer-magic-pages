@@ -22,6 +22,9 @@ export interface Property {
   comps_count?: number;
   last_analysis_date?: string | null;
   analysis_status?: 'complete' | 'partial' | 'pending';
+  // Coordinates for map and location-based comps
+  latitude?: number | null;
+  longitude?: number | null;
   // Extended fields for PropertySelector
   full_address?: string;
   comps_status?: string;

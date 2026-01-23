@@ -285,9 +285,10 @@ serve(async (req) => {
   }
 
   try {
-    const { address, city, state, basePrice, radius = 1 } = await req.json();
+    const { address, city, state, basePrice, radius = 1, latitude, longitude } = await req.json();
 
     console.log(`🔍 Fetching comps for: ${address}, ${city}, ${state}, basePrice: $${basePrice}, radius: ${radius}mi`);
+    console.log(`📍 Property coordinates: ${latitude}, ${longitude}`);
     console.log(`🔑 API Keys configured: Attom=${!!ATTOM_API_KEY}, RapidAPI=${!!RAPIDAPI_KEY}`);
 
     let comps: ComparableData[] = [];
@@ -336,7 +337,12 @@ serve(async (req) => {
       console.log('   - Sign up for RapidAPI: https://rapidapi.com/apimaker/api/zillow-com1 (100 free/month)');
       console.log('   - Add ATTOM_API_KEY and RAPIDAPI_KEY to Supabase Edge Function secrets');
 
-      comps = generateDemoComps(basePrice || 250000, city || 'Orlando', 6);
+      // Use property coordinates if provided, otherwise use city defaults
+      const centerLat = latitude || 28.5383; // Orlando default
+      const centerLng = longitude || -81.3792;
+      
+      console.log(`🎯 Generating demo comps around coordinates: ${centerLat}, ${centerLng}`);
+      comps = generateDemoComps(basePrice || 250000, city || 'Orlando', 6, centerLat, centerLng);
       source = 'demo';
     }
 

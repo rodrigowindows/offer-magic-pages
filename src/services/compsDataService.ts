@@ -80,13 +80,15 @@ export class CompsDataService {
     radius: number = 1,
     limit: number = 10,
     basePrice: number = 250000,
-    useCache: boolean = true
+    useCache: boolean = true,
+    latitude?: number,
+    longitude?: number
   ): Promise<ComparableData[]> {
     // Get saved radius from localStorage if not provided
     const savedRadius = localStorage.getItem('comps_search_radius');
     const searchRadius = savedRadius ? parseFloat(savedRadius) : radius;
 
-    const cacheKey = `${address}-${city}-${state}-${basePrice}-${searchRadius}`;
+    const cacheKey = `${address}-${city}-${state}-${basePrice}-${searchRadius}-${latitude}-${longitude}`;
 
     // Check cache first
     if (useCache) {
@@ -98,10 +100,21 @@ export class CompsDataService {
     }
 
     console.log(`🔍 Fetching comparables for: ${address}, ${city}, ${state} (radius: ${searchRadius}mi)`);
+    if (latitude && longitude) {
+      console.log(`📍 Using property coordinates: ${latitude}, ${longitude}`);
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-comps', {
-        body: { address, city, state, basePrice, radius: searchRadius }
+        body: { 
+          address, 
+          city, 
+          state, 
+          basePrice, 
+          radius: searchRadius,
+          latitude,
+          longitude
+        }
       });
 
       if (error) {
