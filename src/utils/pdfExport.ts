@@ -64,6 +64,7 @@ const loadImageAsBase64 = async (url: string): Promise<string | null> => {
 
 /**
  * Generate Mapbox Static Map URL with subject property and comparables
+ * Uses actual coordinates when available for accurate positioning
  */
 const generateMapboxStaticMap = (
   subjectProperty: PropertyData,
@@ -79,30 +80,49 @@ const generateMapboxStaticMap = (
       return null;
     }
 
-    // Build markers overlay
+    // Build markers overlay with actual coordinates when available
     const markers: string[] = [];
+    let centerLng = -81.3792; // Orlando default
+    let centerLat = 28.5383;
 
-    // Subject property marker (large red pin)
-    markers.push('pin-l-home+ff0000()');
+    // Subject property marker (large red pin with coordinates if available)
+    if (subjectProperty.longitude && subjectProperty.latitude) {
+      markers.push(`pin-l-home+ff0000(${subjectProperty.longitude},${subjectProperty.latitude})`);
+      centerLng = subjectProperty.longitude;
+      centerLat = subjectProperty.latitude;
+    } else {
+      markers.push('pin-l-home+ff0000()');
+    }
 
     // Comparable markers (small blue pins) - limit to 10 to avoid URL length issues
+    // Use actual coordinates when available
     const limitedComps = comparables.slice(0, 10);
-    limitedComps.forEach(() => {
-      markers.push('pin-s-circle+4299e1()');
+    limitedComps.forEach((comp) => {
+      if (comp.longitude && comp.latitude) {
+        markers.push(`pin-s-circle+4299e1(${comp.longitude},${comp.latitude})`);
+      } else {
+        markers.push('pin-s-circle+4299e1()');
+      }
     });
 
-    // Use subject property address as center (Mapbox will geocode it)
-    const centerAddress = `${subjectProperty.address}, ${subjectProperty.city}, ${subjectProperty.state}`;
-    const encodedAddress = encodeURIComponent(centerAddress);
-
     // Construct Static Map URL
+    // If we have coordinates, use them as center; otherwise geocode address
+    let centerPart: string;
+    if (subjectProperty.longitude && subjectProperty.latitude) {
+      centerPart = `${centerLng},${centerLat},12`;
+    } else {
+      const centerAddress = `${subjectProperty.address}, ${subjectProperty.city}, ${subjectProperty.state}`;
+      centerPart = `${encodeURIComponent(centerAddress)},12`;
+    }
+
     // Format: https://api.mapbox.com/styles/v1/{username}/{style_id}/static/{overlay}/{lon},{lat},{zoom}/{width}x{height}
     const mapUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/` +
       `${markers.join(',')}/` +
-      `${encodedAddress}/` +
-      `12/${width}x${height}@2x?` +
+      `${centerPart}/` +
+      `${width}x${height}@2x?` +
       `access_token=${mapboxToken}`;
 
+    console.log('📍 Generated map URL with', markers.length, 'markers');
     return mapUrl;
   } catch (error) {
     console.error('Error generating static map:', error);
