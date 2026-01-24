@@ -27,6 +27,47 @@ interface ComparableData {
   distance?: number;
 }
 
+const EARTH_RADIUS_MILES = 3958.8;
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+    + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2))
+    * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return EARTH_RADIUS_MILES * c;
+}
+
+function addDistanceAndFilterByRadius(
+  comps: ComparableData[],
+  centerLat?: number,
+  centerLng?: number,
+  radiusMiles?: number
+): ComparableData[] {
+  if (centerLat == null || centerLng == null || radiusMiles == null) {
+    return comps;
+  }
+
+  return comps
+    .map(comp => {
+      if (comp.latitude == null || comp.longitude == null) {
+        return comp;
+      }
+
+      const distanceMiles = haversineMiles(centerLat, centerLng, comp.latitude, comp.longitude);
+      return {
+        ...comp,
+        distance: Math.round(distanceMiles * 10) / 10
+      };
+    })
+    .filter(comp => comp.distance == null || comp.distance <= radiusMiles);
+}
+
 // Generate realistic demo data based on property value with coordinates
 // VERSION: 2.0 - INCLUDES LATITUDE/LONGITUDE FOR MAP DISPLAY
 function generateDemoComps(basePrice: number, city: string, count: number = 6, centerLat: number = 28.5383, centerLng: number = -81.3792): ComparableData[] {
@@ -57,7 +98,7 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6, c
     const radius = Math.random() * maxRadius;
     const lat = centerLat + (radius * Math.cos(angle));
     const lng = centerLng + (radius * Math.sin(angle));
-    const distance = Math.sqrt(Math.pow(lat - centerLat, 2) + Math.pow(lng - centerLng, 2)) * 111; // rough km conversion
+    const distance = haversineMiles(centerLat, centerLng, lat, lng);
 
     comps.push({
       address: `${Math.floor(100 + Math.random() * 9900)} ${streets[Math.floor(Math.random() * streets.length)]}`,
@@ -74,7 +115,7 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6, c
       source: 'demo',
       latitude: lat,
       longitude: lng,
-      distance: Math.round(distance * 10) / 10 // Round to 1 decimal
+      distance: Math.round(distance * 10) / 10 // miles (1 decimal)
     });
   }
 
@@ -117,6 +158,14 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
       const sale = prop.sale || {};
       const building = prop.building || {};
       const addr = prop.address || {};
+      const location = prop.location || {};
+
+      const latitude = parseFloat(
+        location.latitude || location.lat || addr.latitude || addr.lat || ''
+      );
+      const longitude = parseFloat(
+        location.longitude || location.lng || location.lon || addr.longitude || addr.lng || ''
+      );
 
       return {
         address: `${addr.line1 || ''}`,
@@ -130,7 +179,9 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
         sqft: parseInt(building.size?.livingSize) || 1500,
         yearBuilt: parseInt(building.summary?.yearBuilt) || 2000,
         propertyType: building.summary?.propertyType || 'Single Family',
-        source: 'attom'
+        source: 'attom',
+        latitude: Number.isFinite(latitude) ? latitude : undefined,
+        longitude: Number.isFinite(longitude) ? longitude : undefined
       };
     });
 
@@ -193,6 +244,8 @@ async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<
 
       if (rowCity.includes(searchCity) || searchCity.includes(rowCity)) {
         const salePrice = parseInt(row.sale_price || row.price || row.sale_amount || '0');
+        const latitude = parseFloat(row.latitude || row.lat || row.y || '');
+        const longitude = parseFloat(row.longitude || row.lng || row.lon || row.x || '');
 
         if (salePrice > 10000) { // Filter out $1 sales
           comps.push({
@@ -207,7 +260,9 @@ async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<
             sqft: parseInt(row.living_area || row.sqft || row.square_feet || '1500'),
             yearBuilt: parseInt(row.year_built || row.effective_year || '2000'),
             propertyType: row.property_type || 'Single Family',
-            source: 'county-csv'
+            source: 'county-csv',
+            latitude: Number.isFinite(latitude) ? latitude : undefined,
+            longitude: Number.isFinite(longitude) ? longitude : undefined
           });
         }
       }
@@ -267,7 +322,9 @@ async function fetchFromZillowRapidAPI(address: string, city: string, state: str
       sqft: comp.livingArea || 1500,
       yearBuilt: comp.yearBuilt || 2000,
       propertyType: comp.homeType || 'Single Family',
-      source: 'zillow-api'
+      source: 'zillow-api',
+      latitude: comp.latitude || comp.lat || comp.address?.latitude,
+      longitude: comp.longitude || comp.lng || comp.address?.longitude
     }));
 
     const validComps = comps.filter(c => c.salePrice > 0);
@@ -345,6 +402,11 @@ serve(async (req) => {
       console.log(`🎯 Generating demo comps around coordinates: ${centerLat}, ${centerLng}`);
       comps = generateDemoComps(basePrice || 250000, city || 'Orlando', 6, centerLat, centerLng);
       source = 'demo';
+    }
+
+    const filteredComps = addDistanceAndFilterByRadius(comps, latitude, longitude, radius);
+    if (filteredComps.length > 0) {
+      comps = filteredComps;
     }
 
     // Filter, deduplicate, and sort
