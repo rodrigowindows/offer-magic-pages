@@ -158,6 +158,12 @@ export class CompsDataService {
     const baseLat = subjectLat || 28.5383; // Default: Orlando downtown
     const baseLng = subjectLng || -81.3792;
 
+    // Extract ZIP from subject address if available
+    const zipMatch = subjectAddress?.match(/\b\d{5}\b/);
+    const subjectZip = zipMatch ? zipMatch[0] : '32801';
+
+    console.log(`📍 Generating fallback comps near (${baseLat}, ${baseLng}) in ZIP ${subjectZip}`);
+
     // Generate 6 addresses within 1 mile radius of subject property
     const streetNames = ['Park Ave', 'Main St', 'Lake View Dr', 'Maple Dr', 'Oak St', 'Washington Ave'];
     const addresses = streetNames.map((street, i) => {
@@ -167,7 +173,7 @@ export class CompsDataService {
 
       return {
         address: `${Math.floor(Math.random() * 9000) + 1000} ${street}`,
-        zip: '32751', // Generic zip for area
+        zip: subjectZip, // Use same ZIP as subject property
         lat: baseLat + latOffset,
         lng: baseLng + lngOffset,
       };
