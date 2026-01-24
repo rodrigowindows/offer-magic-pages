@@ -281,6 +281,30 @@ export type Database = {
         }
         Relationships: []
       }
+      comparables_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          data: Json
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          data: Json
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          data?: Json
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       comps_analysis_history: {
         Row: {
           analysis_data: Json
@@ -727,11 +751,13 @@ export type Database = {
           input_property_state: string | null
           input_property_zip: string | null
           last_contact_date: string | null
+          latitude: number | null
           lead_captured: boolean | null
           lead_captured_at: string | null
           lead_score: number | null
           lead_status: string
           letter_sent: boolean
+          longitude: number | null
           lot_size: number | null
           matched_first_name: string | null
           matched_last_name: string | null
@@ -1060,11 +1086,13 @@ export type Database = {
           input_property_state?: string | null
           input_property_zip?: string | null
           last_contact_date?: string | null
+          latitude?: number | null
           lead_captured?: boolean | null
           lead_captured_at?: string | null
           lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
+          longitude?: number | null
           lot_size?: number | null
           matched_first_name?: string | null
           matched_last_name?: string | null
@@ -1393,11 +1421,13 @@ export type Database = {
           input_property_state?: string | null
           input_property_zip?: string | null
           last_contact_date?: string | null
+          latitude?: number | null
           lead_captured?: boolean | null
           lead_captured_at?: string | null
           lead_score?: number | null
           lead_status?: string
           letter_sent?: boolean
+          longitude?: number | null
           lot_size?: number | null
           matched_first_name?: string | null
           matched_last_name?: string | null
