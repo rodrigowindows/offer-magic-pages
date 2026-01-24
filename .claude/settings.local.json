@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit -m \"$(cat <<''EOF''\nfix: Add coordinate validation and cache cleaning\n\n**Problem:**\nStale geocoding cache was storing wrong coordinates for generic street\nnames (Park Ave, Main St), causing map pins to appear in distant locations\neven when comps had valid lat/lng from generateFallbackComps.\n\n**Solution:**\n1. CompsMapboxMap.tsx - Validate coordinates before using them\n   - Check if comp coords are within ~50 miles (0.7 degrees) of subject\n   - If too far, force re-geocoding instead of using invalid coords\n   - Check if address already has city/state/zip to avoid duplication\n\n2. compsDataService.ts - Explicitly preserve coordinates\n   - Ensure latitude/longitude are mapped from edge function response\n   - Add debug logging to track coordinate flow\n\n3. geocodingService.ts - Add cache cleaning utility\n   - New clearInvalidCachedCoordinates() function\n   - Removes cached coords that are too far from subject property\n   - Helps fix stale cache issues\n\n**Technical Changes:**\n- CompsMapboxMap line 188-213: Coordinate validation + smart address handling\n- compsDataService line 136-144: Explicit coordinate preservation\n- geocodingService line 144-168: Invalid cache clearing function\n\n**Result:**\nMap now correctly validates coordinates before use. Invalid cached\ncoordinates are rejected and re-geocoded. Comps appear near subject property.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(supabase functions:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
