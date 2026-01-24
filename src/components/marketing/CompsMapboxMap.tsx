@@ -200,16 +200,26 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
         }
 
         if (!coords) {
-          // Check if address already contains city/state/zip (e.g., "123 Main St, Orlando, FL 32801")
-          const hasFullAddress = comp.address.includes(',') && comp.address.includes('FL');
-          const fullCompAddress = hasFullAddress
-            ? comp.address
-            : `${comp.address}, ${subjectProperty.city}, ${subjectProperty.state} ${subjectProperty.zip_code}`;
+          const normalizedAddress = (comp.address || '').toLowerCase();
+          const normalizedCity = (subjectProperty.city || '').toLowerCase();
+          const normalizedState = (subjectProperty.state || '').toLowerCase();
+          const hasZip = /\b\d{5}(?:-\d{4})?\b/.test(comp.address || '');
+          const hasCity = normalizedCity && normalizedAddress.includes(normalizedCity);
+          const hasState = normalizedState && normalizedAddress.includes(normalizedState);
+          const hasFullAddress = hasZip || hasCity || hasState;
 
-          console.log(`🔍 Geocoding: ${fullCompAddress}`);
-          coords = await geocodeAddress(fullCompAddress);
-          // Small delay to avoid rate limits only when geocoding
-          await new Promise(resolve => setTimeout(resolve, 100));
+          if (!comp.address) {
+            console.warn('⚠️ Missing comparable address. Skipping geocoding.');
+          } else {
+            const fullCompAddress = hasFullAddress
+              ? comp.address
+              : `${comp.address}, ${subjectProperty.city}, ${subjectProperty.state} ${subjectProperty.zip_code}`;
+
+            console.log(`🔍 Geocoding: ${fullCompAddress}`);
+            coords = await geocodeAddress(fullCompAddress);
+            // Small delay to avoid rate limits only when geocoding
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
         }
 
         setGeocodingProgress(prev => ({ ...prev, current: prev.current + 1 }));

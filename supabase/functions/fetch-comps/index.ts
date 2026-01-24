@@ -124,7 +124,7 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6, c
 
 // ===== OPTION 1: Attom Data API (FREE TIER - 1000 requests/month) =====
 // Sign up at https://api.developer.attomdata.com/
-async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1): Promise<ComparableData[]> {
+async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1, latitude?: number, longitude?: number): Promise<ComparableData[]> {
   if (!ATTOM_API_KEY) {
     console.log('⚠️ Attom API key not configured');
     return [];
@@ -133,7 +133,17 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
   try {
     console.log(`🏠 Trying Attom Data API (1000 free/month, radius: ${radius}mi)...`);
 
-    const url = `https://api.attomdata.com/propertyapi/v1.0.0/salescomparable/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}&maxComps=10`;
+    // Use coordinate-based search if lat/lng provided, otherwise fall back to address search
+    let url: string;
+    if (latitude && longitude) {
+      // Use /sale/detail endpoint with coordinates for precise geographic search
+      url = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/detail?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
+      console.log(`📍 Using coordinate search: ${latitude}, ${longitude} within ${radius}mi`);
+    } else {
+      // Fallback to address-based search
+      url = `https://api.attomdata.com/propertyapi/v1.0.0/salescomparable/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}&maxComps=10`;
+      console.log(`📮 Using address search: ${address}, ${city}, ${state}`);
+    }
 
     const response = await fetch(url, {
       headers: {
@@ -195,9 +205,12 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
 }
 
 // ===== OPTION 2: Orange County CSV Scraper (100% FREE - Public Records) =====
-async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<ComparableData[]> {
+async function fetchFromOrangeCountyCSV(address: string, city: string, latitude?: number, longitude?: number, radius: number = 3): Promise<ComparableData[]> {
   try {
     console.log('🍊 Trying Orange County Public CSV...');
+    if (latitude && longitude) {
+      console.log(`📍 Will filter by distance from (${latitude}, ${longitude}) within ${radius}mi`);
+    }
 
     // Orange County provides monthly CSV exports of all sales
     const csvUrl = 'https://www.ocpafl.org/downloads/sales.csv';
@@ -267,11 +280,16 @@ async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<
         }
       }
 
-      if (comps.length >= 15) break; // Got enough
+      if (comps.length >= 50) break; // Collect more for distance filtering
     }
 
-    console.log(`✅ Found ${comps.length} comps from Orange County CSV`);
-    return comps;
+    console.log(`✅ Found ${comps.length} raw comps from Orange County CSV`);
+
+    // Filter by geographic distance if coordinates provided
+    const filtered = addDistanceAndFilterByRadius(comps, latitude, longitude, radius);
+    console.log(`✅ After distance filter: ${filtered.length} comps within ${radius}mi`);
+
+    return filtered.slice(0, 15); // Return top 15
   } catch (error) {
     console.error('❌ CSV parsing error:', error);
     return [];
@@ -280,7 +298,7 @@ async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<
 
 // ===== OPTION 3: Zillow via RapidAPI (FREE TIER - 100 requests/month) =====
 // Sign up at https://rapidapi.com/apimaker/api/zillow-com1
-async function fetchFromZillowRapidAPI(address: string, city: string, state: string): Promise<ComparableData[]> {
+async function fetchFromZillowRapidAPI(address: string, city: string, state: string, latitude?: number, longitude?: number, radius: number = 3): Promise<ComparableData[]> {
   if (!RAPIDAPI_KEY) {
     console.log('⚠️ RapidAPI key not configured');
     return [];
@@ -288,6 +306,9 @@ async function fetchFromZillowRapidAPI(address: string, city: string, state: str
 
   try {
     console.log('🏠 Trying Zillow via RapidAPI (100 free/month)...');
+    if (latitude && longitude) {
+      console.log(`📍 Will filter results by distance from (${latitude}, ${longitude}) within ${radius}mi`);
+    }
 
     const url = `https://zillow-com1.p.rapidapi.com/similarSales?zpid=0&location=${encodeURIComponent(address + ', ' + city + ', ' + state)}`;
 
@@ -328,8 +349,13 @@ async function fetchFromZillowRapidAPI(address: string, city: string, state: str
     }));
 
     const validComps = comps.filter(c => c.salePrice > 0);
-    console.log(`✅ Found ${validComps.length} comps from Zillow RapidAPI`);
-    return validComps;
+    console.log(`✅ Found ${validComps.length} raw comps from Zillow RapidAPI`);
+
+    // Filter by geographic distance if coordinates provided
+    const filtered = addDistanceAndFilterByRadius(validComps, latitude, longitude, radius);
+    console.log(`✅ After distance filter: ${filtered.length} comps within ${radius}mi`);
+
+    return filtered;
   } catch (error) {
     console.error('❌ RapidAPI error:', error);
     return [];
@@ -357,7 +383,7 @@ serve(async (req) => {
     // 1️⃣ Try Attom Data API (BEST - Real MLS data, 1000 free/month)
     if (ATTOM_API_KEY && comps.length < 3) {
       console.log('1️⃣ Trying Attom Data API...');
-      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius);
+      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, latitude, longitude);
       if (attomComps.length > 0) {
         comps = attomComps;
         source = 'attom';
@@ -368,7 +394,7 @@ serve(async (req) => {
     // 2️⃣ Try Zillow RapidAPI (GOOD - 100 free/month)
     if (RAPIDAPI_KEY && comps.length < 3) {
       console.log('2️⃣ Trying Zillow RapidAPI...');
-      const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
+      const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL', latitude, longitude, radius);
       if (zillowApiComps.length > 0) {
         comps = [...comps, ...zillowApiComps];
         source = comps[0]?.source || 'zillow-api';
@@ -379,7 +405,7 @@ serve(async (req) => {
     // 3️⃣ Try Orange County CSV (100% FREE - Public records for Orlando/FL)
     if ((city?.toLowerCase().includes('orlando') || state === 'FL') && comps.length < 3) {
       console.log('3️⃣ Trying Orange County Public CSV...');
-      const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
+      const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando', latitude, longitude, radius);
       if (countyComps.length > 0) {
         comps = [...comps, ...countyComps];
         source = comps[0]?.source || 'county-csv';

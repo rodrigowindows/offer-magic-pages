@@ -45,6 +45,9 @@ export interface ComparableProperty {
   sqft: number;
   pricePerSqft: number;
   distance: number;
+  latitude?: number;
+  longitude?: number;
+  source?: string;
   // Legacy field names for backward compatibility (snake_case)
   sale_price?: number;
   sale_date?: string;
