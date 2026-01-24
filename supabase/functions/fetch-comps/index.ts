@@ -136,12 +136,12 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
     // Use coordinate-based search if lat/lng provided, otherwise fall back to address search
     let url: string;
     if (latitude && longitude) {
-      // Use /sale/detail endpoint with coordinates for precise geographic search
-      url = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/detail?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
+      // FIXED: Use /sale/snapshot for multiple comps (not /sale/detail which returns single property)
+      url = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/snapshot?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
       console.log(`📍 Using coordinate search: ${latitude}, ${longitude} within ${radius}mi`);
     } else {
       // Fallback to address-based search
-      url = `https://api.attomdata.com/propertyapi/v1.0.0/salescomparable/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}&maxComps=10`;
+      url = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}`;
       console.log(`📮 Using address search: ${address}, ${city}, ${state}`);
     }
 
@@ -165,33 +165,40 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
     }
 
     const comps: ComparableData[] = data.property.map((prop: any) => {
+      // FIXED: Access nested fields correctly according to Attom API structure
       const sale = prop.sale || {};
+      const saleAmount = sale.amount || {}; // Nested under sale.amount
       const building = prop.building || {};
+      const buildingSize = building.size || {};
+      const buildingRooms = building.rooms || {};
+      const buildingSummary = building.summary || {};
       const addr = prop.address || {};
       const location = prop.location || {};
 
-      const latitude = parseFloat(
-        location.latitude || location.lat || addr.latitude || addr.lat || ''
-      );
-      const longitude = parseFloat(
-        location.longitude || location.lng || location.lon || addr.longitude || addr.lng || ''
-      );
+      const lat = parseFloat(location.latitude || location.lat || '');
+      const lng = parseFloat(location.longitude || location.lng || location.lon || '');
+      const dist = parseFloat(location.distance || '0');
 
       return {
-        address: `${addr.line1 || ''}`,
+        address: addr.line1 || addr.oneLine || '',
         city: addr.locality || city,
         state: addr.countrySubd || state,
         zipCode: addr.postal1 || '',
-        saleDate: sale.saleTransDate || new Date().toISOString().split('T')[0],
-        salePrice: parseInt(sale.saleAmt) || 0,
-        beds: parseInt(building.rooms?.beds) || 3,
-        baths: parseInt(building.rooms?.bathsTotal) || 2,
-        sqft: parseInt(building.size?.livingSize) || 1500,
-        yearBuilt: parseInt(building.summary?.yearBuilt) || 2000,
-        propertyType: building.summary?.propertyType || 'Single Family',
+        // FIXED: Use sale.amount.saleTransDate and sale.amount.saleAmt (nested structure)
+        saleDate: saleAmount.saleTransDate || saleAmount.saleRecDate || sale.saleTransDate || new Date().toISOString().split('T')[0],
+        salePrice: parseInt(saleAmount.saleAmt || sale.saleAmt) || 0,
+        // FIXED: Use building.rooms.beds and building.rooms.bathsTotal
+        beds: parseInt(buildingRooms.beds) || 3,
+        baths: parseFloat(buildingRooms.bathsTotal || buildingRooms.bathsFull) || 2,
+        // FIXED: Use building.size.livingSize
+        sqft: parseInt(buildingSize.livingSize || buildingSize.bldgSize || buildingSize.grossSize) || 1500,
+        // FIXED: Use building.summary.yearBuilt
+        yearBuilt: parseInt(buildingSummary.yearBuilt) || 2000,
+        propertyType: buildingSummary.propertyType || 'SFR',
         source: 'attom',
-        latitude: Number.isFinite(latitude) ? latitude : undefined,
-        longitude: Number.isFinite(longitude) ? longitude : undefined
+        latitude: Number.isFinite(lat) ? lat : undefined,
+        longitude: Number.isFinite(lng) ? lng : undefined,
+        distance: Number.isFinite(dist) ? dist : undefined
       };
     });
 
