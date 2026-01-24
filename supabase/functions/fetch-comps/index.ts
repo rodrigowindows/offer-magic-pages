@@ -357,6 +357,7 @@ serve(async (req) => {
       .slice(0, 10);
 
     console.log(`✅ Returning ${sortedComps.length} comps (source: ${source})`);
+    console.log(`🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
 
     return new Response(JSON.stringify({
       success: true,
