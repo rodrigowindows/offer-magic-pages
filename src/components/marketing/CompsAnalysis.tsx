@@ -314,7 +314,10 @@ export const CompsAnalysis = () => {
         property.state || 'FL',
         compsFilters.maxDistance || 3,
         10, // limit
-        property.estimated_value || 250000
+        property.estimated_value || 250000,
+        true, // useCache
+        property.latitude,
+        property.longitude
       );
 
       if (compsData && compsData.length > 0) {
@@ -334,6 +337,8 @@ export const CompsAnalysis = () => {
             baths: Number(comp.baths) || 0,
             pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
             distance: Number(comp.distance) || 0,
+            latitude: comp.latitude,
+            longitude: comp.longitude,
             similarityScore: 0.8,
             propertyType: comp.propertyType || 'Single Family',
             yearBuilt: comp.yearBuilt || undefined,
@@ -641,7 +646,10 @@ export const CompsAnalysis = () => {
           property.state || 'FL',
           compsFilters.maxDistance || 3,
           10,
-          property.estimated_value || 250000
+          property.estimated_value || 250000,
+          true, // useCache
+          property.latitude,
+          property.longitude
         );
 
         // Convert and calculate analysis with validation
@@ -661,6 +669,8 @@ export const CompsAnalysis = () => {
             distance: Number(comp.distance) || 0,
             distanceMiles: Number(comp.distance) || 0, // PDF export compatibility
             pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+            latitude: comp.latitude,
+            longitude: comp.longitude,
             // Legacy fields for PDF export
             sale_price: Number(comp.salePrice) || 0,
             sale_date: comp.saleDate || new Date().toISOString(),
