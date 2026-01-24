@@ -132,12 +132,15 @@ export class CompsDataService {
           source: data.source
         });
 
-        // Return with metadata
+        // Return with metadata and ensure coordinates are preserved
         const compsWithSource = data.comps.map((comp: any) => ({
           ...comp,
+          latitude: comp.latitude,
+          longitude: comp.longitude,
           source: comp.source || data.source // Preserve individual source or use global
         }));
 
+        console.log(`📍 First comp coordinates:`, compsWithSource[0]?.latitude, compsWithSource[0]?.longitude);
         return compsWithSource.slice(0, limit);
       }
 

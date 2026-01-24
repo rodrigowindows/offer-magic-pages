@@ -136,3 +136,33 @@ export const clearGeocodeCache = (): void => {
   geocodeCache.clear();
   console.log('🗑️ Geocoding cache cleared');
 };
+
+/**
+ * Clear invalid cached coordinates that are too far from subject property
+ * This helps fix stale cache issues when demo addresses are re-geocoded to wrong locations
+ */
+export const clearInvalidCachedCoordinates = (
+  subjectLat: number = 28.5383,
+  subjectLng: number = -81.3792,
+  maxDistanceDegrees: number = 0.7
+): number => {
+  let removed = 0;
+  const entries = Array.from(geocodeCache.entries());
+
+  entries.forEach(([address, coords]) => {
+    const latDiff = Math.abs(coords.lat - subjectLat);
+    const lngDiff = Math.abs(coords.lng - subjectLng);
+
+    if (latDiff > maxDistanceDegrees || lngDiff > maxDistanceDegrees) {
+      geocodeCache.delete(address);
+      removed++;
+      console.log(`🗑️ Removed invalid cached coord for: ${address} (${latDiff.toFixed(2)}, ${lngDiff.toFixed(2)} from subject)`);
+    }
+  });
+
+  if (removed > 0) {
+    console.log(`✅ Cleared ${removed} invalid cached coordinates`);
+  }
+
+  return removed;
+};

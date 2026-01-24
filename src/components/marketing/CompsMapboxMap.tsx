@@ -186,11 +186,26 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
         // Use existing coordinates if available (from API/demo data), otherwise geocode
         let coords: [number, number] | null = null;
         if (comp.latitude && comp.longitude) {
-          coords = [comp.longitude, comp.latitude];
-          console.log(`✅ Using cached coordinates for ${comp.address}`);
-        } else {
-          // Create full address with city/state for accurate geocoding
-          const fullCompAddress = `${comp.address}, ${subjectProperty.city}, ${subjectProperty.state} ${subjectProperty.zip_code}`;
+          // Validate coordinates are reasonable (within ~50 miles / 0.7 degrees of subject)
+          const latDiff = Math.abs(comp.latitude - (subjectProperty.latitude || 28.5383));
+          const lngDiff = Math.abs(comp.longitude - (subjectProperty.longitude || -81.3792));
+
+          if (latDiff < 0.7 && lngDiff < 0.7) {
+            coords = [comp.longitude, comp.latitude];
+            console.log(`✅ Using cached coordinates for ${comp.address}: ${comp.latitude}, ${comp.longitude}`);
+          } else {
+            console.warn(`⚠️ Coordinates too far from subject (${latDiff.toFixed(2)}, ${lngDiff.toFixed(2)}) - re-geocoding: ${comp.address}`);
+            coords = null; // Force re-geocoding
+          }
+        }
+
+        if (!coords) {
+          // Check if address already contains city/state/zip (e.g., "123 Main St, Orlando, FL 32801")
+          const hasFullAddress = comp.address.includes(',') && comp.address.includes('FL');
+          const fullCompAddress = hasFullAddress
+            ? comp.address
+            : `${comp.address}, ${subjectProperty.city}, ${subjectProperty.state} ${subjectProperty.zip_code}`;
+
           console.log(`🔍 Geocoding: ${fullCompAddress}`);
           coords = await geocodeAddress(fullCompAddress);
           // Small delay to avoid rate limits only when geocoding
