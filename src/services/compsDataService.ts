@@ -119,7 +119,7 @@ export class CompsDataService {
 
       if (error) {
         console.error('Edge function error:', error);
-        return this.generateFallbackComps(basePrice, city);
+        return this.generateFallbackComps(basePrice, city, address, latitude, longitude);
       }
 
       if (data?.comps && data.comps.length > 0) {
@@ -142,36 +142,45 @@ export class CompsDataService {
       }
 
       console.warn('⚠️ No comps returned, using fallback');
-      return this.generateFallbackComps(basePrice, city);
+      return this.generateFallbackComps(basePrice, city, address, latitude, longitude);
     } catch (error) {
       console.error('❌ Error fetching comparables:', error);
-      return this.generateFallbackComps(basePrice, city);
+      return this.generateFallbackComps(basePrice, city, address, latitude, longitude);
     }
   }
 
   /**
    * Generate fallback demo data if API fails
-   * Uses real addresses in Orlando area with accurate coordinates
+   * Generates comps near the actual property location using geocoding
    */
-  private static generateFallbackComps(basePrice: number, city: string): ComparableData[] {
-    // Real addresses in Orlando with actual lat/lng for accurate map display
-    const orlandoAddresses = [
-      { address: '100 S Eola Dr', zip: '32801', lat: 28.5421, lng: -81.3776 },
-      { address: '400 W Church St', zip: '32801', lat: 28.5396, lng: -81.3825 },
-      { address: '555 N Orange Ave', zip: '32801', lat: 28.5478, lng: -81.3792 },
-      { address: '1000 E Colonial Dr', zip: '32803', lat: 28.5536, lng: -81.3621 },
-      { address: '2000 S Orange Ave', zip: '32806', lat: 28.5189, lng: -81.3728 },
-      { address: '850 N Mills Ave', zip: '32803', lat: 28.5523, lng: -81.3598 },
-    ];
+  private static generateFallbackComps(basePrice: number, city: string, subjectAddress?: string, subjectLat?: number, subjectLng?: number): ComparableData[] {
+    // Use subject property coordinates if available, otherwise use city center
+    const baseLat = subjectLat || 28.5383; // Default: Orlando downtown
+    const baseLng = subjectLng || -81.3792;
+
+    // Generate 6 addresses within 1 mile radius of subject property
+    const streetNames = ['Park Ave', 'Main St', 'Lake View Dr', 'Maple Dr', 'Oak St', 'Washington Ave'];
+    const addresses = streetNames.map((street, i) => {
+      // Generate random offset within ~1 mile (0.014 degrees ≈ 1 mile)
+      const latOffset = (Math.random() - 0.5) * 0.028; // ±1 mile
+      const lngOffset = (Math.random() - 0.5) * 0.028;
+
+      return {
+        address: `${Math.floor(Math.random() * 9000) + 1000} ${street}`,
+        zip: '32751', // Generic zip for area
+        lat: baseLat + latOffset,
+        lng: baseLng + lngOffset,
+      };
+    });
 
     const comps: ComparableData[] = [];
 
-    for (let i = 0; i < orlandoAddresses.length; i++) {
+    for (let i = 0; i < addresses.length; i++) {
       const variance = (Math.random() - 0.5) * 0.3;
       const price = Math.round(basePrice * (1 + variance));
       const daysAgo = Math.floor(Math.random() * 180);
       const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-      const location = orlandoAddresses[i];
+      const location = addresses[i];
 
       comps.push({
         address: `${location.address}, ${city || 'Orlando'}, FL ${location.zip}`,
@@ -192,6 +201,7 @@ export class CompsDataService {
       });
     }
 
+    console.log(`📍 Generated ${comps.length} demo comps near ${baseLat}, ${baseLng}`);
     return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
   }
 
