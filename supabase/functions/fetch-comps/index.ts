@@ -28,6 +28,7 @@ interface ComparableData {
 }
 
 // Generate realistic demo data based on property value with coordinates
+// VERSION: 2.0 - INCLUDES LATITUDE/LONGITUDE FOR MAP DISPLAY
 function generateDemoComps(basePrice: number, city: string, count: number = 6, centerLat: number = 28.5383, centerLng: number = -81.3792): ComparableData[] {
   const streets = [
     'Oak St', 'Pine Ave', 'Maple Dr', 'Cedar Ln', 'Palm Way',
@@ -358,6 +359,7 @@ serve(async (req) => {
 
     console.log(`✅ Returning ${sortedComps.length} comps (source: ${source})`);
     console.log(`🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
+    console.log(`📦 Full first comp:`, JSON.stringify(sortedComps[0]));
 
     return new Response(JSON.stringify({
       success: true,
