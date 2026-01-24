@@ -16,6 +16,8 @@ interface PropertyData {
   estimated_value: number;
   cash_offer_amount: number;
   property_image_url?: string | null;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface ComparableProperty {
@@ -32,6 +34,8 @@ interface ComparableProperty {
   daysOnMarket?: number;
   adjustment: number;
   pricePerSqft: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface MarketAnalysis {
