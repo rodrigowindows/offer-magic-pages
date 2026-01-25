@@ -3,7 +3,8 @@
     "allow": [
       "Bash(supabase functions:*)",
       "Bash(git commit:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
