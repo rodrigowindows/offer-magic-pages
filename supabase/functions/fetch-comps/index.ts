@@ -69,8 +69,13 @@ function addDistanceAndFilterByRadius(
 }
 
 // Generate realistic demo data based on property value with coordinates
-// VERSION: 2.0 - INCLUDES LATITUDE/LONGITUDE FOR MAP DISPLAY
+// VERSION: 2.1 - INCLUDES LATITUDE/LONGITUDE FOR MAP DISPLAY
+// ⚠️ DEMO DATA: These are SIMULATED comparables for testing purposes only
+// To get REAL data, configure ATTOM_API_KEY in Supabase Edge Function secrets
 function generateDemoComps(basePrice: number, city: string, count: number = 6, centerLat: number = 28.5383, centerLng: number = -81.3792): ComparableData[] {
+  console.log('🎭 GENERATING DEMO DATA - Not real comparables!');
+  console.log('💡 To get real data, add ATTOM_API_KEY to Supabase secrets');
+  
   const streets = [
     'Oak St', 'Pine Ave', 'Maple Dr', 'Cedar Ln', 'Palm Way',
     'Sunset Blvd', 'Lake View Dr', 'Park Ave', 'Main St', 'Colonial Dr'
@@ -124,7 +129,7 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6, c
 
 // ===== OPTION 1: Attom Data API (FREE TIER - 1000 requests/month) =====
 // Sign up at https://api.developer.attomdata.com/
-async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1, latitude?: number, longitude?: number): Promise<ComparableData[]> {
+async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1): Promise<ComparableData[]> {
   if (!ATTOM_API_KEY) {
     console.log('⚠️ Attom API key not configured');
     return [];
@@ -133,17 +138,7 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
   try {
     console.log(`🏠 Trying Attom Data API (1000 free/month, radius: ${radius}mi)...`);
 
-    // Use coordinate-based search if lat/lng provided, otherwise fall back to address search
-    let url: string;
-    if (latitude && longitude) {
-      // FIXED: Use /sale/snapshot for multiple comps (not /sale/detail which returns single property)
-      url = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/snapshot?latitude=${latitude}&longitude=${longitude}&radius=${radius}`;
-      console.log(`📍 Using coordinate search: ${latitude}, ${longitude} within ${radius}mi`);
-    } else {
-      // Fallback to address-based search
-      url = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/sale/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}`;
-      console.log(`📮 Using address search: ${address}, ${city}, ${state}`);
-    }
+    const url = `https://api.attomdata.com/propertyapi/v1.0.0/salescomparable/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}&maxComps=10`;
 
     const response = await fetch(url, {
       headers: {
@@ -165,49 +160,39 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
     }
 
     const comps: ComparableData[] = data.property.map((prop: any) => {
-      // FIXED: Access nested fields correctly according to Attom API structure
       const sale = prop.sale || {};
-      const saleAmount = sale.amount || {}; // Nested under sale.amount
       const building = prop.building || {};
-      const buildingSize = building.size || {};
-      const buildingRooms = building.rooms || {};
-      const buildingSummary = building.summary || {};
       const addr = prop.address || {};
       const location = prop.location || {};
 
-      const lat = parseFloat(location.latitude || location.lat || '');
-      const lng = parseFloat(location.longitude || location.lng || location.lon || '');
-      const dist = parseFloat(location.distance || '0');
+      const latitude = parseFloat(
+        location.latitude || location.lat || addr.latitude || addr.lat || ''
+      );
+      const longitude = parseFloat(
+        location.longitude || location.lng || location.lon || addr.longitude || addr.lng || ''
+      );
 
       return {
-        address: addr.line1 || addr.oneLine || '',
+        address: `${addr.line1 || ''}`,
         city: addr.locality || city,
         state: addr.countrySubd || state,
         zipCode: addr.postal1 || '',
-        // FIXED: Use sale.amount.saleTransDate and sale.amount.saleAmt (nested structure)
-        saleDate: saleAmount.saleTransDate || saleAmount.saleRecDate || sale.saleTransDate || new Date().toISOString().split('T')[0],
-        salePrice: parseInt(saleAmount.saleAmt || sale.saleAmt) || 0,
-        // FIXED: Use building.rooms.beds and building.rooms.bathsTotal
-        beds: parseInt(buildingRooms.beds) || 3,
-        baths: parseFloat(buildingRooms.bathsTotal || buildingRooms.bathsFull) || 2,
-        // FIXED: Use building.size.livingSize
-        sqft: parseInt(buildingSize.livingSize || buildingSize.bldgSize || buildingSize.grossSize) || 1500,
-        // FIXED: Use building.summary.yearBuilt
-        yearBuilt: parseInt(buildingSummary.yearBuilt) || 2000,
-        propertyType: buildingSummary.propertyType || 'SFR',
+        saleDate: sale.saleTransDate || new Date().toISOString().split('T')[0],
+        salePrice: parseInt(sale.saleAmt) || 0,
+        beds: parseInt(building.rooms?.beds) || 3,
+        baths: parseInt(building.rooms?.bathsTotal) || 2,
+        sqft: parseInt(building.size?.livingSize) || 1500,
+        yearBuilt: parseInt(building.summary?.yearBuilt) || 2000,
+        propertyType: building.summary?.propertyType || 'Single Family',
         source: 'attom',
-        latitude: Number.isFinite(lat) ? lat : undefined,
-        longitude: Number.isFinite(lng) ? lng : undefined,
-        distance: Number.isFinite(dist) ? dist : undefined
+        latitude: Number.isFinite(latitude) ? latitude : undefined,
+        longitude: Number.isFinite(longitude) ? longitude : undefined
       };
     });
 
     const validComps = comps.filter(c => c.salePrice > 0);
     console.log(`✅ Found ${validComps.length} comps from Attom Data`);
-
-    // Calculate distance if coordinates available and not already set by API
-    const filtered = addDistanceAndFilterByRadius(validComps, latitude, longitude, radius);
-    return filtered;
+    return validComps;
   } catch (error) {
     console.error('❌ Attom error:', error);
     return [];
@@ -215,12 +200,9 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
 }
 
 // ===== OPTION 2: Orange County CSV Scraper (100% FREE - Public Records) =====
-async function fetchFromOrangeCountyCSV(address: string, city: string, latitude?: number, longitude?: number, radius: number = 3): Promise<ComparableData[]> {
+async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<ComparableData[]> {
   try {
     console.log('🍊 Trying Orange County Public CSV...');
-    if (latitude && longitude) {
-      console.log(`📍 Will filter by distance from (${latitude}, ${longitude}) within ${radius}mi`);
-    }
 
     // Orange County provides monthly CSV exports of all sales
     const csvUrl = 'https://www.ocpafl.org/downloads/sales.csv';
@@ -290,16 +272,11 @@ async function fetchFromOrangeCountyCSV(address: string, city: string, latitude?
         }
       }
 
-      if (comps.length >= 50) break; // Collect more for distance filtering
+      if (comps.length >= 15) break; // Got enough
     }
 
-    console.log(`✅ Found ${comps.length} raw comps from Orange County CSV`);
-
-    // Filter by geographic distance if coordinates provided
-    const filtered = addDistanceAndFilterByRadius(comps, latitude, longitude, radius);
-    console.log(`✅ After distance filter: ${filtered.length} comps within ${radius}mi`);
-
-    return filtered.slice(0, 15); // Return top 15
+    console.log(`✅ Found ${comps.length} comps from Orange County CSV`);
+    return comps;
   } catch (error) {
     console.error('❌ CSV parsing error:', error);
     return [];
@@ -308,7 +285,7 @@ async function fetchFromOrangeCountyCSV(address: string, city: string, latitude?
 
 // ===== OPTION 3: Zillow via RapidAPI (FREE TIER - 100 requests/month) =====
 // Sign up at https://rapidapi.com/apimaker/api/zillow-com1
-async function fetchFromZillowRapidAPI(address: string, city: string, state: string, latitude?: number, longitude?: number, radius: number = 3): Promise<ComparableData[]> {
+async function fetchFromZillowRapidAPI(address: string, city: string, state: string): Promise<ComparableData[]> {
   if (!RAPIDAPI_KEY) {
     console.log('⚠️ RapidAPI key not configured');
     return [];
@@ -316,9 +293,6 @@ async function fetchFromZillowRapidAPI(address: string, city: string, state: str
 
   try {
     console.log('🏠 Trying Zillow via RapidAPI (100 free/month)...');
-    if (latitude && longitude) {
-      console.log(`📍 Will filter results by distance from (${latitude}, ${longitude}) within ${radius}mi`);
-    }
 
     const url = `https://zillow-com1.p.rapidapi.com/similarSales?zpid=0&location=${encodeURIComponent(address + ', ' + city + ', ' + state)}`;
 
@@ -359,13 +333,8 @@ async function fetchFromZillowRapidAPI(address: string, city: string, state: str
     }));
 
     const validComps = comps.filter(c => c.salePrice > 0);
-    console.log(`✅ Found ${validComps.length} raw comps from Zillow RapidAPI`);
-
-    // Filter by geographic distance if coordinates provided
-    const filtered = addDistanceAndFilterByRadius(validComps, latitude, longitude, radius);
-    console.log(`✅ After distance filter: ${filtered.length} comps within ${radius}mi`);
-
-    return filtered;
+    console.log(`✅ Found ${validComps.length} comps from Zillow RapidAPI`);
+    return validComps;
   } catch (error) {
     console.error('❌ RapidAPI error:', error);
     return [];
@@ -393,7 +362,7 @@ serve(async (req) => {
     // 1️⃣ Try Attom Data API (BEST - Real MLS data, 1000 free/month)
     if (ATTOM_API_KEY && comps.length < 3) {
       console.log('1️⃣ Trying Attom Data API...');
-      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, latitude, longitude);
+      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius);
       if (attomComps.length > 0) {
         comps = attomComps;
         source = 'attom';
@@ -404,7 +373,7 @@ serve(async (req) => {
     // 2️⃣ Try Zillow RapidAPI (GOOD - 100 free/month)
     if (RAPIDAPI_KEY && comps.length < 3) {
       console.log('2️⃣ Trying Zillow RapidAPI...');
-      const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL', latitude, longitude, radius);
+      const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
       if (zillowApiComps.length > 0) {
         comps = [...comps, ...zillowApiComps];
         source = comps[0]?.source || 'zillow-api';
@@ -415,7 +384,7 @@ serve(async (req) => {
     // 3️⃣ Try Orange County CSV (100% FREE - Public records for Orlando/FL)
     if ((city?.toLowerCase().includes('orlando') || state === 'FL') && comps.length < 3) {
       console.log('3️⃣ Trying Orange County Public CSV...');
-      const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando', latitude, longitude, radius);
+      const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
       if (countyComps.length > 0) {
         comps = [...comps, ...countyComps];
         source = comps[0]?.source || 'county-csv';
@@ -459,11 +428,22 @@ serve(async (req) => {
     console.log(`🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
     console.log(`📦 Full first comp:`, JSON.stringify(sortedComps[0]));
 
+    // Warn clearly if using demo data
+    const isDemo = source === 'demo';
+    if (isDemo) {
+      console.log('⚠️ ========================================');
+      console.log('⚠️ USING DEMO DATA - NOT REAL COMPARABLES');
+      console.log('⚠️ Configure ATTOM_API_KEY for real data');
+      console.log('⚠️ ========================================');
+    }
+
     return new Response(JSON.stringify({
       success: true,
       comps: sortedComps,
       source,
+      isDemo, // Clear indicator for frontend
       count: sortedComps.length,
+      message: isDemo ? '⚠️ Using simulated demo data. Configure ATTOM_API_KEY for real comparables.' : `Found ${sortedComps.length} real comparables from ${source}`,
       apiKeysConfigured: {
         attom: !!ATTOM_API_KEY,
         rapidapi: !!RAPIDAPI_KEY
