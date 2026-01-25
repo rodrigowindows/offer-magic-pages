@@ -185,10 +185,15 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
 
         // Use existing coordinates if available (from API/demo data), otherwise geocode
         let coords: [number, number] | null = null;
+        
+        // Default subject coordinates (Orlando, FL) - used for validation
+        const subjectLat = subjectCoords ? subjectCoords[1] : 28.5383;
+        const subjectLng = subjectCoords ? subjectCoords[0] : -81.3792;
+        
         if (comp.latitude && comp.longitude) {
           // Validate coordinates are reasonable (within ~50 miles / 0.7 degrees of subject)
-          const latDiff = Math.abs(comp.latitude - (subjectProperty.latitude || 28.5383));
-          const lngDiff = Math.abs(comp.longitude - (subjectProperty.longitude || -81.3792));
+          const latDiff = Math.abs(comp.latitude - subjectLat);
+          const lngDiff = Math.abs(comp.longitude - subjectLng);
 
           if (latDiff < 0.7 && lngDiff < 0.7) {
             coords = [comp.longitude, comp.latitude];
