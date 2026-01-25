@@ -257,10 +257,10 @@ serve(async (req) => {
       call_inbound: {
         dynamic_variables: {
           customer_name: getBestCustomerName(),
-          property_address: propertyInfo.address || "Unknown",
-          property_city: propertyInfo.city || "Unknown",
-          property_state: propertyInfo.state || "Unknown",
-          property_zip: propertyInfo.zip_code || "Unknown",
+          address: propertyInfo.address || "Unknown",
+          city: propertyInfo.city || "Unknown",
+          state: propertyInfo.state || "Unknown",
+          zip: propertyInfo.zip_code || "Unknown",
           estimated_value: String(propertyInfo.estimated_value || 0),
           cash_offer: String(propertyInfo.cash_offer_amount || 0),
           // Skip trace data if available
@@ -274,10 +274,10 @@ serve(async (req) => {
       call_inbound: {
         dynamic_variables: {
           customer_name: "Unknown",
-          property_address: "Not found",
-          property_city: "",
-          property_state: "",
-          property_zip: "",
+          address: "Not found",
+          city: "",
+          state: "",
+          zip: "",
           estimated_value: "0",
           cash_offer: "0"
         }
