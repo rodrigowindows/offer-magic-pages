@@ -204,7 +204,10 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
 
     const validComps = comps.filter(c => c.salePrice > 0);
     console.log(`✅ Found ${validComps.length} comps from Attom Data`);
-    return validComps;
+
+    // Calculate distance if coordinates available and not already set by API
+    const filtered = addDistanceAndFilterByRadius(validComps, latitude, longitude, radius);
+    return filtered;
   } catch (error) {
     console.error('❌ Attom error:', error);
     return [];

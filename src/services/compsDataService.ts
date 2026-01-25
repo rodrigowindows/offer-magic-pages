@@ -15,6 +15,23 @@ interface CacheEntry {
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Haversine formula to calculate distance between two coordinates (in miles)
+const EARTH_RADIUS_MILES = 3958.8;
+
+function toRadians(value: number): number {
+  return (value * Math.PI) / 180;
+}
+
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const dLat = toRadians(lat2 - lat1);
+  const dLng = toRadians(lng2 - lng1);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+    + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2))
+    * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return EARTH_RADIUS_MILES * c;
+}
+
 export interface ComparableData {
   address: string;
   city: string;
@@ -191,6 +208,9 @@ export class CompsDataService {
       const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
       const location = addresses[i];
 
+      // Calculate REAL distance using haversine formula
+      const calculatedDistance = haversineMiles(baseLat, baseLng, location.lat, location.lng);
+
       comps.push({
         address: `${location.address}, ${city || 'Orlando'}, FL ${location.zip}`,
         city: city || 'Orlando',
@@ -205,7 +225,7 @@ export class CompsDataService {
         propertyType: 'Single Family',
         latitude: location.lat,
         longitude: location.lng,
-        distance: 0.1 + Math.random() * 0.9, // 0.1-1.0 miles
+        distance: Math.round(calculatedDistance * 10) / 10, // Round to 1 decimal (e.g., 0.7 miles)
         source: 'demo'
       });
     }
