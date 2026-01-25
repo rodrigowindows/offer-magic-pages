@@ -1,80 +1,43 @@
-#!/usr/bin/env node
-
-// Test script for Retell webhook handler
+// Test script for Retell webhook
 // Run with: node test-retell-webhook.js
 
-const https = require('https');
+const WEBHOOK_URL = 'https://atxudkblyyrffbaugkaker.supabase.co/functions/v1/retell-webhook-handler';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('Missing environment variables. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY');
-  process.exit(1);
-}
-
-// Sample Retell webhook payload
 const testPayload = {
-  "event": "call_ended",
-  "call": {
-    "call_type": "phone_call",
-    "from_number": "+12137771234",
-    "to_number": "+12137771235",
-    "direction": "inbound",
-    "call_id": "Jabr9TXYYJHfvl6Syypi88rdAHYHmcq6",
-    "agent_id": "oBeDLoLOeuAbiuaMFXRtDOLriTJ5tSxD",
-    "call_status": "registered",
-    "metadata": {},
-    "retell_llm_dynamic_variables": {
-      "customer_name": "John Doe"
-    },
-    "start_timestamp": 1714608475945,
-    "end_timestamp": 1714608491736,
-    "disconnection_reason": "user_hangup",
-    "transcript": "Hello, I'm calling about my property...",
-    "opt_out_sensitive_data_storage": false
+  event: 'call_inbound',
+  call_inbound: {
+    call_id: 'test_call_123',
+    from_number: '+12405814595',
+    to_number: '+17868828251',
+    agent_id: 'agent_test123'
   }
 };
 
-const webhookUrl = `${SUPABASE_URL}/functions/v1/retell-webhook-handler`;
+async function testWebhook() {
+  console.log('🧪 Testing Retell webhook...\n');
+  console.log('📤 Sending payload:', JSON.stringify(testPayload, null, 2));
 
-console.log('Testing Retell webhook handler...');
-console.log('URL:', webhookUrl);
-console.log('Payload:', JSON.stringify(testPayload, null, 2));
+  try {
+    const response = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testPayload)
+    });
 
-const options = {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-  },
-};
+    const data = await response.json();
 
-const req = https.request(webhookUrl, options, (res) => {
-  let data = '';
+    console.log('\n📥 Response Status:', response.status);
+    console.log('\n📥 Response Data:', JSON.stringify(data, null, 2));
 
-  res.on('data', (chunk) => {
-    data += chunk;
-  });
-
-  res.on('end', () => {
-    console.log('\nResponse Status:', res.statusCode);
-    console.log('Response Headers:', res.headers);
-
-    try {
-      const response = JSON.parse(data);
-      console.log('\nResponse Body:');
-      console.log(JSON.stringify(response, null, 2));
-    } catch (e) {
-      console.log('\nRaw Response:');
-      console.log(data);
+    if (data.call_inbound && data.call_inbound.dynamic_variables) {
+      console.log('\n✅ SUCCESS! Correct Retell format');
+      console.log('\n📊 Dynamic Variables:', JSON.stringify(data.call_inbound.dynamic_variables, null, 2));
+    } else {
+      console.log('\n❌ WRONG FORMAT!');
     }
-  });
-});
+  } catch (error) {
+    console.error('\n❌ Error:', error.message);
+  }
+}
 
-req.on('error', (error) => {
-  console.error('Request failed:', error);
-});
-
-req.write(JSON.stringify(testPayload));
-req.end();
+testWebhook();
