@@ -284,14 +284,11 @@ serve(async (req) => {
       }
     };
 
-    // Return complete response with both Retell format and full details
-    const completeResponse = {
-      success: true,
-      retell_response: retellResponse,
-      webhook_data: result
-    };
+    // Return ONLY the Retell format - no wrapper
+    // Retell expects: { "call_inbound": { "dynamic_variables": {...} } }
+    console.log('✅ Returning Retell format:', JSON.stringify(retellResponse, null, 2));
 
-    return new Response(JSON.stringify(completeResponse), {
+    return new Response(JSON.stringify(retellResponse), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
