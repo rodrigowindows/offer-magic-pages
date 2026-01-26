@@ -483,6 +483,10 @@ export const CompsAnalysis = () => {
         setComparables(formattedComps);
         const avgPrice = formattedComps.reduce((sum, c) => sum + (c.sale_price || 0), 0) / formattedComps.length || 0;
         const avgPricePerSqft = formattedComps.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / formattedComps.length || 0;
+        // Detectar fonte dos dados
+        const detectedSource = compsData[0]?.source || 'demo';
+        const isDemoData = detectedSource === 'demo';
+
         const calculatedAnalysis = {
           avgSalePrice: avgPrice,
           avgPricePerSqft: avgPricePerSqft,
@@ -492,6 +496,8 @@ export const CompsAnalysis = () => {
           trendPercentage: 0,
           medianSalePrice: avgPrice,
           comparablesCount: formattedComps.length,
+          dataSource: detectedSource as 'attom' | 'zillow' | 'county-csv' | 'demo' | 'database',
+          isDemo: isDemoData,
         };
         setAnalysis(calculatedAnalysis);
         setCompsCache(prev => ({
@@ -850,6 +856,10 @@ export const CompsAnalysis = () => {
         const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + (c.salePrice || 0), 0) / formattedComps.length || 0;
         const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || 0), 0) / formattedComps.length || 0;
 
+          // Detectar fonte dos dados (para PDF export)
+          const detectedSource = compsData[0]?.source || 'database';
+          const isDemoData = detectedSource === 'demo';
+
           const calculatedAnalysis = {
             avgSalePrice: avgSalePrice || 0,
             medianSalePrice: avgSalePrice || 0,
@@ -859,6 +869,8 @@ export const CompsAnalysis = () => {
             trendPercentage: 0,
             marketTrend: 'stable' as const,
             comparablesCount: formattedComps.length,
+            dataSource: detectedSource as 'attom' | 'zillow' | 'county-csv' | 'demo' | 'database',
+            isDemo: isDemoData,
           };
 
           return { comparables: formattedComps, analysis: calculatedAnalysis };

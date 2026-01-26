@@ -36,6 +36,7 @@ interface ComparableProperty {
   pricePerSqft: number;
   latitude?: number;
   longitude?: number;
+  source?: string; // Fonte individual do comp (attom, zillow, etc)
 }
 
 interface MarketAnalysis {
@@ -45,6 +46,76 @@ interface MarketAnalysis {
   suggestedValueMax: number;
   marketTrend: 'up' | 'down' | 'stable';
   trendPercentage: number;
+  dataSource?: 'attom' | 'zillow' | 'county-csv' | 'demo' | 'database';
+  isDemo?: boolean;
+  comparablesCount?: number;
+}
+
+/**
+ * Validate comparables values to check if they make sense
+ */
+function validateCompsValues(
+  comparables: ComparableProperty[],
+  basePrice: number
+): {
+  isValid: boolean;
+  warnings: string[];
+  avgPricePerSqft: number;
+  priceRange: { min: number; max: number };
+} {
+  const warnings: string[] = [];
+
+  if (comparables.length === 0) {
+    return {
+      isValid: false,
+      warnings: ['No comparables available'],
+      avgPricePerSqft: 0,
+      priceRange: { min: 0, max: 0 },
+    };
+  }
+
+  const prices = comparables.map((c) => c.salePrice);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+
+  // Validar se preços estão próximos do basePrice (±50%)
+  const priceDiff = Math.abs(avgPrice - basePrice) / basePrice;
+  if (priceDiff > 0.5) {
+    warnings.push(
+      `Average comp price ($${Math.round(avgPrice / 1000)}K) differs significantly from base price ($${Math.round(basePrice / 1000)}K)`
+    );
+  }
+
+  // Validar range de preços (deve ter variação razoável)
+  const priceRange = maxPrice - minPrice;
+  if (priceRange < basePrice * 0.15) {
+    warnings.push('Price range is narrow - comps may be very similar');
+  }
+
+  // Validar $/sqft (Orlando normal: $30-$150)
+  const avgPricePerSqft =
+    comparables.reduce((sum, c) => sum + (c.pricePerSqft || 0), 0) /
+    comparables.length;
+  if (avgPricePerSqft < 30 || avgPricePerSqft > 150) {
+    warnings.push(
+      `Price per sqft ($${Math.round(avgPricePerSqft)}) outside normal Orlando range ($30-$150)`
+    );
+  }
+
+  // Validar se há poucos comps
+  if (comparables.length < 3) {
+    warnings.push(
+      `Only ${comparables.length} comparable(s) found - consider expanding search radius`
+    );
+  }
+
+  return {
+    isValid: warnings.length === 0,
+    warnings,
+    avgPricePerSqft,
+    priceRange: { min: minPrice, max: maxPrice },
+  };
 }
 
 /**
@@ -380,6 +451,64 @@ export const exportCompsToPDF = async (
     );
 
     currentY += 30;
+
+    // ===== DATA SOURCE & VALIDATION =====
+    const sourceLabels: Record<string, string> = {
+      attom: 'MLS Data (Attom API)',
+      zillow: 'Zillow API',
+      'county-csv': 'Public Records (Orange County)',
+      demo: 'Demo Data',
+      database: 'Cached Database',
+    };
+
+    const sourceColors: Record<string, number[]> = {
+      attom: [34, 197, 94], // green
+      zillow: [59, 130, 246], // blue
+      'county-csv': [249, 115, 22], // orange
+      demo: [156, 163, 175], // gray
+      database: [168, 85, 247], // purple
+    };
+
+    if (analysis.dataSource) {
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Data Source:', 20, currentY);
+
+      const color = sourceColors[analysis.dataSource] || [156, 163, 175];
+      doc.setTextColor(color[0], color[1], color[2]);
+      doc.setFont('helvetica', 'bold');
+      doc.text(sourceLabels[analysis.dataSource] || 'Unknown', 50, currentY);
+      doc.setFont('helvetica', 'normal');
+
+      if (analysis.isDemo) {
+        doc.setTextColor(239, 68, 68); // red
+        doc.setFontSize(7);
+        doc.text('⚠ Demo data - Configure API keys for real market data', 100, currentY);
+      }
+
+      currentY += 7;
+    }
+
+    // Validate comparables and show warnings if needed
+    const validation = validateCompsValues(comparables, property.estimated_value);
+    if (validation.warnings.length > 0) {
+      const warningHeight = 12 + validation.warnings.length * 5;
+      doc.setFillColor(254, 252, 232); // yellow background
+      doc.rect(20, currentY, 170, warningHeight, 'F');
+
+      doc.setFontSize(8);
+      doc.setTextColor(161, 98, 7); // yellow-dark text
+      doc.setFont('helvetica', 'bold');
+      doc.text('⚠ Data Quality Warnings:', 25, currentY + 5);
+      doc.setFont('helvetica', 'normal');
+
+      validation.warnings.forEach((warning, idx) => {
+        doc.setFontSize(7);
+        doc.text(`• ${warning}`, 25, currentY + 10 + idx * 4);
+      });
+
+      currentY += warningHeight + 5;
+    }
 
     // ===== COMPARABLE SALES TABLE =====
     doc.setFontSize(14);
@@ -753,6 +882,37 @@ export const exportConsolidatedCompsPDF = async (
 
       currentY += 25;
 
+      // Data Source Badge
+      if (analysis.dataSource) {
+        const sourceConfig: Record<string, { label: string; color: number[] }> = {
+          attom: { label: 'MLS Data', color: [34, 197, 94] },
+          zillow: { label: 'Zillow API', color: [59, 130, 246] },
+          'county-csv': { label: 'Public Records', color: [249, 115, 22] },
+          demo: { label: 'Demo Data', color: [156, 163, 175] },
+          database: { label: 'Database Cache', color: [168, 85, 247] },
+        };
+
+        const config = sourceConfig[analysis.dataSource] || sourceConfig.demo;
+
+        // Draw badge rectangle
+        doc.setFillColor(config.color[0], config.color[1], config.color[2]);
+        doc.roundedRect(140, currentY, 50, 7, 2, 2, 'F');
+
+        // Draw badge text
+        doc.setFontSize(7);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text(config.label, 165, currentY + 5, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+
+        // Demo warning
+        if (analysis.isDemo) {
+          doc.setFontSize(6);
+          doc.setTextColor(239, 68, 68);
+          doc.text('⚠ Demo', 165, currentY + 10, { align: 'center' });
+        }
+      }
+
       // Comparables table
       doc.setFontSize(12);
       doc.setTextColor(15, 23, 42);
@@ -779,23 +939,32 @@ export const exportConsolidatedCompsPDF = async (
           fillColor: [37, 99, 235],
           textColor: [255, 255, 255],
           fontSize: 7,
+          fontStyle: 'bold',
         },
         bodyStyles: {
           fontSize: 7,
+          textColor: [71, 85, 105],
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251],
         },
         columnStyles: {
-          0: { cellWidth: 6 },   // # (reduzido de 7)
-          1: { cellWidth: 46 },  // Address (reduzido de 48)
-          2: { cellWidth: 18 },  // Date (reduzido de 19)
-          3: { cellWidth: 16 },  // Price (reduzido de 17)
-          4: { cellWidth: 14 },  // Sqft (reduzido de 15)
-          5: { cellWidth: 14 },  // $/Sqft (reduzido de 15)
-          6: { cellWidth: 12 },  // Bd/Ba (reduzido de 13)
-          7: { cellWidth: 10 },  // Dist (reduzido de 11)
+          0: { cellWidth: 6 },   // #
+          1: { cellWidth: 46 },  // Address
+          2: { cellWidth: 18 },  // Date
+          3: { cellWidth: 16 },  // Price
+          4: { cellWidth: 14 },  // Sqft
+          5: { cellWidth: 14 },  // $/Sqft
+          6: { cellWidth: 12 },  // Bd/Ba
+          7: { cellWidth: 10 },  // Dist
         },
         margin: { left: 20, right: 20 },
-        tableWidth: 170,
-        styles: { overflow: 'linebreak', cellPadding: 1 },
+        tableWidth: 136,  // Soma exata das colunas
+        styles: {
+          overflow: 'linebreak',
+          cellPadding: { top: 1, right: 1, bottom: 1, left: 1 },
+          halign: 'left',
+        },
       });
 
       // Add mini map if possible (small version for consolidated PDF)
