@@ -323,8 +323,12 @@ export const CompsAnalysis = () => {
       );
 
       if (compsData && compsData.length > 0) {
-        // ✅ NOVO: Validar dados dos comps
-        const validation = AVMService.validateComps(compsData);
+        // ✅ NOVO: Validar dados dos comps (ensure distance is provided)
+        const compsWithDistance = compsData.map(c => ({
+          ...c,
+          distance: c.distance ?? 0
+        }));
+        const validation = AVMService.validateComps(compsWithDistance);
         console.log('📊 Comps Quality Check:', validation);
 
         if (validation.quality === 'poor') {
@@ -343,24 +347,29 @@ export const CompsAnalysis = () => {
 
         try {
           // Buscar dados do banco antes de estimar dos comps
-          let propertySqft = selectedProperty?.sqft;
-          let propertyBeds = selectedProperty?.beds;
-          let propertyBaths = selectedProperty?.baths;
+          let propertySqft = selectedProperty?.square_feet;
+          let propertyBeds = selectedProperty?.bedrooms;
+          let propertyBaths = selectedProperty?.bathrooms;
 
           if (!propertySqft || !propertyBeds || !propertyBaths) {
             const { data: propertyDetails } = await supabase
               .from('properties')
-              .select('sqft, beds, baths')
+              .select('square_feet, bedrooms, bathrooms')
               .eq('id', selectedProperty.id)
               .single();
 
-            propertySqft = propertySqft || propertyDetails?.sqft;
-            propertyBeds = propertyBeds || propertyDetails?.beds;
-            propertyBaths = propertyBaths || propertyDetails?.baths;
+            propertySqft = propertySqft || propertyDetails?.square_feet;
+            propertyBeds = propertyBeds || propertyDetails?.bedrooms;
+            propertyBaths = propertyBaths || propertyDetails?.bathrooms;
 
             // Se ainda faltam valores, estimar dos comps
             if (!propertySqft || !propertyBeds || !propertyBaths) {
-              const estimated = AVMService.estimateSubjectProperties(compsData);
+              // Map compsData to required format with distance guaranteed
+              const compsForEstimation = compsData.map(c => ({
+                ...c,
+                distance: c.distance ?? 0
+              }));
+              const estimated = AVMService.estimateSubjectProperties(compsForEstimation);
               propertySqft = propertySqft || estimated.sqft;
               propertyBeds = propertyBeds || estimated.beds;
               propertyBaths = propertyBaths || estimated.baths;
@@ -368,8 +377,14 @@ export const CompsAnalysis = () => {
             }
           }
 
+          // Map compsData to ensure distance is required for AVM
+          const compsForAVM = compsData.map(c => ({
+            ...c,
+            distance: c.distance ?? 0
+          }));
+          
           const avm = AVMService.calculateValueFromComps(
-            compsData,
+            compsForAVM,
             propertySqft,
             propertyBeds,
             propertyBaths

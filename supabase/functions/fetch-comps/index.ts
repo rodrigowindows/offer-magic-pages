@@ -234,7 +234,6 @@ function extractAttomV2Comparables(data: any, defaults: { city: string; state: s
     console.error('❌ No comparables extracted from ATTOM V2 response');
     console.log('📋 Full response structure:', JSON.stringify(data, null, 2).substring(0, 1000));
   }
-  }
 
   return results;
 }
@@ -403,7 +402,7 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
           distance: 0 // Will be calculated later
         };
       })
-      .filter((comp): comp is ComparableData => comp !== null && comp.salePrice > 0);
+      .filter((comp: ComparableData | null): comp is ComparableData => comp !== null && comp.salePrice > 0);
 
     console.log(`✅ Found ${comps.length} comps with recent sales from Attom Data`);
     return comps;

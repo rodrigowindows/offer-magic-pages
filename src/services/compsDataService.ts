@@ -46,8 +46,8 @@ export interface ComparableData {
   propertyType: string;
   latitude?: number;
   longitude?: number;
-  distance?: number;
-  source: 'attom' | 'county' | 'county-csv' | 'zillow' | 'zillow-api' | 'manual' | 'redfin' | 'realtymole' | 'demo';
+  distance: number; // Required to match avmService
+  source: 'attom' | 'attom-v1' | 'attom-v2' | 'county' | 'county-csv' | 'zillow' | 'zillow-api' | 'manual' | 'redfin' | 'realtymole' | 'demo';
 }
 
 export class CompsDataService {
