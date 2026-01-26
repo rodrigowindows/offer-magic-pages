@@ -129,7 +129,8 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6, c
 
 // ===== OPTION 1: Attom Data API (FREE TIER - 1000 requests/month) =====
 // Sign up at https://api.developer.attomdata.com/
-async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1): Promise<ComparableData[]> {
+// FREE TRIAL endpoints that work: property/address, sale/detail, avm/detail, expandedprofile
+async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1, zipCode?: string): Promise<ComparableData[]> {
   if (!ATTOM_API_KEY) {
     console.log('⚠️ Attom API key not configured');
     return [];
@@ -138,61 +139,95 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
   try {
     console.log(`🏠 Trying Attom Data API (1000 free/month, radius: ${radius}mi)...`);
 
-    const url = `https://api.attomdata.com/propertyapi/v1.0.0/salescomparable/snapshot?address1=${encodeURIComponent(address)}&address2=${encodeURIComponent(city + ', ' + state)}&radius=${radius}&maxComps=10`;
+    // Extract ZIP code from address if not provided
+    if (!zipCode) {
+      const zipMatch = `${address} ${city} ${state}`.match(/\b\d{5}\b/);
+      zipCode = zipMatch ? zipMatch[0] : '';
+    }
 
-    const response = await fetch(url, {
+    if (!zipCode) {
+      console.log('⚠️ No ZIP code found, cannot search nearby properties');
+      return [];
+    }
+
+    console.log(`📍 Searching properties near ZIP ${zipCode} within ${radius} miles...`);
+
+    // Search nearby properties by ZIP code
+    const searchUrl = `https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address?postalcode=${zipCode}&radius=${radius}`;
+
+    const searchResponse = await fetch(searchUrl, {
       headers: {
         'Accept': 'application/json',
         'apikey': ATTOM_API_KEY,
       },
     });
 
-    if (!response.ok) {
-      console.log('❌ Attom API status:', response.status, await response.text());
+    if (!searchResponse.ok) {
+      console.log('❌ Attom search failed:', searchResponse.status, await searchResponse.text());
       return [];
     }
 
-    const data = await response.json();
+    const searchData = await searchResponse.json();
 
-    if (!data.property || !Array.isArray(data.property)) {
-      console.log('⚠️ No comps from Attom');
+    if (!searchData.property || !Array.isArray(searchData.property)) {
+      console.log('⚠️ No properties found near ZIP', zipCode);
       return [];
     }
 
-    const comps: ComparableData[] = data.property.map((prop: any) => {
-      const sale = prop.sale || {};
-      const building = prop.building || {};
-      const addr = prop.address || {};
-      const location = prop.location || {};
+    console.log(`📊 Found ${searchData.property.length} properties nearby, extracting comparables...`);
 
-      const latitude = parseFloat(
-        location.latitude || location.lat || addr.latitude || addr.lat || ''
-      );
-      const longitude = parseFloat(
-        location.longitude || location.lng || location.lon || addr.longitude || addr.lng || ''
-      );
+    // Extract comps from nearby properties with sale data
+    const comps: ComparableData[] = searchData.property
+      .slice(0, 20) // Limit to first 20 to avoid too many requests
+      .map((prop: any) => {
+        const sale = prop.sale || {};
+        const building = prop.building || {};
+        const addr = prop.address || {};
+        const location = prop.location || {};
 
-      return {
-        address: `${addr.line1 || ''}`,
-        city: addr.locality || city,
-        state: addr.countrySubd || state,
-        zipCode: addr.postal1 || '',
-        saleDate: sale.saleTransDate || new Date().toISOString().split('T')[0],
-        salePrice: parseInt(sale.saleAmt) || 0,
-        beds: parseInt(building.rooms?.beds) || 3,
-        baths: parseInt(building.rooms?.bathsTotal) || 2,
-        sqft: parseInt(building.size?.livingSize) || 1500,
-        yearBuilt: parseInt(building.summary?.yearBuilt) || 2000,
-        propertyType: building.summary?.propertyType || 'Single Family',
-        source: 'attom',
-        latitude: Number.isFinite(latitude) ? latitude : undefined,
-        longitude: Number.isFinite(longitude) ? longitude : undefined
-      };
-    });
+        // Only include if has sale data
+        if (!sale.saleTransDate || !sale.saleAmt) {
+          return null;
+        }
 
-    const validComps = comps.filter(c => c.salePrice > 0);
-    console.log(`✅ Found ${validComps.length} comps from Attom Data`);
-    return validComps;
+        // Check sale is recent (within 1 year)
+        const saleDate = new Date(sale.saleTransDate);
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        if (saleDate < oneYearAgo) {
+          return null;
+        }
+
+        const latitude = parseFloat(
+          location.latitude || location.lat || addr.latitude || addr.lat || ''
+        );
+        const longitude = parseFloat(
+          location.longitude || location.lng || location.lon || addr.longitude || addr.lng || ''
+        );
+
+        return {
+          address: `${addr.line1 || ''}`,
+          city: addr.locality || city,
+          state: addr.countrySubd || state,
+          zipCode: addr.postal1 || zipCode,
+          saleDate: sale.saleTransDate || new Date().toISOString().split('T')[0],
+          salePrice: parseInt(sale.saleAmt) || 0,
+          beds: parseInt(building.rooms?.beds) || 3,
+          baths: parseFloat(building.rooms?.bathsTotal) || 2,
+          sqft: parseInt(building.size?.livingSize || building.size?.livingsize) || 1500,
+          yearBuilt: parseInt(building.summary?.yearBuilt || building.summary?.yearbuilt) || 2000,
+          propertyType: building.summary?.propertyType || 'Single Family',
+          source: 'attom',
+          latitude: Number.isFinite(latitude) ? latitude : undefined,
+          longitude: Number.isFinite(longitude) ? longitude : undefined,
+          distance: 0 // Will be calculated later
+        };
+      })
+      .filter((comp): comp is ComparableData => comp !== null && comp.salePrice > 0);
+
+    console.log(`✅ Found ${comps.length} comps with recent sales from Attom Data`);
+    return comps;
   } catch (error) {
     console.error('❌ Attom error:', error);
     return [];
@@ -348,9 +383,9 @@ serve(async (req) => {
   }
 
   try {
-    const { address, city, state, basePrice, radius = 1, latitude, longitude } = await req.json();
+    const { address, city, state, basePrice, radius = 1, latitude, longitude, zipCode } = await req.json();
 
-    console.log(`🔍 Fetching comps for: ${address}, ${city}, ${state}, basePrice: $${basePrice}, radius: ${radius}mi`);
+    console.log(`🔍 Fetching comps for: ${address}, ${city}, ${state}, ZIP: ${zipCode || 'auto'}, basePrice: $${basePrice}, radius: ${radius}mi`);
     console.log(`📍 Property coordinates: ${latitude}, ${longitude}`);
     console.log(`🔑 API Keys configured: Attom=${!!ATTOM_API_KEY}, RapidAPI=${!!RAPIDAPI_KEY}`);
 
@@ -363,7 +398,7 @@ serve(async (req) => {
     // 1️⃣ PRIORITY: Try ATTOM Data API (most accurate)
     if (ATTOM_API_KEY && comps.length < 3) {
       console.log('🔄 [1/3] Attempting ATTOM Data API...');
-      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius);
+      const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, zipCode);
       if (attomComps && attomComps.length >= 3) {
         comps = attomComps;
         source = 'attom';
