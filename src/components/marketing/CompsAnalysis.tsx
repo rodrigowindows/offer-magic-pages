@@ -57,6 +57,8 @@ import { AdjustmentCalculator } from '@/components/AdjustmentCalculator';
 
 // Services
 import { CompsDataService } from '@/services/compsDataService';
+import { AVMService } from '@/services/avmService';
+import { validatePropertyData } from '@/utils/dataValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
 
@@ -321,6 +323,71 @@ export const CompsAnalysis = () => {
       );
 
       if (compsData && compsData.length > 0) {
+        // ✅ NOVO: Validar dados dos comps
+        const validation = AVMService.validateComps(compsData);
+        console.log('📊 Comps Quality Check:', validation);
+
+        if (validation.quality === 'poor') {
+          toast({
+            title: 'Warning',
+            description: validation.issues.join('; '),
+            variant: 'destructive'
+          });
+        }
+
+        // ✅ NOVO: Calcular valor usando AVM
+        let calculatedValue = null;
+        let avmMinValue = null;
+        let avmMaxValue = null;
+        let avmConfidence = null;
+
+        try {
+          const avm = AVMService.calculateValueFromComps(
+            compsData,
+            selectedProperty?.sqft || 1500,
+            selectedProperty?.beds || 3,
+            selectedProperty?.baths || 2
+          );
+
+          calculatedValue = avm.estimatedValue;
+          avmMinValue = avm.minValue;
+          avmMaxValue = avm.maxValue;
+          avmConfidence = avm.confidence;
+
+          console.log('✅ AVM Calculation Successful:', avm);
+
+          // ✅ NOVO: Atualizar propriedade no banco com valores calculados
+          await supabase
+            .from('properties')
+            .update({
+              estimated_value: calculatedValue,
+              avm_min_value: avmMinValue,
+              avm_max_value: avmMaxValue,
+              valuation_method: 'avm',
+              valuation_confidence: avmConfidence,
+              last_valuation_date: new Date().toISOString()
+            })
+            .eq('id', selectedProperty.id);
+
+          // Atualizar estado local
+          setSelectedProperty(prev => prev ? {
+            ...prev,
+            estimated_value: calculatedValue
+          } : null);
+
+          toast({
+            title: '✅ Property Valued',
+            description: `Estimated Value: $${calculatedValue.toLocaleString()} (${Math.round(avmConfidence)}% confidence)`
+          });
+
+        } catch (avmError) {
+          console.warn('⚠️ AVM calculation failed, using comps average:', avmError);
+          // Fallback: usar média simples
+          const avgPrice = compsData.reduce((sum, c) => sum + c.salePrice, 0) / compsData.length;
+          calculatedValue = Math.round(avgPrice);
+          avmConfidence = 40; // Lower confidence
+        }
+
         // Convert to ComparableProperty format with validation
         const formattedComps: ComparableProperty[] = compsData
           .filter(comp => comp.salePrice && comp.sqft && comp.sqft > 0)
@@ -366,8 +433,8 @@ export const CompsAnalysis = () => {
         const calculatedAnalysis = {
           avgSalePrice: avgPrice,
           avgPricePerSqft: avgPricePerSqft,
-          suggestedValueMin: avgPrice * 0.9,
-          suggestedValueMax: avgPrice * 1.1,
+          suggestedValueMin: avmMinValue || avgPrice * 0.9,
+          suggestedValueMax: avmMaxValue || avgPrice * 1.1,
           marketTrend: 'stable' as const,
           trendPercentage: 0,
           medianSalePrice: avgPrice,

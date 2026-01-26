@@ -73,8 +73,8 @@ function addDistanceAndFilterByRadius(
 // ⚠️ DEMO DATA: These are SIMULATED comparables for testing purposes only
 // To get REAL data, configure ATTOM_API_KEY in Supabase Edge Function secrets
 function generateDemoComps(basePrice: number, city: string, count: number = 6, centerLat: number = 28.5383, centerLng: number = -81.3792): ComparableData[] {
-  console.log('🎭 GENERATING DEMO DATA - Not real comparables!');
-  console.log('💡 To get real data, add ATTOM_API_KEY to Supabase secrets');
+  console.log('⚠️ DEMO DATA FALLBACK - Real APIs should be attempted first!');
+  console.log('ℹ️ Configure ATTOM_API_KEY or RAPIDAPI_KEY in Supabase secrets for real data');
   
   const streets = [
     'Oak St', 'Pine Ave', 'Maple Dr', 'Cedar Ln', 'Palm Way',
@@ -358,43 +358,50 @@ serve(async (req) => {
     let source = 'demo';
 
     // ===== CASCATA DE FONTES (tentativas em ordem de qualidade) =====
+    // Demo data is LAST RESORT ONLY
 
-    // 1️⃣ Try Attom Data API (BEST - Real MLS data, 1000 free/month)
+    // 1️⃣ PRIORITY: Try ATTOM Data API (most accurate)
     if (ATTOM_API_KEY && comps.length < 3) {
-      console.log('1️⃣ Trying Attom Data API...');
+      console.log('🔄 [1/3] Attempting ATTOM Data API...');
       const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius);
-      if (attomComps.length > 0) {
+      if (attomComps && attomComps.length >= 3) {
         comps = attomComps;
         source = 'attom';
-        console.log(`✅ SUCCESS: Got ${comps.length} comps from Attom Data (MLS)`);
+        console.log(`✅ Got ${comps.length} comps from ATTOM`);
       }
+    } else if (!ATTOM_API_KEY) {
+      console.log('⚠️ ATTOM_API_KEY not configured. Register at: https://api.developer.attomdata.com/');
     }
 
-    // 2️⃣ Try Zillow RapidAPI (GOOD - 100 free/month)
-    if (RAPIDAPI_KEY && comps.length < 3) {
-      console.log('2️⃣ Trying Zillow RapidAPI...');
-      const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
-      if (zillowApiComps.length > 0) {
-        comps = [...comps, ...zillowApiComps];
-        source = comps[0]?.source || 'zillow-api';
-        console.log(`✅ SUCCESS: Got ${zillowApiComps.length} comps from Zillow API`);
+    // 2️⃣ FALLBACK: Try Zillow/RapidAPI
+    if (!comps || comps.length < 3) {
+      if (RAPIDAPI_KEY) {
+        console.log('🔄 [2/3] Attempting Zillow via RapidAPI...');
+        const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
+        if (zillowApiComps && zillowApiComps.length >= 3) {
+          comps = zillowApiComps;
+          source = 'zillow-api';
+          console.log(`✅ Got ${comps.length} comps from Zillow`);
+        }
+      } else {
+        console.log('⚠️ RAPIDAPI_KEY not configured. Sign up at: https://rapidapi.com/');
       }
     }
 
     // 3️⃣ Try Orange County CSV (100% FREE - Public records for Orlando/FL)
-    if ((city?.toLowerCase().includes('orlando') || state === 'FL') && comps.length < 3) {
-      console.log('3️⃣ Trying Orange County Public CSV...');
+    if ((city?.toLowerCase().includes('orlando') || state === 'FL') && (!comps || comps.length < 3)) {
+      console.log('🔄 Trying Orange County Public CSV...');
       const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
-      if (countyComps.length > 0) {
-        comps = [...comps, ...countyComps];
+      if (countyComps && countyComps.length > 0) {
+        comps = [...(comps || []), ...countyComps];
         source = comps[0]?.source || 'county-csv';
-        console.log(`✅ SUCCESS: Got ${countyComps.length} comps from Orange County CSV`);
+        console.log(`✅ Got ${countyComps.length} comps from Orange County CSV`);
       }
     }
 
-    // 4️⃣ Fallback to realistic demo data
-    if (comps.length < 3) {
-      console.log('⚠️ No real data sources available - using realistic demo data');
+    // 4️⃣ LAST RESORT ONLY: Demo data
+    if (!comps || comps.length < 3) {
+      console.log('🎭 [3/3] Using DEMO DATA (This indicates API configuration issues)');
       console.log('💡 To get real data:');
       console.log('   - Sign up for Attom Data: https://api.developer.attomdata.com/ (1000 free/month)');
       console.log('   - Sign up for RapidAPI: https://rapidapi.com/apimaker/api/zillow-com1 (100 free/month)');
@@ -424,7 +431,8 @@ serve(async (req) => {
       .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
       .slice(0, 10);
 
-    console.log(`✅ Returning ${sortedComps.length} comps (source: ${source})`);
+    // Log final result
+    console.log(`📊 Final Result: ${sortedComps.length} comps from ${source}`);
     console.log(`🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
     console.log(`📦 Full first comp:`, JSON.stringify(sortedComps[0]));
 
