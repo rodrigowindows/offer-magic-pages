@@ -127,7 +127,197 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6, c
   return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
 }
 
-// ===== OPTION 1: Attom Data API (FREE TIER - 1000 requests/month) =====
+// ===== City to County Map (required for ATTOM V2) =====
+const CITY_TO_COUNTY_MAP: Record<string, Record<string, string>> = {
+  FL: {
+    'Orlando': 'Orange',
+    'Winter Park': 'Orange',
+    'Ocoee': 'Orange',
+    'Apopka': 'Orange',
+    'Kissimmee': 'Osceola',
+    'Tampa': 'Hillsborough',
+    'Jacksonville': 'Duval',
+    'Miami': 'Miami-Dade',
+    'Fort Lauderdale': 'Broward',
+    // Add more as needed
+  }
+};
+
+function getCountyByCity(city: string, state: string = 'FL'): string | null {
+  const stateMap = CITY_TO_COUNTY_MAP[state];
+  if (!stateMap) return null;
+
+  const lowerCity = city.toLowerCase();
+  for (const [mapCity, county] of Object.entries(stateMap)) {
+    if (mapCity.toLowerCase() === lowerCity) {
+      return county;
+    }
+  }
+
+  // Fallback for Orlando area
+  if (state === 'FL' && lowerCity.includes('orlando')) {
+    return 'Orange';
+  }
+
+  return null;
+}
+
+// ===== OPTION 1A: Attom Data API V2 (PREFERRED - Sales Comparables) =====
+// V2 endpoint that works with Free Trial: /property/v2/salescomparables/address
+async function fetchFromAttomV2(
+  address: string,
+  city: string,
+  county: string,
+  state: string,
+  zipCode: string
+): Promise<ComparableData[]> {
+  if (!ATTOM_API_KEY) {
+    console.log('⚠️ ATTOM_API_KEY not configured');
+    return [];
+  }
+
+  if (!county) {
+    console.log('⚠️ County name required for ATTOM V2 API');
+    return [];
+  }
+
+  try {
+    console.log(`🏠 Fetching from ATTOM Sales Comparables V2...`);
+    console.log(`📍 Address: ${address}, City: ${city}, County: ${county}, State: ${state}, ZIP: ${zipCode}`);
+
+    const encodedAddress = encodeURIComponent(address);
+    const encodedCity = encodeURIComponent(city);
+    const encodedCounty = encodeURIComponent(county);
+
+    const url = `https://api.gateway.attomdata.com/property/v2/salescomparables/address/${encodedAddress}/${encodedCity}/${encodedCounty}/${state}/${zipCode}`;
+
+    console.log(`🔗 Request URL: ${url.substring(0, 100)}...`);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'APIKey': ATTOM_API_KEY,
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log(`❌ ATTOM V2 API error (HTTP ${response.status}):`, errorText.substring(0, 200));
+      return [];
+    }
+
+    const data = await response.json();
+
+    // Extract comparables from V2 format (RESPONSE_GROUP)
+    const comps = extractAttomV2Comparables(data, { city, state, zipCode });
+
+    if (comps.length === 0) {
+      console.log('⚠️ No comparables returned from ATTOM V2');
+      return [];
+    }
+
+    console.log(`✅ Parsed ${comps.length} valid comparables from ATTOM V2`);
+    return comps;
+
+  } catch (error) {
+    console.error('❌ ATTOM V2 fetch failed:', error);
+    return [];
+  }
+}
+
+// V2 Parser
+function extractAttomV2Comparables(data: any, defaults: { city: string; state: string; zipCode: string }): ComparableData[] {
+  const results: ComparableData[] = [];
+
+  // V2 format (RESPONSE_GROUP)
+  const v2Props = data?.RESPONSE_GROUP?.RESPONSE?.RESPONSE_DATA?.PROPERTY_INFORMATION_RESPONSE_ext?.SUBJECT_PROPERTY_ext?.PROPERTY;
+  if (Array.isArray(v2Props)) {
+    const parsedV2 = v2Props
+      .map((entry: any) => parseAttomV2Comparable(entry, defaults))
+      .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
+    results.push(...parsedV2);
+  }
+
+  // Fallback for legacy format (data.property)
+  if (Array.isArray(data?.property)) {
+    const parsedLegacy = data.property
+      .map((prop: any) => parseLegacyComparable(prop, defaults))
+      .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
+    results.push(...parsedLegacy);
+  }
+
+  return results;
+}
+
+function parseAttomV2Comparable(entry: any, defaults: { city: string; state: string; zipCode: string }): ComparableData | null {
+  try {
+    const c = entry?.COMPARABLE_PROPERTY_ext;
+    if (!c) return null;
+
+    const sale = c.SALES_HISTORY || {};
+    const structure = c.STRUCTURE || {};
+
+    const salePrice = Number(sale['@PropertySalesAmount'] || 0);
+    if (!salePrice || Number.isNaN(salePrice)) return null;
+
+    return {
+      address: String(c['@_StreetAddress'] || '').trim(),
+      city: String(c['@_City'] || defaults.city),
+      state: String(c['@_State'] || defaults.state),
+      zipCode: String(c['@_PostalCode'] || defaults.zipCode),
+      saleDate: String(sale['@TransferDate_ext'] || sale['@PropertySalesDate'] || new Date().toISOString().split('T')[0]),
+      salePrice,
+      beds: Number(structure['@TotalBedroomCount'] || 0),
+      baths: Number(structure['@TotalBathroomCount'] || 0),
+      sqft: Number(structure['@GrossLivingAreaSquareFeetCount'] || 0),
+      yearBuilt: structure.STRUCTURE_ANALYSIS?.['@PropertyStructureBuiltYear'] ? Number(structure.STRUCTURE_ANALYSIS['@PropertyStructureBuiltYear']) : 0,
+      latitude: c['@LatitudeNumber'] ? Number(c['@LatitudeNumber']) : undefined,
+      longitude: c['@LongitudeNumber'] ? Number(c['@LongitudeNumber']) : undefined,
+      distance: c['@DistanceFromSubjectPropertyMilesCount'] ? Number(c['@DistanceFromSubjectPropertyMilesCount']) : undefined,
+      propertyType: String(c['@StandardUseDescription_ext'] || 'Single Family'),
+      source: 'attom'
+    };
+  } catch (error) {
+    console.warn('⚠️ Error parsing V2 comparable:', error);
+    return null;
+  }
+}
+
+function parseLegacyComparable(prop: any, defaults: { city: string; state: string; zipCode: string }): ComparableData | null {
+  try {
+    const addr = prop.address || {};
+    const loc = prop.location || {};
+    const propDetails = prop.property || {};
+    const sale = prop.sale || {};
+
+    const salePrice = sale.saleAmt || sale.saleAmount || 0;
+    if (!salePrice) return null;
+
+    return {
+      address: `${addr.line1 || ''}, ${addr.city || defaults.city}, ${addr.state || defaults.state} ${addr.zip || defaults.zipCode}`,
+      city: addr.city || defaults.city,
+      state: addr.state || defaults.state,
+      zipCode: addr.zip || defaults.zipCode,
+      salePrice: Number(salePrice) || 0,
+      saleDate: sale.saleTransactionDate || sale.saleTransDate || new Date().toISOString().split('T')[0],
+      beds: Number(propDetails.bedrooms || propDetails.beds || 0),
+      baths: Number(propDetails.bathrooms || propDetails.bathsTotal || 0),
+      sqft: Number(propDetails.sqft || propDetails.livingSize || propDetails.universalSize || 0),
+      yearBuilt: propDetails.yearBuilt ? Number(propDetails.yearBuilt) : 0,
+      latitude: loc.latitude ? Number(loc.latitude) : undefined,
+      longitude: loc.longitude ? Number(loc.longitude) : undefined,
+      distance: loc.distance ? Number(loc.distance) : undefined,
+      propertyType: propDetails.propertyType || 'Single Family',
+      source: 'attom'
+    };
+  } catch (error) {
+    console.warn('⚠️ Error parsing legacy comparable:', error);
+    return null;
+  }
+}
+
+// ===== OPTION 1B: Attom Data API V1 (FALLBACK - Property Search) =====
 // Sign up at https://api.developer.attomdata.com/
 // FREE TRIAL endpoints that work: property/address, sale/detail, avm/detail, expandedprofile
 async function fetchFromAttom(address: string, city: string, state: string, radius: number = 1, zipCode?: string): Promise<ComparableData[]> {
@@ -395,23 +585,60 @@ serve(async (req) => {
     // ===== CASCATA DE FONTES (tentativas em ordem de qualidade) =====
     // Demo data is LAST RESORT ONLY
 
-    // 1️⃣ PRIORITY: Try ATTOM Data API (most accurate)
+    // 1️⃣ PRIORITY: Try ATTOM V2 Sales Comparables (most accurate)
     if (ATTOM_API_KEY && comps.length < 3) {
-      console.log('🔄 [1/3] Attempting ATTOM Data API...');
+      console.log('🔄 [1a/4] Attempting ATTOM V2 Sales Comparables API...');
+
+      // Extract ZIP if not provided
+      let extractedZipCode = zipCode;
+      if (!extractedZipCode) {
+        const zipMatch = `${address} ${city} ${state}`.match(/\b\d{5}\b/);
+        extractedZipCode = zipMatch ? zipMatch[0] : '';
+      }
+
+      // Get county (required for V2)
+      const county = getCountyByCity(city || 'Orlando', state || 'FL');
+
+      if (extractedZipCode && county) {
+        const attomV2Comps = await fetchFromAttomV2(
+          address,
+          city || 'Orlando',
+          county,
+          state || 'FL',
+          extractedZipCode
+        );
+
+        if (attomV2Comps && attomV2Comps.length >= 3) {
+          comps = attomV2Comps;
+          source = 'attom-v2';
+          console.log(`✅ Got ${comps.length} comps from ATTOM V2`);
+        } else {
+          console.log(`⚠️ ATTOM V2 returned ${attomV2Comps?.length || 0} comps, trying V1 fallback...`);
+        }
+      } else {
+        console.log(`⚠️ Missing ZIP (${extractedZipCode}) or County (${county}), skipping ATTOM V2`);
+      }
+    }
+
+    // 1️⃣b FALLBACK: Try ATTOM V1 Property Search if V2 failed
+    if (ATTOM_API_KEY && comps.length < 3) {
+      console.log('🔄 [1b/4] Attempting ATTOM V1 Property Search (fallback)...');
       const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, zipCode);
       if (attomComps && attomComps.length >= 3) {
         comps = attomComps;
-        source = 'attom';
-        console.log(`✅ Got ${comps.length} comps from ATTOM`);
+        source = 'attom-v1';
+        console.log(`✅ Got ${comps.length} comps from ATTOM V1`);
       }
-    } else if (!ATTOM_API_KEY) {
+    }
+
+    if (!ATTOM_API_KEY) {
       console.log('⚠️ ATTOM_API_KEY not configured. Register at: https://api.developer.attomdata.com/');
     }
 
     // 2️⃣ FALLBACK: Try Zillow/RapidAPI
     if (!comps || comps.length < 3) {
       if (RAPIDAPI_KEY) {
-        console.log('🔄 [2/3] Attempting Zillow via RapidAPI...');
+        console.log('🔄 [2/4] Attempting Zillow via RapidAPI...');
         const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
         if (zillowApiComps && zillowApiComps.length >= 3) {
           comps = zillowApiComps;
@@ -436,7 +663,7 @@ serve(async (req) => {
 
     // 4️⃣ LAST RESORT ONLY: Demo data
     if (!comps || comps.length < 3) {
-      console.log('🎭 [3/3] Using DEMO DATA (This indicates API configuration issues)');
+      console.log('🎭 [4/4] Using DEMO DATA (This indicates API configuration issues)');
       console.log('💡 To get real data:');
       console.log('   - Sign up for Attom Data: https://api.developer.attomdata.com/ (1000 free/month)');
       console.log('   - Sign up for RapidAPI: https://rapidapi.com/apimaker/api/zillow-com1 (100 free/month)');
