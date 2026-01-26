@@ -9,6 +9,23 @@
  * Endpoint: GET /property/v2/salescomparables/address/{street}/{city}/{county}/{state}/{zip}
  */
 
+interface ComparableData {
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  saleDate: string;
+  salePrice: number;
+  beds: number;
+  baths: number;
+  sqft: number;
+  yearBuilt: number;
+  propertyType: string;
+  source: string;
+  latitude?: number;
+  longitude?: number;
+  distance?: number;
+}
 // ===== ATTOM V2: Sales Comparables API (CORRECTED ROUTE) =====
 // Sign up at https://api.developer.attomdata.com/
 async function fetchFromAttomV2(
