@@ -369,6 +369,19 @@ export const CompsAnalysis = () => {
           }
           // Garante que todos os comps têm distance definido para AVM
           const compsForAVM = compsWithDistance;
+          
+          // Log antes de calcular AVM
+          logger.avm('📊 Calculando AVM', {
+            compsCount: compsForAVM.length,
+            propertyDetails: {
+              id: selectedProperty.id,
+              address: selectedProperty.address,
+              sqft: propertySqft,
+              beds: propertyBeds,
+              baths: propertyBaths
+            }
+          });
+          
           const avm = AVMService.calculateValueFromComps(
             compsForAVM,
             propertySqft,
@@ -379,8 +392,30 @@ export const CompsAnalysis = () => {
           avmMinValue = avm.minValue;
           avmMaxValue = avm.maxValue;
           avmConfidence = avm.confidence;
-          logger.info('✅ [CompsAnalysis] AVM calculado', { avm });
-          await supabase
+          
+          // Log resultado AVM detalhado
+          logger.avm('✅ AVM calculado com sucesso', {
+            estimatedValue: calculatedValue,
+            confidence: avmConfidence,
+            minValue: avmMinValue,
+            maxValue: avmMaxValue,
+            method: avm.method
+          });
+          // Log antes de atualizar propriedade
+          logger.db('💾 Atualizando propriedade com valores AVM', {
+            propertyId: selectedProperty.id,
+            propertyAddress: selectedProperty.address,
+            valuesToUpdate: {
+              estimated_value: calculatedValue,
+              avm_min_value: avmMinValue,
+              avm_max_value: avmMaxValue,
+              valuation_method: 'avm',
+              valuation_confidence: avmConfidence,
+              last_valuation_date: new Date().toISOString()
+            }
+          });
+          
+          const { data: updatedProperty, error: updateError } = await supabase
             .from('properties')
             .update({
               estimated_value: calculatedValue,
@@ -390,7 +425,23 @@ export const CompsAnalysis = () => {
               valuation_confidence: avmConfidence,
               last_valuation_date: new Date().toISOString()
             })
-            .eq('id', selectedProperty.id);
+            .eq('id', selectedProperty.id)
+            .select()
+            .single();
+          
+          if (updateError) {
+            logger.db('❌ Erro ao atualizar propriedade', { error: updateError, propertyId: selectedProperty.id });
+          } else {
+            logger.db('✅ Propriedade atualizada com sucesso', {
+              propertyId: selectedProperty.id,
+              updatedValues: {
+                estimated_value: updatedProperty?.estimated_value,
+                avm_min_value: updatedProperty?.avm_min_value,
+                avm_max_value: updatedProperty?.avm_max_value,
+                valuation_confidence: updatedProperty?.valuation_confidence
+              }
+            });
+          }
           setSelectedProperty(prev => prev ? {
             ...prev,
             estimated_value: calculatedValue
@@ -463,26 +514,57 @@ export const CompsAnalysis = () => {
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
-            await supabase
+            const payloadToSave = {
+              property_id: property.id,
+              analyst_user_id: user.id,
+              analysis_data: {
+                comparables: formattedComps.slice(0, 10),
+                analysis: calculatedAnalysis,
+              } as any,
+              comparables_count: formattedComps.length,
+              suggested_value_min: calculatedAnalysis.suggestedValueMin,
+              suggested_value_max: calculatedAnalysis.suggestedValueMax,
+              search_radius_miles: compsFilters.maxDistance || 3,
+              data_source: compsData[0].source || dataSource,
+              notes: 'Auto-saved on analysis generation',
+            };
+            
+            // Log antes de salvar
+            logger.db('💾 Salvando análise no banco de dados', {
+              propertyId: property.id,
+              propertyAddress: property.address,
+              payload: {
+                comparables_count: payloadToSave.comparables_count,
+                data_source: payloadToSave.data_source,
+                search_radius_miles: payloadToSave.search_radius_miles,
+                suggested_value_min: payloadToSave.suggested_value_min,
+                suggested_value_max: payloadToSave.suggested_value_max
+              }
+            });
+            
+            const { data: savedRecord, error: saveError } = await supabase
               .from('comps_analysis_history')
-              .insert({
-                property_id: property.id,
-                analyst_user_id: user.id,
-                analysis_data: {
-                  comparables: formattedComps.slice(0, 10),
-                  analysis: calculatedAnalysis,
-                } as any,
-                comparables_count: formattedComps.length,
-                suggested_value_min: calculatedAnalysis.suggestedValueMin,
-                suggested_value_max: calculatedAnalysis.suggestedValueMax,
-                search_radius_miles: compsFilters.maxDistance || 3,
-                data_source: compsData[0].source || dataSource,
-                notes: 'Auto-saved on analysis generation',
-              } as any);
-            logger.info('✅ [CompsAnalysis] Auto-salvo no banco de dados', { property: property.address });
+              .insert(payloadToSave as any)
+              .select()
+              .single();
+            
+            if (saveError) {
+              logger.db('❌ Erro ao salvar análise no banco', { error: saveError, propertyId: property.id });
+            } else {
+              logger.db('✅ Análise salva com sucesso', {
+                recordId: savedRecord?.id,
+                propertyId: property.id,
+                propertyAddress: property.address,
+                comparablesCount: savedRecord?.comparables_count,
+                dataSource: savedRecord?.data_source
+              });
+            }
           }
         } catch (saveError) {
-          logger.warn('⚠️ [CompsAnalysis] Falha ao auto-salvar no banco (não crítico)', { saveError });
+          logger.db('❌ Falha ao auto-salvar no banco (não crítico)', { 
+            error: saveError, 
+            propertyId: property.id 
+          });
         }
         toast({
           title: 'Success',

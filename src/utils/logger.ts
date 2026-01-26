@@ -31,14 +31,22 @@ function log(level: LogLevel, prefix: string, message: string, data?: any) {
   }
 }
 
-export const logger = {
+interface Logger {
+  info: (message: string, data?: any) => void;
+  warn: (message: string, data?: any) => void;
+  error: (message: string, data?: any) => void;
+  debug: (message: string, data?: any) => void;
+  avm: (message: string, data?: any) => void;
+  db: (message: string, data?: any) => void;
+  request: (requestId: string, message: string, data?: any) => void;
+}
+
+export const logger: Logger = {
   info: (message: string, data?: any) => log('info', '[COMPS]', message, data),
   warn: (message: string, data?: any) => log('warn', '[COMPS]', message, data),
   error: (message: string, data?: any) => log('error', '[COMPS]', message, data),
   debug: (message: string, data?: any) => log('debug', '[COMPS]', message, data),
+  avm: (message: string, data?: any) => log('info', '[AVM]', message, data),
+  db: (message: string, data?: any) => log('info', '[DB]', message, data),
+  request: (requestId: string, message: string, data?: any) => log('info', `[REQUEST-${requestId}]`, message, data),
 };
-
-// Para logs de AVM, DB, REQUEST, etc:
-logger.avm = (message: string, data?: any) => log('info', '[AVM]', message, data);
-logger.db = (message: string, data?: any) => log('info', '[DB]', message, data);
-logger.request = (requestId: string, message: string, data?: any) => log('info', `[REQUEST-${requestId}]`, message, data);

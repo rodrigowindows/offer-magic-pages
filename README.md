@@ -1,3 +1,4 @@
+
 # Welcome to your Lovable project
 
 ## Project info
@@ -36,7 +37,20 @@ npm i
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+
+---
+
+## 📚 Documentação Consolidada
+
+Veja a documentação completa e organizada em [docs/README.md](docs/README.md).
+
+Principais seções:
+- Guia rápido de uso
+- Features consolidadas (ATTOM/AVM, COMPS, AB Testing, etc.)
+- Deploy, Testes, Troubleshooting
+- Arquivo de índice e guia de organização
+
+Consulte também o [docs/ORGANIZATION_GUIDE.md](docs/ORGANIZATION_GUIDE.md) para entender a estrutura e como contribuir.
 
 - Navigate to the desired file(s).
 - Click the "Edit" button (pencil icon) at the top right of the file view.

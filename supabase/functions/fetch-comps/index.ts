@@ -635,24 +635,44 @@ serve(async (req) => {
     let noResultsFound = false;
 
     if (comps && comps.length > 0) {
+      const compsBeforeFilters = comps.length;
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Processando comps: ${compsBeforeFilters} comps antes de filtros`);
+      
       const filteredComps = addDistanceAndFilterByRadius(comps, latitude, longitude, radius);
+      const compsAfterDistanceFilter = filteredComps.length;
       if (filteredComps.length > 0) {
         comps = filteredComps;
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Após filtro de distância: ${compsAfterDistanceFilter} comps (removidos: ${compsBeforeFilters - compsAfterDistanceFilter})`);
       }
 
       const uniqueComps = Array.from(
         new Map(comps.map(c => [`${c.address}-${c.salePrice}`, c])).values()
       );
+      const compsAfterDeduplication = uniqueComps.length;
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Após deduplicação: ${compsAfterDeduplication} comps (removidos: ${comps.length - compsAfterDeduplication})`);
 
       sortedComps = uniqueComps
         .filter(c => c.salePrice > 10000)
         .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
         .slice(0, 10);
+      
+      const compsAfterPriceFilter = sortedComps.length;
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Após filtro de preço e ordenação: ${compsAfterPriceFilter} comps finais`);
 
-      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Final comps: ${sortedComps.length} from ${source}`);
+      // Log resumido dos primeiros 3 comps processados
       if (sortedComps.length > 0) {
+        const compsSummary = sortedComps.slice(0, 3).map((c, i) => ({
+          index: i + 1,
+          address: c.address,
+          price: c.salePrice,
+          distance: c.distance,
+          sqft: c.sqft
+        }));
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📋 Primeiros comps processados:`, compsSummary);
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
       }
+      
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Resumo processamento: ${compsBeforeFilters} → ${compsAfterDistanceFilter} → ${compsAfterDeduplication} → ${compsAfterPriceFilter} comps finais`);
     } else {
       noResultsFound = true;
       addressNotFound = true;
