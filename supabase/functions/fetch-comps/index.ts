@@ -217,7 +217,7 @@ function parseAttomV2Comparable(entry: any, defaults: { city: string; state: str
       yearBuilt: structure.STRUCTURE_ANALYSIS?.['@PropertyStructureBuiltYear'] ? Number(structure.STRUCTURE_ANALYSIS['@PropertyStructureBuiltYear']) : 0,
       latitude: c['@LatitudeNumber'] ? Number(c['@LatitudeNumber']) : undefined,
       longitude: c['@LongitudeNumber'] ? Number(c['@LongitudeNumber']) : undefined,
-      distance: c['@DistanceFromSubjectPropertyMilesCount'] ? Number(c['@DistanceFromSubjectPropertyMilesCount']) : undefined,
+      distance: c['@DistanceFromSubjectPropertyMilesCount'] ? Number(c['@DistanceFromSubjectPropertyMilesCount']) : 0,
       propertyType: String(c['@StandardUseDescription_ext'] || 'Single Family'),
       source: 'attom'
     };
@@ -250,7 +250,7 @@ function parseLegacyComparable(prop: any, defaults: { city: string; state: strin
       yearBuilt: propDetails.yearBuilt ? Number(propDetails.yearBuilt) : 0,
       latitude: loc.latitude ? Number(loc.latitude) : undefined,
       longitude: loc.longitude ? Number(loc.longitude) : undefined,
-      distance: loc.distance ? Number(loc.distance) : undefined,
+      distance: loc.distance ? Number(loc.distance) : 0,
       propertyType: propDetails.propertyType || 'Single Family',
       source: 'attom'
     };
@@ -435,7 +435,8 @@ async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<
             propertyType: row.property_type || 'Single Family',
             source: 'county-csv',
             latitude: Number.isFinite(latitude) ? latitude : undefined,
-            longitude: Number.isFinite(longitude) ? longitude : undefined
+            longitude: Number.isFinite(longitude) ? longitude : undefined,
+            distance: 0
           });
         }
       }

@@ -398,8 +398,7 @@ export const CompsAnalysis = () => {
             estimatedValue: calculatedValue,
             confidence: avmConfidence,
             minValue: avmMinValue,
-            maxValue: avmMaxValue,
-            method: avm.method
+            maxValue: avmMaxValue
           });
           // Log antes de atualizar propriedade
           logger.db('💾 Atualizando propriedade com valores AVM', {
@@ -418,12 +417,7 @@ export const CompsAnalysis = () => {
           const { data: updatedProperty, error: updateError } = await supabase
             .from('properties')
             .update({
-              estimated_value: calculatedValue,
-              avm_min_value: avmMinValue,
-              avm_max_value: avmMaxValue,
-              valuation_method: 'avm',
-              valuation_confidence: avmConfidence,
-              last_valuation_date: new Date().toISOString()
+              estimated_value: calculatedValue
             })
             .eq('id', selectedProperty.id)
             .select()
@@ -435,10 +429,7 @@ export const CompsAnalysis = () => {
             logger.db('✅ Propriedade atualizada com sucesso', {
               propertyId: selectedProperty.id,
               updatedValues: {
-                estimated_value: updatedProperty?.estimated_value,
-                avm_min_value: updatedProperty?.avm_min_value,
-                avm_max_value: updatedProperty?.avm_max_value,
-                valuation_confidence: updatedProperty?.valuation_confidence
+                estimated_value: updatedProperty?.estimated_value
               }
             });
           }
