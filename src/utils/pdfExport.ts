@@ -181,7 +181,7 @@ const addFooter = (doc: jsPDF, pageNumber: number) => {
 /**
  * Normaliza endereço removendo informações duplicadas
  */
-function normalizeAddress(address: string): {
+function normalizeAddress(address: string, city?: string): {
   street: string;
   zipCode?: string;
 } {
@@ -201,6 +201,29 @@ function normalizeAddress(address: string): {
   const zipCode = zipMatch ? zipMatch[1] : undefined;
   if (zipCode) {
     cleaned = cleaned.replace(/\b\d{5}\b\s*$/, '').trim();
+  }
+  
+  // Remove nomes de cidades conhecidas do final do endereço
+  const knownCities = [
+    'ORLANDO', 'EATONVILLE', 'APOPKA', 'BELLE ISLE', 'WINTER GARDEN',
+    'WINTER PARK', 'OVIEDO', 'WINDERMERE', 'DR. PHILLIPS', 'CLARCONA',
+    'OCOEE', 'WINTER SPRINGS', 'MAITLAND', 'LAKE MARY', 'KISSIMMEE',
+    'SANFORD', 'ALTAMONTE SPRINGS', 'LONGWOOD', 'CASSELBERRY'
+  ];
+  
+  // Remove cidade se estiver no final do endereço
+  for (const cityName of knownCities) {
+    const cityRegex = new RegExp(`\\b${cityName.replace(/\s+/g, '\\s+')}\\s*$`, 'i');
+    if (cityRegex.test(cleaned)) {
+      cleaned = cleaned.replace(cityRegex, '').trim();
+      break; // Remove apenas a primeira cidade encontrada
+    }
+  }
+  
+  // Se a cidade do campo property.city estiver no endereço, removê-la também
+  if (city) {
+    const cityRegex = new RegExp(`\\b${city.replace(/\s+/g, '\\s+')}\\s*$`, 'i');
+    cleaned = cleaned.replace(cityRegex, '').trim();
   }
   
   return {
@@ -238,7 +261,7 @@ function formatAddressForDisplay(address: string): string {
  * Valida e corrige dados da propriedade
  */
 function validatePropertyData(property: PropertyData): PropertyData {
-  const normalized = normalizeAddress(property.address);
+  const normalized = normalizeAddress(property.address, property.city);
   
   return {
     ...property,
@@ -761,14 +784,14 @@ export const exportConsolidatedCompsPDF = async (
           fontSize: 7,
         },
         columnStyles: {
-          0: { cellWidth: 7 },
-          1: { cellWidth: 48 },
-          2: { cellWidth: 19 },
-          3: { cellWidth: 17 },
-          4: { cellWidth: 15 },
-          5: { cellWidth: 15 },
-          6: { cellWidth: 13 },
-          7: { cellWidth: 11 },
+          0: { cellWidth: 6 },   // # (reduzido de 7)
+          1: { cellWidth: 46 },  // Address (reduzido de 48)
+          2: { cellWidth: 18 },  // Date (reduzido de 19)
+          3: { cellWidth: 16 },  // Price (reduzido de 17)
+          4: { cellWidth: 14 },  // Sqft (reduzido de 15)
+          5: { cellWidth: 14 },  // $/Sqft (reduzido de 15)
+          6: { cellWidth: 12 },  // Bd/Ba (reduzido de 13)
+          7: { cellWidth: 10 },  // Dist (reduzido de 11)
         },
         margin: { left: 20, right: 20 },
         tableWidth: 170,
