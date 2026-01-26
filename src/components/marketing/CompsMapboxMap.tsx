@@ -25,6 +25,8 @@ interface CompsMapboxMapProps {
     city: string;
     state: string;
     zip_code: string;
+    latitude?: number | null;
+    longitude?: number | null;
   };
   comparables: ComparableProperty[];
   onCompClick?: (comp: ComparableProperty) => void;
