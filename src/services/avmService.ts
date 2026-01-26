@@ -48,28 +48,35 @@ export class AVMService {
       throw new Error('No valid comparables for calculation');
     }
 
+    // Calcular preço médio por sqft para ajustes dinâmicos
+    const avgPricePerSqft = validComps.reduce((sum, c) => sum + (c.salePrice / c.sqft), 0) / validComps.length;
+
     // Calcular ajustes por características
     const adjustedPrices = validComps.map(comp => {
       let price = comp.salePrice;
       let adjustments = 0;
 
-      // Ajuste por sqft (média $30/sqft no mercado)
+      // Ajuste por sqft dinâmico baseado na média dos comps
       if (comp.sqft !== subjectSqft) {
-        const sqftAdjustment = (subjectSqft - comp.sqft) * 30;
+        const sqftAdjustment = (subjectSqft - comp.sqft) * (avgPricePerSqft * 0.8); // 80% do valor médio
         price += sqftAdjustment;
         adjustments += sqftAdjustment;
       }
 
-      // Ajuste por bedrooms ($5k per bed)
+      // Ajuste por bedrooms (dinâmico)
       if (comp.beds !== subjectBeds) {
-        const bedAdjustment = (subjectBeds - comp.beds) * 5000;
+        // $5K por bed ou 2% do preço médio, o que for maior
+        const bedValuePerUnit = Math.max(5000, avgPricePerSqft * 100 * 0.02);
+        const bedAdjustment = (subjectBeds - comp.beds) * bedValuePerUnit;
         price += bedAdjustment;
         adjustments += bedAdjustment;
       }
 
-      // Ajuste por baths ($3k per bath)
+      // Ajuste por baths (dinâmico)
       if (comp.baths !== subjectBaths) {
-        const bathAdjustment = (subjectBaths - comp.baths) * 3000;
+        // $3K por bath ou 1.5% do preço médio, o que for maior
+        const bathValuePerUnit = Math.max(3000, avgPricePerSqft * 100 * 0.015);
+        const bathAdjustment = (subjectBaths - comp.baths) * bathValuePerUnit;
         price += bathAdjustment;
         adjustments += bathAdjustment;
       }
@@ -87,7 +94,7 @@ export class AVMService {
       const daysAgo = Math.floor(
         (Date.now() - new Date(comp.saleDate).getTime()) / (1000 * 60 * 60 * 24)
       );
-      const recencyWeight = Math.max(0.5, 1 - (daysAgo / 180)); // Decai em 6 meses
+      const recencyWeight = Math.max(0.3, 1 - (daysAgo / 365)); // Decai em 12 meses
       const distanceWeight = 1 / (1 + comp.distance / 2); // Closer = mais peso
       return recencyWeight * distanceWeight;
     });
@@ -119,12 +126,29 @@ export class AVMService {
       estimatedValue
     );
 
-    const minValue = Math.round(estimatedValue - stdDev * 0.67); // -1σ (68% confidence)
-    const maxValue = Math.round(estimatedValue + stdDev * 0.67); // +1σ
+    const minValue = Math.round(estimatedValue - stdDev * 1.5); // -1.5σ (~87% confidence)
+    const maxValue = Math.round(estimatedValue + stdDev * 1.5); // +1.5σ
 
-    // Confidence score (0-100%)
-    // 60% base + 8% per comp up to 100%
-    const confidence = Math.min(100, 60 + (validComps.length * 8));
+    // Métricas de qualidade para confidence score
+    const avgDistance = validComps.reduce((sum, c) => sum + (c.distance || 0), 0) / validComps.length;
+    const avgDaysAgo = validComps.reduce((sum, c) => {
+      const daysAgo = Math.floor((Date.now() - new Date(c.saleDate).getTime()) / (1000 * 60 * 60 * 24));
+      return sum + daysAgo;
+    }, 0) / validComps.length;
+    const sourceBonus = validComps.every(c => c.source === 'attom-v2' || c.source === 'attom') ? 5 : 0;
+
+    // Usar validação existente
+    const validation = this.validateComps(validComps);
+    const qualityBonus = validation.quality === 'excellent' ? 10 : 
+                         validation.quality === 'good' ? 5 : 
+                         validation.quality === 'fair' ? 0 : -5;
+
+    const baseConfidence = 50;
+    const compBonus = validComps.length * 5; // 5% por comp (max 25% com 5 comps)
+    const distancePenalty = avgDistance > 2 ? -10 : avgDistance > 1 ? -5 : 0;
+    const recencyBonus = avgDaysAgo < 90 ? 10 : avgDaysAgo < 180 ? 5 : 0;
+
+    const confidence = Math.min(95, baseConfidence + compBonus + qualityBonus + recencyBonus + sourceBonus + distancePenalty);
 
     const breakdown = {
       estimatedValue,
@@ -142,6 +166,13 @@ export class AVMService {
         sqft: subjectSqft,
         beds: subjectBeds,
         baths: subjectBaths
+      },
+      // NOVO: Métricas de qualidade
+      quality: {
+        avgDistance: Math.round(avgDistance * 10) / 10,
+        avgDaysAgo: Math.round(avgDaysAgo),
+        sources: [...new Set(validComps.map(c => c.source))],
+        validation: validation.quality
       }
     };
 
@@ -168,6 +199,48 @@ export class AVMService {
       0
     ) / values.length;
     return Math.sqrt(variance);
+  }
+
+  /**
+   * Estimar sqft/beds/baths do subject baseado nos comps
+   * Usa mediana para evitar outliers
+   */
+  static estimateSubjectProperties(comps: ComparableData[]): {
+    sqft: number;
+    beds: number;
+    baths: number;
+  } {
+    if (!comps || comps.length === 0) {
+      console.warn('⚠️ No comps available for estimation, using market averages');
+      return { sqft: 1500, beds: 3, baths: 2 };
+    }
+
+    const validComps = comps.filter(c => c.sqft > 0 && c.beds > 0 && c.baths > 0);
+
+    if (validComps.length === 0) {
+      console.warn('⚠️ No valid comps for estimation, using market averages');
+      return { sqft: 1500, beds: 3, baths: 2 };
+    }
+
+    const sqfts = validComps.map(c => c.sqft).sort((a, b) => a - b);
+    const beds = validComps.map(c => c.beds).sort((a, b) => a - b);
+    const baths = validComps.map(c => c.baths).sort((a, b) => a - b);
+
+    const estimatedSqft = Math.round(this.getMedian(sqfts));
+    const estimatedBeds = Math.round(this.getMedian(beds));
+    const estimatedBaths = Math.round(this.getMedian(baths) * 2) / 2; // Round to nearest 0.5
+
+    console.log(`📊 Estimated subject properties from ${validComps.length} comps:`, {
+      sqft: estimatedSqft,
+      beds: estimatedBeds,
+      baths: estimatedBaths
+    });
+
+    return {
+      sqft: estimatedSqft,
+      beds: estimatedBeds,
+      baths: estimatedBaths
+    };
   }
 
   /**

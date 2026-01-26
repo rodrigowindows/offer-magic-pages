@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { CITY_TO_COUNTY_MAP, getCountyByCity, suggestCounty } from './cityCountyMap.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -6,7 +7,9 @@ const corsHeaders = {
 };
 
 // API Keys from environment (all have free tiers!)
-const ATTOM_API_KEY = Deno.env.get('ATTOM_API_KEY') || ''; // 1000 free requests/month
+// ⚠️ HARDCODED FALLBACK: Usar apenas se secret não estiver configurado no Supabase
+// TODO: Remover hardcoded após configurar secret no Supabase
+const ATTOM_API_KEY = Deno.env.get('ATTOM_API_KEY') || 'ab8b3f3032756d9c17529dc80e07049b'; // 1000 free requests/month
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY') || ''; // 100 free requests/month
 
 interface ComparableData {
@@ -128,39 +131,7 @@ function generateDemoComps(basePrice: number, city: string, count: number = 6, c
 }
 
 // ===== City to County Map (required for ATTOM V2) =====
-const CITY_TO_COUNTY_MAP: Record<string, Record<string, string>> = {
-  FL: {
-    'Orlando': 'Orange',
-    'Winter Park': 'Orange',
-    'Ocoee': 'Orange',
-    'Apopka': 'Orange',
-    'Kissimmee': 'Osceola',
-    'Tampa': 'Hillsborough',
-    'Jacksonville': 'Duval',
-    'Miami': 'Miami-Dade',
-    'Fort Lauderdale': 'Broward',
-    // Add more as needed
-  }
-};
-
-function getCountyByCity(city: string, state: string = 'FL'): string | null {
-  const stateMap = CITY_TO_COUNTY_MAP[state];
-  if (!stateMap) return null;
-
-  const lowerCity = city.toLowerCase();
-  for (const [mapCity, county] of Object.entries(stateMap)) {
-    if (mapCity.toLowerCase() === lowerCity) {
-      return county;
-    }
-  }
-
-  // Fallback for Orlando area
-  if (state === 'FL' && lowerCity.includes('orlando')) {
-    return 'Orange';
-  }
-
-  return null;
-}
+// ...existing code...
 
 // ===== OPTION 1A: Attom Data API V2 (PREFERRED - Sales Comparables) =====
 // V2 endpoint that works with Free Trial: /property/v2/salescomparables/address
@@ -230,21 +201,39 @@ async function fetchFromAttomV2(
 function extractAttomV2Comparables(data: any, defaults: { city: string; state: string; zipCode: string }): ComparableData[] {
   const results: ComparableData[] = [];
 
+  // Log estrutura recebida para debugging
+  console.log('📦 ATTOM V2 Response Structure:', JSON.stringify(Object.keys(data || {})));
+
   // V2 format (RESPONSE_GROUP)
   const v2Props = data?.RESPONSE_GROUP?.RESPONSE?.RESPONSE_DATA?.PROPERTY_INFORMATION_RESPONSE_ext?.SUBJECT_PROPERTY_ext?.PROPERTY;
+
   if (Array.isArray(v2Props)) {
+    console.log(`✅ Found V2 format with ${v2Props.length} properties`);
     const parsedV2 = v2Props
       .map((entry: any) => parseAttomV2Comparable(entry, defaults))
       .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
     results.push(...parsedV2);
+  } else if (v2Props) {
+    console.log('⚠️ V2 format found but not an array:', typeof v2Props);
+  } else {
+    console.log('⚠️ V2 format (RESPONSE_GROUP) not found in response');
   }
 
   // Fallback for legacy format (data.property)
   if (Array.isArray(data?.property)) {
+    console.log(`✅ Found legacy format with ${data.property.length} properties`);
     const parsedLegacy = data.property
       .map((prop: any) => parseLegacyComparable(prop, defaults))
       .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
     results.push(...parsedLegacy);
+  } else if (data?.property) {
+    console.log('⚠️ Legacy format found but not an array:', typeof data.property);
+  }
+
+  if (results.length === 0) {
+    console.error('❌ No comparables extracted from ATTOM V2 response');
+    console.log('📋 Full response structure:', JSON.stringify(data, null, 2).substring(0, 1000));
+  }
   }
 
   return results;
@@ -597,7 +586,8 @@ serve(async (req) => {
       }
 
       // Get county (required for V2)
-      const county = getCountyByCity(city || 'Orlando', state || 'FL');
+      // Adiciona fallback usando suggestCounty se getCountyByCity retornar null
+      const county = getCountyByCity(city || 'Orlando', state || 'FL') || suggestCounty(city || 'Orlando', state || 'FL');
 
       if (extractedZipCode && county) {
         const attomV2Comps = await fetchFromAttomV2(
@@ -608,10 +598,26 @@ serve(async (req) => {
           extractedZipCode
         );
 
-        if (attomV2Comps && attomV2Comps.length >= 3) {
+        if (attomV2Comps && attomV2Comps.length > 0) {
           comps = attomV2Comps;
           source = 'attom-v2';
-          console.log(`✅ Got ${comps.length} comps from ATTOM V2`);
+          if (comps.length < 3) {
+            console.log(`⚠️ ATTOM V2 returned ${comps.length} comps, combining with V1 fallback...`);
+            const attomV1Comps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, zipCode);
+            // Função simples para deduplicar comps por endereço
+            const deduplicateComps = (arr: ComparableData[]) => {
+              const seen = new Set();
+              return arr.filter(c => {
+                const key = `${c.address}|${c.saleDate}|${c.salePrice}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+            };
+            comps = deduplicateComps([...comps, ...(attomV1Comps || [])]);
+          } else {
+            console.log(`✅ Got ${comps.length} comps from ATTOM V2`);
+          }
         } else {
           console.log(`⚠️ ATTOM V2 returned ${attomV2Comps?.length || 0} comps, trying V1 fallback...`);
         }

@@ -4,7 +4,9 @@
       "Bash(supabase functions:*)",
       "Bash(git commit:*)",
       "Bash(node:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx supabase:*)",
+      "WebFetch(domain:api.developer.attomdata.com)"
     ],
     "deny": [],
     "ask": []

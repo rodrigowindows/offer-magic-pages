@@ -342,11 +342,37 @@ export const CompsAnalysis = () => {
         let avmConfidence = null;
 
         try {
+          // Buscar dados do banco antes de estimar dos comps
+          let propertySqft = selectedProperty?.sqft;
+          let propertyBeds = selectedProperty?.beds;
+          let propertyBaths = selectedProperty?.baths;
+
+          if (!propertySqft || !propertyBeds || !propertyBaths) {
+            const { data: propertyDetails } = await supabase
+              .from('properties')
+              .select('sqft, beds, baths')
+              .eq('id', selectedProperty.id)
+              .single();
+
+            propertySqft = propertySqft || propertyDetails?.sqft;
+            propertyBeds = propertyBeds || propertyDetails?.beds;
+            propertyBaths = propertyBaths || propertyDetails?.baths;
+
+            // Se ainda faltam valores, estimar dos comps
+            if (!propertySqft || !propertyBeds || !propertyBaths) {
+              const estimated = AVMService.estimateSubjectProperties(compsData);
+              propertySqft = propertySqft || estimated.sqft;
+              propertyBeds = propertyBeds || estimated.beds;
+              propertyBaths = propertyBaths || estimated.baths;
+              console.log('📊 Using estimated values from comps:', { propertySqft, propertyBeds, propertyBaths });
+            }
+          }
+
           const avm = AVMService.calculateValueFromComps(
             compsData,
-            selectedProperty?.sqft || 1500,
-            selectedProperty?.beds || 3,
-            selectedProperty?.baths || 2
+            propertySqft,
+            propertyBeds,
+            propertyBaths
           );
 
           calculatedValue = avm.estimatedValue;
