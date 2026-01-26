@@ -801,65 +801,77 @@ export const CompsAnalysis = () => {
 
         // 4️⃣ Fetch from API (last resort)
         console.log('🔄 Fetching NEW data from API for export:', property.address);
-        const compsData = await CompsDataService.getComparables(
-          property.address || '',
-          property.city || 'Orlando',
-          property.state || 'FL',
-          compsFilters.maxDistance || 3,
-          10,
-          property.estimated_value || 250000,
-          true, // useCache
-          property.latitude,
-          property.longitude
-        );
+        try {
+          const compsData = await CompsDataService.getComparables(
+            property.address || '',
+            property.city || 'Orlando',
+            property.state || 'FL',
+            compsFilters.maxDistance || 3,
+            10,
+            property.estimated_value || 250000,
+            true, // useCache
+            property.latitude,
+            property.longitude
+          );
 
-        // Convert and calculate analysis with validation
-        const formattedComps = compsData
-          .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0) // Filter invalid data
-          .map((comp: any, index: number) => ({
-            id: `comp-${index}`,
-            address: comp.address || 'Unknown',
-            city: comp.city || property.city,
-            state: comp.state || property.state,
-            zipCode: comp.zipCode || '',
-            salePrice: Number(comp.salePrice) || 0,
-            saleDate: comp.saleDate || new Date().toISOString(),
-            beds: Number(comp.beds) || 0,
-            baths: Number(comp.baths) || 0,
-            sqft: Number(comp.sqft) || 1,
-            distance: Number(comp.distance) || 0,
-            distanceMiles: Number(comp.distance) || 0, // PDF export compatibility
-            pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-            latitude: comp.latitude,
-            longitude: comp.longitude,
-            // Legacy fields for PDF export
-            sale_price: Number(comp.salePrice) || 0,
-            sale_date: comp.saleDate || new Date().toISOString(),
-            square_feet: Number(comp.sqft) || 1,
-            bedrooms: Number(comp.beds) || 0,
-            bathrooms: Number(comp.baths) || 0,
-            price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-          }));
+          // Convert and calculate analysis with validation
+          const formattedComps = compsData
+            .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0) // Filter invalid data
+            .map((comp: any, index: number) => ({
+              id: `comp-${index}`,
+              address: comp.address || 'Unknown',
+              city: comp.city || property.city,
+              state: comp.state || property.state,
+              zipCode: comp.zipCode || '',
+              salePrice: Number(comp.salePrice) || 0,
+              saleDate: comp.saleDate || new Date().toISOString(),
+              beds: Number(comp.beds) || 0,
+              baths: Number(comp.baths) || 0,
+              sqft: Number(comp.sqft) || 1,
+              distance: Number(comp.distance) || 0,
+              distanceMiles: Number(comp.distance) || 0, // PDF export compatibility
+              pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+              latitude: comp.latitude,
+              longitude: comp.longitude,
+              // Legacy fields for PDF export
+              sale_price: Number(comp.salePrice) || 0,
+              sale_date: comp.saleDate || new Date().toISOString(),
+              square_feet: Number(comp.sqft) || 1,
+              bedrooms: Number(comp.beds) || 0,
+              bathrooms: Number(comp.baths) || 0,
+              price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+            }));
 
-        if (formattedComps.length === 0) {
-          throw new Error('No valid comparables found for this property');
-        }
+          if (formattedComps.length === 0) {
+            console.warn(`⚠️ No valid comparables found for property: ${property.address}`);
+            throw new Error('No valid comparables found for this property');
+          }
 
         const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + (c.salePrice || 0), 0) / formattedComps.length || 0;
         const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || 0), 0) / formattedComps.length || 0;
 
-        const calculatedAnalysis = {
-          avgSalePrice: avgSalePrice || 0,
-          medianSalePrice: avgSalePrice || 0,
-          avgPricePerSqft: avgPricePerSqft || 0,
-          suggestedValueMin: (avgSalePrice || 0) * 0.95,
-          suggestedValueMax: (avgSalePrice || 0) * 1.05,
-          trendPercentage: 0,
-          marketTrend: 'stable' as const,
-          comparablesCount: formattedComps.length,
-        };
+          const calculatedAnalysis = {
+            avgSalePrice: avgSalePrice || 0,
+            medianSalePrice: avgSalePrice || 0,
+            avgPricePerSqft: avgPricePerSqft || 0,
+            suggestedValueMin: (avgSalePrice || 0) * 0.95,
+            suggestedValueMax: (avgSalePrice || 0) * 1.05,
+            trendPercentage: 0,
+            marketTrend: 'stable' as const,
+            comparablesCount: formattedComps.length,
+          };
 
-        return { comparables: formattedComps, analysis: calculatedAnalysis };
+          return { comparables: formattedComps, analysis: calculatedAnalysis };
+        } catch (error) {
+          // Log error with more context - let PDF export handle it gracefully
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('No valid comparables found')) {
+            console.warn(`⚠️ Skipping property ${property.address}: ${errorMessage}`);
+          } else {
+            console.error(`❌ Error processing property ${property.address}:`, error);
+          }
+          throw error; // Re-throw so PDF export can show error message
+        }
       };
 
       await exportConsolidatedCompsPDF(

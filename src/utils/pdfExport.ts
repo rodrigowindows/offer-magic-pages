@@ -179,6 +179,76 @@ const addFooter = (doc: jsPDF, pageNumber: number) => {
 };
 
 /**
+ * Normaliza endereço removendo informações duplicadas
+ */
+function normalizeAddress(address: string): {
+  street: string;
+  zipCode?: string;
+} {
+  if (!address) return { street: '' };
+  
+  let cleaned = address.trim();
+  
+  // Remove palavras comuns que não fazem parte do endereço
+  cleaned = cleaned
+    .replace(/\bUNINCORPORATED\b/gi, '')
+    .replace(/\bINCORPORATED\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Extrai ZIP code (5 dígitos no final)
+  const zipMatch = cleaned.match(/\b(\d{5})\b\s*$/);
+  const zipCode = zipMatch ? zipMatch[1] : undefined;
+  if (zipCode) {
+    cleaned = cleaned.replace(/\b\d{5}\b\s*$/, '').trim();
+  }
+  
+  return {
+    street: cleaned,
+    zipCode,
+  };
+}
+
+/**
+ * Formata endereço para exibição consistente
+ */
+function formatAddressForDisplay(address: string): string {
+  if (!address) return '';
+  
+  const streetAbbreviations = ['ST', 'AVE', 'RD', 'DR', 'LN', 'CT', 'BLVD', 'WAY', 'CIR', 'PL'];
+  
+  return address
+    .split(' ')
+    .map(word => {
+      const upperWord = word.toUpperCase();
+      if (streetAbbreviations.includes(upperWord)) {
+        return upperWord;
+      }
+      // Direções
+      if (['N', 'S', 'E', 'W', 'NE', 'NW', 'SE', 'SW'].includes(upperWord)) {
+        return upperWord;
+      }
+      // Capitaliza primeira letra
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
+
+/**
+ * Valida e corrige dados da propriedade
+ */
+function validatePropertyData(property: PropertyData): PropertyData {
+  const normalized = normalizeAddress(property.address);
+  
+  return {
+    ...property,
+    address: formatAddressForDisplay(normalized.street),
+    zip_code: normalized.zipCode || property.zip_code || '',
+    city: property.city || 'Orlando',
+  };
+}
+
+/**
  * Export CMA Report to PDF with images
  */
 export const exportCompsToPDF = async (
@@ -317,17 +387,32 @@ export const exportCompsToPDF = async (
       headStyles: {
         fillColor: [37, 99, 235],
         textColor: [255, 255, 255],
-        fontSize: 8,
+        fontSize: 6,
         fontStyle: 'bold',
       },
       bodyStyles: {
-        fontSize: 7,
+        fontSize: 6,
         textColor: [71, 85, 105],
       },
       alternateRowStyles: {
         fillColor: [249, 250, 251],
       },
       margin: { left: 20, right: 20 },
+      tableWidth: 170,
+      styles: { overflow: 'linebreak', cellPadding: 1 },
+      columnStyles: {
+        0: { cellWidth: 6 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 16 },
+        3: { cellWidth: 16 },
+        4: { cellWidth: 13 },
+        5: { cellWidth: 13 },
+        6: { cellWidth: 11 },
+        7: { cellWidth: 11 },
+        8: { cellWidth: 10 },
+        9: { cellWidth: 12 },
+        10: { cellWidth: 15 },
+      },
     });
 
     // Get final Y position after table
@@ -510,7 +595,7 @@ export const exportConsolidatedCompsPDF = async (
 
   // Process each property
   for (let i = 0; i < properties.length; i++) {
-    const property = properties[i];
+    const property = validatePropertyData(properties[i]);
 
     // Progress callback
     if (onProgress) {
@@ -536,12 +621,21 @@ export const exportConsolidatedCompsPDF = async (
     doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
     doc.setFont(undefined, 'bold');
-    doc.text(property.address, 25, currentY + 8);
+    
+    // Quebra endereço longo em múltiplas linhas se necessário
+    const addressLines = doc.splitTextToSize(property.address, 120);
+    addressLines.forEach((line: string, idx: number) => {
+      doc.text(line, 25, currentY + 8 + (idx * 6));
+    });
 
     doc.setFont(undefined, 'normal');
     doc.setFontSize(10);
     doc.setTextColor(100, 116, 139);
-    doc.text(`${property.city}, ${property.state} ${property.zip_code}`, 25, currentY + 15);
+    const addressLineOffset = (addressLines.length - 1) * 6;
+    doc.text(`${property.city}, ${property.state} ${property.zip_code}`, 25, currentY + 15 + addressLineOffset);
+    
+    // Ajustar currentY baseado no número de linhas do endereço
+    currentY += addressLineOffset;
 
     // Property details
     doc.setFontSize(9);
@@ -661,21 +755,24 @@ export const exportConsolidatedCompsPDF = async (
         headStyles: {
           fillColor: [37, 99, 235],
           textColor: [255, 255, 255],
-          fontSize: 8,
+          fontSize: 7,
         },
         bodyStyles: {
-          fontSize: 8,
+          fontSize: 7,
         },
         columnStyles: {
-          0: { cellWidth: 10 },
-          1: { cellWidth: 55 },
-          2: { cellWidth: 22 },
-          3: { cellWidth: 20 },
-          4: { cellWidth: 18 },
-          5: { cellWidth: 18 },
-          6: { cellWidth: 15 },
-          7: { cellWidth: 15 },
+          0: { cellWidth: 7 },
+          1: { cellWidth: 48 },
+          2: { cellWidth: 19 },
+          3: { cellWidth: 17 },
+          4: { cellWidth: 15 },
+          5: { cellWidth: 15 },
+          6: { cellWidth: 13 },
+          7: { cellWidth: 11 },
         },
+        margin: { left: 20, right: 20 },
+        tableWidth: 170,
+        styles: { overflow: 'linebreak', cellPadding: 1 },
       });
 
       // Add mini map if possible (small version for consolidated PDF)
@@ -699,22 +796,31 @@ export const exportConsolidatedCompsPDF = async (
       }
 
     } catch (error) {
-      console.error(`Error processing property ${property.address}:`, error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       
-      // Show error message in PDF
+      // Only log unexpected errors (not "No valid comparables found" which is expected)
+      if (!errorMessage.includes('No valid comparables found')) {
+        console.error(`Error processing property ${property.address}:`, error);
+      }
+      
+      // Show error message in PDF with more details
       doc.setFillColor(254, 242, 242);
-      doc.rect(20, currentY, 170, 40, 'F');
+      doc.rect(20, currentY, 170, 50, 'F');
       
       doc.setFontSize(11);
       doc.setTextColor(220, 38, 38);
-      doc.text('⚠ Unable to load comparables', 25, currentY + 12);
+      doc.text('⚠ Unable to Load Comparables', 25, currentY + 12);
       
       doc.setFontSize(9);
       doc.setTextColor(127, 29, 29);
-      doc.text('No comparable properties found for this address.', 25, currentY + 22);
-      doc.text('This property will be skipped in the analysis.', 25, currentY + 30);
+      doc.text(`Address: ${property.address}`, 25, currentY + 22);
+      doc.text('No comparable properties found for this address.', 25, currentY + 30);
+      doc.text('This may indicate:', 25, currentY + 38);
+      doc.setFontSize(8);
+      doc.text('• Address not found in property database', 30, currentY + 45);
+      doc.text('• No recent sales in the specified radius', 30, currentY + 52);
       
-      currentY += 45;
+      currentY += 58;
     }
 
     addFooter(doc, pageNumber++);
