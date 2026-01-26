@@ -120,26 +120,49 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
   useEffect(() => {
     if (!mapContainer.current || !mapboxToken || showTokenInput) return;
 
+    // Validate token before using it
+    if (!mapboxToken || mapboxToken.trim().length < 10) {
+      console.warn('⚠️ Invalid Mapbox token, skipping map initialization');
+      setShowTokenInput(true);
+      return;
+    }
+
     // Clean up existing map
     if (map.current) {
       map.current.remove();
       map.current = null;
     }
 
-    mapboxgl.accessToken = mapboxToken;
+    try {
+      mapboxgl.accessToken = mapboxToken;
+    } catch (error) {
+      console.error('❌ Error setting Mapbox token:', error);
+      setTokenError('Invalid Mapbox token format');
+      setShowTokenInput(true);
+      return;
+    }
 
     // Create map
-    const newMap = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-81.3792, 28.5383], // Orlando, FL default
-      zoom: 12,
-    });
+    let newMap: mapboxgl.Map;
+    try {
+      newMap = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [-81.3792, 28.5383], // Orlando, FL default
+        zoom: 12,
+      });
 
-    // Add controls
-    newMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      // Add controls
+      newMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    map.current = newMap;
+      map.current = newMap;
+    } catch (error) {
+      console.error('❌ Error initializing Mapbox map:', error);
+      setTokenError('Failed to initialize map. Please check your Mapbox token.');
+      setShowTokenInput(true);
+      setIsLoading(false);
+      return;
+    }
 
     // Geocode and add markers
     const initializeMap = async () => {
@@ -304,6 +327,11 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {tokenError && (
+              <div className="bg-destructive/10 text-destructive border border-destructive/20 p-3 rounded-md text-sm">
+                {tokenError}
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
               Para visualizar o mapa interativo, você precisa configurar um token do Mapbox.
             </p>
@@ -312,7 +340,10 @@ export const CompsMapboxMap = ({ subjectProperty, comparables, onCompClick }: Co
                 type="text"
                 placeholder="Cole seu Mapbox Access Token aqui"
                 value={mapboxToken}
-                onChange={(e) => setMapboxToken(e.target.value)}
+                onChange={(e) => {
+                  setMapboxToken(e.target.value);
+                  setTokenError(null);
+                }}
               />
               <Button onClick={handleTokenSubmit}>
                 Configurar
