@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 // Simple in-memory cache (5 minutes TTL)
 interface CacheEntry {
@@ -56,7 +57,7 @@ export class CompsDataService {
    */
   static clearCache() {
     cache.clear();
-    console.log('🗑️ Comps cache cleared');
+    logger.info('🗑️ [CompsDataService] Comps cache cleared');
   }
 
   /**
@@ -111,15 +112,12 @@ export class CompsDataService {
     if (useCache) {
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        console.log(`💾 Cache hit for ${address} (source: ${cached.source}, radius: ${searchRadius}mi)`);
+        logger.info('💾 [CompsDataService] Cache hit', { address, city, state, basePrice, searchRadius, source: cached.source });
         return cached.data.slice(0, limit);
       }
     }
 
-    console.log(`🔍 Fetching comparables for: ${address}, ${city}, ${state} (radius: ${searchRadius}mi)`);
-    if (latitude && longitude) {
-      console.log(`📍 Using property coordinates: ${latitude}, ${longitude}`);
-    }
+    logger.info('🔍 [CompsDataService] Fetching comparables', { address, city, state, basePrice, searchRadius, latitude, longitude });
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-comps', {
@@ -135,12 +133,13 @@ export class CompsDataService {
       });
 
       if (error) {
-        console.error('Edge function error:', error);
-        return this.generateFallbackComps(basePrice, city, address, latitude, longitude);
+        logger.error('❌ [CompsDataService] Edge function error', { error, address, city, state });
+        logger.warn('⚠️ [CompsDataService] No comps available from API - returning empty array', { address, city, state });
+        return [];
       }
 
       if (data?.comps && data.comps.length > 0) {
-        console.log(`✅ Found ${data.comps.length} comps (source: ${data.source})`);
+        logger.info('✅ [CompsDataService] Found comps', { count: data.comps.length, source: data.source, address, city, state });
 
         // Cache the results
         cache.set(cacheKey, {
@@ -161,78 +160,23 @@ export class CompsDataService {
         return compsWithSource.slice(0, limit);
       }
 
-      console.warn('⚠️ No comps returned, using fallback');
-      return this.generateFallbackComps(basePrice, city, address, latitude, longitude);
+      // No comps found - check if it's an address not found error
+      if (data?.addressNotFound) {
+        console.warn(`⚠️ Address not found: ${address}, ${city}`);
+      } else if (data?.noResultsFound) {
+        console.warn(`⚠️ No comparables found in area for: ${address}, ${city}`);
+      } else {
+        console.warn('⚠️ No comps returned from API');
+      }
+      
+      return [];
     } catch (error) {
       console.error('❌ Error fetching comparables:', error);
-      return this.generateFallbackComps(basePrice, city, address, latitude, longitude);
+      console.warn('⚠️ No comps available from API - returning empty array');
+      return [];
     }
   }
 
-  /**
-   * Generate fallback demo data if API fails
-   * Generates comps near the actual property location using geocoding
-   */
-  private static generateFallbackComps(basePrice: number, city: string, subjectAddress?: string, subjectLat?: number, subjectLng?: number): ComparableData[] {
-    // Use subject property coordinates if available, otherwise use city center
-    const baseLat = subjectLat || 28.5383; // Default: Orlando downtown
-    const baseLng = subjectLng || -81.3792;
-
-    // Extract ZIP from subject address if available
-    const zipMatch = subjectAddress?.match(/\b\d{5}\b/);
-    const subjectZip = zipMatch ? zipMatch[0] : '32801';
-
-    console.log(`📍 Generating fallback comps near (${baseLat}, ${baseLng}) in ZIP ${subjectZip}`);
-
-    // Generate 6 addresses within 1 mile radius of subject property
-    const streetNames = ['Park Ave', 'Main St', 'Lake View Dr', 'Maple Dr', 'Oak St', 'Washington Ave'];
-    const addresses = streetNames.map((street, i) => {
-      // Generate random offset within ~1 mile (0.014 degrees ≈ 1 mile)
-      const latOffset = (Math.random() - 0.5) * 0.028; // ±1 mile
-      const lngOffset = (Math.random() - 0.5) * 0.028;
-
-      return {
-        address: `${Math.floor(Math.random() * 9000) + 1000} ${street}`,
-        zip: subjectZip, // Use same ZIP as subject property
-        lat: baseLat + latOffset,
-        lng: baseLng + lngOffset,
-      };
-    });
-
-    const comps: ComparableData[] = [];
-
-    for (let i = 0; i < addresses.length; i++) {
-      const variance = (Math.random() - 0.5) * 0.3;
-      const price = Math.round(basePrice * (1 + variance));
-      const daysAgo = Math.floor(Math.random() * 180);
-      const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-      const location = addresses[i];
-
-      // Calculate REAL distance using haversine formula
-      const calculatedDistance = haversineMiles(baseLat, baseLng, location.lat, location.lng);
-
-      comps.push({
-        address: `${location.address}, ${city || 'Orlando'}, FL ${location.zip}`,
-        city: city || 'Orlando',
-        state: 'FL',
-        zipCode: location.zip,
-        saleDate: saleDate.toISOString().split('T')[0],
-        salePrice: price,
-        beds: Math.floor(2 + Math.random() * 3),
-        baths: Math.floor(1 + Math.random() * 2.5),
-        sqft: Math.round(1200 + Math.random() * 1500),
-        yearBuilt: Math.floor(1970 + Math.random() * 50),
-        propertyType: 'Single Family',
-        latitude: location.lat,
-        longitude: location.lng,
-        distance: Math.round(calculatedDistance * 10) / 10, // Round to 1 decimal (e.g., 0.7 miles)
-        source: 'demo'
-      });
-    }
-
-    console.log(`📍 Generated ${comps.length} demo comps near ${baseLat}, ${baseLng}`);
-    return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
-  }
 
   /**
    * Calculate investment metrics for a comp

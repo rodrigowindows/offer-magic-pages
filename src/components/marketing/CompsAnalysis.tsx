@@ -33,6 +33,7 @@ import {
   CompsTable,
   AnalysisHistory,
   CompareDialog,
+  NoCompsFound,
 } from '@/components/comps-analysis';
 
 // Types
@@ -57,6 +58,7 @@ import { AdjustmentCalculator } from '@/components/AdjustmentCalculator';
 
 // Services
 import { CompsDataService } from '@/services/compsDataService';
+import { logger } from '@/utils/logger';
 import { AVMService } from '@/services/avmService';
 import { validatePropertyData } from '@/utils/dataValidation';
 import { supabase } from '@/integrations/supabase/client';
@@ -86,6 +88,14 @@ export const CompsAnalysis = () => {
   const [comparables, setComparables] = useState<ComparableProperty[]>([]);
   const [analysis, setAnalysis] = useState<MarketAnalysis | null>(null);
   const [smartInsights, setSmartInsights] = useState<SmartInsightsType | null>(null);
+  
+  // Error states for no comps found
+  const [compsError, setCompsError] = useState<{
+    addressNotFound?: boolean;
+    noResultsFound?: boolean;
+    apiError?: boolean;
+    message?: string;
+  } | null>(null);
 
   // Cache for comparables to avoid redundant API calls
   const [compsCache, setCompsCache] = useState<Record<string, { comparables: ComparableProperty[], analysis: MarketAnalysis, timestamp: number }>>({});
@@ -290,43 +300,34 @@ export const CompsAnalysis = () => {
    */
   const generateComparables = useCallback(async (property: Property) => {
     if (!property) return;
-
+    logger.info('🔎 [CompsAnalysis] Iniciando geração de comparáveis', { property });
     try {
       setLoadingComps(true);
-
-      // Create cache key based on property and filters
       const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
       const cached = compsCache[cacheKey];
-
-      // Check if we have valid cached data (cache never expires)
       if (cached) {
-        console.log('Using cached comparables for property:', property.address);
+        logger.info('💾 [CompsAnalysis] Usando comparáveis do cache', { property: property.address });
         setComparables(cached.comparables);
         setAnalysis(cached.analysis);
         setLoadingComps(false);
         return;
       }
-
-      console.log('Fetching new comparables for property:', property.address);
-
-      // Call CompsDataService with correct parameters
+      logger.info('🌐 [CompsAnalysis] Buscando novos comparáveis', { property: property.address });
       const compsData = await CompsDataService.getComparables(
         property.address || '',
         property.city || 'Orlando',
         property.state || 'FL',
         compsFilters.maxDistance || 3,
-        10, // limit
+        10,
         property.estimated_value || 250000,
-        true, // useCache
+        true,
         property.latitude,
         property.longitude
       );
-
+      setCompsError(null);
       if (compsData && compsData.length > 0) {
-        // ✅ NOVO: Validar dados dos comps
         const validation = AVMService.validateComps(compsData);
-        console.log('📊 Comps Quality Check:', validation);
-
+        logger.info('📊 [CompsAnalysis] Validação dos comps', { validation });
         if (validation.quality === 'poor') {
           toast({
             title: 'Warning',
@@ -334,55 +335,42 @@ export const CompsAnalysis = () => {
             variant: 'destructive'
           });
         }
-
-        // ✅ NOVO: Calcular valor usando AVM
         let calculatedValue = null;
         let avmMinValue = null;
         let avmMaxValue = null;
         let avmConfidence = null;
-
         try {
-          // Buscar dados do banco antes de estimar dos comps
           let propertySqft = selectedProperty?.sqft;
           let propertyBeds = selectedProperty?.beds;
           let propertyBaths = selectedProperty?.baths;
-
           if (!propertySqft || !propertyBeds || !propertyBaths) {
             const { data: propertyDetails } = await supabase
               .from('properties')
               .select('sqft, beds, baths')
               .eq('id', selectedProperty.id)
               .single();
-
             propertySqft = propertySqft || propertyDetails?.sqft;
             propertyBeds = propertyBeds || propertyDetails?.beds;
             propertyBaths = propertyBaths || propertyDetails?.baths;
-
-            // Se ainda faltam valores, estimar dos comps
             if (!propertySqft || !propertyBeds || !propertyBaths) {
               const estimated = AVMService.estimateSubjectProperties(compsData);
               propertySqft = propertySqft || estimated.sqft;
               propertyBeds = propertyBeds || estimated.beds;
               propertyBaths = propertyBaths || estimated.baths;
-              console.log('📊 Using estimated values from comps:', { propertySqft, propertyBeds, propertyBaths });
+              logger.info('📊 [CompsAnalysis] Usando valores estimados dos comps', { propertySqft, propertyBeds, propertyBaths });
             }
           }
-
           const avm = AVMService.calculateValueFromComps(
             compsData,
             propertySqft,
             propertyBeds,
             propertyBaths
           );
-
           calculatedValue = avm.estimatedValue;
           avmMinValue = avm.minValue;
           avmMaxValue = avm.maxValue;
           avmConfidence = avm.confidence;
-
-          console.log('✅ AVM Calculation Successful:', avm);
-
-          // ✅ NOVO: Atualizar propriedade no banco com valores calculados
+          logger.info('✅ [CompsAnalysis] AVM calculado', { avm });
           await supabase
             .from('properties')
             .update({
@@ -394,27 +382,20 @@ export const CompsAnalysis = () => {
               last_valuation_date: new Date().toISOString()
             })
             .eq('id', selectedProperty.id);
-
-          // Atualizar estado local
           setSelectedProperty(prev => prev ? {
             ...prev,
             estimated_value: calculatedValue
           } : null);
-
           toast({
             title: '✅ Property Valued',
             description: `Estimated Value: $${calculatedValue.toLocaleString()} (${Math.round(avmConfidence)}% confidence)`
           });
-
         } catch (avmError) {
-          console.warn('⚠️ AVM calculation failed, using comps average:', avmError);
-          // Fallback: usar média simples
+          logger.warn('⚠️ [CompsAnalysis] AVM falhou, usando média dos comps', { avmError });
           const avgPrice = compsData.reduce((sum, c) => sum + c.salePrice, 0) / compsData.length;
           calculatedValue = Math.round(avgPrice);
-          avmConfidence = 40; // Lower confidence
+          avmConfidence = 40;
         }
-
-        // Convert to ComparableProperty format with validation
         const formattedComps: ComparableProperty[] = compsData
           .filter(comp => comp.salePrice && comp.sqft && comp.sqft > 0)
           .map((comp, index) => ({
@@ -435,7 +416,6 @@ export const CompsAnalysis = () => {
             similarityScore: 0.8,
             propertyType: comp.propertyType || 'Single Family',
             yearBuilt: comp.yearBuilt || undefined,
-            // Legacy fields
             sale_price: Number(comp.salePrice) || 0,
             sale_date: comp.saleDate || new Date().toISOString(),
             square_feet: Number(comp.sqft) || 1,
@@ -445,17 +425,13 @@ export const CompsAnalysis = () => {
             similarity_score: 0.8,
             property_type: comp.propertyType || 'Single Family',
           }));
-
         if (formattedComps.length === 0) {
+          logger.error('❌ [CompsAnalysis] Nenhum comparável válido encontrado', { property });
           throw new Error('No valid comparables found');
         }
-
         setComparables(formattedComps);
-
-        // Calculate analysis with safe defaults
         const avgPrice = formattedComps.reduce((sum, c) => sum + (c.sale_price || 0), 0) / formattedComps.length || 0;
         const avgPricePerSqft = formattedComps.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / formattedComps.length || 0;
-
         const calculatedAnalysis = {
           avgSalePrice: avgPrice,
           avgPricePerSqft: avgPricePerSqft,
@@ -466,11 +442,7 @@ export const CompsAnalysis = () => {
           medianSalePrice: avgPrice,
           comparablesCount: formattedComps.length,
         };
-
         setAnalysis(calculatedAnalysis);
-
-        // Save to memory cache
-        const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
         setCompsCache(prev => ({
           ...prev,
           [cacheKey]: {
@@ -479,8 +451,6 @@ export const CompsAnalysis = () => {
             timestamp: Date.now()
           }
         }));
-
-        // 💾 AUTO-SAVE to database cache for future exports
         try {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -500,21 +470,37 @@ export const CompsAnalysis = () => {
                 data_source: compsData[0].source || dataSource,
                 notes: 'Auto-saved on analysis generation',
               } as any);
-            console.log('✅ Auto-saved to database cache');
+            logger.info('✅ [CompsAnalysis] Auto-salvo no banco de dados', { property: property.address });
           }
         } catch (saveError) {
-          console.warn('Auto-save to database failed (non-critical):', saveError);
+          logger.warn('⚠️ [CompsAnalysis] Falha ao auto-salvar no banco (não crítico)', { saveError });
         }
-
         toast({
           title: 'Success',
           description: `Found ${formattedComps.length} comparable properties (source: ${compsData[0].source})`,
         });
       } else {
-        throw new Error('No comparables found');
+        setComparables([]);
+        setAnalysis(null);
+        setCompsError({
+          noResultsFound: true,
+          message: 'No comparable properties found in this area. This may indicate: no recent sales, address not in database, or API configuration issues.'
+        });
+        logger.warn('⚠️ [CompsAnalysis] Nenhum comparável encontrado', { property });
+        toast({
+          title: 'No Comparables Found',
+          description: 'No comparable properties were found for this address. Please verify the address or try a different property.',
+          variant: 'default',
+        });
       }
     } catch (error) {
-      console.error('Error generating comparables:', error);
+      logger.error('❌ [CompsAnalysis] Erro ao gerar comparáveis', { error, property });
+      setComparables([]);
+      setAnalysis(null);
+      setCompsError({
+        apiError: true,
+        message: error instanceof Error ? error.message : 'Failed to generate comparables'
+      });
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to generate comparables',
@@ -1272,13 +1258,26 @@ export const CompsAnalysis = () => {
                     )}
                   </div>
 
-                  <CompsTable
-                    comparables={filteredComparables}
-                    onViewDetails={handleViewCompDetails}
-                    onOpenMap={handleOpenOnMap}
-                    onToggleFavorite={toggleFavorite}
-                    favorites={favorites}
-                  />
+                  {filteredComparables.length > 0 ? (
+                    <CompsTable
+                      comparables={filteredComparables}
+                      onViewDetails={handleViewCompDetails}
+                      onOpenMap={handleOpenOnMap}
+                      onToggleFavorite={toggleFavorite}
+                      favorites={favorites}
+                    />
+                  ) : (
+                    !loadingComps && (
+                      <NoCompsFound
+                        addressNotFound={compsError?.addressNotFound}
+                        noResultsFound={compsError?.noResultsFound}
+                        apiError={compsError?.apiError}
+                        message={compsError?.message}
+                        address={selectedProperty?.address}
+                        city={selectedProperty?.city}
+                      />
+                    )
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

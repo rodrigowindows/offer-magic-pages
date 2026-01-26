@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { CITY_TO_COUNTY_MAP, getCountyByCity, suggestCounty } from './cityCountyMap.ts';
 
+function generateRequestId() {
+  return Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -24,10 +28,10 @@ interface ComparableData {
   sqft: number;
   yearBuilt: number;
   propertyType: string;
-  source: string;
+  source: 'attom-v2' | 'attom-v1' | 'attom' | 'zillow-api' | 'county-csv' | 'none';
   latitude?: number;
   longitude?: number;
-  distance?: number;
+  distance: number; // Always required
 }
 
 const EARTH_RADIUS_MILES = 3958.8;
@@ -71,64 +75,8 @@ function addDistanceAndFilterByRadius(
     .filter(comp => comp.distance == null || comp.distance <= radiusMiles);
 }
 
-// Generate realistic demo data based on property value with coordinates
-// VERSION: 2.1 - INCLUDES LATITUDE/LONGITUDE FOR MAP DISPLAY
-// ⚠️ DEMO DATA: These are SIMULATED comparables for testing purposes only
-// To get REAL data, configure ATTOM_API_KEY in Supabase Edge Function secrets
-function generateDemoComps(basePrice: number, city: string, count: number = 6, centerLat: number = 28.5383, centerLng: number = -81.3792): ComparableData[] {
-  console.log('⚠️ DEMO DATA FALLBACK - Real APIs should be attempted first!');
-  console.log('ℹ️ Configure ATTOM_API_KEY or RAPIDAPI_KEY in Supabase secrets for real data');
-  
-  const streets = [
-    'Oak St', 'Pine Ave', 'Maple Dr', 'Cedar Ln', 'Palm Way',
-    'Sunset Blvd', 'Lake View Dr', 'Park Ave', 'Main St', 'Colonial Dr'
-  ];
-
-  const comps: ComparableData[] = [];
-
-  // Orlando default coordinates: 28.5383° N, 81.3792° W
-  // 0.01 degrees ≈ 1.1 km (0.7 miles)
-  const maxRadius = 0.02; // ~2.2 km radius
-
-  for (let i = 0; i < count; i++) {
-    const variance = (Math.random() - 0.5) * 0.3;
-    const price = Math.round(basePrice * (1 + variance));
-    const sqft = Math.round(1200 + Math.random() * 1500);
-    const beds = Math.floor(2 + Math.random() * 3);
-    const baths = Math.floor(1 + Math.random() * 2.5);
-    const yearBuilt = Math.floor(1970 + Math.random() * 50);
-
-    const daysAgo = Math.floor(Math.random() * 180);
-    const saleDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-
-    // Generate coordinates within small radius of center (±0.02 degrees)
-    const angle = Math.random() * 2 * Math.PI;
-    const radius = Math.random() * maxRadius;
-    const lat = centerLat + (radius * Math.cos(angle));
-    const lng = centerLng + (radius * Math.sin(angle));
-    const distance = haversineMiles(centerLat, centerLng, lat, lng);
-
-    comps.push({
-      address: `${Math.floor(100 + Math.random() * 9900)} ${streets[Math.floor(Math.random() * streets.length)]}`,
-      city: city || 'Orlando',
-      state: 'FL',
-      zipCode: `328${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`,
-      saleDate: saleDate.toISOString().split('T')[0],
-      salePrice: price,
-      beds,
-      baths,
-      sqft,
-      yearBuilt,
-      propertyType: 'Single Family',
-      source: 'demo',
-      latitude: lat,
-      longitude: lng,
-      distance: Math.round(distance * 10) / 10 // miles (1 decimal)
-    });
-  }
-
-  return comps.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
-}
+// REMOVED: generateDemoComps function - no longer using demo data fallback
+// If no comps are found, return empty array instead
 
 // ===== City to County Map (required for ATTOM V2) =====
 // ...existing code...
@@ -174,7 +122,14 @@ async function fetchFromAttomV2(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.log(`❌ ATTOM V2 API error (HTTP ${response.status}):`, errorText.substring(0, 200));
+      const isAddressNotFound = response.status === 400 && errorText.includes('Unable to locate a property record');
+      
+      if (isAddressNotFound) {
+        console.log(`⚠️ ATTOM V2: Address not found in database (HTTP ${response.status})`);
+        console.log(`📍 Address: ${address}, ${city}, ${county}, ${state} ${zipCode}`);
+      } else {
+        console.log(`❌ ATTOM V2 API error (HTTP ${response.status}):`, errorText.substring(0, 200));
+      }
       return [];
     }
 
@@ -184,11 +139,11 @@ async function fetchFromAttomV2(
     const comps = extractAttomV2Comparables(data, { city, state, zipCode });
 
     if (comps.length === 0) {
-      console.log('⚠️ No comparables returned from ATTOM V2');
+      console.log('⚠️ ATTOM V2: No comparables found (API returned data but parser found 0 valid comps)');
       return [];
     }
 
-    console.log(`✅ Parsed ${comps.length} valid comparables from ATTOM V2`);
+    console.log(`✅ ATTOM V2: Successfully parsed ${comps.length} valid comparables`);
     return comps;
 
   } catch (error) {
@@ -561,50 +516,41 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const requestId = generateRequestId();
+  const startTime = Date.now();
   try {
     const { address, city, state, basePrice, radius = 1, latitude, longitude, zipCode } = await req.json();
 
-    console.log(`🔍 Fetching comps for: ${address}, ${city}, ${state}, ZIP: ${zipCode || 'auto'}, basePrice: $${basePrice}, radius: ${radius}mi`);
-    console.log(`📍 Property coordinates: ${latitude}, ${longitude}`);
-    console.log(`🔑 API Keys configured: Attom=${!!ATTOM_API_KEY}, RapidAPI=${!!RAPIDAPI_KEY}`);
+    console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔍 Fetching comps:`, {
+      address, city, state, zipCode, radius, basePrice, coordinates: { latitude, longitude }
+    });
+
+    console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔑 API Keys configured: Attom=${!!ATTOM_API_KEY}, RapidAPI=${!!RAPIDAPI_KEY}`);
 
     let comps: ComparableData[] = [];
     let source = 'demo';
 
     // ===== CASCATA DE FONTES (tentativas em ordem de qualidade) =====
-    // Demo data is LAST RESORT ONLY
-
     // 1️⃣ PRIORITY: Try ATTOM V2 Sales Comparables (most accurate)
     if (ATTOM_API_KEY && comps.length < 3) {
-      console.log('🔄 [1a/4] Attempting ATTOM V2 Sales Comparables API...');
-
-      // Extract ZIP if not provided
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [1a/4] Attempting ATTOM V2...`, { address, city, state, zipCode });
       let extractedZipCode = zipCode;
       if (!extractedZipCode) {
         const zipMatch = `${address} ${city} ${state}`.match(/\b\d{5}\b/);
         extractedZipCode = zipMatch ? zipMatch[0] : '';
       }
-
-      // Get county (required for V2)
-      // Adiciona fallback usando suggestCounty se getCountyByCity retornar null
       const county = getCountyByCity(city || 'Orlando', state || 'FL') || suggestCounty(city || 'Orlando', state || 'FL');
-
+      const v2Start = Date.now();
       if (extractedZipCode && county) {
-        const attomV2Comps = await fetchFromAttomV2(
-          address,
-          city || 'Orlando',
-          county,
-          state || 'FL',
-          extractedZipCode
-        );
-
+        const attomV2Comps = await fetchFromAttomV2(address, city || 'Orlando', county, state || 'FL', extractedZipCode);
+        const v2Time = Date.now() - v2Start;
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ ATTOM V2 response:`, { status: attomV2Comps.length > 0 ? 'success' : 'empty', timeMs: v2Time, comps: attomV2Comps.length });
         if (attomV2Comps && attomV2Comps.length > 0) {
           comps = attomV2Comps;
           source = 'attom-v2';
           if (comps.length < 3) {
-            console.log(`⚠️ ATTOM V2 returned ${comps.length} comps, combining with V1 fallback...`);
+            console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ ATTOM V2 returned ${comps.length} comps, combining with V1 fallback...`);
             const attomV1Comps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, zipCode);
-            // Função simples para deduplicar comps por endereço
             const deduplicateComps = (arr: ComparableData[]) => {
               const seen = new Set();
               return arr.filter(c => {
@@ -616,110 +562,136 @@ serve(async (req) => {
             };
             comps = deduplicateComps([...comps, ...(attomV1Comps || [])]);
           } else {
-            console.log(`✅ Got ${comps.length} comps from ATTOM V2`);
+            console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from ATTOM V2`);
           }
         } else {
-          console.log(`⚠️ ATTOM V2 returned ${attomV2Comps?.length || 0} comps, trying V1 fallback...`);
+          console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ ATTOM V2 returned ${attomV2Comps?.length || 0} comps, trying V1 fallback...`);
         }
       } else {
-        console.log(`⚠️ Missing ZIP (${extractedZipCode}) or County (${county}), skipping ATTOM V2`);
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ Missing ZIP (${extractedZipCode}) or County (${county}), skipping ATTOM V2`);
       }
     }
 
     // 1️⃣b FALLBACK: Try ATTOM V1 Property Search if V2 failed
     if (ATTOM_API_KEY && comps.length < 3) {
-      console.log('🔄 [1b/4] Attempting ATTOM V1 Property Search (fallback)...');
+      const v1Start = Date.now();
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [1b/4] Attempting ATTOM V1 Property Search (fallback)...`);
       const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, zipCode);
+      const v1Time = Date.now() - v1Start;
       if (attomComps && attomComps.length >= 3) {
         comps = attomComps;
         source = 'attom-v1';
-        console.log(`✅ Got ${comps.length} comps from ATTOM V1`);
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from ATTOM V1 in ${v1Time}ms`);
+      } else {
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ ATTOM V1 failed or returned insufficient comps (${attomComps?.length || 0})`);
       }
     }
 
     if (!ATTOM_API_KEY) {
-      console.log('⚠️ ATTOM_API_KEY not configured. Register at: https://api.developer.attomdata.com/');
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ ATTOM_API_KEY not configured.`);
     }
 
     // 2️⃣ FALLBACK: Try Zillow/RapidAPI
     if (!comps || comps.length < 3) {
       if (RAPIDAPI_KEY) {
-        console.log('🔄 [2/4] Attempting Zillow via RapidAPI...');
+        const zillowStart = Date.now();
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [2/4] Attempting Zillow via RapidAPI...`);
         const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
+        const zillowTime = Date.now() - zillowStart;
         if (zillowApiComps && zillowApiComps.length >= 3) {
           comps = zillowApiComps;
           source = 'zillow-api';
-          console.log(`✅ Got ${comps.length} comps from Zillow`);
+          console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from Zillow in ${zillowTime}ms`);
+        } else {
+          console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ Zillow fallback failed or returned insufficient comps (${zillowApiComps?.length || 0})`);
         }
       } else {
-        console.log('⚠️ RAPIDAPI_KEY not configured. Sign up at: https://rapidapi.com/');
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ RAPIDAPI_KEY not configured.`);
       }
     }
 
     // 3️⃣ Try Orange County CSV (100% FREE - Public records for Orlando/FL)
     if ((city?.toLowerCase().includes('orlando') || state === 'FL') && (!comps || comps.length < 3)) {
-      console.log('🔄 Trying Orange County Public CSV...');
+      const csvStart = Date.now();
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 Trying Orange County Public CSV...`);
       const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
+      const csvTime = Date.now() - csvStart;
       if (countyComps && countyComps.length > 0) {
         comps = [...(comps || []), ...countyComps];
         source = comps[0]?.source || 'county-csv';
-        console.log(`✅ Got ${countyComps.length} comps from Orange County CSV`);
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${countyComps.length} comps from Orange County CSV in ${csvTime}ms`);
+      } else {
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ Orange County CSV returned no comps`);
       }
     }
 
-    // 4️⃣ LAST RESORT ONLY: Demo data
-    if (!comps || comps.length < 3) {
-      console.log('🎭 [4/4] Using DEMO DATA (This indicates API configuration issues)');
-      console.log('💡 To get real data:');
-      console.log('   - Sign up for Attom Data: https://api.developer.attomdata.com/ (1000 free/month)');
-      console.log('   - Sign up for RapidAPI: https://rapidapi.com/apimaker/api/zillow-com1 (100 free/month)');
-      console.log('   - Add ATTOM_API_KEY and RAPIDAPI_KEY to Supabase Edge Function secrets');
-
-      // Use property coordinates if provided, otherwise use city defaults
-      const centerLat = latitude || 28.5383; // Orlando default
-      const centerLng = longitude || -81.3792;
-      
-      console.log(`🎯 Generating demo comps around coordinates: ${centerLat}, ${centerLng}`);
-      comps = generateDemoComps(basePrice || 250000, city || 'Orlando', 6, centerLat, centerLng);
-      source = 'demo';
+    if (!comps || comps.length === 0) {
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ No comparables found from any source`);
+      source = 'none';
     }
 
-    const filteredComps = addDistanceAndFilterByRadius(comps, latitude, longitude, radius);
-    if (filteredComps.length > 0) {
-      comps = filteredComps;
+    // Filter, deduplicate, and sort (only if we have comps)
+    let sortedComps: ComparableData[] = [];
+    let addressNotFound = false;
+    let noResultsFound = false;
+
+    if (comps && comps.length > 0) {
+      const filteredComps = addDistanceAndFilterByRadius(comps, latitude, longitude, radius);
+      if (filteredComps.length > 0) {
+        comps = filteredComps;
+      }
+
+      const uniqueComps = Array.from(
+        new Map(comps.map(c => [`${c.address}-${c.salePrice}`, c])).values()
+      );
+
+      sortedComps = uniqueComps
+        .filter(c => c.salePrice > 10000)
+        .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
+        .slice(0, 10);
+
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Final comps: ${sortedComps.length} from ${source}`);
+      if (sortedComps.length > 0) {
+        console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
+      }
+    } else {
+      noResultsFound = true;
+      addressNotFound = true;
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Final Result: 0 comps - No comparables found`);
     }
 
-    // Filter, deduplicate, and sort
-    const uniqueComps = Array.from(
-      new Map(comps.map(c => [`${c.address}-${c.salePrice}`, c])).values()
-    );
-
-    const sortedComps = uniqueComps
-      .filter(c => c.salePrice > 10000) // Filter out suspicious $1 sales
-      .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
-      .slice(0, 10);
-
-    // Log final result
-    console.log(`📊 Final Result: ${sortedComps.length} comps from ${source}`);
-    console.log(`🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
-    console.log(`📦 Full first comp:`, JSON.stringify(sortedComps[0]));
-
-    // Warn clearly if using demo data
-    const isDemo = source === 'demo';
-    if (isDemo) {
-      console.log('⚠️ ========================================');
-      console.log('⚠️ USING DEMO DATA - NOT REAL COMPARABLES');
-      console.log('⚠️ Configure ATTOM_API_KEY for real data');
-      console.log('⚠️ ========================================');
+    const isDemo = false;
+    let message = '';
+    if (sortedComps.length > 0) {
+      message = `Found ${sortedComps.length} comparables from ${source}`;
+    } else if (addressNotFound) {
+      message = `Address not found in property databases. Please verify the address and try again.`;
+    } else if (noResultsFound) {
+      message = `No comparable properties found in this area. This may indicate: no recent sales, address not in database, or API configuration issues.`;
+    } else {
+      message = `No comparables available.`;
     }
+
+    const totalTime = Date.now() - startTime;
+    console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📦 Response:`, {
+      success: sortedComps.length > 0,
+      source,
+      count: sortedComps.length,
+      message,
+      addressNotFound,
+      noResultsFound,
+      totalTimeMs: totalTime
+    });
 
     return new Response(JSON.stringify({
-      success: true,
+      success: sortedComps.length > 0,
       comps: sortedComps,
       source,
-      isDemo, // Clear indicator for frontend
+      isDemo,
       count: sortedComps.length,
-      message: isDemo ? '⚠️ Using simulated demo data. Configure ATTOM_API_KEY for real comparables.' : `Found ${sortedComps.length} real comparables from ${source}`,
+      message,
+      addressNotFound,
+      noResultsFound,
       apiKeysConfigured: {
         attom: !!ATTOM_API_KEY,
         rapidapi: !!RAPIDAPI_KEY
@@ -728,13 +700,22 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('❌ Fatal Error:', error);
+    const totalTime = Date.now() - startTime;
+    console.error(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ Fatal Error:`, error, { totalTimeMs: totalTime });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({
       success: false,
       error: errorMessage,
-      comps: generateDemoComps(250000, 'Orlando', 6),
-      source: 'demo'
+      comps: [],
+      source: 'none',
+      isDemo: false,
+      count: 0,
+      message: `Error fetching comparables: ${errorMessage}`,
+      apiError: true,
+      apiKeysConfigured: {
+        attom: !!ATTOM_API_KEY,
+        rapidapi: !!RAPIDAPI_KEY
+      }
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -1,42 +1,28 @@
-# 📚 Documentação - Step 5
+# README - Documentação Principal
 
-Este diretório contém toda a documentação técnica e relatórios do projeto Step 5.
+Bem-vindo à documentação do projeto!
+
+## Índice
+
+- [Guia Rápido](getting-started/QUICK_START.md)
+- [ATTOM/AVM](features/ATTOM_AVM.md)
+- [COMPS Analysis](features/COMPS_ANALYSIS.md)
+- [AB Testing](features/AB_TESTING.md)
+- [Importação CSV](features/CSV_IMPORT.md)
+- [Migração](features/MIGRATION.md)
+- [Deploy](deployment/DEPLOY.md)
+- [Testes](testing/TESTING.md)
+- [Resumos Finais (Histórico)](archive/FINAL_SUMMARIES.md)
+
+## Como navegar
+
+- Use o índice acima para acessar rapidamente cada seção consolidada.
+- Consulte o arquivo [MD_FILES_MAPPING.md](../MD_FILES_MAPPING.md) para ver o mapeamento completo dos arquivos.
+- Consulte o [ORGANIZATION_GUIDE.md](ORGANIZATION_GUIDE.md) para entender a estrutura e como contribuir.
 
 ---
 
-## 📁 Estrutura
-
-```
-docs/
-├── technical/          ← Documentação técnica
-└── reports/           ← Relatórios e resumos
-```
-
----
-
-## 📖 Documentos Técnicos
-
-### [technical/EXPLICACAO_SCRIPTS_PYTHON.md](technical/EXPLICACAO_SCRIPTS_PYTHON.md)
-**Guia completo de todos os scripts Python**
-
-Explica cada um dos 12 scripts Python:
-- Para que serve cada script
-- Quando usar
-- Como usar
-- Exemplos de uso
-- Troubleshooting
-
-📌 **Leia este primeiro** se você precisa usar os scripts Python.
-
-### [technical/ORGANIZATION.md](technical/ORGANIZATION.md)
-**Log da reorganização SAFE**
-
-Documenta:
-- O que foi movido durante a reorganização
-- Arquivos movidos para scripts/
-- Arquivos movidos para data/
-- Arquivos movidos para database/
-- Verificações realizadas
+*Documentação organizada e consolidada em 2026.*
 
 ### [technical/ESCOLHA_REORGANIZACAO.md](technical/ESCOLHA_REORGANIZACAO.md)
 **Comparação entre reorganização FULL vs SAFE**
