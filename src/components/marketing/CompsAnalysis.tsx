@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2, Trash2, FileText, RefreshCw, Activity } from 'lucide-react';
 import { Input } from '@/components/ui/input';

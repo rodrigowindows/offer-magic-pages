@@ -550,6 +550,7 @@ export type Database = {
       }
       manual_comps_links: {
         Row: {
+          comp_data: Json | null
           created_at: string
           id: string
           notes: string | null
@@ -561,6 +562,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          comp_data?: Json | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -572,6 +574,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          comp_data?: Json | null
           created_at?: string
           id?: string
           notes?: string | null
