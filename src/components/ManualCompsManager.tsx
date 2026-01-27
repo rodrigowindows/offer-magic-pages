@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { extractDataFromUrl, formatExtractedAddress, isValidExtractedData } from '@/utils/urlDataExtractor';
+import { CompsWalkthrough } from '@/components/CompsWalkthrough';
 import {
   Link,
   Plus,
@@ -22,7 +23,8 @@ import {
   Loader2,
   Home,
   Filter,
-  FileText
+  FileText,
+  HelpCircle
 } from 'lucide-react';
 import {
   Table,
@@ -100,6 +102,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [bulkUrls, setBulkUrls] = useState('');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [recentlyAdded, setRecentlyAdded] = useState<Array<{url: string, address: string, price?: string}>>([]);
+
+  // Tutorial walkthrough
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
 
   // Carregar propriedades
   const loadProperties = async () => {
@@ -585,19 +590,69 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         </Card>
       )}
 
+      {/* Tutorial Walkthrough */}
+      {showWalkthrough && (
+        <CompsWalkthrough onClose={() => setShowWalkthrough(false)} />
+      )}
+
       {/* Formulário para adicionar link */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            Adicionar Link de Comps
-          </CardTitle>
-          <CardDescription>
-            {preSelectedPropertyId
-              ? 'Cole o link da página de comps para a propriedade selecionada'
-              : 'Selecione uma propriedade e cole o link da página de comps'
-            }
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <CardTitle className="flex items-center gap-2">
+                <Plus className="w-5 h-5" />
+                Adicionar Link de Comps
+              </CardTitle>
+              <CardDescription>
+                {preSelectedPropertyId
+                  ? 'Cole o link da página de comps para a propriedade selecionada'
+                  : 'Selecione uma propriedade e cole o link da página de comps'
+                }
+              </CardDescription>
+            </div>
+
+            {/* Help Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowWalkthrough(true)}
+              className="ml-2"
+            >
+              <HelpCircle className="w-4 h-4 mr-2" />
+              Como Fazer?
+            </Button>
+          </div>
+
+          {/* Quick Start Guide */}
+          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-dashed border-purple-300 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                  <HelpCircle className="w-5 h-5 text-purple-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-purple-900 mb-1">🚀 Processo Rápido (1 minuto)</h4>
+                <ol className="text-xs text-purple-800 space-y-1 ml-4 list-decimal">
+                  <li>Selecione propriedade → Clique "Buscar no Zillow"</li>
+                  <li>No Zillow: Ctrl+Click em 10 comps próximos</li>
+                  <li>Copie URLs (Ctrl+L → Ctrl+C → Ctrl+W em cada aba)</li>
+                  <li>Volte aqui → Ctrl+Shift+B → Cole URLs → Enter</li>
+                  <li>✅ Pronto! 10 comps em 1 minuto</li>
+                </ol>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => setShowWalkthrough(true)}
+                  className="text-xs text-purple-600 p-0 h-auto mt-2"
+                >
+                  📖 Ver tutorial completo passo a passo →
+                </Button>
+              </div>
+            </div>
+          </div>
+
           {/* Keyboard shortcuts hint */}
           <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
             <strong>⌨️ Atalhos:</strong> Ctrl+Enter para salvar rápido | Ctrl+Shift+B para Bulk Add
