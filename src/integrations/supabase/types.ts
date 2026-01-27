@@ -361,6 +361,7 @@ export type Database = {
           cache_key: string
           created_at: string | null
           data: Json
+          expires_at: string | null
           id: string
           updated_at: string | null
         }
@@ -368,6 +369,7 @@ export type Database = {
           cache_key: string
           created_at?: string | null
           data: Json
+          expires_at?: string | null
           id?: string
           updated_at?: string | null
         }
@@ -375,6 +377,7 @@ export type Database = {
           cache_key?: string
           created_at?: string | null
           data?: Json
+          expires_at?: string | null
           id?: string
           updated_at?: string | null
         }
@@ -387,6 +390,7 @@ export type Database = {
           comparables_count: number | null
           created_at: string
           data_source: string | null
+          expires_at: string | null
           id: string
           notes: string | null
           property_id: string
@@ -400,6 +404,7 @@ export type Database = {
           comparables_count?: number | null
           created_at?: string
           data_source?: string | null
+          expires_at?: string | null
           id?: string
           notes?: string | null
           property_id: string
@@ -413,6 +418,7 @@ export type Database = {
           comparables_count?: number | null
           created_at?: string
           data_source?: string | null
+          expires_at?: string | null
           id?: string
           notes?: string | null
           property_id?: string
@@ -2155,6 +2161,13 @@ export type Database = {
           p_table_name: string
         }
         Returns: boolean
+      }
+      cleanup_expired_cache: {
+        Args: never
+        Returns: {
+          deleted_comparables_cache: number
+          deleted_comps_history: number
+        }[]
       }
       column_exists: {
         Args: { p_column_name: string; p_table_name: string }
