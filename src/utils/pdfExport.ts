@@ -549,7 +549,18 @@ export const exportCompsToPDF = async (
     doc.text('Comparable Sales', 20, currentY);
     currentY += 5;
 
-    // Prepare table data
+    // Prepare table data with source badges
+    const sourceShortLabels: Record<string, string> = {
+      'attom': 'ATTOM',
+      'attom-v1': 'ATTOM',
+      'attom-v2': 'ATTOM',
+      'zillow': 'Zillow',
+      'county-csv': 'County',
+      'manual': 'Manual',
+      'demo': 'DEMO',
+      'database': 'DB',
+    };
+
     const tableData = comparables.map((comp, index) => [
       `#${index + 1}`,
       comp.address,
@@ -562,11 +573,12 @@ export const exportCompsToPDF = async (
       comp.daysOnMarket || '-',
       comp.adjustment !== 0 ? `$${comp.adjustment.toLocaleString()}` : '-',
       `$${(comp.salePrice + comp.adjustment).toLocaleString()}`,
+      sourceShortLabels[comp.source || 'database'] || 'DB',
     ]);
 
     autoTable(doc, {
       startY: currentY,
-      head: [['#', 'Address', 'Sale Date', 'Sale Price', 'Sqft', '$/Sqft', 'Bd/Ba', 'Distance', 'DOM', 'Adj.', 'Adj. Price']],
+      head: [['#', 'Address', 'Sale Date', 'Sale Price', 'Sqft', '$/Sqft', 'Bd/Ba', 'Distance', 'DOM', 'Adj.', 'Adj. Price', 'Source']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -586,17 +598,35 @@ export const exportCompsToPDF = async (
       tableWidth: 170,
       styles: { overflow: 'linebreak', cellPadding: 1 },
       columnStyles: {
-        0: { cellWidth: 6 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 16 },
-        3: { cellWidth: 16 },
-        4: { cellWidth: 13 },
-        5: { cellWidth: 13 },
-        6: { cellWidth: 11 },
-        7: { cellWidth: 11 },
-        8: { cellWidth: 10 },
-        9: { cellWidth: 12 },
-        10: { cellWidth: 15 },
+        0: { cellWidth: 5 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 14 },
+        3: { cellWidth: 15 },
+        4: { cellWidth: 12 },
+        5: { cellWidth: 11 },
+        6: { cellWidth: 10 },
+        7: { cellWidth: 10 },
+        8: { cellWidth: 8 },
+        9: { cellWidth: 11 },
+        10: { cellWidth: 14 },
+        11: { cellWidth: 12, fontStyle: 'bold' },
+      },
+      didParseCell: (data: any) => {
+        // Color code source column
+        if (data.column.index === 11 && data.section === 'body') {
+          const source = data.cell.raw;
+          const sourceColors: Record<string, number[]> = {
+            'ATTOM': [34, 197, 94],   // green
+            'Zillow': [59, 130, 246],  // blue
+            'Manual': [168, 85, 247],  // purple
+            'County': [251, 191, 36],  // yellow
+            'DEMO': [239, 68, 68],     // red
+            'DB': [156, 163, 175],     // gray
+          };
+          const color = sourceColors[source] || [156, 163, 175];
+          data.cell.styles.textColor = color;
+          data.cell.styles.fontStyle = 'bold';
+        }
       },
     });
 

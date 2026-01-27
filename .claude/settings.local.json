@@ -8,7 +8,8 @@
       "Bash(npx supabase:*)",
       "WebFetch(domain:api.developer.attomdata.com)",
       "Bash(git add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
