@@ -136,6 +136,7 @@ export const CompsTable = ({
             <SortableHeader field="pricePerSqft">$/Sqft</SortableHeader>
             <SortableHeader field="saleDate">Sale Date</SortableHeader>
             <SortableHeader field="similarity">Quality</SortableHeader>
+            <TableHead>Source</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -147,14 +148,17 @@ export const CompsTable = ({
               </TableCell>
             </TableRow>
           ) : (
-            sortedComparables.map((comp) => (
-              <TableRow
-                key={comp.id}
-                className={`
-                  hover:bg-accent/50 transition-colors
-                  ${highlightedCompId === comp.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}
-                `}
-              >
+            sortedComparables.map((comp) => {
+              const isManual = comp.source === 'manual';
+              return (
+                <TableRow
+                  key={comp.id}
+                  className={`
+                    hover:bg-accent/50 transition-colors
+                    ${highlightedCompId === comp.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}
+                    ${isManual ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : ''}
+                  `}
+                >
                 {/* Star */}
                 <TableCell>
                   {onToggleFavorite && (
@@ -229,6 +233,7 @@ export const CompsTable = ({
                   )}
                 </TableCell>
 
+
                 {/* Quality Score */}
                 <TableCell>
                   {getQualityBadge(comp.similarity_score)}
@@ -236,6 +241,20 @@ export const CompsTable = ({
                     <div className="text-xs text-muted-foreground mt-1">
                       {(comp.similarity_score * 100).toFixed(0)}%
                     </div>
+                  )}
+                </TableCell>
+
+                {/* Source */}
+                <TableCell>
+                  {isManual ? (
+                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 mr-1">Manual</Badge>
+                  ) : (
+                    <Badge className="bg-blue-100 text-blue-800 border-blue-200 mr-1">Auto</Badge>
+                  )}
+                  {isManual && comp.url && (
+                    <a href={comp.url} target="_blank" rel="noopener noreferrer" title="Open manual comp link">
+                      <ExternalLink className="h-4 w-4 inline ml-1 text-yellow-700" />
+                    </a>
                   )}
                 </TableCell>
 

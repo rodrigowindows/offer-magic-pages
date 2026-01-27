@@ -6,7 +6,8 @@
       "Bash(node:*)",
       "Bash(curl:*)",
       "Bash(npx supabase:*)",
-      "WebFetch(domain:api.developer.attomdata.com)"
+      "WebFetch(domain:api.developer.attomdata.com)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

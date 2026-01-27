@@ -79,6 +79,9 @@ export interface ComparableProperty {
     age?: number;
     total?: number;
   };
+  // Manual comps fields
+  url?: string;
+  notes?: string;
 }
 
 export interface MarketAnalysis {

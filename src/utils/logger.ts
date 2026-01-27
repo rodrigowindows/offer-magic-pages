@@ -1,3 +1,9 @@
+// Callback para captura de logs na UI
+let logCallback: ((log: {timestamp: string, level: LogLevel, prefix: string, message: string, data?: any}) => void) | null = null;
+
+export const setLogCallback = (callback: typeof logCallback) => {
+  logCallback = callback;
+};
 // src/utils/logger.ts
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
@@ -28,6 +34,15 @@ function log(level: LogLevel, prefix: string, message: string, data?: any) {
     console.warn(`[${ts}] ${prefix} ${message}`, sanitized);
   } else {
     console.log(`[${ts}] ${prefix} ${message}`, sanitized);
+  }
+  if (logCallback) {
+    logCallback({
+      timestamp: ts,
+      level,
+      prefix,
+      message,
+      data: sanitized
+    });
   }
 }
 

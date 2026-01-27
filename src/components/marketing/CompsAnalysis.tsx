@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2 } from 'lucide-react';
+import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2, Trash2, FileText, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 // Modular Components - Phase 1
@@ -35,6 +35,9 @@ import {
   CompareDialog,
   NoCompsFound,
 } from '@/components/comps-analysis';
+
+// Logs Panel
+import { LogsPanel, type LogEntry } from '@/components/comps-analysis/LogsPanel';
 
 // Types
 import type {
@@ -58,7 +61,7 @@ import { AdjustmentCalculator } from '@/components/AdjustmentCalculator';
 
 // Services
 import { CompsDataService } from '@/services/compsDataService';
-import { logger } from '@/utils/logger';
+import { logger, setLogCallback } from '@/utils/logger';
 import { AVMService } from '@/services/avmService';
 import { validatePropertyData } from '@/utils/dataValidation';
 import { supabase } from '@/integrations/supabase/client';
@@ -132,6 +135,10 @@ export const CompsAnalysis = () => {
   // Comparison
   const [selectedForComparison, setSelectedForComparison] = useState<ComparableProperty[]>([]);
 
+  // Logs Panel
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [showLogsPanel, setShowLogsPanel] = useState(false);
+
   // ========================================
   // CUSTOM HOOKS
   // ========================================
@@ -156,9 +163,18 @@ export const CompsAnalysis = () => {
 
   /**
    * Filter comparables based on active filters
+   * INCLUDES MANUAL COMPS when on 'combined' or 'auto' tab
    */
   const filteredComparables = useMemo(() => {
-    return comparables.filter((comp) => {
+    // Convert manual comps to comparable format
+    const manualComparables = convertManualLinksToComparables(manualComps);
+
+    // Combine auto + manual if on combined tab, otherwise just auto
+    const allComparables = activeTab === 'combined' || activeTab === 'auto'
+      ? [...comparables, ...manualComparables]
+      : comparables;
+
+    return allComparables.filter((comp) => {
       // Distance filter
       if (compsFilters.maxDistance && comp.distance && comp.distance > compsFilters.maxDistance) {
         return false;
@@ -212,7 +228,7 @@ export const CompsAnalysis = () => {
 
       return true;
     });
-  }, [comparables, compsFilters]);
+  }, [comparables, compsFilters, manualComps, activeTab, convertManualLinksToComparables]);
 
   /**
    * Filtered properties based on status and offer filters
@@ -600,6 +616,117 @@ export const CompsAnalysis = () => {
   }, [compsFilters.maxDistance, compsCache, toast]);
 
   /**
+   * Clear cache and force fresh API fetch
+   */
+  const clearCacheAndRefresh = useCallback(async () => {
+    if (!selectedProperty) {
+      toast({
+        title: 'No Property Selected',
+        description: 'Please select a property first',
+        variant: 'default',
+      });
+      return;
+    }
+
+    try {
+      logger.info('🗑️ Clearing cache and refreshing comparables', { property: selectedProperty.address });
+
+      // 1. Clear memory cache
+      const cacheKey = `${selectedProperty.id}-${compsFilters.maxDistance || 3}`;
+      setCompsCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[cacheKey];
+        return newCache;
+      });
+      logger.info('✅ Memory cache cleared', { cacheKey });
+
+      // 2. Clear database cache (optional)
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error: deleteError } = await supabase
+            .from('comps_analysis_history')
+            .delete()
+            .eq('property_id', selectedProperty.id)
+            .eq('analyst_user_id', user.id);
+
+          if (deleteError) {
+            logger.warn('⚠️ Failed to clear database cache', deleteError);
+          } else {
+            logger.info('✅ Database cache cleared', { propertyId: selectedProperty.id });
+          }
+        }
+      } catch (dbError) {
+        logger.error('❌ Error clearing database cache', dbError);
+      }
+
+      // 3. Force new fetch
+      toast({
+        title: 'Cache Cleared',
+        description: 'Fetching fresh data from API...',
+        variant: 'default',
+      });
+
+      await generateComparables(selectedProperty);
+
+      toast({
+        title: 'Success',
+        description: 'Fresh comparables loaded successfully',
+        variant: 'default',
+      });
+    } catch (error) {
+      logger.error('❌ Error in clearCacheAndRefresh', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to refresh comparables',
+        variant: 'destructive',
+      });
+    }
+  }, [selectedProperty, compsFilters.maxDistance, generateComparables, toast]);
+
+  /**
+   * Convert manual links to ComparableProperty format
+   */
+  const convertManualLinksToComparables = useCallback((manualLinks: any[]): ComparableProperty[] => {
+    if (!manualLinks || manualLinks.length === 0) return [];
+
+    logger.debug('Converting manual links to comparables', { count: manualLinks.length });
+
+    return manualLinks.map((link, index) => ({
+      id: link.id || `manual-${index}`,
+      address: link.property_address || link.address || 'Manual Entry',
+      sale_price: link.sale_price || 0,
+      sale_date: link.sale_date || link.created_at || new Date().toISOString(),
+      square_feet: link.square_feet || link.sqft || 0,
+      bedrooms: link.bedrooms || link.beds || 0,
+      bathrooms: link.bathrooms || link.baths || 0,
+      price_per_sqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
+      distance: link.distance || 0,
+      source: 'manual',
+      url: link.url || '',
+      notes: link.notes || '',
+      similarity_score: 0.5, // Default score for manual entries
+      property_type: link.property_type || 'Single Family',
+      year_built: link.year_built,
+      lot_size: link.lot_size,
+      // Map to legacy format if needed
+      salePrice: link.sale_price || 0,
+      saleDate: new Date(link.sale_date || link.created_at || Date.now()).toISOString(),
+      sqft: link.square_feet || link.sqft || 0,
+      beds: link.bedrooms || link.beds || 0,
+      baths: link.bathrooms || link.baths || 0,
+      pricePerSqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
+      distanceMiles: link.distance || 0,
+      yearBuilt: link.year_built,
+      lotSize: link.lot_size,
+      latitude: link.latitude,
+      longitude: link.longitude,
+      similarityScore: 0.5,
+      propertyType: link.property_type || 'Single Family',
+    }));
+  }, []);
+
+  /**
    * Load manual comps count
    */
   const loadManualLinksCount = useCallback(async (propertyId: string) => {
@@ -787,18 +914,29 @@ export const CompsAnalysis = () => {
             
             if (analysisData?.comparables && analysisData?.analysis) {
               console.log('✅ Using DATABASE cache for export:', property.address);
+
+              // Preserve dataSource from database field or analysis object or comps
+              const compsSource = analysisData.comparables?.[0]?.source;
+              const restoredAnalysis = {
+                ...analysisData.analysis,
+                dataSource: savedAnalysis.data_source ||
+                            compsSource ||
+                            analysisData.analysis?.dataSource ||
+                            'database',
+                isDemo: (savedAnalysis.data_source || compsSource || 'database') === 'demo',
+              };
               
               // Update memory cache for next time
               setCompsCache(prev => ({
                 ...prev,
                 [cacheKey]: {
                   comparables: analysisData.comparables,
-                  analysis: analysisData.analysis,
+                  analysis: restoredAnalysis,
                   timestamp: Date.now()
                 }
               }));
               
-              return { comparables: analysisData.comparables, analysis: analysisData.analysis };
+              return { comparables: analysisData.comparables, analysis: restoredAnalysis };
             }
           }
         } catch (dbError) {
@@ -1052,6 +1190,28 @@ export const CompsAnalysis = () => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [saveReport, exportToPDF, refreshComparables]);
 
+  // Connect logger callback to capture logs in UI
+  useEffect(() => {
+    const MAX_LOGS = 100; // Limit to prevent memory issues
+
+    setLogCallback((log) => {
+      setLogs(prev => {
+        const newLogs = [...prev, {
+          timestamp: log.timestamp,
+          level: log.level,
+          message: `${log.prefix} ${log.message}`,
+          data: log.data
+        }];
+        // Keep only last MAX_LOGS entries
+        return newLogs.slice(-MAX_LOGS);
+      });
+    });
+
+    return () => {
+      setLogCallback(null as any);
+    };
+  }, []);
+
   // ========================================
   // RENDER
   // ========================================
@@ -1101,6 +1261,28 @@ export const CompsAnalysis = () => {
           >
             {exportingPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
             Export All Filtered ({filteredProperties.length})
+          </Button>
+          <Button
+            variant="outline"
+            onClick={clearCacheAndRefresh}
+            disabled={!selectedProperty || loadingComps}
+            title="Clear cache and fetch fresh data from API"
+          >
+            {loadingComps ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Clear Cache
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowLogsPanel(!showLogsPanel)}
+            className="relative"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Logs
+            {logs.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {logs.length > 99 ? '99+' : logs.length}
+              </span>
+            )}
           </Button>
           <Button
             variant="outline"
@@ -1415,6 +1597,16 @@ export const CompsAnalysis = () => {
               />
             </TabsContent>
           </Tabs>
+
+          {/* Logs Panel */}
+          {showLogsPanel && (
+            <LogsPanel
+              logs={logs}
+              onClear={() => setLogs([])}
+              onClose={() => setShowLogsPanel(false)}
+              show={showLogsPanel}
+            />
+          )}
         </>
       )}
 

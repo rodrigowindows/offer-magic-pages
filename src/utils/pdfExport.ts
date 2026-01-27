@@ -110,6 +110,29 @@ function validateCompsValues(
     );
   }
 
+  // Detectar padrões de dados demo (generic street names)
+  const genericStreets = [
+    'Colonial Dr', 'Pine Ave', 'Palm Way', 'Main St', 'Cedar Ln',
+    'Sunset Blvd', 'Oak St', 'Maple Dr', 'Park Ave', 'Lake View Dr'
+  ];
+
+  const genericCount = comparables.filter(c => {
+    const street = c.address.split(' ').slice(-2).join(' ');
+    return genericStreets.includes(street);
+  }).length;
+
+  if (genericCount >= comparables.length * 0.8) {
+    warnings.push('⚠️ High percentage of generic street names detected - data may be demo');
+  }
+
+  // Validar distâncias (muitos 0.0mi é suspeito)
+  const zeroDistanceCount = comparables.filter(comp => comp.distanceMiles === 0).length;
+  if (zeroDistanceCount > comparables.length * 0.5) {
+    warnings.push(
+      `${zeroDistanceCount} properties show 0.0mi distance - geocoding may have failed`
+    );
+  }
+
   return {
     isValid: warnings.length === 0,
     warnings,
@@ -469,25 +492,25 @@ export const exportCompsToPDF = async (
       database: [168, 85, 247], // purple
     };
 
-    if (analysis.dataSource) {
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('Data Source:', 20, currentY);
+    // Always show data source (default to 'database' if undefined)
+    const dataSource = analysis.dataSource || 'database';
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Data Source:', 20, currentY);
 
-      const color = sourceColors[analysis.dataSource] || [156, 163, 175];
-      doc.setTextColor(color[0], color[1], color[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.text(sourceLabels[analysis.dataSource] || 'Unknown', 50, currentY);
-      doc.setFont('helvetica', 'normal');
+    const color = sourceColors[dataSource] || [168, 85, 247];
+    doc.setTextColor(color[0], color[1], color[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text(sourceLabels[dataSource] || 'Database Cache', 50, currentY);
+    doc.setFont('helvetica', 'normal');
 
-      if (analysis.isDemo) {
-        doc.setTextColor(239, 68, 68); // red
-        doc.setFontSize(7);
-        doc.text('⚠ Demo data - Configure API keys for real market data', 100, currentY);
-      }
-
-      currentY += 7;
+    if (analysis.isDemo) {
+      doc.setTextColor(239, 68, 68); // red
+      doc.setFontSize(7);
+      doc.text('⚠ Demo data - Configure API keys for real market data', 100, currentY);
     }
+
+    currentY += 7;
 
     // Validate comparables and show warnings if needed
     const validation = validateCompsValues(comparables, property.estimated_value);
@@ -882,35 +905,36 @@ export const exportConsolidatedCompsPDF = async (
 
       currentY += 25;
 
-      // Data Source Badge
-      if (analysis.dataSource) {
-        const sourceConfig: Record<string, { label: string; color: number[] }> = {
-          attom: { label: 'MLS Data', color: [34, 197, 94] },
-          zillow: { label: 'Zillow API', color: [59, 130, 246] },
-          'county-csv': { label: 'Public Records', color: [249, 115, 22] },
-          demo: { label: 'Demo Data', color: [156, 163, 175] },
-          database: { label: 'Database Cache', color: [168, 85, 247] },
-        };
+      // Data Source Badge (positioned above table) - ALWAYS show
+      const sourceConfig: Record<string, { label: string; color: number[] }> = {
+        attom: { label: 'MLS Data', color: [34, 197, 94] },
+        zillow: { label: 'Zillow API', color: [59, 130, 246] },
+        'county-csv': { label: 'Public Records', color: [249, 115, 22] },
+        demo: { label: 'Demo Data', color: [156, 163, 175] },
+        database: { label: 'Database Cache', color: [168, 85, 247] },
+      };
 
-        const config = sourceConfig[analysis.dataSource] || sourceConfig.demo;
+      // Default to 'database' if dataSource is undefined
+      const dataSource = analysis.dataSource || 'database';
+      const config = sourceConfig[dataSource] || sourceConfig.database;
 
-        // Draw badge rectangle
-        doc.setFillColor(config.color[0], config.color[1], config.color[2]);
-        doc.roundedRect(140, currentY, 50, 7, 2, 2, 'F');
+      // Draw badge rectangle (using rect instead of roundedRect for compatibility)
+      doc.setFillColor(config.color[0], config.color[1], config.color[2]);
+      doc.rect(140, currentY - 2, 50, 7, 'F');
 
-        // Draw badge text
-        doc.setFontSize(7);
-        doc.setTextColor(255, 255, 255);
-        doc.setFont('helvetica', 'bold');
-        doc.text(config.label, 165, currentY + 5, { align: 'center' });
-        doc.setFont('helvetica', 'normal');
+      // Draw badge text
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.text(config.label, 165, currentY + 3, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
 
-        // Demo warning
-        if (analysis.isDemo) {
-          doc.setFontSize(6);
-          doc.setTextColor(239, 68, 68);
-          doc.text('⚠ Demo', 165, currentY + 10, { align: 'center' });
-        }
+      // Demo warning below badge
+      if (analysis.isDemo) {
+        doc.setFontSize(6);
+        doc.setTextColor(239, 68, 68);
+        doc.text('⚠ Demo', 165, currentY + 8, { align: 'center' });
+        currentY += 3; // Extra space for demo warning
       }
 
       // Comparables table
@@ -949,17 +973,17 @@ export const exportConsolidatedCompsPDF = async (
           fillColor: [249, 250, 251],
         },
         columnStyles: {
-          0: { cellWidth: 6 },   // #
-          1: { cellWidth: 46 },  // Address
-          2: { cellWidth: 18 },  // Date
-          3: { cellWidth: 16 },  // Price
-          4: { cellWidth: 14 },  // Sqft
-          5: { cellWidth: 14 },  // $/Sqft
-          6: { cellWidth: 12 },  // Bd/Ba
-          7: { cellWidth: 10 },  // Dist
+          0: { cellWidth: 5 },   // # (reduzido)
+          1: { cellWidth: 44 },  // Address (reduzido)
+          2: { cellWidth: 17 },  // Date (reduzido)
+          3: { cellWidth: 15 },  // Price (reduzido)
+          4: { cellWidth: 13 },  // Sqft (reduzido)
+          5: { cellWidth: 13 },  // $/Sqft (reduzido)
+          6: { cellWidth: 11 },  // Bd/Ba (reduzido)
+          7: { cellWidth: 9 },   // Dist (reduzido)
         },
         margin: { left: 20, right: 20 },
-        tableWidth: 136,  // Soma exata das colunas
+        tableWidth: 127,  // Nova soma: 5+44+17+15+13+13+11+9 = 127
         styles: {
           overflow: 'linebreak',
           cellPadding: { top: 1, right: 1, bottom: 1, left: 1 },
