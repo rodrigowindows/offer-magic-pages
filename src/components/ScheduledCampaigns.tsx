@@ -33,13 +33,9 @@ export const ScheduledCampaigns = () => {
 
   const loadScheduledCampaigns = async () => {
     try {
-      const { data, error } = await supabase
-        .from('scheduled_campaigns')
-        .select('*')
-        .order('scheduled_at', { ascending: true });
-
-      if (error) throw error;
-      setCampaigns(data || []);
+      // Table scheduled_campaigns doesn't exist - using empty array for now
+      // TODO: Create scheduled_campaigns table if this feature is needed
+      setCampaigns([]);
     } catch (error) {
       console.error('Error loading scheduled campaigns:', error);
       toast({
@@ -83,19 +79,12 @@ export const ScheduledCampaigns = () => {
     if (!confirm('Are you sure you want to delete this scheduled campaign?')) return;
 
     try {
-      const { error } = await supabase
-        .from('scheduled_campaigns')
-        .delete()
-        .eq('id', campaignId);
-
-      if (error) throw error;
-
+      // Table doesn't exist - just filter locally
+      setCampaigns(campaigns.filter(c => c.id !== campaignId));
       toast({
         title: 'Campaign Deleted',
         description: 'Scheduled campaign has been deleted',
       });
-
-      setCampaigns(campaigns.filter(c => c.id !== campaignId));
     } catch (error) {
       console.error('Error deleting campaign:', error);
       toast({

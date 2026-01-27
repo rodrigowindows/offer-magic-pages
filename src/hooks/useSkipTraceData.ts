@@ -46,6 +46,7 @@ export interface SkipTraceResponse {
     properties_with_emails: number;
     properties_with_owner_info: number;
   };
+  error?: string;
 }
 
 export interface UseSkipTraceDataOptions {
@@ -93,12 +94,14 @@ export const useSkipTraceData = (options: UseSkipTraceDataOptions = {}) => {
 
       // Since we can't pass query params directly to invoke, we'll use fetch
       const queryString = params.toString();
-      const functionUrl = `${supabase.supabaseUrl}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const functionUrl = `${supabaseUrl}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
 
       const response2 = await fetch(functionUrl, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Authorization': `Bearer ${supabaseKey}`,
           'Content-Type': 'application/json',
         },
       });
