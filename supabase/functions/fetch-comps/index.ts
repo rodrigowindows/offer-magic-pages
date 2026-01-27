@@ -359,6 +359,7 @@ async function fetchFromAttomV2(
 // V2 Parser
 function extractAttomV2Comparables(data: any, defaults: { city: string; state: string; zipCode: string }): { comps: ComparableData[]; parsingPath: string } {
   const results: ComparableData[] = [];
+  let parsingPath = 'unknown';
 
   // Log estrutura recebida para debugging
   console.log('📦 ATTOM V2 Response Structure - Top level keys:', JSON.stringify(Object.keys(data || {})));
