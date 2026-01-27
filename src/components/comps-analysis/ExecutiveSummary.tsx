@@ -20,6 +20,7 @@ interface ExecutiveSummaryProps {
   onSave: () => void;
   onExport: (withImages: boolean) => void;
   onExportAll: () => void;
+  onExportAllForceRefresh?: () => void;
   onShare: () => void;
 }
 
@@ -54,6 +55,7 @@ export const ExecutiveSummary = ({
   onSave,
   onExport,
   onExportAll,
+  onExportAllForceRefresh,
   onShare
 }: ExecutiveSummaryProps) => {
   return (
@@ -139,6 +141,15 @@ export const ExecutiveSummary = ({
                   <Download className="w-4 h-4 mr-2" />
                   Export All Filtered
                 </DropdownMenuItem>
+                {onExportAllForceRefresh && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onExportAllForceRefresh} disabled={exportingPDF} className="text-orange-600">
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Force Refresh & Export All
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 

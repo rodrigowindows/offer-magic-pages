@@ -85,7 +85,7 @@ function addDistanceAndFilterByRadius(
 // ===== Address Normalization for ATTOM API =====
 /**
  * Normalizes address for ATTOM API by removing city name from end,
- * removing duplicate words, and cleaning up format
+ * expanding abbreviations, and cleaning up format
  */
 function normalizeAddressForAttom(address: string, city: string): string {
   if (!address) return '';
@@ -101,10 +101,101 @@ function normalizeAddressForAttom(address: string, city: string): string {
   // Remove palavras duplicadas comuns (ORLANDO, FLORIDA, FL)
   normalized = normalized.replace(/\b(ORLANDO|FLORIDA|FL)\b/gi, '').trim();
   
+  // Expand directional abbreviations (important for API matching)
+  // Must do compound directions first to avoid double replacement
+  normalized = normalized.replace(/\bNE\b/g, 'NORTHEAST');
+  normalized = normalized.replace(/\bNW\b/g, 'NORTHWEST');
+  normalized = normalized.replace(/\bSE\b/g, 'SOUTHEAST');
+  normalized = normalized.replace(/\bSW\b/g, 'SOUTHWEST');
+  // Then do single letter directions - match standalone letters (not part of words)
+  // Pattern: word boundary, single letter, word boundary (ensures it's a standalone direction)
+  normalized = normalized.replace(/\bN\b/g, 'NORTH');
+  normalized = normalized.replace(/\bS\b/g, 'SOUTH');
+  normalized = normalized.replace(/\bE\b/g, 'EAST');
+  normalized = normalized.replace(/\bW\b/g, 'WEST');
+  
+  // Expand common street type abbreviations
+  normalized = normalized.replace(/\bST\b/g, 'STREET');
+  normalized = normalized.replace(/\bAVE\b/g, 'AVENUE');
+  normalized = normalized.replace(/\bRD\b/g, 'ROAD');
+  normalized = normalized.replace(/\bDR\b/g, 'DRIVE');
+  normalized = normalized.replace(/\bBLVD\b/g, 'BOULEVARD');
+  normalized = normalized.replace(/\bBLVD\b/g, 'BOULEVARD');
+  normalized = normalized.replace(/\bCT\b/g, 'COURT');
+  normalized = normalized.replace(/\bCIR\b/g, 'CIRCLE');
+  normalized = normalized.replace(/\bLN\b/g, 'LANE');
+  normalized = normalized.replace(/\bPL\b/g, 'PLACE');
+  normalized = normalized.replace(/\bPKWY\b/g, 'PARKWAY');
+  normalized = normalized.replace(/\bHWY\b/g, 'HIGHWAY');
+  
   // Normaliza espaços múltiplos
   normalized = normalized.replace(/\s+/g, ' ');
   
-  return normalized;
+  return normalized.trim();
+}
+
+/**
+ * Generates alternative address formats to try when primary format fails
+ * This helps handle cases where API expects different address formats
+ */
+function generateAlternativeAddressFormats(address: string): string[] {
+  const formats: string[] = [];
+  
+  // 1. Try with abbreviated directional (opposite of expansion) - API might prefer abbreviations
+  const withAbbrevDir = address
+    .replace(/\bNORTH\b/g, 'N')
+    .replace(/\bSOUTH\b/g, 'S')
+    .replace(/\bEAST\b/g, 'E')
+    .replace(/\bWEST\b/g, 'W')
+    .replace(/\bNORTHEAST\b/g, 'NE')
+    .replace(/\bNORTHWEST\b/g, 'NW')
+    .replace(/\bSOUTHEAST\b/g, 'SE')
+    .replace(/\bSOUTHWEST\b/g, 'SW');
+  if (withAbbrevDir !== address) {
+    formats.push(withAbbrevDir);
+  }
+  
+  // 2. Try with abbreviated street types (opposite of expansion)
+  const withAbbrevTypes = address
+    .replace(/\bSTREET\b/g, 'ST')
+    .replace(/\bAVENUE\b/g, 'AVE')
+    .replace(/\bROAD\b/g, 'RD')
+    .replace(/\bDRIVE\b/g, 'DR')
+    .replace(/\bBOULEVARD\b/g, 'BLVD')
+    .replace(/\bCOURT\b/g, 'CT')
+    .replace(/\bCIRCLE\b/g, 'CIR')
+    .replace(/\bLANE\b/g, 'LN')
+    .replace(/\bPLACE\b/g, 'PL')
+    .replace(/\bPARKWAY\b/g, 'PKWY')
+    .replace(/\bHIGHWAY\b/g, 'HWY');
+  if (withAbbrevTypes !== address) {
+    formats.push(withAbbrevTypes);
+  }
+  
+  // 3. Try without directional if present
+  const withoutDirectional = address.replace(/\b(NORTH|SOUTH|EAST|WEST|NORTHEAST|NORTHWEST|SOUTHEAST|SOUTHWEST)\s+/gi, '').trim();
+  if (withoutDirectional !== address && withoutDirectional.length > 0) {
+    formats.push(withoutDirectional);
+  }
+  
+  // 4. Try combination: abbreviated directional + abbreviated types
+  if (withAbbrevDir !== address && withAbbrevTypes !== address) {
+    const combined = withAbbrevTypes
+      .replace(/\bNORTH\b/g, 'N')
+      .replace(/\bSOUTH\b/g, 'S')
+      .replace(/\bEAST\b/g, 'E')
+      .replace(/\bWEST\b/g, 'W')
+      .replace(/\bNORTHEAST\b/g, 'NE')
+      .replace(/\bNORTHWEST\b/g, 'NW')
+      .replace(/\bSOUTHEAST\b/g, 'SE')
+      .replace(/\bSOUTHWEST\b/g, 'SW');
+    if (combined !== address) {
+      formats.push(combined);
+    }
+  }
+  
+  // Remove duplicates and return
+  return Array.from(new Set(formats));
 }
 
 // ===== Helper function to log API requests to database =====
@@ -272,6 +363,70 @@ async function fetchFromAttomV2(
       if (isAddressNotFound) {
         console.log(`⚠️ ATTOM V2: Address not found in database`);
         console.log(`📍 Original: ${address}, Normalized: ${normalizedAddress}, ${city}, ${county}, ${state} ${zipCode}`);
+        
+        // Try alternative address formats as fallback
+        console.log(`🔄 Attempting alternative address formats...`);
+        const alternativeFormats = generateAlternativeAddressFormats(normalizedAddress);
+        
+        for (const altAddress of alternativeFormats) {
+          if (altAddress === normalizedAddress) continue; // Skip if same as already tried
+          
+          console.log(`🔄 Trying alternative format: "${altAddress}"`);
+          const altEncodedAddress = encodeURIComponent(altAddress);
+          const altUrl = `https://api.gateway.attomdata.com/property/v2/salescomparables/address/${altEncodedAddress}/${encodedCity}/${encodedCounty}/${state}/${zipCode}`;
+          
+          try {
+            const altResponse = await fetch(altUrl, {
+              method: 'GET',
+              headers: requestHeaders,
+            });
+            
+            if (altResponse.ok) {
+              const altData = await altResponse.json();
+              const { comps: altComps, parsingPath: altParsingPath } = extractAttomV2Comparables(altData, { city, state, zipCode });
+              
+              if (altComps.length > 0) {
+                console.log(`✅ Alternative format succeeded! Found ${altComps.length} comps with format: "${altAddress}"`);
+                
+                // Log successful alternative attempt
+                await logApiRequest({
+                  apiSource: 'attom-v2',
+                  requestAddress: address,
+                  normalizedAddress: altAddress,
+                  city,
+                  county,
+                  state,
+                  zipCode,
+                  requestUrl: altUrl,
+                  httpStatus: altResponse.status,
+                  httpStatusText: altResponse.statusText,
+                  responseHeaders: Object.fromEntries(altResponse.headers.entries()),
+                  requestHeaders,
+                  responseBody: altData,
+                  parsedCompsCount: altComps.length,
+                  parsingPathUsed: altParsingPath,
+                  responseStructureKeys: Object.keys(altData || {}),
+                  executionTimeMs: Date.now() - startTime,
+                  apiKeyConfigured: !!ATTOM_API_KEY,
+                  metadata: {
+                    isAlternativeFormat: true,
+                    originalNormalized: normalizedAddress,
+                    alternativeFormat: altAddress,
+                  },
+                });
+                
+                return altComps;
+              }
+            } else {
+              const altErrorText = await altResponse.text();
+              console.log(`⚠️ Alternative format "${altAddress}" also failed (HTTP ${altResponse.status})`);
+            }
+          } catch (altError) {
+            console.log(`⚠️ Error trying alternative format "${altAddress}":`, altError);
+          }
+        }
+        
+        console.log(`❌ All address format attempts failed`);
       } else if (response.status === 401) {
         console.log(`🔑 ATTOM V2: API Key authentication failed - check API key configuration`);
       } else if (response.status === 429) {

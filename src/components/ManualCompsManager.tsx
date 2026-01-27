@@ -86,8 +86,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [saving, setSaving] = useState(false);
   const [filterPropertyId, setFilterPropertyId] = useState<string>('all');
 
-  // Estados para dados completos
+  // Estados para dados completos e modo rápido
   const [addFullData, setAddFullData] = useState(false);
+  const [quickAdd, setQuickAdd] = useState(false);
   const [salePrice, setSalePrice] = useState('');
   const [squareFeet, setSquareFeet] = useState('');
   const [bedrooms, setBedrooms] = useState('');
@@ -210,36 +211,44 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         return;
       }
 
-      // Preparar dados completos se ativado
+      // Preparar dados completos se ativado (Quick Add ou Full Data)
       let compData = null;
-      if (addFullData) {
-        // Validar campos obrigatórios quando dados completos
-        if (!salePrice || parseFloat(salePrice) <= 0) {
-          toast({
-            title: '⚠️ Preço inválido',
-            description: 'Informe um preço de venda válido',
-            variant: 'destructive'
-          });
-          setSaving(false);
-          return;
-        }
-        if (!squareFeet || parseFloat(squareFeet) <= 0) {
-          toast({
-            title: '⚠️ Área inválida',
-            description: 'Informe a área em sqft',
-            variant: 'destructive'
-          });
-          setSaving(false);
-          return;
+      if (quickAdd || addFullData) {
+        // Quick Add: apenas preço e sqft (opcionais)
+        // Full Data: todos os campos (preço e sqft obrigatórios)
+        
+        if (addFullData) {
+          // Validar campos obrigatórios quando dados completos
+          if (!salePrice || parseFloat(salePrice) <= 0) {
+            toast({
+              title: '⚠️ Preço inválido',
+              description: 'Informe um preço de venda válido',
+              variant: 'destructive'
+            });
+            setSaving(false);
+            return;
+          }
+          if (!squareFeet || parseFloat(squareFeet) <= 0) {
+            toast({
+              title: '⚠️ Área inválida',
+              description: 'Informe a área em sqft',
+              variant: 'destructive'
+            });
+            setSaving(false);
+            return;
+          }
         }
 
-        compData = {
-          sale_price: parseFloat(salePrice),
-          square_feet: parseFloat(squareFeet),
-          bedrooms: bedrooms ? parseInt(bedrooms) : undefined,
-          bathrooms: bathrooms ? parseFloat(bathrooms) : undefined,
-          sale_date: saleDate || undefined
-        };
+        // Se tem preço ou sqft preenchidos, incluir no comp_data
+        if (salePrice || squareFeet) {
+          compData = {
+            sale_price: salePrice ? parseFloat(salePrice) : undefined,
+            square_feet: squareFeet ? parseFloat(squareFeet) : undefined,
+            bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
+            bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
+            sale_date: addFullData && saleDate ? saleDate : undefined
+          };
+        }
       }
 
       const { error } = await supabase
@@ -275,6 +284,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBathrooms('');
       setSaleDate('');
       setAddFullData(false);
+      setQuickAdd(false);
       loadLinks();
     } catch (error) {
       console.error('Error saving link:', error);
@@ -547,98 +557,100 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
             />
           </div>
 
-          {/* Toggle para dados completos */}
-          <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
+
+          {/* Modo Rápido (Quick Add) */}
+          <div className="flex items-center gap-2 mt-4">
+            <Button
+              type="button"
+              variant={quickAdd ? 'default' : 'outline'}
+              onClick={() => setQuickAdd((v) => !v)}
+              disabled={saving}
+            >
+              Quick Add
+            </Button>
+            <span className="text-xs text-muted-foreground">Adicionar preço/sqft rapidamente</span>
+          </div>
+          {(quickAdd || addFullData) && (
+            <div className="grid grid-cols-2 gap-4 mt-2 p-2 border rounded bg-muted/30">
               <div>
-                <Label htmlFor="full-data-toggle" className="cursor-pointer">
-                  Adicionar dados completos do comp
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Preencha manualmente preço, sqft, quartos, etc.
-                </p>
+                <Label htmlFor="sale-price-quick">Preço ($)</Label>
+                <Input
+                  id="sale-price-quick"
+                  type="number"
+                  placeholder="Ex: 250000"
+                  value={salePrice}
+                  onChange={(e) => setSalePrice(e.target.value)}
+                  className={salePrice ? 'border-green-500' : ''}
+                  disabled={saving}
+                />
               </div>
+              <div>
+                <Label htmlFor="square-feet-quick">Sqft</Label>
+                <Input
+                  id="square-feet-quick"
+                  type="number"
+                  placeholder="Ex: 1500"
+                  value={squareFeet}
+                  onChange={(e) => setSquareFeet(e.target.value)}
+                  className={squareFeet ? 'border-green-500' : ''}
+                  disabled={saving}
+                />
+              </div>
+              {addFullData && (
+                <>
+                  <div>
+                    <Label htmlFor="bedrooms">Bedrooms</Label>
+                    <Input
+                      id="bedrooms"
+                      type="number"
+                      placeholder="Ex: 3"
+                      value={bedrooms}
+                      onChange={(e) => setBedrooms(e.target.value)}
+                      disabled={saving}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="bathrooms">Bathrooms</Label>
+                    <Input
+                      id="bathrooms"
+                      type="number"
+                      step="0.5"
+                      placeholder="Ex: 2"
+                      value={bathrooms}
+                      onChange={(e) => setBathrooms(e.target.value)}
+                      disabled={saving}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="sale-date">Sale Date</Label>
+                    <Input
+                      id="sale-date"
+                      type="date"
+                      value={saleDate}
+                      onChange={(e) => setSaleDate(e.target.value)}
+                      disabled={saving}
+                    />
+                  </div>
+                </>
+              )}
             </div>
+          )}
+          {/* Toggle para dados completos */}
+          <div className="flex items-center gap-2 mt-2">
             <Switch
               id="full-data-toggle"
               checked={addFullData}
               onCheckedChange={setAddFullData}
               disabled={saving}
             />
+            <Label htmlFor="full-data-toggle" className="cursor-pointer">
+              Adicionar dados completos (quartos, banheiros, data)
+            </Label>
           </div>
-
-          {/* Campos de dados completos */}
-          {addFullData && (
-            <div className="space-y-4 p-4 border-2 border-dashed border-muted-foreground/20 rounded-lg bg-muted/30">
-              <div className="flex items-center gap-2 mb-2">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <p className="text-sm font-semibold text-blue-900">Dados do Comparable</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sale-price">
-                    Sale Price ($) <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="sale-price"
-                    type="number"
-                    placeholder="Ex: 250000"
-                    value={salePrice}
-                    onChange={(e) => setSalePrice(e.target.value)}
-                    disabled={saving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="square-feet">
-                    Square Feet <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="square-feet"
-                    type="number"
-                    placeholder="Ex: 1500"
-                    value={squareFeet}
-                    onChange={(e) => setSquareFeet(e.target.value)}
-                    disabled={saving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bedrooms">Bedrooms</Label>
-                  <Input
-                    id="bedrooms"
-                    type="number"
-                    placeholder="Ex: 3"
-                    value={bedrooms}
-                    onChange={(e) => setBedrooms(e.target.value)}
-                    disabled={saving}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bathrooms">Bathrooms</Label>
-                  <Input
-                    id="bathrooms"
-                    type="number"
-                    step="0.5"
-                    placeholder="Ex: 2"
-                    value={bathrooms}
-                    onChange={(e) => setBathrooms(e.target.value)}
-                    disabled={saving}
-                  />
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="sale-date">Sale Date</Label>
-                  <Input
-                    id="sale-date"
-                    type="date"
-                    value={saleDate}
-                    onChange={(e) => setSaleDate(e.target.value)}
-                    disabled={saving}
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                <span className="text-red-500">*</span> Campos obrigatórios quando dados completos ativado
-              </p>
+          {/* Preview do comp manual */}
+          {(salePrice || squareFeet) && (
+            <div className="mt-2 p-2 border rounded bg-green-50 text-green-900 text-xs">
+              <b>Preview:</b> {salePrice ? `Preço: $${salePrice}` : ''} {squareFeet ? `| Sqft: ${squareFeet}` : ''}
             </div>
           )}
 

@@ -478,18 +478,28 @@ export const exportCompsToPDF = async (
     // ===== DATA SOURCE & VALIDATION =====
     const sourceLabels: Record<string, string> = {
       attom: 'MLS Data (Attom API)',
+      'attom-v2': 'MLS Data (Attom V2)',
+      'attom-v1': 'MLS Data (Attom V1)',
       zillow: 'Zillow API',
+      'zillow-api': 'Zillow API',
       'county-csv': 'Public Records (Orange County)',
       demo: 'Demo Data',
       database: 'Cached Database',
+      manual: 'Manual Entry',
+      combined: 'Combined (API + Manual)',
     };
 
     const sourceColors: Record<string, number[]> = {
       attom: [34, 197, 94], // green
+      'attom-v2': [34, 197, 94], // green
+      'attom-v1': [34, 197, 94], // green
       zillow: [59, 130, 246], // blue
+      'zillow-api': [59, 130, 246], // blue
       'county-csv': [249, 115, 22], // orange
       demo: [156, 163, 175], // gray
       database: [168, 85, 247], // purple
+      manual: [139, 92, 246], // purple/violet
+      combined: [34, 197, 94], // green (same as attom)
     };
 
     // Always show data source (default to 'database' if undefined)
@@ -908,10 +918,15 @@ export const exportConsolidatedCompsPDF = async (
       // Data Source Badge (positioned above table) - ALWAYS show
       const sourceConfig: Record<string, { label: string; color: number[] }> = {
         attom: { label: 'MLS Data', color: [34, 197, 94] },
+        'attom-v2': { label: 'MLS Data (V2)', color: [34, 197, 94] },
+        'attom-v1': { label: 'MLS Data (V1)', color: [34, 197, 94] },
         zillow: { label: 'Zillow API', color: [59, 130, 246] },
+        'zillow-api': { label: 'Zillow API', color: [59, 130, 246] },
         'county-csv': { label: 'Public Records', color: [249, 115, 22] },
         demo: { label: 'Demo Data', color: [156, 163, 175] },
         database: { label: 'Database Cache', color: [168, 85, 247] },
+        manual: { label: 'Manual Entry', color: [139, 92, 246] },
+        combined: { label: 'Combined', color: [34, 197, 94] },
       };
 
       // Default to 'database' if dataSource is undefined
