@@ -108,6 +108,81 @@ export type Database = {
           },
         ]
       }
+      api_request_logs: {
+        Row: {
+          api_key_configured: boolean | null
+          api_source: string
+          city: string | null
+          county: string | null
+          created_at: string
+          error_response: string | null
+          execution_time_ms: number | null
+          http_status: number | null
+          http_status_text: string | null
+          id: string
+          metadata: Json | null
+          normalized_address: string | null
+          parsed_comps_count: number | null
+          parsing_path_used: string | null
+          request_address: string
+          request_headers: Json | null
+          request_url: string
+          response_body: Json | null
+          response_headers: Json | null
+          response_structure_keys: string[] | null
+          state: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          api_key_configured?: boolean | null
+          api_source?: string
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          error_response?: string | null
+          execution_time_ms?: number | null
+          http_status?: number | null
+          http_status_text?: string | null
+          id?: string
+          metadata?: Json | null
+          normalized_address?: string | null
+          parsed_comps_count?: number | null
+          parsing_path_used?: string | null
+          request_address: string
+          request_headers?: Json | null
+          request_url: string
+          response_body?: Json | null
+          response_headers?: Json | null
+          response_structure_keys?: string[] | null
+          state?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          api_key_configured?: boolean | null
+          api_source?: string
+          city?: string | null
+          county?: string | null
+          created_at?: string
+          error_response?: string | null
+          execution_time_ms?: number | null
+          http_status?: number | null
+          http_status_text?: string | null
+          id?: string
+          metadata?: Json | null
+          normalized_address?: string | null
+          parsed_comps_count?: number | null
+          parsing_path_used?: string | null
+          request_address?: string
+          request_headers?: Json | null
+          request_url?: string
+          response_body?: Json | null
+          response_headers?: Json | null
+          response_structure_keys?: string[] | null
+          state?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
       call_settings: {
         Row: {
           api_endpoint: string
