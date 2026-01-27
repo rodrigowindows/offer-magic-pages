@@ -296,8 +296,9 @@ export const CompsTable = ({
                   </div>
                 </TableCell>
               </TableRow>
-            ))
-          )}
+              );
+            }))
+          }
         </TableBody>
       </Table>
     </div>
