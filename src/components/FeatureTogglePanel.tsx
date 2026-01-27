@@ -438,10 +438,10 @@ export const FeatureTogglePanel: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Switch
                             id={feature.key}
-                            checked={flags[feature.key]}
+                            checked={Boolean(flags[feature.key])}
                             onCheckedChange={(checked) => updateFlag(feature.key, checked)}
                           />
-                          {flags[feature.key] ? (
+                          {Boolean(flags[feature.key]) ? (
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
                           ) : (
                             <div className="h-4 w-4" />

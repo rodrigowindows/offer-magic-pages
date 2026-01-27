@@ -164,12 +164,14 @@ export interface SavedTemplate {
   channel: Channel;
   subject?: string;
   body: string;
-  content?: string;        // ADICIONAR
-  message_template?: string; // ADICIONAR
-  description?: string;    // ADICIONAR
+  content?: string;
+  message_template?: string;
+  description?: string;
   is_default: boolean;
   created_at: Date;
   updated_at: Date;
+  version?: number;
+  edited_manually?: boolean;
 }
 
 // ===== BATCH UPLOAD =====

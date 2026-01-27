@@ -199,7 +199,8 @@ export const FeatureToggleProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const isFeatureEnabled = (key: keyof FeatureFlags): boolean => {
-    return flags[key];
+    const value = flags[key];
+    return typeof value === 'boolean' ? value : Boolean(value);
   };
 
   return (

@@ -39,7 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 interface OfferCreationFormProps {
   onBack?: () => void;
   onSave?: (offer: PropertyOfferData) => void;
-  onSend?: (offer: PropertyOfferData) => void;
+  onSend?: (offerId: string) => void;
   initialData?: Partial<PropertyOfferData>;
 }
 
@@ -176,11 +176,12 @@ export const OfferCreationForm = ({
 
     setIsSubmitting(true);
     try {
-      const offerData: Omit<PropertyOfferData, 'id' | 'status' | 'createdAt' | 'expiresAt'> = {
+      const offerData = {
         propertyId: `prop_${Date.now()}`, // Generate temporary ID
         offerAmount: parseFloat(formData.offerAmount),
         estimatedValue: parseFloat(formData.estimatedValue) || parseFloat(formData.offerAmount),
         closingDays: parseInt(formData.closingDays),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         recipientName: formData.recipientName,
         recipientEmail: formData.recipientEmail,
         recipientPhone: formData.recipientPhone,
@@ -193,9 +194,9 @@ export const OfferCreationForm = ({
           state: formData.state,
           zipCode: formData.zipCode,
           propertyType: formData.propertyType,
-          bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
-          bathrooms: formData.bathrooms ? parseFloat(formData.bathrooms) : undefined,
-          squareFeet: formData.squareFeet ? parseInt(formData.squareFeet) : undefined
+          bedrooms: formData.bedrooms ? parseInt(String(formData.bedrooms)) : undefined,
+          bathrooms: formData.bathrooms ? parseFloat(String(formData.bathrooms)) : undefined,
+          squareFeet: formData.squareFeet ? parseInt(String(formData.squareFeet)) : undefined
         }
       };
 
@@ -256,7 +257,7 @@ export const OfferCreationForm = ({
           title: "Offer Sent",
           description: "Offer campaign has been sent successfully"
         });
-        onSend?.(result.data!);
+        onSend?.(result.offerId || '');
       } else {
         toast({
           title: "Error",
