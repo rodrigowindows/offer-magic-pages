@@ -158,6 +158,51 @@ export const CompsAnalysis = () => {
   } = useAnalysisHistory();
 
   // ========================================
+  // HELPER FUNCTIONS
+  // ========================================
+
+  /**
+   * Convert manual links to ComparableProperty format
+   */
+  const convertManualLinksToComparables = useCallback((manualLinks: any[]): ComparableProperty[] => {
+    if (!manualLinks || manualLinks.length === 0) return [];
+
+    logger.debug('Converting manual links to comparables', { count: manualLinks.length });
+
+    return manualLinks.map((link, index) => ({
+      id: link.id || `manual-${index}`,
+      address: link.property_address || link.address || 'Manual Entry',
+      sale_price: link.sale_price || 0,
+      sale_date: link.sale_date || link.created_at || new Date().toISOString(),
+      square_feet: link.square_feet || link.sqft || 0,
+      bedrooms: link.bedrooms || link.beds || 0,
+      bathrooms: link.bathrooms || link.baths || 0,
+      price_per_sqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
+      distance: link.distance || 0,
+      source: 'manual',
+      url: link.url || '',
+      notes: link.notes || '',
+      similarity_score: 0.5,
+      property_type: link.property_type || 'Single Family',
+      year_built: link.year_built,
+      lot_size: link.lot_size,
+      salePrice: link.sale_price || 0,
+      saleDate: new Date(link.sale_date || link.created_at || Date.now()).toISOString(),
+      sqft: link.square_feet || link.sqft || 0,
+      beds: link.bedrooms || link.beds || 0,
+      baths: link.bathrooms || link.baths || 0,
+      pricePerSqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
+      distanceMiles: link.distance || 0,
+      yearBuilt: link.year_built,
+      lotSize: link.lot_size,
+      latitude: link.latitude,
+      longitude: link.longitude,
+      similarityScore: 0.5,
+      propertyType: link.property_type || 'Single Family',
+    }));
+  }, []);
+
+  // ========================================
   // COMPUTED VALUES (MEMOIZED)
   // ========================================
 
@@ -684,47 +729,6 @@ export const CompsAnalysis = () => {
     }
   }, [selectedProperty, compsFilters.maxDistance, generateComparables, toast]);
 
-  /**
-   * Convert manual links to ComparableProperty format
-   */
-  const convertManualLinksToComparables = useCallback((manualLinks: any[]): ComparableProperty[] => {
-    if (!manualLinks || manualLinks.length === 0) return [];
-
-    logger.debug('Converting manual links to comparables', { count: manualLinks.length });
-
-    return manualLinks.map((link, index) => ({
-      id: link.id || `manual-${index}`,
-      address: link.property_address || link.address || 'Manual Entry',
-      sale_price: link.sale_price || 0,
-      sale_date: link.sale_date || link.created_at || new Date().toISOString(),
-      square_feet: link.square_feet || link.sqft || 0,
-      bedrooms: link.bedrooms || link.beds || 0,
-      bathrooms: link.bathrooms || link.baths || 0,
-      price_per_sqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
-      distance: link.distance || 0,
-      source: 'manual',
-      url: link.url || '',
-      notes: link.notes || '',
-      similarity_score: 0.5, // Default score for manual entries
-      property_type: link.property_type || 'Single Family',
-      year_built: link.year_built,
-      lot_size: link.lot_size,
-      // Map to legacy format if needed
-      salePrice: link.sale_price || 0,
-      saleDate: new Date(link.sale_date || link.created_at || Date.now()).toISOString(),
-      sqft: link.square_feet || link.sqft || 0,
-      beds: link.bedrooms || link.beds || 0,
-      baths: link.bathrooms || link.baths || 0,
-      pricePerSqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
-      distanceMiles: link.distance || 0,
-      yearBuilt: link.year_built,
-      lotSize: link.lot_size,
-      latitude: link.latitude,
-      longitude: link.longitude,
-      similarityScore: 0.5,
-      propertyType: link.property_type || 'Single Family',
-    }));
-  }, []);
 
   /**
    * Load manual comps count
