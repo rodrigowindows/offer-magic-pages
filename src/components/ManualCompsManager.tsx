@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { extractDataFromUrl, formatExtractedAddress, isValidExtractedData } from '@/utils/urlDataExtractor';
 import {
   Link,
   Plus,
@@ -86,11 +87,10 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [saving, setSaving] = useState(false);
   const [filterPropertyId, setFilterPropertyId] = useState<string>('all');
 
-  // Estados para dados completos e modo rápido
-  const [addFullData, setAddFullData] = useState(false);
-  const [quickAdd, setQuickAdd] = useState(false);
+  // Estados para dados do comp (Quick Add sempre visível)
   const [salePrice, setSalePrice] = useState('');
   const [squareFeet, setSquareFeet] = useState('');
+  const [addFullData, setAddFullData] = useState(false); // Para dados avançados opcionais
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [saleDate, setSaleDate] = useState('');
@@ -534,14 +534,112 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
             <Input
               id="comps-url"
               type="url"
-              placeholder="Ex: https://www.trulia.com/sold/Orlando,FL/..."
+              placeholder="Ex: https://www.zillow.com/homedetails/123-Main-St-Orlando-FL-32801/..."
               value={compsUrl}
-              onChange={(e) => setCompsUrl(e.target.value)}
+              onChange={(e) => {
+                const newUrl = e.target.value;
+                setCompsUrl(newUrl);
+
+                // Auto-extract data from URL when pasted
+                if (newUrl.length > 20 && (newUrl.includes('zillow') || newUrl.includes('redfin') || newUrl.includes('trulia') || newUrl.includes('realtor'))) {
+                  try {
+                    const extracted = extractDataFromUrl(newUrl);
+                    console.log('🔍 Extracted data from URL:', extracted);
+
+                    // Show toast notification
+                    if (isValidExtractedData(extracted)) {
+                      const addressStr = formatExtractedAddress(extracted);
+                      toast({
+                        title: '✅ Dados detectados da URL',
+                        description: addressStr || 'Endereço encontrado',
+                        duration: 3000,
+                      });
+                    }
+                  } catch (error) {
+                    console.warn('Failed to extract URL data:', error);
+                  }
+                }
+              }}
               disabled={saving}
             />
-            <p className="text-xs text-muted-foreground">
-              💡 Dica: Abra Trulia/Zillow, busque vendas recentes próximas, copie a URL
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground flex-1">
+                💡 Cole o link e clique "Auto-Fill" para extrair dados automaticamente!
+              </p>
+              {compsUrl && (compsUrl.includes('zillow') || compsUrl.includes('trulia') || compsUrl.includes('redfin')) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      toast({ title: '🔍 Buscando dados...', description: 'Extraindo informações da URL' });
+
+                      const extracted = extractDataFromUrl(compsUrl);
+
+                      // For now, just use URL extraction (scraping is optional)
+                      if (extracted.price) setSalePrice(extracted.price.toString());
+                      if (extracted.sqft) setSquareFeet(extracted.sqft.toString());
+                      if (extracted.beds) setBedrooms(extracted.beds.toString());
+                      if (extracted.baths) setBathrooms(extracted.baths.toString());
+
+                      toast({
+                        title: '✅ Dados extraídos!',
+                        description: formatExtractedAddress(extracted) || 'Informações preenchidas',
+                      });
+                    } catch (error) {
+                      console.error('Auto-fill error:', error);
+                      toast({
+                        title: '⚠️ Não foi possível extrair',
+                        description: 'Preencha os dados manualmente',
+                        variant: 'destructive',
+                      });
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading || saving}
+                >
+                  {loading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : '🪄'}
+                  Auto-Fill
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Add Fields - Always visible */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold flex items-center gap-2">
+              ⚡ Quick Add - Preço & Sqft (Opcional)
+              <span className="text-xs text-muted-foreground font-normal">Preencha manual ou use Auto-Fill</span>
+            </Label>
+            <div className="grid grid-cols-2 gap-4 p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/50">
+              <div>
+                <Label htmlFor="sale-price-quick" className="text-xs">Preço de Venda ($)</Label>
+                <Input
+                  id="sale-price-quick"
+                  type="number"
+                  placeholder="Ex: 250000"
+                  value={salePrice}
+                  onChange={(e) => setSalePrice(e.target.value)}
+                  className={salePrice ? 'border-green-500 border-2' : ''}
+                  disabled={saving}
+                />
+              </div>
+              <div>
+                <Label htmlFor="square-feet-quick" className="text-xs">Square Feet</Label>
+                <Input
+                  id="square-feet-quick"
+                  type="number"
+                  placeholder="Ex: 1500"
+                  value={squareFeet}
+                  onChange={(e) => setSquareFeet(e.target.value)}
+                  className={squareFeet ? 'border-green-500 border-2' : ''}
+                  disabled={saving}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Notas (opcional) */}
@@ -557,85 +655,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
             />
           </div>
 
-
-          {/* Modo Rápido (Quick Add) */}
-          <div className="flex items-center gap-2 mt-4">
-            <Button
-              type="button"
-              variant={quickAdd ? 'default' : 'outline'}
-              onClick={() => setQuickAdd((v) => !v)}
-              disabled={saving}
-            >
-              Quick Add
-            </Button>
-            <span className="text-xs text-muted-foreground">Adicionar preço/sqft rapidamente</span>
-          </div>
-          {(quickAdd || addFullData) && (
-            <div className="grid grid-cols-2 gap-4 mt-2 p-2 border rounded bg-muted/30">
-              <div>
-                <Label htmlFor="sale-price-quick">Preço ($)</Label>
-                <Input
-                  id="sale-price-quick"
-                  type="number"
-                  placeholder="Ex: 250000"
-                  value={salePrice}
-                  onChange={(e) => setSalePrice(e.target.value)}
-                  className={salePrice ? 'border-green-500' : ''}
-                  disabled={saving}
-                />
-              </div>
-              <div>
-                <Label htmlFor="square-feet-quick">Sqft</Label>
-                <Input
-                  id="square-feet-quick"
-                  type="number"
-                  placeholder="Ex: 1500"
-                  value={squareFeet}
-                  onChange={(e) => setSquareFeet(e.target.value)}
-                  className={squareFeet ? 'border-green-500' : ''}
-                  disabled={saving}
-                />
-              </div>
-              {addFullData && (
-                <>
-                  <div>
-                    <Label htmlFor="bedrooms">Bedrooms</Label>
-                    <Input
-                      id="bedrooms"
-                      type="number"
-                      placeholder="Ex: 3"
-                      value={bedrooms}
-                      onChange={(e) => setBedrooms(e.target.value)}
-                      disabled={saving}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bathrooms">Bathrooms</Label>
-                    <Input
-                      id="bathrooms"
-                      type="number"
-                      step="0.5"
-                      placeholder="Ex: 2"
-                      value={bathrooms}
-                      onChange={(e) => setBathrooms(e.target.value)}
-                      disabled={saving}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="sale-date">Sale Date</Label>
-                    <Input
-                      id="sale-date"
-                      type="date"
-                      value={saleDate}
-                      onChange={(e) => setSaleDate(e.target.value)}
-                      disabled={saving}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-          {/* Toggle para dados completos */}
+          {/* Toggle para dados avançados (optional) */}
           <div className="flex items-center gap-2 mt-2">
             <Switch
               id="full-data-toggle"
@@ -643,14 +663,55 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
               onCheckedChange={setAddFullData}
               disabled={saving}
             />
-            <Label htmlFor="full-data-toggle" className="cursor-pointer">
-              Adicionar dados completos (quartos, banheiros, data)
+            <Label htmlFor="full-data-toggle" className="cursor-pointer text-sm">
+              📋 Adicionar dados avançados (quartos, banheiros, data de venda)
             </Label>
           </div>
+
+          {/* Advanced Fields */}
+          {addFullData && (
+            <div className="grid grid-cols-2 gap-4 mt-2 p-3 border rounded bg-amber-50/50">
+              <div>
+                <Label htmlFor="bedrooms" className="text-xs">Bedrooms</Label>
+                <Input
+                  id="bedrooms"
+                  type="number"
+                  placeholder="Ex: 3"
+                  value={bedrooms}
+                  onChange={(e) => setBedrooms(e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+              <div>
+                <Label htmlFor="bathrooms" className="text-xs">Bathrooms</Label>
+                <Input
+                  id="bathrooms"
+                  type="number"
+                  step="0.5"
+                  placeholder="Ex: 2"
+                  value={bathrooms}
+                  onChange={(e) => setBathrooms(e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="sale-date" className="text-xs">Sale Date</Label>
+                <Input
+                  id="sale-date"
+                  type="date"
+                  value={saleDate}
+                  onChange={(e) => setSaleDate(e.target.value)}
+                  disabled={saving}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Preview do comp manual */}
           {(salePrice || squareFeet) && (
-            <div className="mt-2 p-2 border rounded bg-green-50 text-green-900 text-xs">
-              <b>Preview:</b> {salePrice ? `Preço: $${salePrice}` : ''} {squareFeet ? `| Sqft: ${squareFeet}` : ''}
+            <div className="mt-2 p-2 border-2 border-green-300 rounded bg-green-50 text-green-900 text-sm">
+              <b>✓ Preview:</b> {salePrice ? `Preço: $${Number(salePrice).toLocaleString()}` : ''} {squareFeet ? `| Sqft: ${Number(squareFeet).toLocaleString()}` : ''}
+              {salePrice && squareFeet ? ` | $/Sqft: $${Math.round(Number(salePrice) / Number(squareFeet))}` : ''}
             </div>
           )}
 
