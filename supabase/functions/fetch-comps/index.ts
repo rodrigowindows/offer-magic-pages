@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { CITY_TO_COUNTY_MAP, getCountyByCity, suggestCounty } from './cityCountyMap.ts';
 
 function generateRequestId() {
@@ -81,6 +82,108 @@ function addDistanceAndFilterByRadius(
 // ===== City to County Map (required for ATTOM V2) =====
 // ...existing code...
 
+// ===== Address Normalization for ATTOM API =====
+/**
+ * Normalizes address for ATTOM API by removing city name from end,
+ * removing duplicate words, and cleaning up format
+ */
+function normalizeAddressForAttom(address: string, city: string): string {
+  if (!address) return '';
+  
+  let normalized = address.trim().toUpperCase();
+  
+  // Remove cidade do final se presente
+  const cityUpper = city.toUpperCase();
+  if (normalized.endsWith(` ${cityUpper}`)) {
+    normalized = normalized.slice(0, -cityUpper.length - 1).trim();
+  }
+  
+  // Remove palavras duplicadas comuns (ORLANDO, FLORIDA, FL)
+  normalized = normalized.replace(/\b(ORLANDO|FLORIDA|FL)\b/gi, '').trim();
+  
+  // Normaliza espaços múltiplos
+  normalized = normalized.replace(/\s+/g, ' ');
+  
+  return normalized;
+}
+
+// ===== Helper function to log API requests to database =====
+/**
+ * Logs API request/response details to database for verification and debugging
+ * This helps verify that the API is returning production data correctly
+ */
+async function logApiRequest(params: {
+  apiSource: string;
+  requestAddress: string;
+  normalizedAddress?: string;
+  city?: string;
+  county?: string;
+  state?: string;
+  zipCode?: string;
+  requestUrl: string;
+  httpStatus?: number;
+  httpStatusText?: string;
+  responseHeaders?: Record<string, string>;
+  requestHeaders?: Record<string, string>;
+  responseBody?: any;
+  errorResponse?: string;
+  parsedCompsCount?: number;
+  parsingPathUsed?: string;
+  responseStructureKeys?: string[];
+  executionTimeMs?: number;
+  apiKeyConfigured?: boolean;
+  metadata?: any;
+}): Promise<void> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.log('⚠️ Cannot log API request: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured');
+      return;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const logData = {
+      api_source: params.apiSource,
+      request_address: params.requestAddress,
+      normalized_address: params.normalizedAddress || null,
+      city: params.city || null,
+      county: params.county || null,
+      state: params.state || null,
+      zip_code: params.zipCode || null,
+      request_url: params.requestUrl,
+      http_status: params.httpStatus || null,
+      http_status_text: params.httpStatusText || null,
+      response_headers: params.responseHeaders || null,
+      request_headers: params.requestHeaders || null,
+      response_body: params.responseBody || null,
+      error_response: params.errorResponse || null,
+      parsed_comps_count: params.parsedCompsCount || 0,
+      parsing_path_used: params.parsingPathUsed || null,
+      response_structure_keys: params.responseStructureKeys || null,
+      execution_time_ms: params.executionTimeMs || null,
+      api_key_configured: params.apiKeyConfigured ?? false,
+      metadata: params.metadata || null,
+    };
+
+    const { error } = await supabase
+      .from('api_request_logs')
+      .insert(logData);
+
+    if (error) {
+      console.error('❌ Failed to log API request to database:', error);
+      // Don't throw - logging failure shouldn't break the main flow
+    } else {
+      console.log('✅ API request logged to database successfully');
+    }
+  } catch (error) {
+    console.error('❌ Error logging API request:', error);
+    // Don't throw - logging failure shouldn't break the main flow
+  }
+}
+
 // ===== OPTION 1A: Attom Data API V2 (PREFERRED - Sales Comparables) =====
 // V2 endpoint that works with Free Trial: /property/v2/salescomparables/address
 async function fetchFromAttomV2(
@@ -100,46 +203,123 @@ async function fetchFromAttomV2(
     return [];
   }
 
+  const startTime = Date.now();
+  
   try {
     console.log(`🏠 Fetching from ATTOM Sales Comparables V2...`);
-    console.log(`📍 Address: ${address}, City: ${city}, County: ${county}, State: ${state}, ZIP: ${zipCode}`);
+    console.log(`📍 Original Address: ${address}, City: ${city}, County: ${county}, State: ${state}, ZIP: ${zipCode}`);
 
-    const encodedAddress = encodeURIComponent(address);
+    // Normalize address before sending to API
+    const normalizedAddress = normalizeAddressForAttom(address, city);
+    console.log(`📍 Normalized Address: ${normalizedAddress}`);
+
+    const encodedAddress = encodeURIComponent(normalizedAddress);
     const encodedCity = encodeURIComponent(city);
     const encodedCounty = encodeURIComponent(county);
 
     const url = `https://api.gateway.attomdata.com/property/v2/salescomparables/address/${encodedAddress}/${encodedCity}/${encodedCounty}/${state}/${zipCode}`;
 
-    console.log(`🔗 Request URL: ${url.substring(0, 100)}...`);
+    console.log(`🔗 Full Request URL: ${url}`);
+    console.log(`🔑 API Key configured: ${!!ATTOM_API_KEY}`);
+
+    const requestHeaders = {
+      'Accept': 'application/json',
+      'APIKey': ATTOM_API_KEY,
+    };
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'APIKey': ATTOM_API_KEY,
-      }
+      headers: requestHeaders,
     });
+
+    const executionTime = Date.now() - startTime;
+    const responseHeaders = Object.fromEntries(response.headers.entries());
+    
+    console.log(`📡 Response Status: ${response.status} ${response.statusText}`);
+    console.log(`📋 Response Headers:`, responseHeaders);
 
     if (!response.ok) {
       const errorText = await response.text();
       const isAddressNotFound = response.status === 400 && errorText.includes('Unable to locate a property record');
       
+      console.log(`❌ ATTOM V2 API Error (HTTP ${response.status}):`);
+      console.log(`📄 Full Error Response:`, errorText);
+      
+      // Log error to database
+      await logApiRequest({
+        apiSource: 'attom-v2',
+        requestAddress: address,
+        normalizedAddress,
+        city,
+        county,
+        state,
+        zipCode,
+        requestUrl: url,
+        httpStatus: response.status,
+        httpStatusText: response.statusText,
+        responseHeaders,
+        requestHeaders,
+        errorResponse: errorText,
+        parsedCompsCount: 0,
+        executionTimeMs: executionTime,
+        apiKeyConfigured: !!ATTOM_API_KEY,
+        metadata: {
+          isAddressNotFound,
+          errorType: response.status === 401 ? 'authentication' : response.status === 429 ? 'rate_limit' : 'unknown',
+        },
+      });
+      
       if (isAddressNotFound) {
-        console.log(`⚠️ ATTOM V2: Address not found in database (HTTP ${response.status})`);
-        console.log(`📍 Address: ${address}, ${city}, ${county}, ${state} ${zipCode}`);
+        console.log(`⚠️ ATTOM V2: Address not found in database`);
+        console.log(`📍 Original: ${address}, Normalized: ${normalizedAddress}, ${city}, ${county}, ${state} ${zipCode}`);
+      } else if (response.status === 401) {
+        console.log(`🔑 ATTOM V2: API Key authentication failed - check API key configuration`);
+      } else if (response.status === 429) {
+        console.log(`⏱️ ATTOM V2: Rate limit exceeded - too many requests`);
       } else {
-        console.log(`❌ ATTOM V2 API error (HTTP ${response.status}):`, errorText.substring(0, 200));
+        console.log(`❌ ATTOM V2: Unknown error (HTTP ${response.status})`);
       }
       return [];
     }
 
     const data = await response.json();
+    const responseStructureKeys = Object.keys(data || {});
+    
+    console.log(`📦 ATTOM V2 Response received, structure keys:`, responseStructureKeys);
+    console.log(`📦 Full Response (first 2000 chars):`, JSON.stringify(data, null, 2).substring(0, 2000));
 
     // Extract comparables from V2 format (RESPONSE_GROUP)
-    const comps = extractAttomV2Comparables(data, { city, state, zipCode });
+    const { comps, parsingPath } = extractAttomV2Comparables(data, { city, state, zipCode });
+
+    // Log successful request to database
+    await logApiRequest({
+      apiSource: 'attom-v2',
+      requestAddress: address,
+      normalizedAddress,
+      city,
+      county,
+      state,
+      zipCode,
+      requestUrl: url,
+      httpStatus: response.status,
+      httpStatusText: response.statusText,
+      responseHeaders,
+      requestHeaders,
+      responseBody: data, // Full response stored for verification
+      parsedCompsCount: comps.length,
+      parsingPathUsed: parsingPath,
+      responseStructureKeys,
+      executionTimeMs: executionTime,
+      apiKeyConfigured: !!ATTOM_API_KEY,
+      metadata: {
+        hasData: !!data,
+        dataType: Array.isArray(data) ? 'array' : typeof data,
+      },
+    });
 
     if (comps.length === 0) {
       console.log('⚠️ ATTOM V2: No comparables found (API returned data but parser found 0 valid comps)');
+      console.log(`📋 Full response structure for debugging:`, JSON.stringify(data, null, 2));
       return [];
     }
 
@@ -147,50 +327,161 @@ async function fetchFromAttomV2(
     return comps;
 
   } catch (error) {
+    const executionTime = Date.now() - startTime;
     console.error('❌ ATTOM V2 fetch failed:', error);
+    console.error('❌ Error details:', error instanceof Error ? error.message : String(error));
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'N/A');
+    
+    // Log exception to database
+    await logApiRequest({
+      apiSource: 'attom-v2',
+      requestAddress: address,
+      normalizedAddress: normalizeAddressForAttom(address, city),
+      city,
+      county,
+      state,
+      zipCode,
+      requestUrl: `https://api.gateway.attomdata.com/property/v2/salescomparables/address/...`,
+      errorResponse: error instanceof Error ? error.message : String(error),
+      parsedCompsCount: 0,
+      executionTimeMs: executionTime,
+      apiKeyConfigured: !!ATTOM_API_KEY,
+      metadata: {
+        errorType: 'exception',
+        errorStack: error instanceof Error ? error.stack : null,
+      },
+    });
+    
     return [];
   }
 }
 
 // V2 Parser
-function extractAttomV2Comparables(data: any, defaults: { city: string; state: string; zipCode: string }): ComparableData[] {
+function extractAttomV2Comparables(data: any, defaults: { city: string; state: string; zipCode: string }): { comps: ComparableData[]; parsingPath: string } {
   const results: ComparableData[] = [];
 
   // Log estrutura recebida para debugging
-  console.log('📦 ATTOM V2 Response Structure:', JSON.stringify(Object.keys(data || {})));
+  console.log('📦 ATTOM V2 Response Structure - Top level keys:', JSON.stringify(Object.keys(data || {})));
+  
+  // Log full structure for debugging
+  console.log('📦 ATTOM V2 Full Response Structure:', JSON.stringify(data, null, 2));
 
-  // V2 format (RESPONSE_GROUP)
+  // Try multiple parsing paths
+  let parsingAttempts = 0;
+  let parsingSuccess = false;
+
+  // Path 1: V2 format (RESPONSE_GROUP) - Primary path
+  parsingAttempts++;
+  console.log(`🔍 [Path ${parsingAttempts}] Attempting V2 format (RESPONSE_GROUP)...`);
   const v2Props = data?.RESPONSE_GROUP?.RESPONSE?.RESPONSE_DATA?.PROPERTY_INFORMATION_RESPONSE_ext?.SUBJECT_PROPERTY_ext?.PROPERTY;
-
-  if (Array.isArray(v2Props)) {
-    console.log(`✅ Found V2 format with ${v2Props.length} properties`);
-    const parsedV2 = v2Props
-      .map((entry: any) => parseAttomV2Comparable(entry, defaults))
-      .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
-    results.push(...parsedV2);
-  } else if (v2Props) {
-    console.log('⚠️ V2 format found but not an array:', typeof v2Props);
+  
+  if (v2Props) {
+    console.log(`📋 V2 Props found, type: ${typeof v2Props}, isArray: ${Array.isArray(v2Props)}`);
+    
+    if (Array.isArray(v2Props)) {
+      console.log(`✅ Found V2 format with ${v2Props.length} properties`);
+      const parsedV2 = v2Props
+        .map((entry: any, idx: number) => {
+          console.log(`  🔍 Parsing entry ${idx + 1}/${v2Props.length}`);
+          const comp = parseAttomV2Comparable(entry, defaults);
+          if (comp) {
+            console.log(`  ✅ Entry ${idx + 1} parsed: ${comp.address}, $${comp.salePrice}`);
+          } else {
+            console.log(`  ⚠️ Entry ${idx + 1} failed to parse`);
+          }
+          return comp;
+        })
+        .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
+      results.push(...parsedV2);
+      console.log(`✅ Path ${parsingAttempts} success: ${parsedV2.length} valid comps extracted`);
+      parsingPath = 'v2';
+      parsingSuccess = true;
+    } else {
+      console.log(`⚠️ V2 format found but not an array: ${typeof v2Props}`);
+      console.log(`📋 V2 Props value:`, JSON.stringify(v2Props, null, 2).substring(0, 500));
+    }
   } else {
-    console.log('⚠️ V2 format (RESPONSE_GROUP) not found in response');
+    console.log(`⚠️ V2 format (RESPONSE_GROUP) not found in response`);
+    // Log intermediate paths for debugging
+    if (data?.RESPONSE_GROUP) {
+      console.log(`  📋 RESPONSE_GROUP exists, keys:`, Object.keys(data.RESPONSE_GROUP));
+      if (data.RESPONSE_GROUP?.RESPONSE) {
+        console.log(`  📋 RESPONSE exists, keys:`, Object.keys(data.RESPONSE_GROUP.RESPONSE));
+      }
+    }
   }
 
-  // Fallback for legacy format (data.property)
-  if (Array.isArray(data?.property)) {
-    console.log(`✅ Found legacy format with ${data.property.length} properties`);
-    const parsedLegacy = data.property
-      .map((prop: any) => parseLegacyComparable(prop, defaults))
-      .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
-    results.push(...parsedLegacy);
-  } else if (data?.property) {
-    console.log('⚠️ Legacy format found but not an array:', typeof data.property);
+  // Path 2: Legacy format (data.property) - Fallback
+  if (results.length === 0) {
+    parsingAttempts++;
+    console.log(`🔍 [Path ${parsingAttempts}] Attempting legacy format (data.property)...`);
+    
+    if (Array.isArray(data?.property)) {
+      console.log(`✅ Found legacy format with ${data.property.length} properties`);
+      const parsedLegacy = data.property
+        .map((prop: any, idx: number) => {
+          console.log(`  🔍 Parsing legacy property ${idx + 1}/${data.property.length}`);
+          const comp = parseLegacyComparable(prop, defaults);
+          if (comp) {
+            console.log(`  ✅ Legacy property ${idx + 1} parsed: ${comp.address}, $${comp.salePrice}`);
+          }
+          return comp;
+        })
+        .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
+      results.push(...parsedLegacy);
+      console.log(`✅ Path ${parsingAttempts} success: ${parsedLegacy.length} valid comps extracted`);
+      parsingPath = 'legacy';
+      parsingSuccess = true;
+    } else if (data?.property) {
+      console.log(`⚠️ Legacy format found but not an array: ${typeof data.property}`);
+      console.log(`📋 Property value:`, JSON.stringify(data.property, null, 2).substring(0, 500));
+    } else {
+      console.log(`⚠️ Legacy format (data.property) not found`);
+    }
+  }
+
+  // Path 3: Alternative V2 paths
+  if (results.length === 0) {
+    parsingAttempts++;
+    console.log(`🔍 [Path ${parsingAttempts}] Attempting alternative V2 paths...`);
+    
+    // Try alternative paths
+    const altPaths = [
+      data?.property?.comparables,
+      data?.comparables,
+      data?.RESPONSE?.property,
+      data?.RESPONSE?.comparables,
+      data?.data?.property,
+      data?.data?.comparables,
+    ];
+    
+    for (let i = 0; i < altPaths.length; i++) {
+      const altPath = altPaths[i];
+      if (Array.isArray(altPath) && altPath.length > 0) {
+        console.log(`  ✅ Found alternative path ${i + 1} with ${altPath.length} items`);
+        // Try to parse as legacy format
+        const parsedAlt = altPath
+          .map((prop: any) => parseLegacyComparable(prop, defaults))
+          .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
+        if (parsedAlt.length > 0) {
+          results.push(...parsedAlt);
+          console.log(`✅ Alternative path ${i + 1} success: ${parsedAlt.length} valid comps extracted`);
+          parsingPath = `alternative-${i + 1}`;
+          parsingSuccess = true;
+          break;
+        }
+      }
+    }
   }
 
   if (results.length === 0) {
-    console.error('❌ No comparables extracted from ATTOM V2 response');
-    console.log('📋 Full response structure:', JSON.stringify(data, null, 2).substring(0, 1000));
+    console.error('❌ No comparables extracted from ATTOM V2 response after trying all paths');
+    console.log('📋 Full response structure for debugging:', JSON.stringify(data, null, 2));
+  } else {
+    console.log(`✅ Total comparables extracted: ${results.length}`);
   }
 
-  return results;
+  return { comps: results, parsingPath };
 }
 
 function parseAttomV2Comparable(entry: any, defaults: { city: string; state: string; zipCode: string }): ComparableData | null {
@@ -532,19 +823,74 @@ serve(async (req) => {
     }
     // TESTE INDIVIDUAL DE API
     if (testSource === 'attom-v2') {
-      let extractedZipCode = zipCode;
-      if (!extractedZipCode) {
+      // Use extractedZipCode from above if available, otherwise extract again
+      let testZipCode = extractedZipCode;
+      if (!testZipCode) {
         const zipMatch = `${address} ${city} ${state}`.match(/\b\d{5}\b/);
-        extractedZipCode = zipMatch ? zipMatch[0] : '';
+        testZipCode = zipMatch ? zipMatch[0] : '';
       }
       const county = getCountyByCity(city || 'Orlando', state || 'FL') || suggestCounty(city || 'Orlando', state || 'FL');
-      const attomV2Comps = await fetchFromAttomV2(address, city || 'Orlando', county, state || 'FL', extractedZipCode);
+      
+      // Normalize address for debug info
+      const normalizedAddress = normalizeAddressForAttom(address || '', city || 'Orlando');
+      const encodedAddress = encodeURIComponent(normalizedAddress);
+      const encodedCity = encodeURIComponent(city || 'Orlando');
+      const encodedCounty = encodeURIComponent(county);
+      const debugUrl = `https://api.gateway.attomdata.com/property/v2/salescomparables/address/${encodedAddress}/${encodedCity}/${encodedCounty}/${state || 'FL'}/${testZipCode}`;
+      
+      // Make direct API call to capture response details for debugging
+      let httpStatus: number | null = null;
+      let responseBody: any = null;
+      let errorResponse: string | null = null;
+      let responseHeaders: Record<string, string> = {};
+      
+      try {
+        const testResponse = await fetch(debugUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'APIKey': ATTOM_API_KEY || '',
+          }
+        });
+        
+        httpStatus = testResponse.status;
+        responseHeaders = Object.fromEntries(testResponse.headers.entries());
+        
+        if (!testResponse.ok) {
+          errorResponse = await testResponse.text();
+        } else {
+          responseBody = await testResponse.json();
+        }
+      } catch (apiError) {
+        errorResponse = apiError instanceof Error ? apiError.message : String(apiError);
+      }
+      
+      // Still call fetchFromAttomV2 to get parsed comps
+      const attomV2Comps = await fetchFromAttomV2(address, city || 'Orlando', county, state || 'FL', testZipCode);
+      
       return new Response(JSON.stringify({
         comps: attomV2Comps,
         source: 'attom-v2',
         count: attomV2Comps.length,
         tested: 'attom-v2',
-        error: attomV2Comps.length === 0 ? 'No comps found from Attom V2' : null
+        error: attomV2Comps.length === 0 ? 'No comps found from Attom V2' : null,
+        debug: {
+          originalAddress: address,
+          normalizedAddress: normalizedAddress,
+          city: city || 'Orlando',
+          county: county,
+          state: state || 'FL',
+          zipCode: testZipCode,
+          apiUrl: debugUrl,
+          apiKeyConfigured: !!ATTOM_API_KEY,
+          httpStatus: httpStatus,
+          responseHeaders: responseHeaders,
+          errorResponse: errorResponse,
+          responseStructure: responseBody ? {
+            topLevelKeys: Object.keys(responseBody || {}),
+            fullResponse: responseBody
+          } : null
+        }
       }), { headers: corsHeaders });
     }
     if (testSource === 'zillow') {
