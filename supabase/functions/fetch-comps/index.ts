@@ -520,6 +520,16 @@ serve(async (req) => {
   const startTime = Date.now();
   try {
     const { address, city, state, basePrice, radius = 1, latitude, longitude, zipCode, testSource } = await req.json();
+    // Melhor extração de zipCode
+    let extractedZipCode = zipCode;
+    if (!extractedZipCode) {
+      const zipMatch = `${address} ${city} ${state}`.match(/\b\d{5}(?:-\d{4})?\b/);
+      extractedZipCode = zipMatch ? zipMatch[0] : '';
+      // Se ainda não encontrou e tem coordenadas, logar possível uso de reverse geocoding
+      if (!extractedZipCode && latitude && longitude) {
+        console.log(`⚠️ No ZIP code found, using coordinates: ${latitude}, ${longitude}`);
+      }
+    }
     // TESTE INDIVIDUAL DE API
     if (testSource === 'attom-v2') {
       let extractedZipCode = zipCode;
@@ -566,10 +576,13 @@ serve(async (req) => {
 
     let comps: ComparableData[] = [];
     let source = 'demo';
+    const apiErrors: Record<string, string> = {};
+    const testedSources: string[] = [];
 
     // ===== CASCATA DE FONTES (tentativas em ordem de qualidade) =====
     // 1️⃣ PRIORITY: Try ATTOM V2 Sales Comparables (most accurate)
     if (ATTOM_API_KEY && comps.length < 3) {
+      testedSources.push('attom-v2');
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [1a/4] Attempting ATTOM V2...`, { address, city, state, zipCode });
       let extractedZipCode = zipCode;
       if (!extractedZipCode) {
@@ -602,6 +615,7 @@ serve(async (req) => {
             console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from ATTOM V2`);
           }
         } else {
+          apiErrors['attom-v2'] = 'No comps found or address not recognized';
           console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ ATTOM V2 returned ${attomV2Comps?.length || 0} comps, trying V1 fallback...`);
         }
       } else {
@@ -611,6 +625,7 @@ serve(async (req) => {
 
     // 1️⃣b FALLBACK: Try ATTOM V1 Property Search if V2 failed
     if (ATTOM_API_KEY && comps.length < 3) {
+      testedSources.push('attom-v1');
       const v1Start = Date.now();
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [1b/4] Attempting ATTOM V1 Property Search (fallback)...`);
       const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, zipCode);
@@ -620,6 +635,7 @@ serve(async (req) => {
         source = 'attom-v1';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from ATTOM V1 in ${v1Time}ms`);
       } else {
+        apiErrors['attom-v1'] = 'No comps found or insufficient comps';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ ATTOM V1 failed or returned insufficient comps (${attomComps?.length || 0})`);
       }
     }
@@ -630,6 +646,7 @@ serve(async (req) => {
 
     // 2️⃣ FALLBACK: Try Zillow/RapidAPI
     if (!comps || comps.length < 3) {
+      testedSources.push('zillow');
       if (RAPIDAPI_KEY) {
         const zillowStart = Date.now();
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [2/4] Attempting Zillow via RapidAPI...`);
@@ -640,6 +657,7 @@ serve(async (req) => {
           source = 'zillow-api';
           console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from Zillow in ${zillowTime}ms`);
         } else {
+          apiErrors['zillow'] = 'No comps found or insufficient comps';
           console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ Zillow fallback failed or returned insufficient comps (${zillowApiComps?.length || 0})`);
         }
       } else {
@@ -649,6 +667,7 @@ serve(async (req) => {
 
     // 3️⃣ Try Orange County CSV (100% FREE - Public records for Orlando/FL)
     if ((city?.toLowerCase().includes('orlando') || state === 'FL') && (!comps || comps.length < 3)) {
+      testedSources.push('county-csv');
       const csvStart = Date.now();
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 Trying Orange County Public CSV...`);
       const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
@@ -658,10 +677,21 @@ serve(async (req) => {
         source = comps[0]?.source || 'county-csv';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${countyComps.length} comps from Orange County CSV in ${csvTime}ms`);
       } else {
+        apiErrors['county-csv'] = 'No comps found in Orange County CSV';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ Orange County CSV returned no comps`);
       }
     }
 
+    // Fallback por coordenadas se todas APIs falharem
+    if ((!comps || comps.length === 0) && latitude && longitude) {
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 Attempting coordinate-based search...`);
+      // Aqui você pode implementar fetchCompsByCoordinates se disponível
+      // Exemplo: const coordinateBasedComps = await fetchCompsByCoordinates(latitude, longitude, radius, basePrice);
+      // if (coordinateBasedComps && coordinateBasedComps.length > 0) {
+      //   comps = coordinateBasedComps;
+      //   source = 'coordinate-based';
+      // }
+    }
     if (!comps || comps.length === 0) {
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ No comparables found from any source`);
       source = 'none';
@@ -753,12 +783,8 @@ serve(async (req) => {
         attom: !!ATTOM_API_KEY,
         rapidapi: !!RAPIDAPI_KEY
       },
-      testedSources: ['attom-v2', 'attom-v1', 'zillow', 'county-csv'],
-      apiErrors: {
-        attomV2: null, // Aqui você pode adicionar detalhes de erro se quiser
-        zillow: null,
-        county: null
-      }
+      testedSources,
+      apiErrors
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

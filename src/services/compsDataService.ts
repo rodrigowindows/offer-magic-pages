@@ -100,35 +100,44 @@ export class CompsDataService {
     basePrice: number = 250000,
     useCache: boolean = true,
     latitude?: number,
-    longitude?: number
+    longitude?: number,
+    zipCode?: string
   ): Promise<ComparableData[]> {
     // Get saved radius from localStorage if not provided
     const savedRadius = localStorage.getItem('comps_search_radius');
     const searchRadius = savedRadius ? parseFloat(savedRadius) : radius;
 
-    const cacheKey = `${address}-${city}-${state}-${basePrice}-${searchRadius}-${latitude}-${longitude}`;
+    // Extract zipCode from address if not provided
+    let extractedZipCode = zipCode;
+    if (!extractedZipCode && address) {
+      const zipMatch = address.match(/\b\d{5}(?:-\d{4})?\b/);
+      extractedZipCode = zipMatch ? zipMatch[0] : undefined;
+    }
+
+    const cacheKey = `${address}-${city}-${state}-${basePrice}-${searchRadius}-${latitude}-${longitude}-${extractedZipCode}`;
 
     // Check cache first
     if (useCache) {
       const cached = cache.get(cacheKey);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        logger.info('💾 [CompsDataService] Cache hit', { address, city, state, basePrice, searchRadius, source: cached.source });
+        logger.info('💾 [CompsDataService] Cache hit', { address, city, state, basePrice, searchRadius, zipCode: extractedZipCode, source: cached.source });
         return cached.data.slice(0, limit);
       }
     }
 
-    logger.info('🔍 [CompsDataService] Fetching comparables', { address, city, state, basePrice, searchRadius, latitude, longitude });
+    logger.info('🔍 [CompsDataService] Fetching comparables', { address, city, state, basePrice, searchRadius, latitude, longitude, zipCode: extractedZipCode });
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-comps', {
-        body: { 
-          address, 
-          city, 
-          state, 
-          basePrice, 
+        body: {
+          address,
+          city,
+          state,
+          basePrice,
           radius: searchRadius,
           latitude,
-          longitude
+          longitude,
+          zipCode: extractedZipCode
         }
       });
 

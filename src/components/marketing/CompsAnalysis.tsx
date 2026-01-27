@@ -394,7 +394,8 @@ export const CompsAnalysis = () => {
         property.estimated_value || 250000,
         true,
         property.latitude,
-        property.longitude
+        property.longitude,
+        property.zip_code
       );
       setCompsError(null);
       if (compsData && compsData.length > 0) {
@@ -1213,7 +1214,8 @@ export const CompsAnalysis = () => {
             property.estimated_value || 250000,
             true, // useCache
             property.latitude,
-            property.longitude
+            property.longitude,
+            property.zip_code
           );
 
           // Convert and calculate analysis with validation
