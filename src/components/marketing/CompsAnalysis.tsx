@@ -174,43 +174,57 @@ export const CompsAnalysis = () => {
 
   /**
    * Convert manual links to ComparableProperty format
+   * Now supports comp_data field with complete property information
    */
   const convertManualLinksToComparables = useCallback((manualLinks: any[]): ComparableProperty[] => {
     if (!manualLinks || manualLinks.length === 0) return [];
 
     logger.debug('Converting manual links to comparables', { count: manualLinks.length });
 
-    return manualLinks.map((link, index) => ({
-      id: link.id || `manual-${index}`,
-      address: link.property_address || link.address || 'Manual Entry',
-      sale_price: link.sale_price || 0,
-      sale_date: link.sale_date || link.created_at || new Date().toISOString(),
-      square_feet: link.square_feet || link.sqft || 0,
-      bedrooms: link.bedrooms || link.beds || 0,
-      bathrooms: link.bathrooms || link.baths || 0,
-      price_per_sqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
-      distance: link.distance || 0,
-      source: 'manual',
-      url: link.url || '',
-      notes: link.notes || '',
-      similarity_score: 0.5,
-      property_type: link.property_type || 'Single Family',
-      year_built: link.year_built,
-      lot_size: link.lot_size,
-      salePrice: link.sale_price || 0,
-      saleDate: new Date(link.sale_date || link.created_at || Date.now()).toISOString(),
-      sqft: link.square_feet || link.sqft || 0,
-      beds: link.bedrooms || link.beds || 0,
-      baths: link.bathrooms || link.baths || 0,
-      pricePerSqft: link.price_per_sqft || (link.sale_price && link.square_feet ? link.sale_price / link.square_feet : 0),
-      distanceMiles: link.distance || 0,
-      yearBuilt: link.year_built,
-      lotSize: link.lot_size,
-      latitude: link.latitude,
-      longitude: link.longitude,
-      similarityScore: 0.5,
-      propertyType: link.property_type || 'Single Family',
-    }));
+    return manualLinks.map((link, index) => {
+      // Se tem dados completos no comp_data, usar eles como prioridade
+      const compData = link.comp_data || {};
+
+      // Usar comp_data se disponível, senão fallback para campos diretos do link
+      const salePrice = compData.sale_price || link.sale_price || 0;
+      const squareFeet = compData.square_feet || link.square_feet || link.sqft || 0;
+      const bedrooms = compData.bedrooms || link.bedrooms || link.beds || 0;
+      const bathrooms = compData.bathrooms || link.bathrooms || link.baths || 0;
+      const saleDate = compData.sale_date || link.sale_date || link.created_at || new Date().toISOString();
+      const pricePerSqft = squareFeet > 0 ? salePrice / squareFeet : 0;
+
+      return {
+        id: link.id || `manual-${index}`,
+        address: link.property_address || link.address || 'Manual Entry',
+        sale_price: salePrice,
+        sale_date: saleDate,
+        square_feet: squareFeet,
+        bedrooms: bedrooms,
+        bathrooms: bathrooms,
+        price_per_sqft: pricePerSqft,
+        distance: link.distance || 0,
+        source: 'manual',
+        url: link.url || '',
+        notes: link.notes || '',
+        similarity_score: 0.5,
+        property_type: link.property_type || 'Single Family',
+        year_built: link.year_built,
+        lot_size: link.lot_size,
+        salePrice: salePrice,
+        saleDate: new Date(saleDate).toISOString(),
+        sqft: squareFeet,
+        beds: bedrooms,
+        baths: bathrooms,
+        pricePerSqft: pricePerSqft,
+        distanceMiles: link.distance || 0,
+        yearBuilt: link.year_built,
+        lotSize: link.lot_size,
+        latitude: link.latitude,
+        longitude: link.longitude,
+        similarityScore: 0.5,
+        propertyType: link.property_type || 'Single Family',
+      };
+    });
   }, []);
 
   // ========================================

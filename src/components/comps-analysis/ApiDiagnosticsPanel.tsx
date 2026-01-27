@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 import {
   CheckCircle2,
   XCircle,
@@ -59,7 +60,15 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
 
   const testAPI = async (source: 'attom-v2' | 'zillow' | 'county-csv') => {
     const startTime = Date.now();
-    
+
+    // Logar início do teste
+    logger.info(`🧪 Testing ${source} API`, {
+      property: property.address,
+      city: property.city,
+      state: property.state,
+      zipCode: property.zip_code
+    });
+
     setResults(prev => ({
       ...prev,
       [source]: { status: 'testing' },
@@ -83,6 +92,9 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
       const responseTime = Date.now() - startTime;
 
       if (error) {
+        // Logar erro
+        logger.error(`❌ ${source} API test failed`, { error: error.message, details: error });
+
         setResults(prev => ({
           ...prev,
           [source]: {
@@ -100,6 +112,9 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
       }
 
       if (!data?.comps || data.comps.length === 0) {
+        // Logar aviso de nenhum resultado
+        logger.warn(`⚠️ ${source} API test: No results`, { error: data?.error, details: data });
+
         setResults(prev => ({
           ...prev,
           [source]: {
@@ -121,6 +136,13 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
         return;
       }
 
+      // Logar sucesso
+      logger.info(`✅ ${source} API test successful`, {
+        count: data.comps.length,
+        source: data.source,
+        responseTime
+      });
+
       setResults(prev => ({
         ...prev,
         [source]: {
@@ -140,6 +162,9 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
         description: `Found ${data.comps.length} comparables in ${responseTime}ms`,
       });
     } catch (err: any) {
+      // Logar exceção
+      logger.error(`❌ ${source} API test exception`, { error: err });
+
       setResults(prev => ({
         ...prev,
         [source]: {
