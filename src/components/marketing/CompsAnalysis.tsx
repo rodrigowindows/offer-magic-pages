@@ -42,9 +42,6 @@ import { LogsPanel, type LogEntry } from '@/components/comps-analysis/LogsPanel'
 // API Diagnostics Panel
 import { ApiDiagnosticsPanel } from '@/components/comps-analysis/ApiDiagnosticsPanel';
 
-// API Diagnostics Panel
-import { ApiDiagnosticsPanel } from '@/components/comps-analysis/ApiDiagnosticsPanel';
-
 // Types
 import type {
   Property,
