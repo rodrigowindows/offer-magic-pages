@@ -108,6 +108,7 @@ export interface AnalysisHistoryItem {
   search_radius_miles: number | null;
   data_source: string | null;
   created_at: string;
+  expires_at?: string | null;
 }
 
 export interface OfferHistoryItem {

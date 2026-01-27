@@ -1201,8 +1201,6 @@ export const CompsAnalysis = () => {
                 suggestedValueMin: avgSalePrice * 0.95,
                 suggestedValueMax: avgSalePrice * 1.05,
                 comparablesCount: allComps.length,
-                dataSource: 'combined' as const,
-                isDemo: false,
               };
             }
 
@@ -1246,8 +1244,6 @@ export const CompsAnalysis = () => {
                 suggestedValueMin: avgSalePrice * 0.95,
                 suggestedValueMax: avgSalePrice * 1.05,
                 comparablesCount: allComps.length,
-                dataSource: 'combined' as const,
-                isDemo: false,
               };
             }
 
@@ -1264,7 +1260,7 @@ export const CompsAnalysis = () => {
               .limit(1);
 
             if (historyData && historyData.length > 0) {
-              const savedAnalysis = historyData[0];
+              const savedAnalysis = historyData[0] as any;
               const analysisData = savedAnalysis.analysis_data as any;
 
               // Check if cache is expired (expires_at < NOW())
