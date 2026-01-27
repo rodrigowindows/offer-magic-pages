@@ -95,6 +95,12 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [bathrooms, setBathrooms] = useState('');
   const [saleDate, setSaleDate] = useState('');
 
+  // Bulk Add states
+  const [showBulkAdd, setShowBulkAdd] = useState(false);
+  const [bulkUrls, setBulkUrls] = useState('');
+  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
+  const [recentlyAdded, setRecentlyAdded] = useState<Array<{url: string, address: string, price?: string}>>([]);
+
   // Carregar propriedades
   const loadProperties = async () => {
     try {
@@ -298,6 +304,145 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
     }
   };
 
+  // Bulk Add - Adicionar múltiplas URLs de uma vez
+  const handleBulkAdd = async () => {
+    if (!selectedPropertyId || selectedPropertyId === 'manual') {
+      toast({
+        title: '⚠️ Selecione uma propriedade',
+        description: 'Escolha a propriedade antes de adicionar comps',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Parse URLs (uma por linha)
+    const urls = bulkUrls
+      .split('\n')
+      .map(url => url.trim())
+      .filter(url => url.length > 0 && (url.includes('zillow') || url.includes('trulia') || url.includes('redfin') || url.includes('realtor')));
+
+    if (urls.length === 0) {
+      toast({
+        title: '⚠️ Nenhuma URL válida',
+        description: 'Cole URLs do Zillow/Trulia/Redfin (uma por linha)',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setSaving(true);
+    setBulkProgress({ current: 0, total: urls.length });
+    const added: Array<{url: string, address: string, price?: string}> = [];
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: '⚠️ Não autenticado',
+          description: 'Faça login para salvar links',
+          variant: 'destructive'
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Processar cada URL
+      for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        setBulkProgress({ current: i + 1, total: urls.length });
+
+        try {
+          // Extrair dados da URL
+          const extracted = extractDataFromUrl(url);
+          const addressStr = formatExtractedAddress(extracted);
+
+          // Preparar comp_data se tiver dados
+          let compData = null;
+          if (extracted.price || extracted.sqft) {
+            compData = {
+              salePrice: extracted.price,
+              squareFeet: extracted.sqft,
+              bedrooms: extracted.beds,
+              bathrooms: extracted.baths,
+              pricePerSqft: extracted.price && extracted.sqft ? Math.round(extracted.price / extracted.sqft) : undefined,
+            };
+          }
+
+          // Salvar no banco
+          const { error } = await supabase
+            .from('manual_comps_links')
+            .insert({
+              property_address: propertyAddress,
+              property_id: selectedPropertyId,
+              url: url,
+              source: extracted.source,
+              notes: `Bulk add - ${addressStr || 'Auto detected'}`,
+              comp_data: compData,
+              user_id: user.id
+            });
+
+          if (error) throw error;
+
+          added.push({
+            url,
+            address: addressStr || 'Unknown',
+            price: extracted.price ? `$${extracted.price.toLocaleString()}` : undefined
+          });
+
+          // Pequeno delay para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 300));
+
+        } catch (error) {
+          console.warn(`Failed to add URL ${url}:`, error);
+        }
+      }
+
+      // Atualizar lista e limpar
+      setRecentlyAdded(added);
+      loadLinks();
+      setBulkUrls('');
+      setShowBulkAdd(false);
+
+      toast({
+        title: '✅ Comps adicionados!',
+        description: `${added.length} de ${urls.length} URLs adicionadas com sucesso`,
+      });
+
+      if (onLinkAdded) onLinkAdded();
+
+    } catch (error) {
+      console.error('Bulk add error:', error);
+      toast({
+        title: '❌ Erro no bulk add',
+        description: 'Alguns comps podem não ter sido salvos',
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+      setBulkProgress({ current: 0, total: 0 });
+    }
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Enter ou Cmd+Enter para salvar rápido
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && compsUrl && !saving) {
+        e.preventDefault();
+        handleSaveLink();
+      }
+
+      // Ctrl+Shift+B para abrir Bulk Add
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
+        e.preventDefault();
+        setShowBulkAdd(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [compsUrl, saving, handleSaveLink]);
+
   useEffect(() => {
     loadProperties();
     loadLinks();
@@ -453,6 +598,10 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
               : 'Selecione uma propriedade e cole o link da página de comps'
             }
           </CardDescription>
+          {/* Keyboard shortcuts hint */}
+          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+            <strong>⌨️ Atalhos:</strong> Ctrl+Enter para salvar rápido | Ctrl+Shift+B para Bulk Add
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Property info - read-only if pre-selected */}
@@ -523,6 +672,29 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                     <CheckCircle2 className="w-3 h-3" />
                     Endereço preenchido automaticamente
                   </p>
+                )}
+
+                {/* Botão para buscar no Zillow */}
+                {propertyAddress && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const searchQuery = encodeURIComponent(`recently sold ${propertyAddress}`);
+                      const zillowUrl = `https://www.zillow.com/homes/${searchQuery}_rb/`;
+                      window.open(zillowUrl, '_blank');
+                      toast({
+                        title: '🔍 Abrindo Zillow',
+                        description: 'Busque comps e copie as URLs',
+                        duration: 3000,
+                      });
+                    }}
+                    className="w-full mt-2"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    🏠 Buscar Comps no Zillow
+                  </Button>
                 )}
               </div>
             </>
@@ -715,19 +887,112 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
             </div>
           )}
 
-          <Button onClick={handleSaveLink} className="w-full" disabled={saving}>
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4 mr-2" />
-                Salvar Link
-              </>
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleSaveLink} className="flex-1" disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Salvar Link
+                </>
+              )}
+            </Button>
+
+            <Button
+              onClick={() => setShowBulkAdd(!showBulkAdd)}
+              variant={showBulkAdd ? "default" : "outline"}
+              disabled={saving}
+              className="whitespace-nowrap"
+            >
+              📋 Bulk Add
+            </Button>
+          </div>
+
+          {/* Bulk Add Section */}
+          {showBulkAdd && (
+            <div className="mt-4 p-4 border-2 border-dashed border-purple-300 rounded-lg bg-purple-50/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-purple-900 flex items-center gap-2">
+                  🚀 Bulk Add - Adicione Múltiplas URLs
+                </h4>
+                {bulkProgress.total > 0 && (
+                  <span className="text-sm text-purple-700">
+                    {bulkProgress.current} / {bulkProgress.total}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-xs text-purple-800">
+                Cole múltiplas URLs do Zillow/Trulia/Redfin (uma por linha) e adicione todas de uma vez!
+              </p>
+
+              <Textarea
+                placeholder={`https://www.zillow.com/homedetails/123-Main-St...
+https://www.zillow.com/homedetails/456-Oak-Ave...
+https://www.trulia.com/p/fl/orlando/789-Elm-Dr...
+
+Cole quantas URLs quiser (recomendado: 5-10)`}
+                value={bulkUrls}
+                onChange={(e) => setBulkUrls(e.target.value)}
+                rows={8}
+                disabled={saving}
+                className="font-mono text-xs"
+              />
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleBulkAdd}
+                  disabled={saving || !bulkUrls.trim()}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Adicionando {bulkProgress.current}/{bulkProgress.total}...
+                    </>
+                  ) : (
+                    <>
+                      ⚡ Adicionar Todas ({bulkUrls.split('\n').filter(url => url.trim() && (url.includes('zillow') || url.includes('trulia') || url.includes('redfin'))).length})
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    setShowBulkAdd(false);
+                    setBulkUrls('');
+                  }}
+                  variant="outline"
+                  disabled={saving}
+                >
+                  Cancelar
+                </Button>
+              </div>
+
+              {/* Recently Added Preview */}
+              {recentlyAdded.length > 0 && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                  <p className="text-sm font-semibold text-green-900 mb-2">
+                    ✅ Adicionados recentemente ({recentlyAdded.length}):
+                  </p>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {recentlyAdded.map((item, idx) => (
+                      <div key={idx} className="text-xs text-green-800 flex items-start gap-2">
+                        <span className="text-green-600">✓</span>
+                        <span className="flex-1">
+                          {item.address} {item.price && `- ${item.price}`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
