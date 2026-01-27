@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2, Trash2, FileText, RefreshCw } from 'lucide-react';
+import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2, Trash2, FileText, RefreshCw, Activity } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 // Modular Components - Phase 1
@@ -38,6 +38,9 @@ import {
 
 // Logs Panel
 import { LogsPanel, type LogEntry } from '@/components/comps-analysis/LogsPanel';
+
+// API Diagnostics Panel
+import { ApiDiagnosticsPanel } from '@/components/comps-analysis/ApiDiagnosticsPanel';
 
 // Types
 import type {
@@ -138,6 +141,14 @@ export const CompsAnalysis = () => {
   // Logs Panel
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [showLogsPanel, setShowLogsPanel] = useState(false);
+
+  // API Diagnostics
+  const [apiTestResults, setApiTestResults] = useState<{
+    attom?: { status: 'testing' | 'success' | 'error', result?: any, error?: string };
+    zillow?: { status: 'testing' | 'success' | 'error', result?: any, error?: string };
+    county?: { status: 'testing' | 'success' | 'error', result?: any, error?: string };
+  }>({});
+  const [showApiDiagnostics, setShowApiDiagnostics] = useState(false);
 
   // ========================================
   // CUSTOM HOOKS
@@ -758,6 +769,249 @@ export const CompsAnalysis = () => {
     }
   }, []);
 
+  /**
+   * Test Attom API individually
+   */
+  const testAttomAPI = useCallback(async () => {
+    if (!selectedProperty) {
+      toast({
+        title: 'No Property Selected',
+        description: 'Please select a property first',
+        variant: 'default',
+      });
+      return;
+    }
+
+    setApiTestResults(prev => ({ ...prev, attom: { status: 'testing' } }));
+    logger.info('🧪 Testing Attom API', { property: selectedProperty.address });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-comps', {
+        body: {
+          address: selectedProperty.address,
+          city: selectedProperty.city,
+          state: selectedProperty.state,
+          zipCode: selectedProperty.zip_code,
+          basePrice: selectedProperty.estimated_value,
+          radius: compsFilters.maxDistance || 3,
+          latitude: selectedProperty.latitude,
+          longitude: selectedProperty.longitude,
+          testSource: 'attom-v2' // Test only Attom
+        }
+      });
+
+      if (error || !data?.comps || data.comps.length === 0) {
+        const errorMsg = error?.message || data?.error || 'No comps found';
+        logger.error('❌ Attom API test failed', { error: errorMsg, data });
+        setApiTestResults(prev => ({
+          ...prev,
+          attom: {
+            status: 'error',
+            error: errorMsg,
+            result: data
+          }
+        }));
+        toast({
+          title: 'Attom API Test Failed',
+          description: errorMsg,
+          variant: 'destructive',
+        });
+      } else {
+        logger.info('✅ Attom API test successful', { count: data.comps.length });
+        setApiTestResults(prev => ({
+          ...prev,
+          attom: {
+            status: 'success',
+            result: { count: data.comps.length, source: data.source, comps: data.comps }
+          }
+        }));
+        toast({
+          title: 'Attom API Test Successful',
+          description: `Found ${data.comps.length} comparables`,
+          variant: 'default',
+        });
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logger.error('❌ Attom API test exception', { error: errorMsg });
+      setApiTestResults(prev => ({
+        ...prev,
+        attom: { status: 'error', error: errorMsg }
+      }));
+      toast({
+        title: 'Attom API Test Error',
+        description: errorMsg,
+        variant: 'destructive',
+      });
+    }
+  }, [selectedProperty, compsFilters.maxDistance, toast]);
+
+  /**
+   * Test Zillow API individually
+   */
+  const testZillowAPI = useCallback(async () => {
+    if (!selectedProperty) {
+      toast({
+        title: 'No Property Selected',
+        description: 'Please select a property first',
+        variant: 'default',
+      });
+      return;
+    }
+
+    setApiTestResults(prev => ({ ...prev, zillow: { status: 'testing' } }));
+    logger.info('🧪 Testing Zillow API', { property: selectedProperty.address });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-comps', {
+        body: {
+          address: selectedProperty.address,
+          city: selectedProperty.city,
+          state: selectedProperty.state,
+          zipCode: selectedProperty.zip_code,
+          basePrice: selectedProperty.estimated_value,
+          radius: compsFilters.maxDistance || 3,
+          latitude: selectedProperty.latitude,
+          longitude: selectedProperty.longitude,
+          testSource: 'zillow' // Test only Zillow
+        }
+      });
+
+      if (error || !data?.comps || data.comps.length === 0) {
+        const errorMsg = error?.message || data?.error || 'No comps found';
+        logger.error('❌ Zillow API test failed', { error: errorMsg, data });
+        setApiTestResults(prev => ({
+          ...prev,
+          zillow: {
+            status: 'error',
+            error: errorMsg,
+            result: data
+          }
+        }));
+        toast({
+          title: 'Zillow API Test Failed',
+          description: errorMsg,
+          variant: 'destructive',
+        });
+      } else {
+        logger.info('✅ Zillow API test successful', { count: data.comps.length });
+        setApiTestResults(prev => ({
+          ...prev,
+          zillow: {
+            status: 'success',
+            result: { count: data.comps.length, source: data.source, comps: data.comps }
+          }
+        }));
+        toast({
+          title: 'Zillow API Test Successful',
+          description: `Found ${data.comps.length} comparables`,
+          variant: 'default',
+        });
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logger.error('❌ Zillow API test exception', { error: errorMsg });
+      setApiTestResults(prev => ({
+        ...prev,
+        zillow: { status: 'error', error: errorMsg }
+      }));
+      toast({
+        title: 'Zillow API Test Error',
+        description: errorMsg,
+        variant: 'destructive',
+      });
+    }
+  }, [selectedProperty, compsFilters.maxDistance, toast]);
+
+  /**
+   * Test County CSV API individually
+   */
+  const testCountyCSV = useCallback(async () => {
+    if (!selectedProperty) {
+      toast({
+        title: 'No Property Selected',
+        description: 'Please select a property first',
+        variant: 'default',
+      });
+      return;
+    }
+
+    setApiTestResults(prev => ({ ...prev, county: { status: 'testing' } }));
+    logger.info('🧪 Testing County CSV', { property: selectedProperty.address });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-comps', {
+        body: {
+          address: selectedProperty.address,
+          city: selectedProperty.city,
+          state: selectedProperty.state,
+          zipCode: selectedProperty.zip_code,
+          basePrice: selectedProperty.estimated_value,
+          radius: compsFilters.maxDistance || 3,
+          latitude: selectedProperty.latitude,
+          longitude: selectedProperty.longitude,
+          testSource: 'county-csv' // Test only County CSV
+        }
+      });
+
+      if (error || !data?.comps || data.comps.length === 0) {
+        const errorMsg = error?.message || data?.error || 'No comps found';
+        logger.error('❌ County CSV test failed', { error: errorMsg, data });
+        setApiTestResults(prev => ({
+          ...prev,
+          county: {
+            status: 'error',
+            error: errorMsg,
+            result: data
+          }
+        }));
+        toast({
+          title: 'County CSV Test Failed',
+          description: errorMsg,
+          variant: 'destructive',
+        });
+      } else {
+        logger.info('✅ County CSV test successful', { count: data.comps.length });
+        setApiTestResults(prev => ({
+          ...prev,
+          county: {
+            status: 'success',
+            result: { count: data.comps.length, source: data.source, comps: data.comps }
+          }
+        }));
+        toast({
+          title: 'County CSV Test Successful',
+          description: `Found ${data.comps.length} comparables`,
+          variant: 'default',
+        });
+      }
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      logger.error('❌ County CSV test exception', { error: errorMsg });
+      setApiTestResults(prev => ({
+        ...prev,
+        county: { status: 'error', error: errorMsg }
+      }));
+      toast({
+        title: 'County CSV Test Error',
+        description: errorMsg,
+        variant: 'destructive',
+      });
+    }
+  }, [selectedProperty, compsFilters.maxDistance, toast]);
+
+  /**
+   * Test all APIs sequentially
+   */
+  const testAllAPIs = useCallback(async () => {
+    logger.info('🧪 Testing all APIs sequentially');
+    await testAttomAPI();
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between tests
+    await testZillowAPI();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await testCountyCSV();
+  }, [testAttomAPI, testZillowAPI, testCountyCSV]);
+
   // ========================================
   // ACTIONS
   // ========================================
@@ -1290,6 +1544,15 @@ export const CompsAnalysis = () => {
           </Button>
           <Button
             variant="outline"
+            onClick={() => setShowApiDiagnostics(!showApiDiagnostics)}
+            disabled={!selectedProperty}
+            title="Test individual APIs and view diagnostics"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            API Diagnostics
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => setShowApiConfig(true)}
           >
             <AlertCircle className="h-4 w-4 mr-2" />
@@ -1609,6 +1872,18 @@ export const CompsAnalysis = () => {
               onClear={() => setLogs([])}
               onClose={() => setShowLogsPanel(false)}
               show={showLogsPanel}
+            />
+          )}
+
+          {/* API Diagnostics Panel */}
+          {showApiDiagnostics && selectedProperty && (
+            <ApiDiagnosticsPanel
+              property={selectedProperty}
+              apiTestResults={apiTestResults}
+              onTestAttom={testAttomAPI}
+              onTestZillow={testZillowAPI}
+              onTestCounty={testCountyCSV}
+              onTestAll={testAllAPIs}
             />
           )}
         </>

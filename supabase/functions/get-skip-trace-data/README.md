@@ -57,8 +57,6 @@ curl -X GET "https://your-project.supabase.co/functions/v1/get-skip-trace-data?s
       "skip_trace_summary": {
         "total_phones": 3,
         "total_emails": 2,
-        "total_manual_phones": 1,
-        "total_manual_emails": 1,
         "has_owner_info": true,
         "phones": [
           {
@@ -73,12 +71,8 @@ curl -X GET "https://your-project.supabase.co/functions/v1/get-skip-trace-data?s
             "type": "Owner"
           }
         ],
-        "preferred_phones": ["(407) 555-1234"],
+        "preferred_phones": ["4075551234"],
         "preferred_emails": ["owner@example.com"],
-        "manual_phones": ["(407) 555-9999"],
-        "manual_emails": ["manual@example.com"],
-        "all_available_phones": ["(407) 555-1234", "(407) 555-9999"],
-        "all_available_emails": ["owner@example.com", "manual@example.com"],
         "dnc_status": "Clear",
         "deceased_status": "Active"
       }
@@ -113,19 +107,13 @@ Todos os campos da tabela `properties` são retornados, incluindo:
 
 ### Resumo de Skip Trace
 Adicionalmente, é incluído um objeto `skip_trace_summary` com:
-- **total_phones**: Contagem total de telefones do skip trace
-- **total_emails**: Contagem total de emails do skip trace
-- **total_manual_phones**: Contagem de telefones adicionados manualmente
-- **total_manual_emails**: Contagem de emails adicionados manualmente
+- **total_phones**: Contagem total de telefones encontrados
+- **total_emails**: Contagem total de emails encontrados
 - **has_owner_info**: Se há informações do proprietário
-- **phones**: Array com todos os telefones do skip trace formatados
-- **emails**: Array com todos os emails do skip trace validados
-- **preferred_phones**: Telefones do skip trace marcados como preferidos
-- **preferred_emails**: Emails do skip trace marcados como preferidos
-- **manual_phones**: Telefones adicionados manualmente pelo usuário
-- **manual_emails**: Emails adicionados manualmente pelo usuário
-- **all_available_phones**: Todos os telefones disponíveis (preferidos + manuais)
-- **all_available_emails**: Todos os emails disponíveis (preferidos + manuais)
+- **phones**: Array com todos os telefones formatados
+- **emails**: Array com todos os emails validados
+- **preferred_phones**: Telefones marcados como preferidos
+- **preferred_emails**: Emails marcados como preferidos
 - **dnc_status**: Status DNC ("DNC" ou "Clear")
 - **deceased_status**: Status de falecimento ("Deceased" ou "Active")
 

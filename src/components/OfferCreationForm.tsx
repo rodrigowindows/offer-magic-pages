@@ -176,7 +176,7 @@ export const OfferCreationForm = ({
 
     setIsSubmitting(true);
     try {
-      const offerData: Omit<PropertyOfferData, 'id' | 'status' | 'createdAt'> = {
+      const offerData: Omit<PropertyOfferData, 'id' | 'status' | 'createdAt' | 'expiresAt'> = {
         propertyId: `prop_${Date.now()}`, // Generate temporary ID
         offerAmount: parseFloat(formData.offerAmount),
         estimatedValue: parseFloat(formData.estimatedValue) || parseFloat(formData.offerAmount),
@@ -193,26 +193,24 @@ export const OfferCreationForm = ({
           state: formData.state,
           zipCode: formData.zipCode,
           propertyType: formData.propertyType,
-          bedrooms: formData.bedrooms ? parseInt(String(formData.bedrooms)) : undefined,
-          bathrooms: formData.bathrooms ? parseFloat(String(formData.bathrooms)) : undefined,
-          squareFeet: formData.squareFeet ? parseInt(String(formData.squareFeet)) : undefined
-        },
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+          bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : undefined,
+          bathrooms: formData.bathrooms ? parseFloat(formData.bathrooms) : undefined,
+          squareFeet: formData.squareFeet ? parseInt(formData.squareFeet) : undefined
+        }
       };
 
       const result = await PropertyOfferService.createOffer(offerData);
 
-      // createOffer returns the offer directly, not a response object
-      if (result) {
+      if (result.success && result.data) {
         toast({
           title: "Offer Saved",
           description: "Offer has been saved as draft"
         });
-        onSave?.(result);
+        onSave?.(result.data);
       } else {
         toast({
           title: "Error",
-          description: "Failed to save offer",
+          description: result.error || "Failed to save offer",
           variant: "destructive"
         });
       }
@@ -253,35 +251,12 @@ export const OfferCreationForm = ({
         agentPhone: formData.agentPhone
       });
 
-      if (result.success && result.offerId) {
+      if (result.success) {
         toast({
           title: "Offer Sent",
           description: "Offer campaign has been sent successfully"
         });
-        // Create a mock PropertyOfferData for the callback
-        const sentOffer: PropertyOfferData = {
-          id: result.offerId,
-          propertyId: `prop_${Date.now()}`,
-          offerAmount: parseFloat(formData.offerAmount),
-          estimatedValue: parseFloat(formData.estimatedValue) || parseFloat(formData.offerAmount),
-          closingDays: parseInt(formData.closingDays),
-          status: 'sent',
-          createdAt: new Date(),
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          recipientName: formData.recipientName,
-          recipientEmail: formData.recipientEmail,
-          recipientPhone: formData.recipientPhone,
-          agentName: formData.agentName,
-          agentEmail: formData.agentEmail,
-          agentPhone: formData.agentPhone,
-          property: {
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            zipCode: formData.zipCode
-          }
-        };
-        onSend?.(sentOffer);
+        onSend?.(result.data!);
       } else {
         toast({
           title: "Error",

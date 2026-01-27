@@ -56,9 +56,9 @@ export class PropertyOfferService {
    */
   static generateQRCodeUrl(offerUrl: string): string {
     // Using QR Server API to generate QR codes
-    // Using 200x200 for better quality and adding error correction
+    // In production, you might want to use a different service or generate locally
     const encodedUrl = encodeURIComponent(offerUrl);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&ecc=M&margin=10&data=${encodedUrl}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
   }
 
   /**
@@ -74,7 +74,7 @@ export class PropertyOfferService {
   /**
    * Create a new property offer
    */
-  static async createOffer(offerData: Omit<PropertyOfferData, 'id' | 'createdAt' | 'status'> & { expiresAt: Date }): Promise<PropertyOfferData> {
+  static async createOffer(offerData: Omit<PropertyOfferData, 'id' | 'createdAt' | 'status'>): Promise<PropertyOfferData> {
     const offer: PropertyOfferData = {
       ...offerData,
       id: `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -120,7 +120,7 @@ export class PropertyOfferService {
       }
 
       // Create offer record
-      const createOfferData = {
+      const offerData: Omit<PropertyOfferData, 'id' | 'createdAt' | 'status'> = {
         propertyId,
         offerAmount,
         estimatedValue,
@@ -144,7 +144,7 @@ export class PropertyOfferService {
         }
       };
 
-      const offer = await this.createOffer(createOfferData);
+      const offer = await this.createOffer(offerData);
 
       // Send email if requested
       if (sendEmail) {
@@ -155,12 +155,8 @@ export class PropertyOfferService {
 
         const emailHtml = generatePropertyOfferEmail({
           property: {
-            address: offer.property.address,
-            city: offer.property.city,
-            state: offer.property.state,
-            zipCode: offer.property.zipCode,
-            offerAmount: offerAmount,
-            closingDays: closingDays
+            ...offer.property,
+            offerAmount: offerAmount
           },
           recipientName: offer.recipientName,
           trackingUrl: `${window.location.origin}/api/track-open?offerId=${offer.id}`,
@@ -237,14 +233,8 @@ export class PropertyOfferService {
       };
 
       await downloadPropertyOfferPDF({
-        property: {
-          address: mockOffer.property.address,
-          city: mockOffer.property.city,
-          state: mockOffer.property.state,
-          zipCode: mockOffer.property.zipCode,
-          offerAmount: mockOffer.offerAmount,
-          closingDays: mockOffer.closingDays
-        },
+        property: mockOffer.property,
+        offerAmount: mockOffer.offerAmount,
         recipientName: mockOffer.recipientName,
         agentName: mockOffer.agentName,
         agentEmail: mockOffer.agentEmail,
@@ -331,9 +321,10 @@ export class PropertyOfferService {
       const { error } = await supabase
         .from('campaign_logs')
         .insert({
-          campaign_type: activity,
-          metadata: { offer_id: offerId, ...data },
-          sent_at: new Date().toISOString()
+          offer_id: offerId,
+          activity_type: activity,
+          activity_data: data,
+          created_at: new Date().toISOString()
         });
 
       if (error) {
@@ -351,18 +342,15 @@ export class PropertyOfferService {
     const followUpDate = new Date();
     followUpDate.setDate(followUpDate.getDate() + days);
 
-    // Store follow-up schedule in campaign_logs since scheduled_campaigns doesn't exist
     try {
       const { error } = await supabase
-        .from('campaign_logs')
+        .from('scheduled_campaigns')
         .insert({
-          campaign_type: 'scheduled_follow_up',
-          metadata: {
-            offer_id: offerId,
-            scheduled_date: followUpDate.toISOString(),
-            status: 'scheduled'
-          },
-          sent_at: new Date().toISOString()
+          offer_id: offerId,
+          campaign_type: 'follow_up',
+          scheduled_date: followUpDate.toISOString(),
+          status: 'scheduled',
+          created_at: new Date().toISOString()
         });
 
       if (error) {

@@ -33,30 +33,13 @@ export const ScheduledCampaigns = () => {
 
   const loadScheduledCampaigns = async () => {
     try {
-      // Use campaign_logs as a workaround since scheduled_campaigns doesn't exist
       const { data, error } = await supabase
-        .from('campaign_logs')
+        .from('scheduled_campaigns')
         .select('*')
-        .order('sent_at', { ascending: false })
-        .limit(20);
+        .order('scheduled_at', { ascending: true });
 
       if (error) throw error;
-      
-      // Map campaign_logs to ScheduledCampaign format
-      const mappedCampaigns: ScheduledCampaign[] = (data || []).map(log => ({
-        id: log.id,
-        campaign_name: log.campaign_type || 'Campaign',
-        campaign_type: log.channel || 'sms',
-        property_ids: log.property_id ? [log.property_id] : [],
-        scheduled_at: log.sent_at,
-        time_slot: format(new Date(log.sent_at), 'HH:mm'),
-        status: log.link_clicked ? 'completed' : 'pending',
-        executed_at: log.clicked_at || undefined,
-        results: log.api_response,
-        error_message: log.api_status !== 200 ? 'Error occurred' : undefined,
-      }));
-      
-      setCampaigns(mappedCampaigns);
+      setCampaigns(data || []);
     } catch (error) {
       console.error('Error loading scheduled campaigns:', error);
       toast({
@@ -101,7 +84,7 @@ export const ScheduledCampaigns = () => {
 
     try {
       const { error } = await supabase
-        .from('campaign_logs')
+        .from('scheduled_campaigns')
         .delete()
         .eq('id', campaignId);
 
@@ -116,7 +99,7 @@ export const ScheduledCampaigns = () => {
     } catch (error) {
       console.error('Error deleting campaign:', error);
       toast({
-        title: 'Error',
+        title: 'Delete Failed',
         description: 'Failed to delete campaign',
         variant: 'destructive',
       });
@@ -125,98 +108,141 @@ export const ScheduledCampaigns = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'scheduled':
+        return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Scheduled</Badge>;
+      case 'processing':
+        return <Badge variant="default"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Processing</Badge>;
       case 'completed':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
-      case 'running':
-        return <Badge variant="default" className="bg-blue-500"><Loader2 className="h-3 w-3 mr-1 animate-spin" />Running</Badge>;
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
       case 'failed':
-        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Failed</Badge>;
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
       default:
-        return <Badge variant="secondary"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   if (loading) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center p-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" />
+          Loading scheduled campaigns...
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
-          Scheduled Campaigns
-        </CardTitle>
-        <CardDescription>
-          View and manage your scheduled marketing campaigns
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {campaigns.length === 0 ? (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              No scheduled campaigns found. Create a new campaign to get started.
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="space-y-4">
-            {campaigns.map((campaign) => (
-              <div
-                key={campaign.id}
-                className="flex items-center justify-between p-4 border rounded-lg"
-              >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{campaign.campaign_name}</span>
-                    {getStatusBadge(campaign.status)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {format(new Date(campaign.scheduled_at), 'PPp')}
-                    </span>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Type: {campaign.campaign_type} • {campaign.property_ids.length} properties
-                  </div>
-                  {campaign.error_message && (
-                    <p className="text-sm text-destructive">{campaign.error_message}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {campaign.status === 'pending' && (
-                    <Button
-                      size="sm"
-                      onClick={() => executeCampaignNow(campaign.id)}
-                      disabled={executing === campaign.id}
-                    >
-                      {executing === campaign.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => deleteCampaign(campaign.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Scheduled Campaigns
+          </CardTitle>
+          <CardDescription>
+            Manage your scheduled marketing campaigns for optimal timing
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {campaigns.length === 0 ? (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                No scheduled campaigns found. Use the Campaign Manager to schedule campaigns for better response rates.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-4">
+              {campaigns.map((campaign) => (
+                <Card key={campaign.id} className="border-l-4 border-l-blue-500">
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold">{campaign.campaign_name}</h3>
+                          {getStatusBadge(campaign.status)}
+                          <Badge variant="outline">{campaign.campaign_type.toUpperCase()}</Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground mb-3">
+                          <div>
+                            <span className="font-medium">Scheduled:</span>
+                            <br />
+                            {format(new Date(campaign.scheduled_at), 'MMM dd, yyyy hh:mm a')}
+                          </div>
+                          <div>
+                            <span className="font-medium">Time Slot:</span>
+                            <br />
+                            {campaign.time_slot}
+                          </div>
+                          <div>
+                            <span className="font-medium">Properties:</span>
+                            <br />
+                            {campaign.property_ids.length}
+                          </div>
+                          {campaign.executed_at && (
+                            <div>
+                              <span className="font-medium">Executed:</span>
+                              <br />
+                              {format(new Date(campaign.executed_at), 'MMM dd, hh:mm a')}
+                            </div>
+                          )}
+                        </div>
+
+                        {campaign.results && (
+                          <div className="text-sm">
+                            <span className="font-medium">Results:</span>
+                            <span className="ml-2">
+                              ✅ {campaign.results.success_count || 0} success •
+                              ❌ {campaign.results.error_count || 0} failed
+                            </span>
+                          </div>
+                        )}
+
+                        {campaign.error_message && (
+                          <Alert variant="destructive" className="mt-2">
+                            <AlertDescription className="text-sm">
+                              {campaign.error_message}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 ml-4">
+                        {campaign.status === 'scheduled' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => executeCampaignNow(campaign.id)}
+                            disabled={executing === campaign.id}
+                          >
+                            {executing === campaign.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                            ) : (
+                              <Play className="w-3 h-3 mr-1" />
+                            )}
+                            Execute Now
+                          </Button>
+                        )}
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => deleteCampaign(campaign.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };

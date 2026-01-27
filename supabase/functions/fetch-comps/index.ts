@@ -519,7 +519,44 @@ serve(async (req) => {
   const requestId = generateRequestId();
   const startTime = Date.now();
   try {
-    const { address, city, state, basePrice, radius = 1, latitude, longitude, zipCode } = await req.json();
+    const { address, city, state, basePrice, radius = 1, latitude, longitude, zipCode, testSource } = await req.json();
+    // TESTE INDIVIDUAL DE API
+    if (testSource === 'attom-v2') {
+      let extractedZipCode = zipCode;
+      if (!extractedZipCode) {
+        const zipMatch = `${address} ${city} ${state}`.match(/\b\d{5}\b/);
+        extractedZipCode = zipMatch ? zipMatch[0] : '';
+      }
+      const county = getCountyByCity(city || 'Orlando', state || 'FL') || suggestCounty(city || 'Orlando', state || 'FL');
+      const attomV2Comps = await fetchFromAttomV2(address, city || 'Orlando', county, state || 'FL', extractedZipCode);
+      return new Response(JSON.stringify({
+        comps: attomV2Comps,
+        source: 'attom-v2',
+        count: attomV2Comps.length,
+        tested: 'attom-v2',
+        error: attomV2Comps.length === 0 ? 'No comps found from Attom V2' : null
+      }), { headers: corsHeaders });
+    }
+    if (testSource === 'zillow') {
+      const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
+      return new Response(JSON.stringify({
+        comps: zillowApiComps,
+        source: 'zillow',
+        count: zillowApiComps.length,
+        tested: 'zillow',
+        error: zillowApiComps.length === 0 ? 'No comps found from Zillow' : null
+      }), { headers: corsHeaders });
+    }
+    if (testSource === 'county-csv') {
+      const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
+      return new Response(JSON.stringify({
+        comps: countyComps,
+        source: 'county-csv',
+        count: countyComps.length,
+        tested: 'county-csv',
+        error: countyComps.length === 0 ? 'No comps found from County CSV' : null
+      }), { headers: corsHeaders });
+    }
 
     console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔍 Fetching comps:`, {
       address, city, state, zipCode, radius, basePrice, coordinates: { latitude, longitude }
@@ -715,6 +752,12 @@ serve(async (req) => {
       apiKeysConfigured: {
         attom: !!ATTOM_API_KEY,
         rapidapi: !!RAPIDAPI_KEY
+      },
+      testedSources: ['attom-v2', 'attom-v1', 'zillow', 'county-csv'],
+      apiErrors: {
+        attomV2: null, // Aqui você pode adicionar detalhes de erro se quiser
+        zillow: null,
+        county: null
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

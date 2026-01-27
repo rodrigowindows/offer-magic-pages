@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-
-// Get Supabase URL from environment
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+import { supabase } from '@/integrations/supabase/client';
 
 export interface SkipTraceProperty {
   id: string;
@@ -49,7 +46,6 @@ export interface SkipTraceResponse {
     properties_with_emails: number;
     properties_with_owner_info: number;
   };
-  error?: string;
 }
 
 export interface UseSkipTraceDataOptions {
@@ -84,23 +80,34 @@ export const useSkipTraceData = (options: UseSkipTraceDataOptions = {}) => {
       if (opts.hasSkipTraceData) params.append('hasSkipTraceData', 'true');
       if (opts.search) params.append('search', opts.search);
 
-      // Call the Supabase Edge Function using environment variables
-      const queryString = params.toString();
-      const functionUrl = `${SUPABASE_URL}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
+      // Call the Supabase Edge Function
+      const { data: response, error: functionError } = await supabase.functions.invoke(
+        'get-skip-trace-data',
+        {
+          body: {},
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      const response = await fetch(functionUrl, {
+      // Since we can't pass query params directly to invoke, we'll use fetch
+      const queryString = params.toString();
+      const functionUrl = `${supabase.supabaseUrl}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
+
+      const response2 = await fetch(functionUrl, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response2.ok) {
+        throw new Error(`HTTP error! status: ${response2.status}`);
       }
 
-      const result: SkipTraceResponse = await response.json();
+      const result: SkipTraceResponse = await response2.json();
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch skip trace data');

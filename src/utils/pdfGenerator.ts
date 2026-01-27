@@ -47,9 +47,9 @@ export const generatePropertyOfferPDF = async (options: OfferPDFOptions): Promis
   const pdf = new jsPDF();
 
   // Set up colors and fonts
-  const primaryColor: [number, number, number] = [16, 185, 129]; // Green
-  const secondaryColor: [number, number, number] = [55, 65, 81]; // Gray-700
-  const lightGray: [number, number, number] = [243, 244, 246]; // Gray-100
+  const primaryColor = [16, 185, 129]; // Green
+  const secondaryColor = [55, 65, 81]; // Gray-700
+  const lightGray = [243, 244, 246]; // Gray-100
 
   // Helper function to format currency
   const formatCurrency = (amount: number): string => {
