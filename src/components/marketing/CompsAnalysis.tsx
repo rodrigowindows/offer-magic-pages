@@ -116,7 +116,7 @@ export const CompsAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [loadingComps, setLoadingComps] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
-  const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined' | 'map'>('auto');
+  const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined' | 'map'>('manual'); // Start with manual tab
 
   // Dialogs
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -2088,11 +2088,11 @@ export const CompsAnalysis = () => {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="auto">
-                Auto Comps ({filteredComparables.length})
+              <TabsTrigger value="manual" className="font-semibold">
+                📝 Manual Comps ({manualLinksCount})
               </TabsTrigger>
-              <TabsTrigger value="manual">
-                Manual ({manualLinksCount})
+              <TabsTrigger value="auto">
+                🤖 Auto Comps ({filteredComparables.length})
               </TabsTrigger>
               <TabsTrigger value="map">
                 <Map className="h-4 w-4 mr-2" />
@@ -2106,6 +2106,17 @@ export const CompsAnalysis = () => {
 
             {/* Auto Comps Tab */}
             <TabsContent value="auto" className="space-y-4">
+              {/* API Warning Banner */}
+              <Alert className="bg-amber-50 border-amber-200">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertTitle className="text-amber-900 font-semibold">API Limitations</AlertTitle>
+                <AlertDescription className="text-amber-800">
+                  The ATTOM API may have limited data availability for some addresses.
+                  For best results, use <strong>Manual Comps</strong> tab to add comparables directly.
+                  Auto comps will fetch available data from MLS/Public records when possible.
+                </AlertDescription>
+              </Alert>
+
               {/* Filters */}
               <CompsFilters
                 filters={compsFilters}

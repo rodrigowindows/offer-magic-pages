@@ -90,10 +90,20 @@ export const NoCompsFound = ({
           </AlertDescription>
         </Alert>
 
+        <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+          <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-900">
+            💡 Recommended: Use Manual Comps
+          </h4>
+          <p className="text-sm text-blue-800 mb-3">
+            The <strong>Manual Comps</strong> tab allows you to add comparables directly by pasting Zillow/Redfin links or entering data manually.
+            This is often more reliable than auto-fetched data.
+          </p>
+        </div>
+
         <div className="mt-4 p-4 bg-muted rounded-lg">
           <h4 className="font-semibold mb-2 flex items-center gap-2">
             <HelpCircle className="h-4 w-4" />
-            What can you do?
+            Troubleshooting Auto Comps
           </h4>
           <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
             {addressNotFound && (
@@ -109,13 +119,14 @@ export const NoCompsFound = ({
                 <li>Try increasing the search radius</li>
                 <li>Check if there are recent sales in this area</li>
                 <li>Verify the property exists in public records</li>
+                <li><strong>Best option: Switch to Manual Comps tab</strong></li>
               </>
             )}
             {apiError && (
               <>
                 <li>Check your internet connection</li>
                 <li>Try again in a few moments</li>
-                <li>Contact support if the issue persists</li>
+                <li><strong>Alternative: Use Manual Comps tab instead</strong></li>
               </>
             )}
           </ul>
