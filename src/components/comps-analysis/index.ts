@@ -16,6 +16,7 @@ export { CompsTable } from './CompsTable';
 export { AnalysisHistory } from './AnalysisHistory';
 export { CompareDialog } from './CompareDialog';
 export { NoCompsFound } from './NoCompsFound';
+export { ApiDiagnosticsPanel } from './ApiDiagnosticsPanel';
 
 // Types
 export type {

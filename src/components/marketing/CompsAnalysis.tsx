@@ -42,6 +42,9 @@ import { LogsPanel, type LogEntry } from '@/components/comps-analysis/LogsPanel'
 // API Diagnostics Panel
 import { ApiDiagnosticsPanel } from '@/components/comps-analysis/ApiDiagnosticsPanel';
 
+// API Diagnostics Panel
+import { ApiDiagnosticsPanel } from '@/components/comps-analysis/ApiDiagnosticsPanel';
+
 // Types
 import type {
   Property,
@@ -143,12 +146,12 @@ export const CompsAnalysis = () => {
   const [showLogsPanel, setShowLogsPanel] = useState(false);
 
   // API Diagnostics
+  const [showApiDiagnostics, setShowApiDiagnostics] = useState(false);
   const [apiTestResults, setApiTestResults] = useState<{
     attom?: { status: 'testing' | 'success' | 'error', result?: any, error?: string };
     zillow?: { status: 'testing' | 'success' | 'error', result?: any, error?: string };
     county?: { status: 'testing' | 'success' | 'error', result?: any, error?: string };
   }>({});
-  const [showApiDiagnostics, setShowApiDiagnostics] = useState(false);
 
   // ========================================
   // CUSTOM HOOKS
@@ -1879,11 +1882,7 @@ export const CompsAnalysis = () => {
           {showApiDiagnostics && selectedProperty && (
             <ApiDiagnosticsPanel
               property={selectedProperty}
-              apiTestResults={apiTestResults}
-              onTestAttom={testAttomAPI}
-              onTestZillow={testZillowAPI}
-              onTestCounty={testCountyCSV}
-              onTestAll={testAllAPIs}
+              compsFilters={compsFilters}
             />
           )}
         </>

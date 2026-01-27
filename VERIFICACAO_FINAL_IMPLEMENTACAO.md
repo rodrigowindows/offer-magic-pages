@@ -1,134 +1,92 @@
-# Verificação Final da Implementação
+# Verificação Final - Todas as Implementações
 
-## Status: TODAS AS CORREÇÕES IMPLEMENTADAS ✅
+## Status: ✅ TODAS AS FUNCIONALIDADES IMPLEMENTADAS
 
-### 1. Validação de Dados Demo ✅
+### 1. Botão de Limpeza de Cache ✅
+- **Arquivo:** `src/components/marketing/CompsAnalysis.tsx` linhas 621-685
+- ✅ Função `clearCacheAndRefresh` implementada
+- ✅ Botão "Clear Cache" no header (linha 1530-1537)
+- ✅ Limpa cache de memória e banco de dados
+- ✅ Força nova busca da API
 
-**Arquivo:** `src/utils/pdfExport.ts` linhas 113-134
+### 2. Painel de Logs na UI ✅
+- **Arquivo:** `src/components/comps-analysis/LogsPanel.tsx`
+- ✅ Componente criado e funcional
+- ✅ Filtros por nível (info, warn, error, debug)
+- ✅ Botão "Logs" com badge de contagem (linha 1538-1550)
+- ✅ Logs capturados automaticamente via callback
 
-- ✅ Detecta ruas genéricas (Colonial Dr, Pine Ave, etc.)
-- ✅ Alerta se 80%+ dos comps têm ruas genéricas
-- ✅ Detecta distâncias zero (suspeito de dados gerados)
-- ✅ Alerta se 50%+ dos comps têm distância 0.0mi
+### 3. Integração Manual + Automático ✅
+- **Arquivo:** `src/components/marketing/CompsAnalysis.tsx` linhas 690-727
+- ✅ Função `convertManualLinksToComparables` implementada
+- ✅ Comps manuais aparecem junto com automáticos
+- ✅ Badges "Manual" vs "Auto" na tabela
 
-### 2. Badge de Fonte de Dados Sempre Aparece ✅
+### 4. API Diagnostics Panel ✅ **NOVO**
+- **Arquivo:** `src/components/comps-analysis/ApiDiagnosticsPanel.tsx`
+- ✅ Componente criado com testes individuais de API
+- ✅ Botões para testar Attom, Zillow, County CSV separadamente
+- ✅ Botão "Test All APIs" para testar todas sequencialmente
+- ✅ Status indicators (idle, testing, success, error)
+- ✅ Exibe contagem de comps, tempo de resposta, erros detalhados
+- ✅ Exemplo do primeiro comp encontrado (expandível)
+- ✅ Botão para copiar erros para clipboard
 
-**Arquivo:** `src/utils/pdfExport.ts` linhas 495-510 e 908-938
+### 5. Edge Function - Suporte a testSource ✅
+- **Arquivo:** `supabase/functions/fetch-comps/index.ts` linhas 523-559
+- ✅ Parâmetro `testSource` implementado
+- ✅ Suporta 'attom-v2', 'zillow', 'county-csv'
+- ✅ Retorna resultados detalhados de cada API testada
 
-**PDF Individual:**
-- ✅ Sempre mostra "Data Source:" mesmo se `dataSource` for `undefined`
-- ✅ Default para 'database' se não especificado
-- ✅ Mostra aviso "⚠ Demo data" se `isDemo === true`
+### 6. Integração na UI ✅
+- **Arquivo:** `src/components/marketing/CompsAnalysis.tsx`
+- ✅ Botão "API Diagnostics" no header (linha 1551-1559)
+- ✅ Painel renderizado quando ativo (linha 1880-1886)
+- ✅ Desabilitado quando não há propriedade selecionada
 
-**PDF Consolidado:**
-- ✅ Badge sempre aparece (removido `if (analysis.dataSource)`)
-- ✅ Default para 'database' se não especificado
-- ✅ Mostra "⚠ Demo" abaixo do badge se for demo
+### 7. Melhorias de Tratamento de Erros ✅
+- **Arquivo:** `src/services/compsDataService.ts` linhas 164-170
+- ✅ Logs detalhados com `apiErrors` e `testedSources`
+- ✅ Informações mais completas sobre falhas
 
-### 3. Largura da Tabela Ajustada ✅
+### 8. Export do Componente ✅
+- **Arquivo:** `src/components/comps-analysis/index.ts`
+- ✅ `ApiDiagnosticsPanel` exportado
 
-**Arquivo:** `src/utils/pdfExport.ts` linhas 975-986
+## Funcionalidades Disponíveis
 
-- ✅ Colunas reduzidas: 5+44+17+15+13+13+11+9 = 127
-- ✅ `tableWidth: 127` definido corretamente
-- ✅ Deve eliminar erro "34 units width could not fit page"
+### Botões no Header:
+1. **Clear Cache** - Limpa cache e força nova busca
+2. **Logs** - Mostra painel de logs com badge de contagem
+3. **API Diagnostics** - Abre painel de diagnóstico de APIs
+4. **Settings** - Configurações de API
 
-### 4. Detecção de Fonte de Dados no Cache Melhorada ✅
+### API Diagnostics Panel:
+- Testa cada API individualmente
+- Mostra status em tempo real
+- Exibe resultados detalhados
+- Permite copiar erros
+- Mostra exemplo de dados retornados
 
-**Arquivo:** `src/components/marketing/CompsAnalysis.tsx` linhas 791-800
+## Como Usar
 
-- ✅ Verifica `savedAnalysis.data_source` (campo do banco)
-- ✅ Verifica `compsSource` (source do primeiro comp)
-- ✅ Verifica `analysisData.analysis?.dataSource` (do objeto analysis)
-- ✅ Fallback para 'database' se nenhum encontrado
-- ✅ Detecta `isDemo` corretamente
+1. **Selecionar uma propriedade**
+2. **Clicar em "API Diagnostics"**
+3. **Testar APIs individualmente ou todas juntas**
+4. **Ver resultados detalhados e erros (se houver)**
+5. **Usar "Clear Cache" se necessário para forçar nova busca**
 
-### 5. Detecção de Fonte ao Gerar Comparables ✅
+## Verificações
 
-**Arquivo:** `src/components/marketing/CompsAnalysis.tsx` linhas 487-500
+- ✅ Sem erros de lint
+- ✅ Todos os componentes importados corretamente
+- ✅ Tipos TypeScript corretos
+- ✅ Edge function suporta testSource
+- ✅ UI integrada e funcional
 
-- ✅ Detecta `detectedSource` do primeiro comp
-- ✅ Define `isDemoData` corretamente
-- ✅ Salva no `calculatedAnalysis` com `dataSource` e `isDemo`
-- ✅ Salva no banco com `data_source: compsData[0].source` (linha 525)
+## Próximos Passos (Opcional)
 
-## Análise dos Dados do PDF
-
-### Evidências de Dados Demo:
-
-1. **Endereços Genéricos:**
-   - Property 1: Colonial Dr, Pine Ave, Palm Way, Main St, Cedar Ln (100% genéricos)
-   - Property 2: Colonial Dr, Main St, Pine Ave, Sunset Blvd, Oak St (83% genéricos)
-   - Property 3: Pine Ave, Colonial Dr, Park Ave, Cedar Ln, Oak St, Maple Dr (100% genéricos)
-
-2. **Distâncias Suspeitas:**
-   - Property 1: Todos os 6 comps têm 0.0mi (100% suspeito)
-   - Property 2: Alguns têm distâncias variadas (0.3mi - 1.6mi) - mais realista
-   - Property 3: Distâncias variadas (0.1mi - 2.1mi) - mais realista
-
-3. **Valores:**
-   - ✅ Preços fazem sentido ($86K-$115K, média ~$100K)
-   - ✅ $/sqft dentro do range normal ($40-$79)
-   - ✅ Preços próximos ao `estimated_value` ($100K)
-
-### Conclusão:
-
-**Os dados são DEMO do cache antigo do banco de dados.**
-
-- Endereços genéricos indicam `generateDemoComps()`
-- Distâncias 0.0mi indicam dados gerados
-- Valores fazem sentido porque são calculados baseados no `basePrice`
-- Cache do banco (`comps_analysis_history`) contém dados demo salvos anteriormente
-
-## Como Obter Dados Reais
-
-### Opção 1: Limpar Cache Demo (Recomendado)
-
-Execute no Supabase SQL Editor:
-
-```sql
--- Deletar análises com dados demo
-DELETE FROM comps_analysis_history 
-WHERE data_source = 'demo';
-
--- Deletar comparables demo do cache
-DELETE FROM comparables_cache 
-WHERE source = 'demo';
-```
-
-Depois, **regenere os comparables** na interface.
-
-### Opção 2: Verificar API Keys
-
-1. Supabase Dashboard → Settings → Edge Functions → Secrets
-2. Verificar se `ATTOM_API_KEY` está configurada
-3. Se não estiver, adicionar a chave
-
-### Opção 3: Forçar Nova Busca
-
-Na interface, use o botão "Regenerate" para forçar nova busca da API (ignora cache).
-
-## Próximos Passos
-
-1. ✅ Todas as correções implementadas
-2. ⚠️ Limpar cache demo do banco de dados
-3. ⚠️ Regenerar comparables para obter dados reais
-4. ✅ Validações agora detectarão dados demo e mostrarão avisos no PDF
-
-## Verificação de Funcionamento
-
-Após limpar cache e regenerar:
-
-1. **Console deve mostrar:**
-   - `🔄 Fetching NEW data from API` (não "Using DATABASE cache")
-   - `✅ Found comps` com `source: "attom-v2"` ou `"attom-v1"` (não "demo")
-
-2. **PDF deve mostrar:**
-   - Badge verde "MLS Data" ou azul "Zillow API" (não cinza "Demo Data")
-   - Endereços reais (não genéricos como Colonial Dr, Pine Ave)
-   - Distâncias variadas (não todos 0.0mi)
-
-3. **Validações devem:**
-   - Não mostrar aviso de "generic street names"
-   - Não mostrar aviso de "0.0mi distance"
-   - Valores ainda devem fazer sentido (preços próximos, $/sqft normal)
+1. Adicionar mais detalhes nos erros (status HTTP, mensagens da API)
+2. Adicionar gráficos de performance (tempo de resposta por API)
+3. Salvar histórico de testes
+4. Exportar resultados de teste

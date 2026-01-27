@@ -162,10 +162,32 @@ export class CompsDataService {
 
       // No comps found - check if it's an address not found error
       if (data?.addressNotFound) {
+        logger.warn('⚠️ Address not found', {
+          address,
+          city,
+          state,
+          zipCode: data.zipCode,
+          apiErrors: data.apiErrors, // Detalhes de cada API tentada
+          testedSources: data.testedSources, // Quais APIs foram testadas
+          error: data.error
+        });
         console.warn(`⚠️ Address not found: ${address}, ${city}`);
       } else if (data?.noResultsFound) {
+        logger.warn('⚠️ No comparables found in area', {
+          address,
+          city,
+          state,
+          apiErrors: data.apiErrors,
+          testedSources: data.testedSources
+        });
         console.warn(`⚠️ No comparables found in area for: ${address}, ${city}`);
       } else {
+        logger.warn('⚠️ No comps returned from API', {
+          address,
+          city,
+          state,
+          data
+        });
         console.warn('⚠️ No comps returned from API');
       }
       
