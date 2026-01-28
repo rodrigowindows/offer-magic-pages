@@ -1337,7 +1337,66 @@ export const CompsAnalysis = () => {
             .order('created_at', { ascending: false });
 
           if (!manualLinks || manualLinks.length === 0) {
-            throw new Error('No manual comparables found for this property');
+            // If no manual comps, try to fetch from API as fallback
+            console.warn(`No manual comps for ${property.address}, attempting API fetch...`);
+
+            const compsData = await CompsDataService.getComparables(
+              property.address || '',
+              property.city || 'Orlando',
+              property.state || 'FL',
+              property.estimated_value,
+              compsFilters.maxDistance || 3,
+              compsFilters.maxResults || 10
+            );
+
+            if (!compsData || compsData.length === 0) {
+              throw new Error('No manual or API comparables found for this property');
+            }
+
+            // Use API data as fallback
+            const formattedComps = compsData
+              .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0)
+              .map((comp: any, index: number) => ({
+                id: `comp-${index}`,
+                address: comp.address || 'Unknown',
+                city: comp.city || property.city,
+                state: comp.state || property.state,
+                zipCode: comp.zipCode || '',
+                salePrice: Number(comp.salePrice) || 0,
+                saleDate: comp.saleDate || new Date().toISOString(),
+                beds: Number(comp.beds) || 0,
+                baths: Number(comp.baths) || 0,
+                sqft: Number(comp.sqft) || 1,
+                distance: Number(comp.distance) || 0,
+                distanceMiles: Number(comp.distance) || 0,
+                pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+                latitude: comp.latitude,
+                longitude: comp.longitude,
+                sale_price: Number(comp.salePrice) || 0,
+                sale_date: comp.saleDate || new Date().toISOString(),
+                square_feet: Number(comp.sqft) || 1,
+                bedrooms: Number(comp.beds) || 0,
+                bathrooms: Number(comp.baths) || 0,
+                price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+              }));
+
+            const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + c.salePrice, 0) / formattedComps.length || 0;
+            const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + c.pricePerSqft, 0) / formattedComps.length || 0;
+
+            const calculatedAnalysis = {
+              avgSalePrice,
+              medianSalePrice: avgSalePrice,
+              avgPricePerSqft,
+              suggestedValueMin: avgSalePrice * 0.95,
+              suggestedValueMax: avgSalePrice * 1.05,
+              trendPercentage: 0,
+              marketTrend: 'stable' as const,
+              comparablesCount: formattedComps.length,
+              dataSource: compsData[0]?.source || 'attom',
+              isDemo: false,
+            };
+
+            return { comparables: formattedComps, analysis: calculatedAnalysis };
           }
 
           const manualCompsForProperty = convertManualLinksToComparables(manualLinks);
