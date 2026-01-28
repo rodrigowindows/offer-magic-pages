@@ -1745,7 +1745,7 @@ export const CompsAnalysis = () => {
         await supabase
           .from('comps_analysis_history')
           .delete()
-          .eq('user_id', user.id);
+          .eq('analyst_user_id', user.id);
       }
 
       toast({
