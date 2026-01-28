@@ -1348,42 +1348,39 @@ export const CompsAnalysis = () => {
           }
         }
 
-        // 4️⃣ Fetch from API (last resort)
-        console.log('🔄 Fetching NEW data from API for export:', property.address);
+        // 4️⃣ Fetch ONLY manual comps (skip API completely)
+        console.log('📝 Using ONLY manual comps for export:', property.address);
         try {
-          const compsData = await CompsDataService.getComparables(
-            property.address || '',
-            property.city || 'Orlando',
-            property.state || 'FL',
-            compsFilters.maxDistance || 3,
-            10,
-            property.estimated_value || 250000,
-            true, // useCache
-            property.latitude,
-            property.longitude,
-            property.zip_code
-          );
+          // Fetch manual comps for this property
+          const { data: manualLinks } = await supabase
+            .from('manual_comps_links')
+            .select('*')
+            .eq('property_id', property.id)
+            .order('created_at', { ascending: false });
 
-          // 5️⃣ Also fetch manual comps for this property
-          let manualCompsForProperty: ComparableProperty[] = [];
-          try {
-            const { data: manualLinks } = await supabase
-              .from('manual_comps_links')
-              .select('*')
-              .eq('property_id', property.id)
-              .order('created_at', { ascending: false });
-
-            if (manualLinks && manualLinks.length > 0) {
-              manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-              console.log(`✅ Found ${manualCompsForProperty.length} manual comps for export:`, property.address);
-            }
-          } catch (manualError) {
-            console.warn('⚠️ Error fetching manual comps for export:', manualError);
+          if (!manualLinks || manualLinks.length === 0) {
+            console.warn(`⚠️ No manual comps found for: ${property.address}`);
+            throw new Error('No manual comparables found for this property');
           }
 
-          // Convert and calculate analysis with validation
-          const formattedComps = compsData
-            .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0) // Filter invalid data
+          const manualCompsForProperty = convertManualLinksToComparables(manualLinks);
+          console.log(`✅ Found ${manualCompsForProperty.length} manual comps for export:`, property.address);
+
+          // Filter only comps with valid data (price and sqft)
+          const validManualComps = manualCompsForProperty.filter(comp =>
+            comp.salePrice && comp.salePrice > 0 &&
+            comp.sqft && comp.sqft > 0
+          );
+
+          if (validManualComps.length === 0) {
+            console.warn(`⚠️ No valid manual comps (with price/sqft) for: ${property.address}`);
+            throw new Error('No valid manual comparables found for this property');
+          }
+
+          console.log(`✅ Using ${validManualComps.length} valid manual comps for PDF`);
+
+          // Use ONLY manual comps (no API data)
+          const formattedComps = validManualComps
             .map((comp: any, index: number) => ({
               id: `comp-${index}`,
               address: comp.address || 'Unknown',
@@ -1409,8 +1406,8 @@ export const CompsAnalysis = () => {
               price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
             }));
 
-          // Combine API comps with manual comps
-          const allComps = [...formattedComps, ...manualCompsForProperty];
+          // Use ONLY manual comps (no API comps)
+          const allComps = formattedComps;
 
           if (allComps.length === 0) {
             console.warn(`⚠️ No valid comparables found for property: ${property.address}`);
@@ -1420,13 +1417,9 @@ export const CompsAnalysis = () => {
         const avgSalePrice = allComps.reduce((sum: number, c: any) => sum + (c.salePrice || 0), 0) / allComps.length || 0;
         const avgPricePerSqft = allComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || 0), 0) / allComps.length || 0;
 
-          // Detectar fonte dos dados (para PDF export)
-          // Se tem manual comps, usar "combined", senão usar source da API
-          const hasManualComps = manualCompsForProperty.length > 0;
-          const detectedSource = hasManualComps 
-            ? 'combined' 
-            : (compsData[0]?.source || 'database');
-          const isDemoData = !hasManualComps && detectedSource === 'demo';
+          // Source is always 'manual' (no API data)
+          const detectedSource = 'manual';
+          const isDemoData = false;
 
           const calculatedAnalysis = {
             avgSalePrice: avgSalePrice || 0,
@@ -1659,6 +1652,42 @@ export const CompsAnalysis = () => {
       generateComparables(selectedProperty);
     }
   }, [selectedProperty, generateComparables]);
+
+  /**
+   * Clear cache (memory + database)
+   */
+  const handleClearCache = useCallback(async () => {
+    try {
+      // Clear memory cache
+      setCompsCache({});
+
+      // Clear database cache for all properties
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('comps_analysis_history')
+          .delete()
+          .eq('user_id', user.id);
+      }
+
+      toast({
+        title: '🗑️ Cache limpo!',
+        description: 'Todo o histórico de comps foi removido. Próxima exportação usará apenas manual comps.',
+      });
+
+      // Refresh current view
+      if (selectedProperty) {
+        generateComparables(selectedProperty);
+      }
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      toast({
+        title: '❌ Erro ao limpar cache',
+        description: 'Não foi possível limpar o cache',
+        variant: 'destructive'
+      });
+    }
+  }, [selectedProperty, generateComparables, toast]);
 
   /**
    * Handle property selection
@@ -2082,6 +2111,7 @@ export const CompsAnalysis = () => {
               onExport={exportToPDF}
               onExportAll={exportAllAnalyses}
               onExportAllForceRefresh={exportAllAnalysesForceRefresh}
+              onClearCache={handleClearCache}
               onShare={shareAnalysis}
             />
           )}

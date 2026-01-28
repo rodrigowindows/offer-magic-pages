@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { RefreshCw, Save, Download, Share2, ChevronDown, Loader2, FileText } from 'lucide-react';
+import { RefreshCw, Save, Download, Share2, ChevronDown, Loader2, FileText, Trash2 } from 'lucide-react';
 import type { MarketAnalysis, Property, ComparableProperty, DataSource } from './types';
 
 interface ExecutiveSummaryProps {
@@ -21,6 +21,7 @@ interface ExecutiveSummaryProps {
   onExport: (withImages: boolean) => void;
   onExportAll: () => void;
   onExportAllForceRefresh?: () => void;
+  onClearCache?: () => void;
   onShare: () => void;
 }
 
@@ -48,6 +49,7 @@ export const ExecutiveSummary = ({
   dataSource,
   selectedProperty,
   loading,
+  onClearCache,
   exportingPDF,
   analysisNotes,
   onNotesChange,
@@ -147,6 +149,16 @@ export const ExecutiveSummary = ({
                     <DropdownMenuItem onClick={onExportAllForceRefresh} disabled={exportingPDF} className="text-orange-600">
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Force Refresh & Export All
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                {onClearCache && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onClearCache} className="text-red-600">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Limpar Cache Antigo
                     </DropdownMenuItem>
                   </>
                 )}
