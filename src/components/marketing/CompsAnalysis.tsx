@@ -797,14 +797,38 @@ export const CompsAnalysis = () => {
 
 
   /**
-   * Load manual comps count
+   * Load ALL manual comps for the current user (for filter counts)
+   */
+  const loadAllManualComps = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setManualComps([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('manual_comps_links')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setManualComps(data || []);
+      console.log('✅ Loaded all manual comps:', data?.length || 0);
+    } catch (error) {
+      console.error('Error loading all manual comps:', error);
+      setManualComps([]);
+    }
+  }, []);
+
+  /**
+   * Load manual comps count for a specific property
    */
   const loadManualLinksCount = useCallback(async (propertyId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setManualLinksCount(0);
-        setManualComps([]);
         return;
       }
 
@@ -816,11 +840,9 @@ export const CompsAnalysis = () => {
 
       if (error) throw error;
       setManualLinksCount(count || 0);
-      setManualComps(data || []);
     } catch (error) {
       console.error('Error loading manual links count:', error);
       setManualLinksCount(0);
-      setManualComps([]);
     }
   }, []);
 
@@ -1759,13 +1781,14 @@ export const CompsAnalysis = () => {
   // Load properties on mount
   useEffect(() => {
     fetchProperties();
+    loadAllManualComps(); // Load all manual comps for filter counts
 
     // Check if first time user
     const hasSeenOnboarding = localStorage.getItem('comps_onboarding_seen');
     if (!hasSeenOnboarding) {
       setTimeout(() => setShowOnboarding(true), 1000);
     }
-  }, [fetchProperties]);
+  }, [fetchProperties, loadAllManualComps]);
 
   // Generate comps when property selected
   useEffect(() => {
@@ -2247,7 +2270,10 @@ export const CompsAnalysis = () => {
             <TabsContent value="manual">
               <ManualCompsManager
                 preSelectedPropertyId={selectedProperty.id}
-                onLinkAdded={() => loadManualLinksCount(selectedProperty.id)}
+                onLinkAdded={() => {
+                  loadManualLinksCount(selectedProperty.id);
+                  loadAllManualComps(); // Refresh filter counts
+                }}
               />
             </TabsContent>
 
