@@ -185,13 +185,6 @@ export const CompsAnalysis = () => {
       // Se tem dados completos no comp_data, usar eles como prioridade
       const compData = link.comp_data || {};
 
-      // DEBUG: Log para ver o que está chegando
-      console.log(`🔍 Manual Link #${index + 1}:`, {
-        url: link.url,
-        comp_data: compData,
-        property_address: link.property_address
-      });
-
       // Usar comp_data se disponível, senão fallback para campos diretos do link
       const salePrice = compData.sale_price || link.sale_price || 0;
       const squareFeet = compData.square_feet || link.square_feet || link.sqft || 0;
@@ -199,8 +192,6 @@ export const CompsAnalysis = () => {
       const bathrooms = compData.bathrooms || link.bathrooms || link.baths || 0;
       const saleDate = compData.sale_date || link.sale_date || link.created_at || new Date().toISOString();
       const pricePerSqft = squareFeet > 0 ? salePrice / squareFeet : 0;
-
-      console.log(`✅ Converted to:`, { salePrice, squareFeet, pricePerSqft, bedrooms, bathrooms });
 
       return {
         id: link.id || `manual-${index}`,
@@ -1167,15 +1158,12 @@ export const CompsAnalysis = () => {
       // Function to get comparables for each property
       const getComparablesForProperty = async (property: Property, forceRefresh = false) => {
         // Skip all caches if forceRefresh is true
-        if (forceRefresh) {
-          console.log('🔄 Force refresh enabled, skipping all caches for:', property.address);
-        } else {
+        if (!forceRefresh) {
           // 1️⃣ Check MEMORY cache first (fastest)
           const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
           const cached = compsCache[cacheKey];
 
           if (cached) {
-            console.log('✅ Using MEMORY cache for export:', property.address);
             // Also fetch manual comps even when using memory cache
             let manualCompsForProperty: ComparableProperty[] = [];
             try {
@@ -1187,10 +1175,9 @@ export const CompsAnalysis = () => {
 
               if (manualLinks && manualLinks.length > 0) {
                 manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-                console.log(`✅ Found ${manualCompsForProperty.length} manual comps for cached export:`, property.address);
               }
             } catch (manualError) {
-              console.warn('⚠️ Error fetching manual comps for cached export:', manualError);
+              // Silently handle manual comps fetch error
             }
 
             // Combine cached comps with manual comps
@@ -1218,7 +1205,6 @@ export const CompsAnalysis = () => {
 
           // 2️⃣ Check if this is the currently selected property (already loaded)
           if (selectedProperty?.id === property.id && comparables.length > 0 && analysis) {
-            console.log('✅ Using CURRENT selection for export:', property.address);
             // Also fetch manual comps for current selection
             let manualCompsForProperty: ComparableProperty[] = [];
             try {
@@ -1230,10 +1216,9 @@ export const CompsAnalysis = () => {
 
               if (manualLinks && manualLinks.length > 0) {
                 manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-                console.log(`✅ Found ${manualCompsForProperty.length} manual comps for current selection export:`, property.address);
               }
             } catch (manualError) {
-              console.warn('⚠️ Error fetching manual comps for current selection export:', manualError);
+              // Silently handle manual comps fetch error
             }
 
             // Combine current comps with manual comps
@@ -1278,12 +1263,7 @@ export const CompsAnalysis = () => {
                 : false;
 
               // ⚠️ SKIP demo data cache - always fetch fresh data instead
-              if (savedAnalysis.data_source === 'demo') {
-                console.log('⚠️ Cache contains demo data, fetching fresh data instead:', property.address);
-              } else if (isExpired) {
-                console.log('⚠️ Cache expired, fetching fresh data:', property.address);
-              } else if (analysisData?.comparables && analysisData?.analysis) {
-                console.log('✅ Using DATABASE cache for export:', property.address);
+              if (savedAnalysis.data_source !== 'demo' && !isExpired && analysisData?.comparables && analysisData?.analysis) {
 
                 // Also fetch manual comps for this property (even when using cache)
                 let manualCompsForProperty: ComparableProperty[] = [];
@@ -1296,10 +1276,9 @@ export const CompsAnalysis = () => {
 
                   if (manualLinks && manualLinks.length > 0) {
                     manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-                    console.log(`✅ Found ${manualCompsForProperty.length} manual comps for cached export:`, property.address);
                   }
                 } catch (manualError) {
-                  console.warn('⚠️ Error fetching manual comps for cached export:', manualError);
+                  // Silently handle manual comps fetch error
                 }
 
                 // Combine cached comps with manual comps
@@ -1344,12 +1323,11 @@ export const CompsAnalysis = () => {
               }
             }
           } catch (dbError) {
-            console.warn('Database cache check failed:', dbError);
+            // Silently handle database cache error
           }
         }
 
         // 4️⃣ Fetch ONLY manual comps (skip API completely)
-        console.log('📝 Using ONLY manual comps for export:', property.address);
         try {
           // Fetch manual comps for this property
           const { data: manualLinks } = await supabase
@@ -1359,12 +1337,10 @@ export const CompsAnalysis = () => {
             .order('created_at', { ascending: false });
 
           if (!manualLinks || manualLinks.length === 0) {
-            console.warn(`⚠️ No manual comps found for: ${property.address}`);
             throw new Error('No manual comparables found for this property');
           }
 
           const manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-          console.log(`✅ Found ${manualCompsForProperty.length} manual comps for export:`, property.address);
 
           // Filter only comps with valid data (price and sqft)
           const validManualComps = manualCompsForProperty.filter(comp =>
@@ -1373,11 +1349,8 @@ export const CompsAnalysis = () => {
           );
 
           if (validManualComps.length === 0) {
-            console.warn(`⚠️ No valid manual comps (with price/sqft) for: ${property.address}`);
             throw new Error('No valid manual comparables found for this property');
           }
-
-          console.log(`✅ Using ${validManualComps.length} valid manual comps for PDF`);
 
           // Use ONLY manual comps (no API data)
           const formattedComps = validManualComps
@@ -1410,7 +1383,6 @@ export const CompsAnalysis = () => {
           const allComps = formattedComps;
 
           if (allComps.length === 0) {
-            console.warn(`⚠️ No valid comparables found for property: ${property.address}`);
             throw new Error('No valid comparables found for this property');
           }
 
@@ -1436,23 +1408,14 @@ export const CompsAnalysis = () => {
 
           return { comparables: allComps, analysis: calculatedAnalysis };
         } catch (error) {
-          // Log error with more context - let PDF export handle it gracefully
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          if (errorMessage.includes('No valid comparables found')) {
-            console.warn(`⚠️ Skipping property ${property.address}: ${errorMessage}`);
-          } else {
-            console.error(`❌ Error processing property ${property.address}:`, error);
-          }
-          throw error; // Re-throw so PDF export can show error message
+          // Re-throw so PDF export can show error message
+          throw error;
         }
       };
 
       await exportConsolidatedCompsPDF(
         filteredProperties,
-        getComparablesForProperty as any,
-        (current, total) => {
-          console.log(`Exporting ${current}/${total} properties...`);
-        }
+        getComparablesForProperty as any
       );
 
       toast({
@@ -1487,15 +1450,9 @@ export const CompsAnalysis = () => {
     try {
       setExportingPDF(true);
 
-      console.log('🔄 FORCE REFRESH: Exporting all properties with fresh data from API');
-
       // Function to get comparables for each property (with force refresh)
       const getComparablesForPropertyForceRefresh = async (property: Property) => {
-        // Always skip caches and fetch fresh from API
-        console.log('🔄 Force refresh enabled, skipping all caches for:', property.address);
-
         // Fetch from API
-        console.log('🔄 Fetching NEW data from API for export:', property.address);
         try {
           const compsData = await CompsDataService.getComparables(
             property.address || '',
@@ -1521,10 +1478,9 @@ export const CompsAnalysis = () => {
 
             if (manualLinks && manualLinks.length > 0) {
               manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-              console.log(`✅ Found ${manualCompsForProperty.length} manual comps for export:`, property.address);
             }
           } catch (manualError) {
-            console.warn('⚠️ Error fetching manual comps for export:', manualError);
+            // Silently handle manual comps fetch error
           }
 
           // Convert and calculate analysis with validation
@@ -1559,7 +1515,6 @@ export const CompsAnalysis = () => {
           const allComps = [...formattedComps, ...manualCompsForProperty];
 
           if (allComps.length === 0) {
-            console.warn(`⚠️ No valid comparables found for property: ${property.address}`);
             throw new Error('No valid comparables found for this property');
           }
 
@@ -1589,24 +1544,15 @@ export const CompsAnalysis = () => {
 
           return { comparables: allComps, analysis: calculatedAnalysis };
         } catch (error) {
-          // Log error with more context - let PDF export handle it gracefully
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          if (errorMessage.includes('No valid comparables found')) {
-            console.warn(`⚠️ Skipping property ${property.address}: ${errorMessage}`);
-          } else {
-            console.error(`❌ Error processing property ${property.address}:`, error);
-          }
-          throw error; // Re-throw so PDF export can show error message
+          // Re-throw so PDF export can show error message
+          throw error;
         }
       };
 
       // Export consolidated PDF with force refresh function
       await exportConsolidatedCompsPDF(
         filteredProperties,
-        getComparablesForPropertyForceRefresh as any,
-        (current, total) => {
-          console.log(`Exporting ${current}/${total} properties...`);
-        }
+        getComparablesForPropertyForceRefresh as any
       );
 
       toast({
@@ -1704,7 +1650,6 @@ export const CompsAnalysis = () => {
    */
   const handleViewCompDetails = useCallback((comp: ComparableProperty) => {
     // TODO: Open comp details dialog
-    console.log('View comp details:', comp);
   }, []);
 
   /**
@@ -1720,7 +1665,6 @@ export const CompsAnalysis = () => {
    */
   const handleExportHistory = useCallback(async (item: any) => {
     // TODO: Export specific history item
-    console.log('Export history item:', item);
   }, []);
 
   /**
@@ -2266,7 +2210,6 @@ export const CompsAnalysis = () => {
           compAddress={filteredComparables[0]?.address || selectedProperty.address}
           basePrice={filteredComparables[0]?.salePrice || filteredComparables[0]?.sale_price || selectedProperty.estimated_value}
           onApplyAdjustments={(adjustedPrice, adjustments) => {
-            console.log('Adjusted price:', adjustedPrice, adjustments);
             setShowAdjustmentCalc(false);
           }}
         />

@@ -265,14 +265,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         sale_date: addFullData && saleDate ? saleDate : undefined
       };
 
-      // DEBUG: Log do que está sendo salvo
-      console.log('💾 Salvando manual comp:', {
-        property_address: propertyAddress.trim(),
-        url: compsUrl.trim(),
-        comp_data: compData,
-        has_data: !!compData
-      });
-
       const { error } = await supabase
         .from('manual_comps_links' as any)
         .insert([{
@@ -554,7 +546,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
           await new Promise(resolve => setTimeout(resolve, 300));
 
         } catch (error) {
-          console.warn(`Failed to add URL ${url}:`, error);
+          // Silently skip failed URLs
         }
       }
 
@@ -897,7 +889,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                 if (newUrl.length > 20 && (newUrl.includes('zillow') || newUrl.includes('redfin') || newUrl.includes('trulia') || newUrl.includes('realtor'))) {
                   try {
                     const extracted = extractDataFromUrl(newUrl);
-                    console.log('🔍 Extracted data from URL:', extracted);
 
                     // Show toast notification
                     if (isValidExtractedData(extracted)) {
@@ -909,7 +900,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                       });
                     }
                   } catch (error) {
-                    console.warn('Failed to extract URL data:', error);
+                    // Silently ignore extraction errors
                   }
                 }
               }}
