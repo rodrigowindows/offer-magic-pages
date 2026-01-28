@@ -1100,13 +1100,21 @@ Cole quantas URLs quiser (recomendado: 5-10)`}
                 <TableRow>
                   <TableHead>Propriedade</TableHead>
                   <TableHead>Fonte</TableHead>
+                  <TableHead className="text-right">Preço</TableHead>
+                  <TableHead className="text-right">Sqft</TableHead>
+                  <TableHead className="text-right">$/Sqft</TableHead>
                   <TableHead>Notas</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {getFilteredLinks().map((link) => (
+                {getFilteredLinks().map((link) => {
+                  const salePrice = link.comp_data?.sale_price;
+                  const squareFeet = link.comp_data?.square_feet;
+                  const pricePerSqft = salePrice && squareFeet ? salePrice / squareFeet : null;
+
+                  return (
                   <TableRow key={link.id}>
                     <TableCell className="font-medium">
                       {link.property_address}
@@ -1117,7 +1125,16 @@ Cole quantas URLs quiser (recomendado: 5-10)`}
                         <span className="text-sm">{getSourceLabel(link.source)}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-[200px] truncate text-sm text-muted-foreground">
+                    <TableCell className="text-right font-semibold text-green-700">
+                      {salePrice ? `$${salePrice.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-muted-foreground">
+                      {squareFeet ? squareFeet.toLocaleString() : '-'}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-blue-700">
+                      {pricePerSqft ? `$${Math.round(pricePerSqft)}` : '-'}
+                    </TableCell>
+                    <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground">
                       {link.notes || '-'}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
@@ -1153,12 +1170,113 @@ Cole quantas URLs quiser (recomendado: 5-10)`}
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Card de Resumo e Calculadora de Proposta */}
+      {getFilteredLinks().length > 0 && (() => {
+        const linksWithData = getFilteredLinks().filter(link =>
+          link.comp_data?.sale_price && link.comp_data?.square_feet
+        );
+
+        if (linksWithData.length === 0) return null;
+
+        const avgPrice = linksWithData.reduce((sum, link) =>
+          sum + (link.comp_data!.sale_price || 0), 0
+        ) / linksWithData.length;
+
+        const avgSqft = linksWithData.reduce((sum, link) =>
+          sum + (link.comp_data!.square_feet || 0), 0
+        ) / linksWithData.length;
+
+        const avgPricePerSqft = avgPrice / avgSqft;
+
+        // Percentuais de oferta
+        const offers = [
+          { label: '70%', percent: 0.70, color: 'text-red-700 bg-red-50 border-red-300' },
+          { label: '75%', percent: 0.75, color: 'text-orange-700 bg-orange-50 border-orange-300' },
+          { label: '80%', percent: 0.80, color: 'text-amber-700 bg-amber-50 border-amber-300' },
+          { label: '85%', percent: 0.85, color: 'text-yellow-700 bg-yellow-50 border-yellow-300' },
+          { label: '90%', percent: 0.90, color: 'text-green-700 bg-green-50 border-green-300' },
+        ];
+
+        return (
+          <Card className="border-blue-300 bg-gradient-to-br from-blue-50 to-purple-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                📊 Resumo dos Comps & Calculadora de Proposta
+              </CardTitle>
+              <CardDescription>
+                Análise de {linksWithData.length} comp{linksWithData.length > 1 ? 's' : ''} com dados completos
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Médias */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-white rounded-lg border-2 border-green-200">
+                  <p className="text-xs text-muted-foreground mb-1">Preço Médio</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    ${Math.round(avgPrice).toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg border-2 border-blue-200">
+                  <p className="text-xs text-muted-foreground mb-1">Sqft Médio</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {Math.round(avgSqft).toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-4 bg-white rounded-lg border-2 border-purple-200">
+                  <p className="text-xs text-muted-foreground mb-1">$/Sqft Médio</p>
+                  <p className="text-2xl font-bold text-purple-700">
+                    ${Math.round(avgPricePerSqft)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Calculadora de Proposta */}
+              <div className="p-4 bg-white rounded-lg border-2 border-dashed border-purple-300">
+                <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                  💰 Calculadora de Proposta Rápida
+                </h4>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Baseado no preço médio de ${Math.round(avgPrice).toLocaleString()}
+                </p>
+                <div className="grid grid-cols-5 gap-3">
+                  {offers.map(offer => {
+                    const offerAmount = avgPrice * offer.percent;
+                    return (
+                      <div
+                        key={offer.label}
+                        className={`p-3 rounded-lg border-2 ${offer.color} cursor-pointer hover:shadow-md transition-shadow`}
+                        onClick={() => {
+                          navigator.clipboard.writeText(Math.round(offerAmount).toString());
+                          toast({
+                            title: '📋 Copiado!',
+                            description: `$${Math.round(offerAmount).toLocaleString()} (${offer.label})`,
+                          });
+                        }}
+                      >
+                        <p className="text-xs font-semibold mb-1">{offer.label}</p>
+                        <p className="text-lg font-bold">
+                          ${Math.round(offerAmount).toLocaleString()}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  💡 Clique em qualquer valor para copiar
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Exemplos de como usar */}
       <Card className="border-gray-200 bg-gray-50">
