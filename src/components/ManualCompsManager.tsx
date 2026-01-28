@@ -259,6 +259,14 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         };
       }
 
+      // DEBUG: Log do que está sendo salvo
+      console.log('💾 Salvando manual comp:', {
+        property_address: propertyAddress.trim(),
+        url: compsUrl.trim(),
+        comp_data: compData,
+        has_data: !!compData
+      });
+
       const { error } = await supabase
         .from('manual_comps_links' as any)
         .insert([{
