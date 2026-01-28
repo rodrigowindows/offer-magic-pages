@@ -94,6 +94,8 @@ export interface MarketAnalysis {
   trendPercentage: number;
   marketTrend: 'up' | 'down' | 'stable';
   comparablesCount: number;
+  dataSource?: string;
+  isDemo?: boolean;
 }
 
 export interface AnalysisHistoryItem {

@@ -46,7 +46,7 @@ interface MarketAnalysis {
   suggestedValueMax: number;
   marketTrend: 'up' | 'down' | 'stable';
   trendPercentage: number;
-  dataSource?: 'attom' | 'zillow' | 'county-csv' | 'demo' | 'database';
+  dataSource?: string;
   isDemo?: boolean;
   comparablesCount?: number;
 }
