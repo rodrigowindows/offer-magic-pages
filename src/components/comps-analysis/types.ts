@@ -133,6 +133,7 @@ export interface SmartInsights {
 
 export interface CompsFiltersConfig {
   maxDistance?: number;
+  maxResults?: number;
   minBeds?: number;
   maxBeds?: number;
   minBaths?: number;
