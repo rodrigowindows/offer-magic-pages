@@ -98,6 +98,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [bathrooms, setBathrooms] = useState('');
   const [saleDate, setSaleDate] = useState('');
 
+  // Estado de edição
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+
   // Bulk Add states
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkUrls, setBulkUrls] = useState('');
@@ -311,6 +314,123 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
     } finally {
       setSaving(false);
     }
+  };
+
+  // Editar link existente
+  const handleEditLink = (link: SavedCompsLink) => {
+    setEditingLinkId(link.id);
+    setCompsUrl(link.url);
+    setNotes(link.notes || '');
+
+    // Preencher dados se existirem
+    if (link.comp_data) {
+      setSalePrice(link.comp_data.sale_price?.toString() || '');
+      setSquareFeet(link.comp_data.square_feet?.toString() || '');
+      setBedrooms(link.comp_data.bedrooms?.toString() || '');
+      setBathrooms(link.comp_data.bathrooms?.toString() || '');
+      setSaleDate(link.comp_data.sale_date || '');
+
+      // Ativar dados avançados se existirem
+      if (link.comp_data.bedrooms || link.comp_data.bathrooms || link.comp_data.sale_date) {
+        setAddFullData(true);
+      }
+    }
+
+    // Scroll para o topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    toast({
+      title: '✏️ Modo de edição',
+      description: 'Faça as alterações e clique em "Atualizar"',
+    });
+  };
+
+  // Atualizar link editado
+  const handleUpdateLink = async () => {
+    if (!editingLinkId) return;
+
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: '⚠️ Não autenticado',
+          description: 'Faça login para atualizar',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Preparar comp_data
+      let compData = null;
+      if (salePrice || squareFeet) {
+        compData = {
+          sale_price: salePrice ? parseFloat(salePrice) : undefined,
+          square_feet: squareFeet ? parseFloat(squareFeet) : undefined,
+          bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
+          bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
+          sale_date: addFullData && saleDate ? saleDate : undefined
+        };
+      }
+
+      const { error } = await supabase
+        .from('manual_comps_links' as any)
+        .update({
+          url: compsUrl.trim(),
+          notes: notes.trim() || null,
+          comp_data: compData
+        })
+        .eq('id', editingLinkId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: '✅ Link atualizado!',
+        description: 'Alterações salvas com sucesso',
+      });
+
+      // Limpar formulário e sair do modo de edição
+      setEditingLinkId(null);
+      setCompsUrl('');
+      setNotes('');
+      setSalePrice('');
+      setSquareFeet('');
+      setBedrooms('');
+      setBathrooms('');
+      setSaleDate('');
+      setAddFullData(false);
+
+      onLinkAdded?.();
+      loadLinks();
+    } catch (error) {
+      console.error('Error updating link:', error);
+      toast({
+        title: '❌ Erro ao atualizar',
+        description: 'Não foi possível atualizar o link',
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Cancelar edição
+  const handleCancelEdit = () => {
+    setEditingLinkId(null);
+    setCompsUrl('');
+    setNotes('');
+    setSalePrice('');
+    setSquareFeet('');
+    setBedrooms('');
+    setBathrooms('');
+    setSaleDate('');
+    setAddFullData(false);
+
+    toast({
+      title: '❌ Edição cancelada',
+      description: 'Formulário limpo',
+    });
   };
 
   // Bulk Add - Adicionar múltiplas URLs de uma vez
@@ -602,14 +722,38 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       {/* Formulário para adicionar link */}
       <Card>
         <CardHeader>
+          {/* Banner de edição */}
+          {editingLinkId && (
+            <div className="mb-4 p-3 bg-blue-100 border-2 border-blue-400 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-900">
+                <Pencil className="w-5 h-5" />
+                <span className="font-semibold">✏️ Modo de Edição</span>
+              </div>
+              <p className="text-sm text-blue-800 mt-1">
+                Faça as alterações necessárias e clique em "Atualizar Link"
+              </p>
+            </div>
+          )}
+
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <CardTitle className="flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                Adicionar Link de Comps
+                {editingLinkId ? (
+                  <>
+                    <Pencil className="w-5 h-5" />
+                    Editar Link de Comps
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    Adicionar Link de Comps
+                  </>
+                )}
               </CardTitle>
               <CardDescription>
-                {preSelectedPropertyId
+                {editingLinkId
+                  ? 'Atualize os dados do comp e clique em "Atualizar Link"'
+                  : preSelectedPropertyId
                   ? 'Cole o link da página de comps para a propriedade selecionada'
                   : 'Selecione uma propriedade e cole o link da página de comps'
                 }
@@ -950,28 +1094,55 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
           )}
 
           <div className="flex gap-2">
-            <Button onClick={handleSaveLink} className="flex-1" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Salvar Link
-                </>
-              )}
-            </Button>
+            {editingLinkId ? (
+              <>
+                <Button onClick={handleUpdateLink} className="flex-1" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Atualizando...
+                    </>
+                  ) : (
+                    <>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Atualizar Link
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleCancelEdit}
+                  variant="outline"
+                  disabled={saving}
+                >
+                  Cancelar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={handleSaveLink} className="flex-1" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Salvar Link
+                    </>
+                  )}
+                </Button>
 
-            <Button
-              onClick={() => setShowBulkAdd(!showBulkAdd)}
-              variant={showBulkAdd ? "default" : "outline"}
-              disabled={saving}
-              className="whitespace-nowrap"
-            >
-              📋 Bulk Add
-            </Button>
+                <Button
+                  onClick={() => setShowBulkAdd(!showBulkAdd)}
+                  variant={showBulkAdd ? "default" : "outline"}
+                  disabled={saving}
+                  className="whitespace-nowrap"
+                >
+                  📋 Bulk Add
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Bulk Add Section */}
@@ -1167,13 +1338,7 @@ Cole quantas URLs quiser (recomendado: 5-10)`}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            // TODO: Implementar edição - por enquanto apenas mostra toast
-                            toast({
-                              title: '🚧 Em desenvolvimento',
-                              description: 'Funcionalidade de edição será implementada em breve',
-                            });
-                          }}
+                          onClick={() => handleEditLink(link)}
                           title="Editar"
                           className="text-blue-500 hover:text-blue-700"
                         >
