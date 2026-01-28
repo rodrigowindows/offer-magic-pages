@@ -473,7 +473,36 @@ export const exportCompsToPDF = async (
       currentY + 13
     );
 
-    currentY += 30;
+    currentY += 25;
+
+    // ===== OFFER vs ESTIMATED VALUE COMPARISON CARD =====
+    if (property.cash_offer_amount && property.cash_offer_amount > 0) {
+      const offerVsEstimate = ((property.cash_offer_amount / property.estimated_value) - 1) * 100;
+      const isAbove = offerVsEstimate > 0;
+      const cardColor = isAbove ? [254, 242, 242] : [240, 253, 244]; // red or green background
+      const textColor = isAbove ? [220, 38, 38] : [22, 163, 74]; // red or green text
+
+      doc.setFillColor(cardColor[0], cardColor[1], cardColor[2]);
+      doc.rect(20, currentY, 170, 15, 'F');
+
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text('💰 Your Offer vs Estimated Value:', 25, currentY + 5);
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      doc.text(
+        `$${property.cash_offer_amount.toLocaleString()} (${offerVsEstimate > 0 ? '+' : ''}${offerVsEstimate.toFixed(1)}% ${isAbove ? 'above' : 'below'} market)`,
+        25,
+        currentY + 11
+      );
+      doc.setFont('helvetica', 'normal');
+
+      currentY += 20;
+    } else {
+      currentY += 5;
+    }
 
     // ===== DATA SOURCE & VALIDATION =====
     const sourceLabels: Record<string, string> = {
@@ -522,8 +551,34 @@ export const exportCompsToPDF = async (
 
     currentY += 7;
 
-    // Validate comparables and show warnings if needed
+    // ===== DATA QUALITY INDICATOR =====
     const validation = validateCompsValues(comparables, property.estimated_value);
+    const qualityScore = Math.max(0, 100 - (validation.warnings.length * 20));
+    const qualityLabel = qualityScore >= 80 ? 'Excellent' : qualityScore >= 60 ? 'Good' : qualityScore >= 40 ? 'Fair' : 'Poor';
+    const qualityColor = qualityScore >= 80 ? [34, 197, 94] : qualityScore >= 60 ? [251, 191, 36] : qualityScore >= 40 ? [249, 115, 22] : [239, 68, 68];
+
+    // Quality indicator bar
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Data Quality:', 20, currentY);
+
+    // Background bar
+    doc.setFillColor(229, 231, 235);
+    doc.rect(50, currentY - 3, 60, 5, 'F');
+
+    // Quality bar (filled based on score)
+    doc.setFillColor(qualityColor[0], qualityColor[1], qualityColor[2]);
+    doc.rect(50, currentY - 3, (60 * qualityScore) / 100, 5, 'F');
+
+    // Quality label
+    doc.setTextColor(qualityColor[0], qualityColor[1], qualityColor[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${qualityScore}% - ${qualityLabel}`, 115, currentY);
+    doc.setFont('helvetica', 'normal');
+
+    currentY += 7;
+
+    // Show warnings if needed
     if (validation.warnings.length > 0) {
       const warningHeight = 12 + validation.warnings.length * 5;
       doc.setFillColor(254, 252, 232); // yellow background
@@ -543,11 +598,53 @@ export const exportCompsToPDF = async (
       currentY += warningHeight + 5;
     }
 
+    // ===== STATISTICS SUMMARY =====
+    const prices = comparables.map(c => c.salePrice);
+    const pricesPerSqft = comparables.map(c => c.pricePerSqft || 0);
+    const sortedPrices = [...prices].sort((a, b) => a - b);
+    const medianPrice = sortedPrices.length % 2 === 0
+      ? (sortedPrices[sortedPrices.length / 2 - 1] + sortedPrices[sortedPrices.length / 2]) / 2
+      : sortedPrices[Math.floor(sortedPrices.length / 2)];
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const avgPricePerSqft = pricesPerSqft.reduce((sum, p) => sum + p, 0) / pricesPerSqft.length;
+
+    // Calculate standard deviation
+    const mean = prices.reduce((sum, p) => sum + p, 0) / prices.length;
+    const variance = prices.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / prices.length;
+    const stdDev = Math.sqrt(variance);
+
+    doc.setFontSize(10);
+    doc.setTextColor(15, 23, 42);
+    doc.text('📊 Additional Statistics:', 20, currentY);
+    currentY += 6;
+
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Median Price: $${medianPrice.toLocaleString()}`, 25, currentY);
+    doc.text(`Price Range: $${minPrice.toLocaleString()} - $${maxPrice.toLocaleString()}`, 95, currentY);
+    currentY += 5;
+    doc.text(`Std. Deviation: $${Math.round(stdDev).toLocaleString()}`, 25, currentY);
+    doc.text(`Avg $/Sqft: $${Math.round(avgPricePerSqft)}`, 95, currentY);
+    currentY += 8;
+
     // ===== COMPARABLE SALES TABLE =====
     doc.setFontSize(14);
     doc.setTextColor(15, 23, 42);
     doc.text('Comparable Sales', 20, currentY);
+
+    // Add search radius note
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('(sorted by distance, closest first)', 75, currentY);
     currentY += 5;
+
+    // Sort comparables by distance (closest first)
+    const sortedComparables = [...comparables].sort((a, b) => {
+      const distA = (a as any).distanceMiles || (a as any).distance || 0;
+      const distB = (b as any).distanceMiles || (b as any).distance || 0;
+      return distA - distB;
+    });
 
     // Prepare table data with source badges
     const sourceShortLabels: Record<string, string> = {
@@ -561,7 +658,7 @@ export const exportCompsToPDF = async (
       'database': 'DB',
     };
 
-    const tableData = comparables.map((comp, index) => [
+    const tableData = sortedComparables.map((comp, index) => [
       `#${index + 1}`,
       comp.address,
       format(comp.saleDate, 'MM/dd/yyyy'),
@@ -670,38 +767,84 @@ export const exportCompsToPDF = async (
         const mapImageData = await loadImageAsBase64(mapUrl);
         if (mapImageData) {
           doc.addImage(mapImageData, 'PNG', 20, 75, 170, 110);
-          
+
           // Add legend
           doc.setFontSize(9);
           doc.setTextColor(100, 116, 139);
           doc.text('Legend:', 20, 192);
-          
+
           // Red marker
           doc.setFillColor(239, 68, 68);
           doc.circle(25, 197, 2, 'F');
           doc.text('Subject Property', 30, 198);
-          
+
           // Blue marker
           doc.setFillColor(66, 153, 225);
           doc.circle(25, 202, 2, 'F');
           doc.text('Comparable Properties (up to 10 shown)', 30, 203);
         } else {
-          doc.setFontSize(10);
-          doc.setTextColor(156, 163, 175);
-          doc.text('Map unavailable - unable to load image', 20, 100);
+          // Better fallback - draw a placeholder with icon
+          doc.setDrawColor(203, 213, 225);
+          doc.setFillColor(248, 250, 252);
+          doc.rect(20, 75, 170, 110, 'FD');
+
+          // Map icon (simple square with pin)
+          doc.setFillColor(148, 163, 184);
+          doc.circle(105, 115, 8, 'F');
+          doc.setFillColor(239, 68, 68);
+          doc.circle(105, 112, 4, 'F');
+
+          doc.setFontSize(11);
+          doc.setTextColor(100, 116, 139);
+          doc.text('Map Image Unavailable', 105, 140, { align: 'center' });
+          doc.setFontSize(8);
+          doc.setTextColor(148, 163, 184);
+          doc.text('Unable to load map image from Mapbox', 105, 148, { align: 'center' });
         }
       } else {
-        doc.setFontSize(10);
-        doc.setTextColor(156, 163, 175);
-        doc.text('Map unavailable - Mapbox token not configured', 20, 100);
+        // No token - show setup instructions
+        doc.setDrawColor(251, 191, 36);
+        doc.setFillColor(254, 252, 232);
+        doc.rect(20, 75, 170, 110, 'FD');
+
+        // Warning icon
+        doc.setFillColor(251, 191, 36);
+        doc.circle(105, 115, 8, 'F');
+        doc.setFontSize(14);
+        doc.setTextColor(255, 255, 255);
+        doc.text('!', 105, 119, { align: 'center' });
+
+        doc.setFontSize(11);
+        doc.setTextColor(161, 98, 7);
+        doc.text('Mapbox Token Not Configured', 105, 140, { align: 'center' });
         doc.setFontSize(8);
-        doc.text('To enable maps, add your Mapbox token in Settings', 20, 110);
+        doc.setTextColor(161, 98, 7);
+        doc.text('To enable property maps in PDF reports:', 105, 150, { align: 'center' });
+        doc.text('1. Go to Settings > API Configuration', 105, 157, { align: 'center' });
+        doc.text('2. Add your Mapbox Access Token', 105, 164, { align: 'center' });
+        doc.text('3. Maps will appear in future exports', 105, 171, { align: 'center' });
       }
     } catch (mapError) {
       console.error('Error adding map to PDF:', mapError);
-      doc.setFontSize(10);
-      doc.setTextColor(156, 163, 175);
-      doc.text('Map unavailable - error loading map', 20, 100);
+
+      // Error fallback
+      doc.setDrawColor(239, 68, 68);
+      doc.setFillColor(254, 242, 242);
+      doc.rect(20, 75, 170, 110, 'FD');
+
+      // Error icon
+      doc.setFillColor(239, 68, 68);
+      doc.circle(105, 115, 8, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.text('✕', 105, 119, { align: 'center' });
+
+      doc.setFontSize(11);
+      doc.setTextColor(220, 38, 38);
+      doc.text('Map Loading Error', 105, 140, { align: 'center' });
+      doc.setFontSize(8);
+      doc.setTextColor(127, 29, 29);
+      doc.text('An error occurred while loading the map', 105, 148, { align: 'center' });
     }
 
     // Add Footer
@@ -982,13 +1125,25 @@ export const exportConsolidatedCompsPDF = async (
         currentY += 3; // Extra space for demo warning
       }
 
+      // Sort comparables by distance (closest first)
+      const sortedComparables = [...comparables].sort((a, b) => {
+        const distA = (a as any).distanceMiles || (a as any).distance || 0;
+        const distB = (b as any).distanceMiles || (b as any).distance || 0;
+        return distA - distB;
+      });
+
       // Comparables table
       doc.setFontSize(12);
       doc.setTextColor(15, 23, 42);
       doc.text('Comparable Sales', 20, currentY);
+
+      // Add search radius note
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text('(sorted by distance)', 75, currentY);
       currentY += 3;
 
-      const tableData = comparables.map((comp, index) => [
+      const tableData = sortedComparables.map((comp, index) => [
         `#${index + 1}`,
         comp.address.length > 30 ? comp.address.substring(0, 27) + '...' : comp.address,
         format(comp.saleDate, 'MM/dd/yy'),
