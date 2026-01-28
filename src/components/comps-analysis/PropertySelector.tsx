@@ -4,7 +4,9 @@
  */
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Star } from 'lucide-react';
+import { Star, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
 import type { Property } from './types';
 
 export interface PropertySelectorProps {
@@ -26,6 +28,8 @@ export const PropertySelector = ({
   filter = 'all',
   className = '',
 }: PropertySelectorProps) => {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { toast } = useToast();
   // Filter properties based on current filter
   const filteredProperties = properties.filter((property) => {
     if (filter === 'favorites') {
@@ -63,6 +67,32 @@ export const PropertySelector = ({
     onToggleFavorite(propertyId);
   };
 
+  const handleCopyAddress = async (e: React.MouseEvent, property: Property) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const address = property.full_address || property.address || '';
+
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedId(property.id);
+      toast({
+        title: '📋 Endereço copiado!',
+        description: address,
+        duration: 2000,
+      });
+
+      // Reset copied state after 2 seconds
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      toast({
+        title: '❌ Erro ao copiar',
+        description: 'Não foi possível copiar o endereço',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className={`w-full ${className}`}>
       <Select
@@ -92,7 +122,7 @@ export const PropertySelector = ({
               <SelectItem
                 key={property.id}
                 value={property.id}
-                className="flex items-center justify-between gap-2 cursor-pointer hover:bg-accent"
+                className="flex items-center justify-between gap-2 cursor-pointer hover:bg-accent group"
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   <button
@@ -111,6 +141,21 @@ export const PropertySelector = ({
                   <span className="truncate flex-1">
                     {formatPropertyLabel(property)}
                   </span>
+
+                  {/* Copy Address Button - Shows on hover */}
+                  <button
+                    onClick={(e) => handleCopyAddress(e, property)}
+                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
+                    type="button"
+                    title="Copiar endereço"
+                  >
+                    {copiedId === property.id ? (
+                      <Check className="h-3.5 w-3.5 text-green-600" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5 text-gray-600" />
+                    )}
+                  </button>
+
                   {(property.comps_status === 'approved' || property.approval_status === 'approved') && (
                     <span className="flex-shrink-0 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
                       ✓ Approved

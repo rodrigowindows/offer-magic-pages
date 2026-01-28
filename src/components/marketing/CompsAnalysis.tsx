@@ -85,6 +85,7 @@ export const CompsAnalysis = () => {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [approvalStatusFilter, setApprovalStatusFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [offerFilter, setOfferFilter] = useState<'all' | 'with-offer' | 'no-offer'>('all');
+  const [manualCompsFilter, setManualCompsFilter] = useState<'all' | 'with-manual' | 'without-manual'>('all');
 
   // Offer Management
   const [editingOffer, setEditingOffer] = useState(false);
@@ -350,9 +351,14 @@ export const CompsAnalysis = () => {
       if (offerFilter === 'with-offer' && (!p.cash_offer_amount || p.cash_offer_amount === 0)) return false;
       if (offerFilter === 'no-offer' && p.cash_offer_amount && p.cash_offer_amount > 0) return false;
 
+      // Manual Comps filter
+      const propertyManualComps = manualComps.filter(mc => mc.property_id === p.id);
+      if (manualCompsFilter === 'with-manual' && propertyManualComps.length === 0) return false;
+      if (manualCompsFilter === 'without-manual' && propertyManualComps.length > 0) return false;
+
       return true;
     });
-  }, [properties, approvalStatusFilter, offerFilter]);
+  }, [properties, approvalStatusFilter, offerFilter, manualCompsFilter, manualComps]);
 
   /**
    * Generate smart insights based on analysis
@@ -1991,6 +1997,37 @@ export const CompsAnalysis = () => {
                   className={offerFilter === 'no-offer' ? 'bg-gray-600 hover:bg-gray-700 text-white' : ''}
                 >
                   📝 No Offer ({properties.filter(p => !p.cash_offer_amount || p.cash_offer_amount === 0).length})
+                </Button>
+              </div>
+            </div>
+
+            {/* Manual Comps Filter */}
+            <div className="border-t pt-3">
+              <Label className="text-sm font-semibold mb-2 block">Filter by Manual Comps:</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={manualCompsFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setManualCompsFilter('all')}
+                  className={manualCompsFilter === 'all' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+                >
+                  All Properties
+                </Button>
+                <Button
+                  variant={manualCompsFilter === 'with-manual' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setManualCompsFilter('with-manual')}
+                  className={manualCompsFilter === 'with-manual' ? 'bg-blue-600 hover:bg-blue-700 text-white' : ''}
+                >
+                  📋 Has Manual Comps ({properties.filter(p => manualComps.filter(mc => mc.property_id === p.id).length > 0).length})
+                </Button>
+                <Button
+                  variant={manualCompsFilter === 'without-manual' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setManualCompsFilter('without-manual')}
+                  className={manualCompsFilter === 'without-manual' ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''}
+                >
+                  ⚠️ No Manual Comps ({properties.filter(p => manualComps.filter(mc => mc.property_id === p.id).length === 0).length})
                 </Button>
               </div>
             </div>
