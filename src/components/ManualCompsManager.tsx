@@ -830,13 +830,13 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
             </div>
           </div>
 
-          {/* Quick Add Fields - Always visible */}
+          {/* Campos de Preço/Sqft - Sempre visíveis (opcionais) */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold flex items-center gap-2">
-              ⚡ Quick Add - Preço & Sqft (Opcional)
-              <span className="text-xs text-muted-foreground font-normal">Preencha manual ou use Auto-Fill</span>
+              💰 Preço & Área (Opcional)
+              <span className="text-xs text-muted-foreground font-normal">Preencha manual ou use Auto-Fill acima</span>
             </Label>
-            <div className="grid grid-cols-2 gap-4 p-3 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50/50">
+            <div className="grid grid-cols-2 gap-4 p-3 border-2 border-dashed border-green-300 rounded-lg bg-green-50/30">
               <div>
                 <Label htmlFor="sale-price-quick" className="text-xs">Preço de Venda ($)</Label>
                 <Input
@@ -862,6 +862,15 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                 />
               </div>
             </div>
+
+            {/* Preview inline - mostra cálculo do $/Sqft */}
+            {(salePrice || squareFeet) && (
+              <div className="p-3 border-2 border-green-400 rounded-lg bg-green-100 text-green-900 text-sm font-semibold">
+                ✓ Preview: {salePrice ? `Preço: $${Number(salePrice).toLocaleString()}` : ''}
+                {squareFeet ? ` | Área: ${Number(squareFeet).toLocaleString()} sqft` : ''}
+                {salePrice && squareFeet ? ` | $/Sqft: $${Math.round(Number(salePrice) / Number(squareFeet))}` : ''}
+              </div>
+            )}
           </div>
 
           {/* Notas (opcional) */}
@@ -926,14 +935,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                   disabled={saving}
                 />
               </div>
-            </div>
-          )}
-
-          {/* Preview do comp manual */}
-          {(salePrice || squareFeet) && (
-            <div className="mt-2 p-2 border-2 border-green-300 rounded bg-green-50 text-green-900 text-sm">
-              <b>✓ Preview:</b> {salePrice ? `Preço: $${Number(salePrice).toLocaleString()}` : ''} {squareFeet ? `| Sqft: ${Number(squareFeet).toLocaleString()}` : ''}
-              {salePrice && squareFeet ? ` | $/Sqft: $${Math.round(Number(salePrice) / Number(squareFeet))}` : ''}
             </div>
           )}
 
