@@ -92,6 +92,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   // Estados para dados do comp (Quick Add sempre visível)
   const [salePrice, setSalePrice] = useState('');
   const [squareFeet, setSquareFeet] = useState('');
+  const [quickAdd, setQuickAdd] = useState(false); // Toggle para campos Quick Add
   const [addFullData, setAddFullData] = useState(false); // Para dados avançados opcionais
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
