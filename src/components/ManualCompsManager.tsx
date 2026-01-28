@@ -285,9 +285,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       // Call callback to refresh manual links count
       onLinkAdded?.();
 
-      // Limpar formulário e recarregar lista
-      setSelectedPropertyId('');
-      setPropertyAddress('');
+      // Limpar formulário MAS MANTER a propriedade selecionada para adicionar mais comps
+      // setSelectedPropertyId(''); // ← NÃO limpar - manter selecionado
+      // setPropertyAddress('');    // ← NÃO limpar - manter endereço
       setCompsUrl('');
       setNotes('');
       setSalePrice('');
