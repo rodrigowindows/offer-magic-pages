@@ -185,7 +185,7 @@ export const CompsAnalysis = () => {
     return manualLinks.map((link, index) => {
       // Se tem dados completos no comp_data, usar eles como prioridade
       // comp_data pode ser string JSON ou objeto
-      let compData = {};
+      let compData: Record<string, any> = {};
       if (link.comp_data) {
         if (typeof link.comp_data === 'string') {
           try {
@@ -195,7 +195,7 @@ export const CompsAnalysis = () => {
             compData = {};
           }
         } else {
-          compData = link.comp_data;
+          compData = link.comp_data as Record<string, any>;
         }
       }
       
@@ -206,17 +206,15 @@ export const CompsAnalysis = () => {
           has_comp_data: !!link.comp_data,
           comp_data_type: typeof link.comp_data,
           comp_data: compData,
-          sale_price_direct: link.sale_price,
-          square_feet_direct: link.square_feet,
         });
       }
 
-      // Usar comp_data se disponível, senão fallback para campos diretos do link
-      const salePrice = compData.sale_price || link.sale_price || 0;
-      const squareFeet = compData.square_feet || link.square_feet || link.sqft || 0;
-      const bedrooms = compData.bedrooms || link.bedrooms || link.beds || 0;
-      const bathrooms = compData.bathrooms || link.bathrooms || link.baths || 0;
-      const saleDate = compData.sale_date || link.sale_date || link.created_at || new Date().toISOString();
+      // Usar comp_data se disponível (extrair valores de JSONB)
+      const salePrice = Number(compData.sale_price || compData.salePrice) || 0;
+      const squareFeet = Number(compData.square_feet || compData.squareFeet || compData.sqft) || 0;
+      const bedrooms = Number(compData.bedrooms || compData.beds) || 0;
+      const bathrooms = Number(compData.bathrooms || compData.baths) || 0;
+      const saleDate = compData.sale_date || compData.saleDate || link.created_at || new Date().toISOString();
       const pricePerSqft = squareFeet > 0 ? salePrice / squareFeet : 0;
       
       // Debug: log converted values
@@ -1440,8 +1438,6 @@ export const CompsAnalysis = () => {
               id: l.id, 
               has_comp_data: !!l.comp_data,
               comp_data: l.comp_data,
-              sale_price: l.sale_price,
-              square_feet: l.square_feet
             })));
             
             manualCompsForProperty = convertManualLinksToComparables(manualLinks);
