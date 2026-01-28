@@ -185,6 +185,13 @@ export const CompsAnalysis = () => {
       // Se tem dados completos no comp_data, usar eles como prioridade
       const compData = link.comp_data || {};
 
+      // DEBUG: Log para ver o que está chegando
+      console.log(`🔍 Manual Link #${index + 1}:`, {
+        url: link.url,
+        comp_data: compData,
+        property_address: link.property_address
+      });
+
       // Usar comp_data se disponível, senão fallback para campos diretos do link
       const salePrice = compData.sale_price || link.sale_price || 0;
       const squareFeet = compData.square_feet || link.square_feet || link.sqft || 0;
@@ -192,6 +199,8 @@ export const CompsAnalysis = () => {
       const bathrooms = compData.bathrooms || link.bathrooms || link.baths || 0;
       const saleDate = compData.sale_date || link.sale_date || link.created_at || new Date().toISOString();
       const pricePerSqft = squareFeet > 0 ? salePrice / squareFeet : 0;
+
+      console.log(`✅ Converted to:`, { salePrice, squareFeet, pricePerSqft, bedrooms, bathrooms });
 
       return {
         id: link.id || `manual-${index}`,
