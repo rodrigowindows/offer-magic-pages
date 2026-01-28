@@ -103,8 +103,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   // Bulk Add states
   const [showBulkAdd, setShowBulkAdd] = useState(false);
   const [bulkUrls, setBulkUrls] = useState('');
-  const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
-  const [recentlyAdded, setRecentlyAdded] = useState<Array<{url: string, address: string, price?: string}>>([]);
 
   // Carregar propriedades
   const loadProperties = async () => {
@@ -484,8 +482,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
     }
 
     setSaving(true);
-    setBulkProgress({ current: 0, total: urls.length });
-    const added: Array<{url: string, address: string, price?: string}> = [];
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -500,10 +496,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       }
 
       // Processar cada URL
-      for (let i = 0; i < urls.length; i++) {
-        const url = urls[i];
-        setBulkProgress({ current: i + 1, total: urls.length });
-
+      for (const url of urls) {
         try {
           // Extrair dados da URL
           const extracted = extractDataFromUrl(url);
@@ -536,14 +529,8 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
 
           if (error) throw error;
 
-          added.push({
-            url,
-            address: addressStr || 'Unknown',
-            price: extracted.price ? `$${extracted.price.toLocaleString()}` : undefined
-          });
-
           // Pequeno delay para não sobrecarregar
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise(resolve => setTimeout(resolve, 200));
 
         } catch (error) {
           // Silently skip failed URLs
@@ -551,14 +538,13 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       }
 
       // Atualizar lista e limpar
-      setRecentlyAdded(added);
       loadLinks();
       setBulkUrls('');
       setShowBulkAdd(false);
 
       toast({
         title: '✅ Comps adicionados!',
-        description: `${added.length} de ${urls.length} URLs adicionadas com sucesso`,
+        description: `${urls.length} URLs processadas com sucesso`,
       });
 
       if (onLinkAdded) onLinkAdded();
@@ -572,7 +558,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       });
     } finally {
       setSaving(false);
-      setBulkProgress({ current: 0, total: 0 });
     }
   };
 
@@ -1115,30 +1100,21 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
           {/* Bulk Add Section */}
           {showBulkAdd && (
             <div className="mt-4 p-4 border-2 border-dashed border-purple-300 rounded-lg bg-purple-50/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-purple-900 flex items-center gap-2">
-                  🚀 Bulk Add - Adicione Múltiplas URLs
-                </h4>
-                {bulkProgress.total > 0 && (
-                  <span className="text-sm text-purple-700">
-                    {bulkProgress.current} / {bulkProgress.total}
-                  </span>
-                )}
-              </div>
+              <h4 className="font-semibold text-purple-900">
+                🚀 Bulk Add - Adicione Múltiplas URLs
+              </h4>
 
               <p className="text-xs text-purple-800">
-                Cole múltiplas URLs do Zillow/Trulia/Redfin (uma por linha) e adicione todas de uma vez!
+                Cole múltiplas URLs do Zillow/Trulia/Redfin (uma por linha)
               </p>
 
               <Textarea
                 placeholder={`https://www.zillow.com/homedetails/123-Main-St...
 https://www.zillow.com/homedetails/456-Oak-Ave...
-https://www.trulia.com/p/fl/orlando/789-Elm-Dr...
-
-Cole quantas URLs quiser (recomendado: 5-10)`}
+https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
                 value={bulkUrls}
                 onChange={(e) => setBulkUrls(e.target.value)}
-                rows={8}
+                rows={6}
                 disabled={saving}
                 className="font-mono text-xs"
               />
@@ -1152,7 +1128,7 @@ Cole quantas URLs quiser (recomendado: 5-10)`}
                   {saving ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Adicionando {bulkProgress.current}/{bulkProgress.total}...
+                      Processando...
                     </>
                   ) : (
                     <>
@@ -1172,25 +1148,6 @@ Cole quantas URLs quiser (recomendado: 5-10)`}
                   Cancelar
                 </Button>
               </div>
-
-              {/* Recently Added Preview */}
-              {recentlyAdded.length > 0 && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-                  <p className="text-sm font-semibold text-green-900 mb-2">
-                    ✅ Adicionados recentemente ({recentlyAdded.length}):
-                  </p>
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {recentlyAdded.map((item, idx) => (
-                      <div key={idx} className="text-xs text-green-800 flex items-start gap-2">
-                        <span className="text-green-600">✓</span>
-                        <span className="flex-1">
-                          {item.address} {item.price && `- ${item.price}`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </CardContent>
