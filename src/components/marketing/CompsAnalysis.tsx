@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2, Trash2, FileText, RefreshCw, Activity } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -116,7 +116,7 @@ export const CompsAnalysis = () => {
   const [loading, setLoading] = useState(false);
   const [loadingComps, setLoadingComps] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
-  const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined' | 'map'>('manual'); // Start with manual tab
+  const [activeTab, setActiveTab] = useState<'auto' | 'manual' | 'combined' | 'map'>('auto');
 
   // Dialogs
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -1158,12 +1158,15 @@ export const CompsAnalysis = () => {
       // Function to get comparables for each property
       const getComparablesForProperty = async (property: Property, forceRefresh = false) => {
         // Skip all caches if forceRefresh is true
-        if (!forceRefresh) {
+        if (forceRefresh) {
+          console.log('🔄 Force refresh enabled, skipping all caches for:', property.address);
+        } else {
           // 1️⃣ Check MEMORY cache first (fastest)
           const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
           const cached = compsCache[cacheKey];
 
           if (cached) {
+            console.log('✅ Using MEMORY cache for export:', property.address);
             // Also fetch manual comps even when using memory cache
             let manualCompsForProperty: ComparableProperty[] = [];
             try {
@@ -1175,9 +1178,10 @@ export const CompsAnalysis = () => {
 
               if (manualLinks && manualLinks.length > 0) {
                 manualCompsForProperty = convertManualLinksToComparables(manualLinks);
+                console.log(`✅ Found ${manualCompsForProperty.length} manual comps for cached export:`, property.address);
               }
             } catch (manualError) {
-              // Silently handle manual comps fetch error
+              console.warn('⚠️ Error fetching manual comps for cached export:', manualError);
             }
 
             // Combine cached comps with manual comps
@@ -1197,6 +1201,8 @@ export const CompsAnalysis = () => {
                 suggestedValueMin: avgSalePrice * 0.95,
                 suggestedValueMax: avgSalePrice * 1.05,
                 comparablesCount: allComps.length,
+                dataSource: 'combined' as const,
+                isDemo: false,
               };
             }
 
@@ -1205,6 +1211,7 @@ export const CompsAnalysis = () => {
 
           // 2️⃣ Check if this is the currently selected property (already loaded)
           if (selectedProperty?.id === property.id && comparables.length > 0 && analysis) {
+            console.log('✅ Using CURRENT selection for export:', property.address);
             // Also fetch manual comps for current selection
             let manualCompsForProperty: ComparableProperty[] = [];
             try {
@@ -1216,9 +1223,10 @@ export const CompsAnalysis = () => {
 
               if (manualLinks && manualLinks.length > 0) {
                 manualCompsForProperty = convertManualLinksToComparables(manualLinks);
+                console.log(`✅ Found ${manualCompsForProperty.length} manual comps for current selection export:`, property.address);
               }
             } catch (manualError) {
-              // Silently handle manual comps fetch error
+              console.warn('⚠️ Error fetching manual comps for current selection export:', manualError);
             }
 
             // Combine current comps with manual comps
@@ -1238,6 +1246,8 @@ export const CompsAnalysis = () => {
                 suggestedValueMin: avgSalePrice * 0.95,
                 suggestedValueMax: avgSalePrice * 1.05,
                 comparablesCount: allComps.length,
+                dataSource: 'combined' as const,
+                isDemo: false,
               };
             }
 
@@ -1254,7 +1264,7 @@ export const CompsAnalysis = () => {
               .limit(1);
 
             if (historyData && historyData.length > 0) {
-              const savedAnalysis = historyData[0] as any;
+              const savedAnalysis = historyData[0];
               const analysisData = savedAnalysis.analysis_data as any;
 
               // Check if cache is expired (expires_at < NOW())
@@ -1263,7 +1273,12 @@ export const CompsAnalysis = () => {
                 : false;
 
               // ⚠️ SKIP demo data cache - always fetch fresh data instead
-              if (savedAnalysis.data_source !== 'demo' && !isExpired && analysisData?.comparables && analysisData?.analysis) {
+              if (savedAnalysis.data_source === 'demo') {
+                console.log('⚠️ Cache contains demo data, fetching fresh data instead:', property.address);
+              } else if (isExpired) {
+                console.log('⚠️ Cache expired, fetching fresh data:', property.address);
+              } else if (analysisData?.comparables && analysisData?.analysis) {
+                console.log('✅ Using DATABASE cache for export:', property.address);
 
                 // Also fetch manual comps for this property (even when using cache)
                 let manualCompsForProperty: ComparableProperty[] = [];
@@ -1276,9 +1291,10 @@ export const CompsAnalysis = () => {
 
                   if (manualLinks && manualLinks.length > 0) {
                     manualCompsForProperty = convertManualLinksToComparables(manualLinks);
+                    console.log(`✅ Found ${manualCompsForProperty.length} manual comps for cached export:`, property.address);
                   }
                 } catch (manualError) {
-                  // Silently handle manual comps fetch error
+                  console.warn('⚠️ Error fetching manual comps for cached export:', manualError);
                 }
 
                 // Combine cached comps with manual comps
@@ -1323,231 +1339,63 @@ export const CompsAnalysis = () => {
               }
             }
           } catch (dbError) {
-            // Silently handle database cache error
+            console.warn('Database cache check failed:', dbError);
           }
         }
 
-        // 4️⃣ Fetch ONLY manual comps (skip API completely)
+        // 4️⃣ Use ONLY manual comps (NO API calls during PDF export)
+        console.log(`📍 Checking for manual comps only (no API): ${property.address}`);
+        
+        let manualCompsForProperty: ComparableProperty[] = [];
         try {
-          // Fetch manual comps for this property
           const { data: manualLinks } = await supabase
             .from('manual_comps_links')
             .select('*')
             .eq('property_id', property.id)
             .order('created_at', { ascending: false });
 
-          if (!manualLinks || manualLinks.length === 0) {
-            // If no manual comps, try to fetch from API as fallback
-            console.log(`📍 No manual comps for ${property.address}, fetching from API...`);
-
-            const compsData = await CompsDataService.getComparables(
-              property.address || '',
-              property.city || 'Orlando',
-              property.state || 'FL',
-              property.estimated_value,
-              compsFilters.maxDistance || 3,
-              compsFilters.maxResults || 10
-            );
-
-            if (!compsData || compsData.length === 0) {
-              console.error(`❌ No comparables found (manual or API) for: ${property.address}`);
-              throw new Error('No comparables found for this property');
-            }
-
-            console.log(`✅ Found ${compsData.length} API comps for ${property.address}`);
-
-            // Use API data as fallback
-            const formattedComps = compsData
-              .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0)
-              .map((comp: any, index: number) => ({
-                id: `comp-${index}`,
-                address: comp.address || 'Unknown',
-                city: comp.city || property.city,
-                state: comp.state || property.state,
-                zipCode: comp.zipCode || '',
-                salePrice: Number(comp.salePrice) || 0,
-                saleDate: comp.saleDate || new Date().toISOString(),
-                beds: Number(comp.beds) || 0,
-                baths: Number(comp.baths) || 0,
-                sqft: Number(comp.sqft) || 1,
-                distance: Number(comp.distance) || 0,
-                distanceMiles: Number(comp.distance) || 0,
-                pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-                latitude: comp.latitude,
-                longitude: comp.longitude,
-                sale_price: Number(comp.salePrice) || 0,
-                sale_date: comp.saleDate || new Date().toISOString(),
-                square_feet: Number(comp.sqft) || 1,
-                bedrooms: Number(comp.beds) || 0,
-                bathrooms: Number(comp.baths) || 0,
-                price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-              }));
-
-            const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + c.salePrice, 0) / formattedComps.length || 0;
-            const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + c.pricePerSqft, 0) / formattedComps.length || 0;
-
-            // Calculate median
-            const prices = formattedComps.map(c => c.salePrice).sort((a, b) => a - b);
-            const median = prices.length % 2 === 0
-              ? (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2
-              : prices[Math.floor(prices.length / 2)];
-
-            const calculatedAnalysis = {
-              avgSalePrice,
-              medianSalePrice: median,
-              avgPricePerSqft,
-              suggestedValueMin: avgSalePrice * 0.95,
-              suggestedValueMax: avgSalePrice * 1.05,
-              trendPercentage: 0,
-              marketTrend: 'stable' as const,
-              comparablesCount: formattedComps.length,
-              dataSource: (compsData[0]?.source || 'attom') as any,
-              isDemo: false,
-            };
-
-            console.log(`✅ API fallback successful for ${property.address}:`, calculatedAnalysis);
-            return { comparables: formattedComps, analysis: calculatedAnalysis };
+          if (manualLinks && manualLinks.length > 0) {
+            manualCompsForProperty = convertManualLinksToComparables(manualLinks);
+            console.log(`✅ Found ${manualCompsForProperty.length} manual comps for export:`, property.address);
+          } else {
+            console.log(`📍 No manual comps for ${property.address}, skipping (no API call)`);
           }
-
-          const manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-
-          // Filter only comps with valid data (price and sqft)
-          const validManualComps = manualCompsForProperty.filter(comp =>
-            comp.salePrice && comp.salePrice > 0 &&
-            comp.sqft && comp.sqft > 0
-          );
-
-          if (validManualComps.length === 0) {
-            console.warn(`⚠️ Manual comps found but none are valid for ${property.address}, trying API...`);
-
-            // If manual comps exist but are invalid, fallback to API
-            const compsData = await CompsDataService.getComparables(
-              property.address || '',
-              property.city || 'Orlando',
-              property.state || 'FL',
-              property.estimated_value,
-              compsFilters.maxDistance || 3,
-              compsFilters.maxResults || 10
-            );
-
-            if (!compsData || compsData.length === 0) {
-              throw new Error('No valid comparables found for this property');
-            }
-
-            const formattedComps = compsData
-              .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0)
-              .map((comp: any, index: number) => ({
-                id: `comp-${index}`,
-                address: comp.address || 'Unknown',
-                city: comp.city || property.city,
-                state: comp.state || property.state,
-                zipCode: comp.zipCode || '',
-                salePrice: Number(comp.salePrice) || 0,
-                saleDate: comp.saleDate || new Date().toISOString(),
-                beds: Number(comp.beds) || 0,
-                baths: Number(comp.baths) || 0,
-                sqft: Number(comp.sqft) || 1,
-                distance: Number(comp.distance) || 0,
-                distanceMiles: Number(comp.distance) || 0,
-                pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-                latitude: comp.latitude,
-                longitude: comp.longitude,
-                sale_price: Number(comp.salePrice) || 0,
-                sale_date: comp.saleDate || new Date().toISOString(),
-                square_feet: Number(comp.sqft) || 1,
-                bedrooms: Number(comp.beds) || 0,
-                bathrooms: Number(comp.baths) || 0,
-                price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-              }));
-
-            const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + c.salePrice, 0) / formattedComps.length || 0;
-            const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + c.pricePerSqft, 0) / formattedComps.length || 0;
-
-            const prices = formattedComps.map(c => c.salePrice).sort((a, b) => a - b);
-            const median = prices.length % 2 === 0
-              ? (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2
-              : prices[Math.floor(prices.length / 2)];
-
-            const calculatedAnalysis = {
-              avgSalePrice,
-              medianSalePrice: median,
-              avgPricePerSqft,
-              suggestedValueMin: avgSalePrice * 0.95,
-              suggestedValueMax: avgSalePrice * 1.05,
-              trendPercentage: 0,
-              marketTrend: 'stable' as const,
-              comparablesCount: formattedComps.length,
-              dataSource: (compsData[0]?.source || 'attom') as any,
-              isDemo: false,
-            };
-
-            return { comparables: formattedComps, analysis: calculatedAnalysis };
-          }
-
-          // Use ONLY manual comps (no API data)
-          const formattedComps = validManualComps
-            .map((comp: any, index: number) => ({
-              id: `comp-${index}`,
-              address: comp.address || 'Unknown',
-              city: comp.city || property.city,
-              state: comp.state || property.state,
-              zipCode: comp.zipCode || '',
-              salePrice: Number(comp.salePrice) || 0,
-              saleDate: comp.saleDate || new Date().toISOString(),
-              beds: Number(comp.beds) || 0,
-              baths: Number(comp.baths) || 0,
-              sqft: Number(comp.sqft) || 1,
-              distance: Number(comp.distance) || 0,
-              distanceMiles: Number(comp.distance) || 0, // PDF export compatibility
-              pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-              latitude: comp.latitude,
-              longitude: comp.longitude,
-              // Legacy fields for PDF export
-              sale_price: Number(comp.salePrice) || 0,
-              sale_date: comp.saleDate || new Date().toISOString(),
-              square_feet: Number(comp.sqft) || 1,
-              bedrooms: Number(comp.beds) || 0,
-              bathrooms: Number(comp.baths) || 0,
-              price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
-            }));
-
-          // Use ONLY manual comps (no API comps)
-          const allComps = formattedComps;
-
-          if (allComps.length === 0) {
-            throw new Error('No valid comparables found for this property');
-          }
-
-        const avgSalePrice = allComps.reduce((sum: number, c: any) => sum + (c.salePrice || 0), 0) / allComps.length || 0;
-        const avgPricePerSqft = allComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || 0), 0) / allComps.length || 0;
-
-          // Source is always 'manual' (no API data)
-          const detectedSource = 'manual';
-          const isDemoData = false;
-
-          const calculatedAnalysis = {
-            avgSalePrice: avgSalePrice || 0,
-            medianSalePrice: avgSalePrice || 0,
-            avgPricePerSqft: avgPricePerSqft || 0,
-            suggestedValueMin: (avgSalePrice || 0) * 0.95,
-            suggestedValueMax: (avgSalePrice || 0) * 1.05,
-            trendPercentage: 0,
-            marketTrend: 'stable' as const,
-            comparablesCount: allComps.length,
-            dataSource: detectedSource as 'attom' | 'zillow' | 'county-csv' | 'demo' | 'database' | 'combined' | 'manual',
-            isDemo: isDemoData,
-          };
-
-          return { comparables: allComps, analysis: calculatedAnalysis };
-        } catch (error) {
-          // Re-throw so PDF export can show error message
-          throw error;
+        } catch (manualError) {
+          console.warn('⚠️ Error fetching manual comps for export:', manualError);
         }
+
+        // If no manual comps found, return empty (PDF will show message)
+        if (manualCompsForProperty.length === 0) {
+          console.log(`❌ No manual comparables found for: ${property.address} (using manual-only mode, no API calls)`);
+          throw new Error('No comparables found for this property');
+        }
+
+        // Calculate analysis from manual comps only
+        const avgSalePrice = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / manualCompsForProperty.length || 0;
+        const avgPricePerSqft = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.pricePerSqft || c.price_per_sqft || 0), 0) / manualCompsForProperty.length || 0;
+
+        const calculatedAnalysis = {
+          avgSalePrice: avgSalePrice || 0,
+          medianSalePrice: avgSalePrice || 0,
+          avgPricePerSqft: avgPricePerSqft || 0,
+          suggestedValueMin: (avgSalePrice || 0) * 0.95,
+          suggestedValueMax: (avgSalePrice || 0) * 1.05,
+          trendPercentage: 0,
+          marketTrend: 'stable' as const,
+          comparablesCount: manualCompsForProperty.length,
+          dataSource: 'manual' as const,
+          isDemo: false,
+        };
+
+        return { comparables: manualCompsForProperty, analysis: calculatedAnalysis };
       };
 
       await exportConsolidatedCompsPDF(
         filteredProperties,
-        getComparablesForProperty as any
+        getComparablesForProperty as any,
+        (current, total) => {
+          console.log(`Exporting ${current}/${total} properties...`);
+        }
       );
 
       toast({
@@ -1582,9 +1430,15 @@ export const CompsAnalysis = () => {
     try {
       setExportingPDF(true);
 
+      console.log('🔄 FORCE REFRESH: Exporting all properties with fresh data from API');
+
       // Function to get comparables for each property (with force refresh)
       const getComparablesForPropertyForceRefresh = async (property: Property) => {
+        // Always skip caches and fetch fresh from API
+        console.log('🔄 Force refresh enabled, skipping all caches for:', property.address);
+
         // Fetch from API
+        console.log('🔄 Fetching NEW data from API for export:', property.address);
         try {
           const compsData = await CompsDataService.getComparables(
             property.address || '',
@@ -1610,9 +1464,10 @@ export const CompsAnalysis = () => {
 
             if (manualLinks && manualLinks.length > 0) {
               manualCompsForProperty = convertManualLinksToComparables(manualLinks);
+              console.log(`✅ Found ${manualCompsForProperty.length} manual comps for export:`, property.address);
             }
           } catch (manualError) {
-            // Silently handle manual comps fetch error
+            console.warn('⚠️ Error fetching manual comps for export:', manualError);
           }
 
           // Convert and calculate analysis with validation
@@ -1647,6 +1502,7 @@ export const CompsAnalysis = () => {
           const allComps = [...formattedComps, ...manualCompsForProperty];
 
           if (allComps.length === 0) {
+            console.warn(`⚠️ No valid comparables found for property: ${property.address}`);
             throw new Error('No valid comparables found for this property');
           }
 
@@ -1676,15 +1532,24 @@ export const CompsAnalysis = () => {
 
           return { comparables: allComps, analysis: calculatedAnalysis };
         } catch (error) {
-          // Re-throw so PDF export can show error message
-          throw error;
+          // Log error with more context - let PDF export handle it gracefully
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('No valid comparables found')) {
+            console.warn(`⚠️ Skipping property ${property.address}: ${errorMessage}`);
+          } else {
+            console.error(`❌ Error processing property ${property.address}:`, error);
+          }
+          throw error; // Re-throw so PDF export can show error message
         }
       };
 
       // Export consolidated PDF with force refresh function
       await exportConsolidatedCompsPDF(
         filteredProperties,
-        getComparablesForPropertyForceRefresh as any
+        getComparablesForPropertyForceRefresh as any,
+        (current, total) => {
+          console.log(`Exporting ${current}/${total} properties...`);
+        }
       );
 
       toast({
@@ -1732,42 +1597,6 @@ export const CompsAnalysis = () => {
   }, [selectedProperty, generateComparables]);
 
   /**
-   * Clear cache (memory + database)
-   */
-  const handleClearCache = useCallback(async () => {
-    try {
-      // Clear memory cache
-      setCompsCache({});
-
-      // Clear database cache for all properties
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from('comps_analysis_history')
-          .delete()
-          .eq('analyst_user_id', user.id);
-      }
-
-      toast({
-        title: '🗑️ Cache limpo!',
-        description: 'Todo o histórico de comps foi removido. Próxima exportação usará apenas manual comps.',
-      });
-
-      // Refresh current view
-      if (selectedProperty) {
-        generateComparables(selectedProperty);
-      }
-    } catch (error) {
-      console.error('Error clearing cache:', error);
-      toast({
-        title: '❌ Erro ao limpar cache',
-        description: 'Não foi possível limpar o cache',
-        variant: 'destructive'
-      });
-    }
-  }, [selectedProperty, generateComparables, toast]);
-
-  /**
    * Handle property selection
    */
   const handleSelectProperty = useCallback((propertyId: string) => {
@@ -1782,6 +1611,7 @@ export const CompsAnalysis = () => {
    */
   const handleViewCompDetails = useCallback((comp: ComparableProperty) => {
     // TODO: Open comp details dialog
+    console.log('View comp details:', comp);
   }, []);
 
   /**
@@ -1797,6 +1627,7 @@ export const CompsAnalysis = () => {
    */
   const handleExportHistory = useCallback(async (item: any) => {
     // TODO: Export specific history item
+    console.log('Export history item:', item);
   }, []);
 
   /**
@@ -2187,7 +2018,6 @@ export const CompsAnalysis = () => {
               onExport={exportToPDF}
               onExportAll={exportAllAnalyses}
               onExportAllForceRefresh={exportAllAnalysesForceRefresh}
-              onClearCache={handleClearCache}
               onShare={shareAnalysis}
             />
           )}
@@ -2203,11 +2033,11 @@ export const CompsAnalysis = () => {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="manual" className="font-semibold">
-                📝 Manual Comps ({manualLinksCount})
-              </TabsTrigger>
               <TabsTrigger value="auto">
-                🤖 Auto Comps ({filteredComparables.length})
+                Auto Comps ({filteredComparables.length})
+              </TabsTrigger>
+              <TabsTrigger value="manual">
+                Manual ({manualLinksCount})
               </TabsTrigger>
               <TabsTrigger value="map">
                 <Map className="h-4 w-4 mr-2" />
@@ -2221,17 +2051,6 @@ export const CompsAnalysis = () => {
 
             {/* Auto Comps Tab */}
             <TabsContent value="auto" className="space-y-4">
-              {/* API Warning Banner */}
-              <Alert className="bg-amber-50 border-amber-200">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-900 font-semibold">API Limitations</AlertTitle>
-                <AlertDescription className="text-amber-800">
-                  The ATTOM API may have limited data availability for some addresses.
-                  For best results, use <strong>Manual Comps</strong> tab to add comparables directly.
-                  Auto comps will fetch available data from MLS/Public records when possible.
-                </AlertDescription>
-              </Alert>
-
               {/* Filters */}
               <CompsFilters
                 filters={compsFilters}
@@ -2342,6 +2161,7 @@ export const CompsAnalysis = () => {
           compAddress={filteredComparables[0]?.address || selectedProperty.address}
           basePrice={filteredComparables[0]?.salePrice || filteredComparables[0]?.sale_price || selectedProperty.estimated_value}
           onApplyAdjustments={(adjustedPrice, adjustments) => {
+            console.log('Adjusted price:', adjustedPrice, adjustments);
             setShowAdjustmentCalc(false);
           }}
         />
