@@ -42,7 +42,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 
 interface SavedCompsLink {
   id: string;
@@ -89,10 +88,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [saving, setSaving] = useState(false);
   const [filterPropertyId, setFilterPropertyId] = useState<string>('all');
 
-  // Estados para dados do comp (campos de preço/sqft sempre visíveis)
+  // Estados para dados do comp (todos os campos sempre visíveis mas opcionais)
   const [salePrice, setSalePrice] = useState('');
   const [squareFeet, setSquareFeet] = useState('');
-  const [addFullData, setAddFullData] = useState(false); // Para dados avançados opcionais (bedrooms, bathrooms, date)
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [saleDate, setSaleDate] = useState('');
@@ -258,9 +256,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       const compData = {
         sale_price: priceNum,
         square_feet: sqftNum,
-        bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
-        bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
-        sale_date: addFullData && saleDate ? saleDate : undefined
+        bedrooms: bedrooms ? parseInt(bedrooms) : undefined,
+        bathrooms: bathrooms ? parseFloat(bathrooms) : undefined,
+        sale_date: saleDate || undefined
       };
 
       const { error } = await supabase
@@ -295,7 +293,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBedrooms('');
       setBathrooms('');
       setSaleDate('');
-      setAddFullData(false);
       loadLinks();
     } catch (error) {
       console.error('Error saving link:', error);
@@ -322,11 +319,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBedrooms(link.comp_data.bedrooms?.toString() || '');
       setBathrooms(link.comp_data.bathrooms?.toString() || '');
       setSaleDate(link.comp_data.sale_date || '');
-
-      // Ativar dados avançados se existirem
-      if (link.comp_data.bedrooms || link.comp_data.bathrooms || link.comp_data.sale_date) {
-        setAddFullData(true);
-      }
     }
 
     // Scroll para o topo
@@ -390,9 +382,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       const compData = {
         sale_price: priceNum,
         square_feet: sqftNum,
-        bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
-        bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
-        sale_date: addFullData && saleDate ? saleDate : undefined
+        bedrooms: bedrooms ? parseInt(bedrooms) : undefined,
+        bathrooms: bathrooms ? parseFloat(bathrooms) : undefined,
+        sale_date: saleDate || undefined
       };
 
       const { error } = await supabase
@@ -421,7 +413,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBedrooms('');
       setBathrooms('');
       setSaleDate('');
-      setAddFullData(false);
 
       onLinkAdded?.();
       loadLinks();
@@ -447,7 +438,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
     setBedrooms('');
     setBathrooms('');
     setSaleDate('');
-    setAddFullData(false);
 
     toast({
       title: '❌ Edição cancelada',
@@ -980,35 +970,13 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
             )}
           </div>
 
-          {/* Notas (opcional) */}
+          {/* Dados Avançados (Opcionais) */}
           <div className="space-y-2">
-            <Label htmlFor="notes">Notas (Opcional)</Label>
-            <Textarea
-              id="notes"
-              placeholder="Ex: Comps do mesmo condomínio, preços de 2024..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              disabled={saving}
-            />
-          </div>
-
-          {/* Toggle para dados avançados (optional) */}
-          <div className="flex items-center gap-2 mt-2">
-            <Switch
-              id="full-data-toggle"
-              checked={addFullData}
-              onCheckedChange={setAddFullData}
-              disabled={saving}
-            />
-            <Label htmlFor="full-data-toggle" className="cursor-pointer text-sm">
-              📋 Adicionar dados avançados (quartos, banheiros, data de venda)
+            <Label className="text-sm font-semibold flex items-center gap-2">
+              📋 Dados Avançados (Opcional)
+              <span className="text-xs text-muted-foreground font-normal">Deixe em branco se não souber</span>
             </Label>
-          </div>
-
-          {/* Advanced Fields */}
-          {addFullData && (
-            <div className="grid grid-cols-2 gap-4 mt-2 p-3 border rounded bg-amber-50/50">
+            <div className="grid grid-cols-2 gap-4 p-3 border rounded bg-gray-50/50">
               <div>
                 <Label htmlFor="bedrooms" className="text-xs">Bedrooms</Label>
                 <Input
@@ -1043,7 +1011,20 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                 />
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Notas (opcional) */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notas (Opcional)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Ex: Comps do mesmo condomínio, preços de 2024..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              disabled={saving}
+            />
+          </div>
 
           <div className="flex gap-2">
             {editingLinkId ? (
