@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2, Trash2, FileText, RefreshCw, Activity } from 'lucide-react';
+import { AlertCircle, Map, BarChart3, History as HistoryIcon, Edit2, Save, Download, Loader2, Trash2, FileText, RefreshCw, Activity, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 // Modular Components - Phase 1
