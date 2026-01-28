@@ -183,7 +183,32 @@ export const CompsAnalysis = () => {
 
     return manualLinks.map((link, index) => {
       // Se tem dados completos no comp_data, usar eles como prioridade
-      const compData = link.comp_data || {};
+      // comp_data pode ser string JSON ou objeto
+      let compData = {};
+      if (link.comp_data) {
+        if (typeof link.comp_data === 'string') {
+          try {
+            compData = JSON.parse(link.comp_data);
+          } catch (e) {
+            console.warn('⚠️ Failed to parse comp_data as JSON:', e);
+            compData = {};
+          }
+        } else {
+          compData = link.comp_data;
+        }
+      }
+      
+      // Debug: log raw data
+      if (index === 0) {
+        console.log('🔍 Converting manual link:', {
+          id: link.id,
+          has_comp_data: !!link.comp_data,
+          comp_data_type: typeof link.comp_data,
+          comp_data: compData,
+          sale_price_direct: link.sale_price,
+          square_feet_direct: link.square_feet,
+        });
+      }
 
       // Usar comp_data se disponível, senão fallback para campos diretos do link
       const salePrice = compData.sale_price || link.sale_price || 0;
@@ -192,6 +217,17 @@ export const CompsAnalysis = () => {
       const bathrooms = compData.bathrooms || link.bathrooms || link.baths || 0;
       const saleDate = compData.sale_date || link.sale_date || link.created_at || new Date().toISOString();
       const pricePerSqft = squareFeet > 0 ? salePrice / squareFeet : 0;
+      
+      // Debug: log converted values
+      if (index === 0) {
+        console.log('✅ Converted values:', {
+          salePrice,
+          squareFeet,
+          pricePerSqft,
+          bedrooms,
+          bathrooms,
+        });
+      }
 
       return {
         id: link.id || `manual-${index}`,
@@ -1272,11 +1308,50 @@ export const CompsAnalysis = () => {
                 ? new Date(savedAnalysis.expires_at) < new Date()
                 : false;
 
-              // ⚠️ SKIP demo data cache - always fetch fresh data instead
-              if (savedAnalysis.data_source === 'demo') {
-                console.log('⚠️ Cache contains demo data, fetching fresh data instead:', property.address);
-              } else if (isExpired) {
-                console.log('⚠️ Cache expired, fetching fresh data:', property.address);
+              // ⚠️ SKIP demo data cache - use ONLY manual comps (NO API)
+              if (savedAnalysis.data_source === 'demo' || isExpired) {
+                console.log(`⚠️ Cache ${savedAnalysis.data_source === 'demo' ? 'contains demo data' : 'expired'}, using manual comps only (no API):`, property.address);
+                
+                // Fetch ONLY manual comps (no API call)
+                let manualCompsForProperty: ComparableProperty[] = [];
+                try {
+                  const { data: manualLinks } = await supabase
+                    .from('manual_comps_links')
+                    .select('*')
+                    .eq('property_id', property.id)
+                    .order('created_at', { ascending: false });
+
+                  if (manualLinks && manualLinks.length > 0) {
+                    console.log(`📦 Raw manual links found (demo/expired cache):`, manualLinks.length);
+                    manualCompsForProperty = convertManualLinksToComparables(manualLinks);
+                    console.log(`✅ Found ${manualCompsForProperty.length} manual comps (demo/expired cache):`, property.address);
+                    
+                    if (manualCompsForProperty.length > 0) {
+                      const avgSalePrice = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / manualCompsForProperty.length || 0;
+                      const avgPricePerSqft = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.pricePerSqft || c.price_per_sqft || 0), 0) / manualCompsForProperty.length || 0;
+                      
+                      const manualAnalysis = {
+                        avgSalePrice: avgSalePrice || 0,
+                        medianSalePrice: avgSalePrice || 0,
+                        avgPricePerSqft: avgPricePerSqft || 0,
+                        suggestedValueMin: (avgSalePrice || 0) * 0.95,
+                        suggestedValueMax: (avgSalePrice || 0) * 1.05,
+                        trendPercentage: 0,
+                        marketTrend: 'stable' as const,
+                        comparablesCount: manualCompsForProperty.length,
+                        dataSource: 'manual' as const,
+                        isDemo: false,
+                      };
+                      
+                      return { comparables: manualCompsForProperty, analysis: manualAnalysis };
+                    }
+                  }
+                } catch (manualError) {
+                  console.warn('⚠️ Error fetching manual comps (demo/expired cache):', manualError);
+                }
+                
+                // If no manual comps, continue to section 4 (which will throw error)
+                console.log(`📍 No manual comps found (demo/expired cache), will show error in PDF`);
               } else if (analysisData?.comparables && analysisData?.analysis) {
                 console.log('✅ Using DATABASE cache for export:', property.address);
 
@@ -1355,8 +1430,22 @@ export const CompsAnalysis = () => {
             .order('created_at', { ascending: false });
 
           if (manualLinks && manualLinks.length > 0) {
+            console.log(`📦 Raw manual links found:`, manualLinks.length, manualLinks.map(l => ({ 
+              id: l.id, 
+              has_comp_data: !!l.comp_data,
+              comp_data: l.comp_data,
+              sale_price: l.sale_price,
+              square_feet: l.square_feet
+            })));
+            
             manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-            console.log(`✅ Found ${manualCompsForProperty.length} manual comps for export:`, property.address);
+            
+            console.log(`✅ Converted ${manualCompsForProperty.length} manual comps for export:`, property.address);
+            console.log(`📊 First comp data:`, manualCompsForProperty[0] ? {
+              salePrice: manualCompsForProperty[0].salePrice,
+              sqft: manualCompsForProperty[0].sqft,
+              pricePerSqft: manualCompsForProperty[0].pricePerSqft
+            } : 'none');
           } else {
             console.log(`📍 No manual comps for ${property.address}, skipping (no API call)`);
           }
@@ -1371,8 +1460,17 @@ export const CompsAnalysis = () => {
         }
 
         // Calculate analysis from manual comps only
-        const avgSalePrice = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / manualCompsForProperty.length || 0;
-        const avgPricePerSqft = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.pricePerSqft || c.price_per_sqft || 0), 0) / manualCompsForProperty.length || 0;
+        const avgSalePrice = manualCompsForProperty.reduce((sum: number, c: any) => {
+          const price = c.salePrice || c.sale_price || 0;
+          return sum + price;
+        }, 0) / manualCompsForProperty.length || 0;
+        
+        const avgPricePerSqft = manualCompsForProperty.reduce((sum: number, c: any) => {
+          const pricePerSqft = c.pricePerSqft || c.price_per_sqft || 0;
+          return sum + pricePerSqft;
+        }, 0) / manualCompsForProperty.length || 0;
+        
+        console.log(`💰 Calculated analysis: avgSalePrice=${avgSalePrice}, avgPricePerSqft=${avgPricePerSqft}`);
 
         const calculatedAnalysis = {
           avgSalePrice: avgSalePrice || 0,
