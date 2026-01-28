@@ -12,7 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { extractDataFromUrl, formatExtractedAddress, isValidExtractedData } from '@/utils/urlDataExtractor';
-import { CompsWalkthrough } from '@/components/CompsWalkthrough';
 import {
   Link,
   Plus,
@@ -106,9 +105,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [bulkUrls, setBulkUrls] = useState('');
   const [bulkProgress, setBulkProgress] = useState({ current: 0, total: 0 });
   const [recentlyAdded, setRecentlyAdded] = useState<Array<{url: string, address: string, price?: string}>>([]);
-
-  // Tutorial walkthrough
-  const [showWalkthrough, setShowWalkthrough] = useState(false);
 
   // Carregar propriedades
   const loadProperties = async () => {
@@ -226,41 +222,48 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         return;
       }
 
-      // Preparar comp_data se houver preço ou sqft preenchidos
-      let compData = null;
-
-      // Validar campos obrigatórios quando dados completos estão ativados
-      if (addFullData) {
-        if (!salePrice || parseFloat(salePrice) <= 0) {
-          toast({
-            title: '⚠️ Preço inválido',
-            description: 'Informe um preço de venda válido para dados completos',
-            variant: 'destructive'
-          });
-          setSaving(false);
-          return;
-        }
-        if (!squareFeet || parseFloat(squareFeet) <= 0) {
-          toast({
-            title: '⚠️ Área inválida',
-            description: 'Informe a área em sqft para dados completos',
-            variant: 'destructive'
-          });
-          setSaving(false);
-          return;
-        }
+      // VALIDAÇÃO: Exigir pelo menos preço E sqft
+      if (!salePrice || !squareFeet) {
+        toast({
+          title: '⚠️ Dados incompletos',
+          description: 'Preencha tanto o preço quanto o sqft para salvar',
+          variant: 'destructive'
+        });
+        setSaving(false);
+        return;
       }
 
-      // Se tem preço ou sqft preenchidos, incluir no comp_data (sempre, não depende de toggle)
-      if (salePrice || squareFeet) {
-        compData = {
-          sale_price: salePrice ? parseFloat(salePrice) : undefined,
-          square_feet: squareFeet ? parseFloat(squareFeet) : undefined,
-          bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
-          bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
-          sale_date: addFullData && saleDate ? saleDate : undefined
-        };
+      const priceNum = parseFloat(salePrice);
+      const sqftNum = parseFloat(squareFeet);
+
+      if (priceNum <= 0 || isNaN(priceNum)) {
+        toast({
+          title: '⚠️ Preço inválido',
+          description: 'O preço deve ser maior que zero',
+          variant: 'destructive'
+        });
+        setSaving(false);
+        return;
       }
+
+      if (sqftNum <= 0 || isNaN(sqftNum)) {
+        toast({
+          title: '⚠️ Área inválida',
+          description: 'O sqft deve ser maior que zero',
+          variant: 'destructive'
+        });
+        setSaving(false);
+        return;
+      }
+
+      // Preparar comp_data com dados validados
+      const compData = {
+        sale_price: priceNum,
+        square_feet: sqftNum,
+        bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
+        bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
+        sale_date: addFullData && saleDate ? saleDate : undefined
+      };
 
       // DEBUG: Log do que está sendo salvo
       console.log('💾 Salvando manual comp:', {
@@ -349,6 +352,37 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const handleUpdateLink = async () => {
     if (!editingLinkId) return;
 
+    // VALIDAÇÃO: Exigir preço E sqft
+    if (!salePrice || !squareFeet) {
+      toast({
+        title: '⚠️ Dados incompletos',
+        description: 'Preencha tanto o preço quanto o sqft',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const priceNum = parseFloat(salePrice);
+    const sqftNum = parseFloat(squareFeet);
+
+    if (priceNum <= 0 || isNaN(priceNum)) {
+      toast({
+        title: '⚠️ Preço inválido',
+        description: 'O preço deve ser maior que zero',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (sqftNum <= 0 || isNaN(sqftNum)) {
+      toast({
+        title: '⚠️ Área inválida',
+        description: 'O sqft deve ser maior que zero',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -358,20 +392,18 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
           description: 'Faça login para atualizar',
           variant: 'destructive'
         });
+        setSaving(false);
         return;
       }
 
-      // Preparar comp_data
-      let compData = null;
-      if (salePrice || squareFeet) {
-        compData = {
-          sale_price: salePrice ? parseFloat(salePrice) : undefined,
-          square_feet: squareFeet ? parseFloat(squareFeet) : undefined,
-          bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
-          bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
-          sale_date: addFullData && saleDate ? saleDate : undefined
-        };
-      }
+      // Preparar comp_data com dados validados
+      const compData = {
+        sale_price: priceNum,
+        square_feet: sqftNum,
+        bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
+        bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
+        sale_date: addFullData && saleDate ? saleDate : undefined
+      };
 
       const { error } = await supabase
         .from('manual_comps_links' as any)
@@ -714,11 +746,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         </Card>
       )}
 
-      {/* Tutorial Walkthrough */}
-      {showWalkthrough && (
-        <CompsWalkthrough onClose={() => setShowWalkthrough(false)} />
-      )}
-
       {/* Formulário para adicionar link */}
       <Card>
         <CardHeader>
@@ -730,83 +757,32 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                 <span className="font-semibold">✏️ Modo de Edição</span>
               </div>
               <p className="text-sm text-blue-800 mt-1">
-                Faça as alterações necessárias e clique em "Atualizar Link"
+                Faça as alterações e clique em "Atualizar Link"
               </p>
             </div>
           )}
 
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="flex items-center gap-2">
-                {editingLinkId ? (
-                  <>
-                    <Pencil className="w-5 h-5" />
-                    Editar Link de Comps
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5" />
-                    Adicionar Link de Comps
-                  </>
-                )}
-              </CardTitle>
-              <CardDescription>
-                {editingLinkId
-                  ? 'Atualize os dados do comp e clique em "Atualizar Link"'
-                  : preSelectedPropertyId
-                  ? 'Cole o link da página de comps para a propriedade selecionada'
-                  : 'Selecione uma propriedade e cole o link da página de comps'
-                }
-              </CardDescription>
-            </div>
-
-            {/* Help Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowWalkthrough(true)}
-              className="ml-2"
-            >
-              <HelpCircle className="w-4 h-4 mr-2" />
-              Como Fazer?
-            </Button>
-          </div>
-
-          {/* Quick Start Guide - apenas quando propriedade NÃO está pré-selecionada */}
-          {!preSelectedPropertyId && (
-            <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-dashed border-purple-300 rounded-lg">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                    <HelpCircle className="w-5 h-5 text-purple-600" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-purple-900 mb-1">🚀 Processo Rápido (1 minuto)</h4>
-                  <ol className="text-xs text-purple-800 space-y-1 ml-4 list-decimal">
-                    <li>Selecione propriedade → Clique "Buscar no Zillow"</li>
-                    <li>No Zillow: Ctrl+Click em 10 comps próximos</li>
-                    <li>Copie URLs (Ctrl+L → Ctrl+C → Ctrl+W em cada aba)</li>
-                    <li>Volte aqui → Ctrl+Shift+B → Cole URLs → Enter</li>
-                    <li>✅ Pronto! 10 comps em 1 minuto</li>
-                  </ol>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => setShowWalkthrough(true)}
-                    className="text-xs text-purple-600 p-0 h-auto mt-2"
-                  >
-                    📖 Ver tutorial completo passo a passo →
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Keyboard shortcuts hint */}
-          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
-            <strong>⌨️ Atalhos:</strong> Ctrl+Enter para salvar rápido | Ctrl+Shift+B para Bulk Add
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            {editingLinkId ? (
+              <>
+                <Pencil className="w-5 h-5" />
+                Editar Comp
+              </>
+            ) : (
+              <>
+                <Plus className="w-5 h-5" />
+                Adicionar Comp
+              </>
+            )}
+          </CardTitle>
+          <CardDescription>
+            {editingLinkId
+              ? 'Atualize os dados do comp'
+              : preSelectedPropertyId
+              ? 'Cole a URL e preencha o preço/sqft'
+              : 'Selecione uma propriedade e adicione comps'
+            }
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Property info - read-only if pre-selected */}
