@@ -2163,22 +2163,34 @@ export const CompsAnalysis = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="auto">
-                Auto Comps ({filteredComparables.length})
-              </TabsTrigger>
-              <TabsTrigger value="manual">
-                Manual ({manualLinksCount})
-              </TabsTrigger>
-              <TabsTrigger value="map">
-                <Map className="h-4 w-4 mr-2" />
-                Map
-              </TabsTrigger>
-              <TabsTrigger value="history">
-                <HistoryIcon className="h-4 w-4 mr-2" />
-                History
-              </TabsTrigger>
-            </TabsList>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <TabsList className="grid flex-1 grid-cols-4">
+                <TabsTrigger value="auto">
+                  Auto Comps ({filteredComparables.length})
+                </TabsTrigger>
+                <TabsTrigger value="manual">
+                  Manual ({manualLinksCount})
+                </TabsTrigger>
+                <TabsTrigger value="map">
+                  <Map className="h-4 w-4 mr-2" />
+                  Map
+                </TabsTrigger>
+                <TabsTrigger value="history">
+                  <HistoryIcon className="h-4 w-4 mr-2" />
+                  History
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Quick Add Comp Button - Always visible */}
+              <Button
+                onClick={() => setActiveTab('manual')}
+                className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Comp
+              </Button>
+            </div>
 
             {/* Auto Comps Tab */}
             <TabsContent value="auto" className="space-y-4">
