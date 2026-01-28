@@ -23,12 +23,16 @@ export interface ManualCompData {
   source: 'trulia' | 'zillow' | 'redfin' | 'realtor' | 'other';
   notes?: string;
   isManualLink: true;
-  // Estimated data (will be null if not scraped)
+  // Data from comp_data JSONB column
   salePrice?: number;
   sqft?: number;
   beds?: number;
   baths?: number;
   yearBuilt?: number;
+  saleDate?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
 }
 
 /**
@@ -62,15 +66,34 @@ export async function getManualCompsForProperty(propertyId: string): Promise<Man
 
     console.log(`✅ Found ${data.length} manual comps links`);
 
-    // Convert to ManualCompData format
-    const manualComps: ManualCompData[] = data.map((link: any) => ({
-      id: `manual-${link.id}`,
-      address: link.property_address,
-      url: link.url,
-      source: link.source,
-      notes: link.notes,
-      isManualLink: true,
-    }));
+    // Convert to ManualCompData format, extracting data from comp_data JSONB
+    const manualComps: ManualCompData[] = data.map((link: any) => {
+      const compData = link.comp_data || {};
+      
+      console.log('🔍 Manual Link:', link.id, 'comp_data:', compData);
+      
+      const converted: ManualCompData = {
+        id: `manual-${link.id}`,
+        address: link.property_address,
+        url: link.url,
+        source: link.source,
+        notes: link.notes,
+        isManualLink: true,
+        // Extract numeric values from comp_data - handle both snake_case and camelCase
+        salePrice: Number(compData.salePrice || compData.sale_price) || undefined,
+        sqft: Number(compData.squareFeet || compData.square_feet || compData.sqft) || undefined,
+        beds: Number(compData.bedrooms || compData.beds) || undefined,
+        baths: Number(compData.bathrooms || compData.baths) || undefined,
+        yearBuilt: Number(compData.yearBuilt || compData.year_built) || undefined,
+        saleDate: compData.saleDate || compData.sale_date,
+        city: compData.city,
+        state: compData.state,
+        zipCode: compData.zipCode || compData.zip_code,
+      };
+      
+      console.log('✅ Converted to:', converted);
+      return converted;
+    });
 
     return manualComps;
   } catch (error) {
