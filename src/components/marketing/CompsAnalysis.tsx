@@ -1338,7 +1338,7 @@ export const CompsAnalysis = () => {
 
           if (!manualLinks || manualLinks.length === 0) {
             // If no manual comps, try to fetch from API as fallback
-            console.warn(`No manual comps for ${property.address}, attempting API fetch...`);
+            console.log(`📍 No manual comps for ${property.address}, fetching from API...`);
 
             const compsData = await CompsDataService.getComparables(
               property.address || '',
@@ -1350,8 +1350,11 @@ export const CompsAnalysis = () => {
             );
 
             if (!compsData || compsData.length === 0) {
-              throw new Error('No manual or API comparables found for this property');
+              console.error(`❌ No comparables found (manual or API) for: ${property.address}`);
+              throw new Error('No comparables found for this property');
             }
+
+            console.log(`✅ Found ${compsData.length} API comps for ${property.address}`);
 
             // Use API data as fallback
             const formattedComps = compsData
@@ -1383,19 +1386,26 @@ export const CompsAnalysis = () => {
             const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + c.salePrice, 0) / formattedComps.length || 0;
             const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + c.pricePerSqft, 0) / formattedComps.length || 0;
 
+            // Calculate median
+            const prices = formattedComps.map(c => c.salePrice).sort((a, b) => a - b);
+            const median = prices.length % 2 === 0
+              ? (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2
+              : prices[Math.floor(prices.length / 2)];
+
             const calculatedAnalysis = {
               avgSalePrice,
-              medianSalePrice: avgSalePrice,
+              medianSalePrice: median,
               avgPricePerSqft,
               suggestedValueMin: avgSalePrice * 0.95,
               suggestedValueMax: avgSalePrice * 1.05,
               trendPercentage: 0,
               marketTrend: 'stable' as const,
               comparablesCount: formattedComps.length,
-              dataSource: compsData[0]?.source || 'attom',
+              dataSource: (compsData[0]?.source || 'attom') as any,
               isDemo: false,
             };
 
+            console.log(`✅ API fallback successful for ${property.address}:`, calculatedAnalysis);
             return { comparables: formattedComps, analysis: calculatedAnalysis };
           }
 
@@ -1408,7 +1418,70 @@ export const CompsAnalysis = () => {
           );
 
           if (validManualComps.length === 0) {
-            throw new Error('No valid manual comparables found for this property');
+            console.warn(`⚠️ Manual comps found but none are valid for ${property.address}, trying API...`);
+
+            // If manual comps exist but are invalid, fallback to API
+            const compsData = await CompsDataService.getComparables(
+              property.address || '',
+              property.city || 'Orlando',
+              property.state || 'FL',
+              property.estimated_value,
+              compsFilters.maxDistance || 3,
+              compsFilters.maxResults || 10
+            );
+
+            if (!compsData || compsData.length === 0) {
+              throw new Error('No valid comparables found for this property');
+            }
+
+            const formattedComps = compsData
+              .filter((comp: any) => comp.salePrice && comp.sqft && comp.sqft > 0)
+              .map((comp: any, index: number) => ({
+                id: `comp-${index}`,
+                address: comp.address || 'Unknown',
+                city: comp.city || property.city,
+                state: comp.state || property.state,
+                zipCode: comp.zipCode || '',
+                salePrice: Number(comp.salePrice) || 0,
+                saleDate: comp.saleDate || new Date().toISOString(),
+                beds: Number(comp.beds) || 0,
+                baths: Number(comp.baths) || 0,
+                sqft: Number(comp.sqft) || 1,
+                distance: Number(comp.distance) || 0,
+                distanceMiles: Number(comp.distance) || 0,
+                pricePerSqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+                latitude: comp.latitude,
+                longitude: comp.longitude,
+                sale_price: Number(comp.salePrice) || 0,
+                sale_date: comp.saleDate || new Date().toISOString(),
+                square_feet: Number(comp.sqft) || 1,
+                bedrooms: Number(comp.beds) || 0,
+                bathrooms: Number(comp.baths) || 0,
+                price_per_sqft: Number(comp.salePrice) / Number(comp.sqft) || 0,
+              }));
+
+            const avgSalePrice = formattedComps.reduce((sum: number, c: any) => sum + c.salePrice, 0) / formattedComps.length || 0;
+            const avgPricePerSqft = formattedComps.reduce((sum: number, c: any) => sum + c.pricePerSqft, 0) / formattedComps.length || 0;
+
+            const prices = formattedComps.map(c => c.salePrice).sort((a, b) => a - b);
+            const median = prices.length % 2 === 0
+              ? (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2
+              : prices[Math.floor(prices.length / 2)];
+
+            const calculatedAnalysis = {
+              avgSalePrice,
+              medianSalePrice: median,
+              avgPricePerSqft,
+              suggestedValueMin: avgSalePrice * 0.95,
+              suggestedValueMax: avgSalePrice * 1.05,
+              trendPercentage: 0,
+              marketTrend: 'stable' as const,
+              comparablesCount: formattedComps.length,
+              dataSource: (compsData[0]?.source || 'attom') as any,
+              isDemo: false,
+            };
+
+            return { comparables: formattedComps, analysis: calculatedAnalysis };
           }
 
           // Use ONLY manual comps (no API data)
