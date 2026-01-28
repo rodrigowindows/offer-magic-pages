@@ -89,11 +89,10 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [saving, setSaving] = useState(false);
   const [filterPropertyId, setFilterPropertyId] = useState<string>('all');
 
-  // Estados para dados do comp (Quick Add sempre visível)
+  // Estados para dados do comp (campos de preço/sqft sempre visíveis)
   const [salePrice, setSalePrice] = useState('');
   const [squareFeet, setSquareFeet] = useState('');
-  const [quickAdd, setQuickAdd] = useState(false); // Toggle para campos Quick Add
-  const [addFullData, setAddFullData] = useState(false); // Para dados avançados opcionais
+  const [addFullData, setAddFullData] = useState(false); // Para dados avançados opcionais (bedrooms, bathrooms, date)
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [saleDate, setSaleDate] = useState('');
@@ -223,44 +222,40 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         return;
       }
 
-      // Preparar dados completos se ativado (Quick Add ou Full Data)
+      // Preparar comp_data se houver preço ou sqft preenchidos
       let compData = null;
-      if (quickAdd || addFullData) {
-        // Quick Add: apenas preço e sqft (opcionais)
-        // Full Data: todos os campos (preço e sqft obrigatórios)
-        
-        if (addFullData) {
-          // Validar campos obrigatórios quando dados completos
-          if (!salePrice || parseFloat(salePrice) <= 0) {
-            toast({
-              title: '⚠️ Preço inválido',
-              description: 'Informe um preço de venda válido',
-              variant: 'destructive'
-            });
-            setSaving(false);
-            return;
-          }
-          if (!squareFeet || parseFloat(squareFeet) <= 0) {
-            toast({
-              title: '⚠️ Área inválida',
-              description: 'Informe a área em sqft',
-              variant: 'destructive'
-            });
-            setSaving(false);
-            return;
-          }
-        }
 
-        // Se tem preço ou sqft preenchidos, incluir no comp_data
-        if (salePrice || squareFeet) {
-          compData = {
-            sale_price: salePrice ? parseFloat(salePrice) : undefined,
-            square_feet: squareFeet ? parseFloat(squareFeet) : undefined,
-            bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
-            bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
-            sale_date: addFullData && saleDate ? saleDate : undefined
-          };
+      // Validar campos obrigatórios quando dados completos estão ativados
+      if (addFullData) {
+        if (!salePrice || parseFloat(salePrice) <= 0) {
+          toast({
+            title: '⚠️ Preço inválido',
+            description: 'Informe um preço de venda válido para dados completos',
+            variant: 'destructive'
+          });
+          setSaving(false);
+          return;
         }
+        if (!squareFeet || parseFloat(squareFeet) <= 0) {
+          toast({
+            title: '⚠️ Área inválida',
+            description: 'Informe a área em sqft para dados completos',
+            variant: 'destructive'
+          });
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Se tem preço ou sqft preenchidos, incluir no comp_data (sempre, não depende de toggle)
+      if (salePrice || squareFeet) {
+        compData = {
+          sale_price: salePrice ? parseFloat(salePrice) : undefined,
+          square_feet: squareFeet ? parseFloat(squareFeet) : undefined,
+          bedrooms: addFullData && bedrooms ? parseInt(bedrooms) : undefined,
+          bathrooms: addFullData && bathrooms ? parseFloat(bathrooms) : undefined,
+          sale_date: addFullData && saleDate ? saleDate : undefined
+        };
       }
 
       const { error } = await supabase
@@ -296,7 +291,6 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBathrooms('');
       setSaleDate('');
       setAddFullData(false);
-      setQuickAdd(false);
       loadLinks();
     } catch (error) {
       console.error('Error saving link:', error);
