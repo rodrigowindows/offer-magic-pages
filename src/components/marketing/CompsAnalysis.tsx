@@ -2072,20 +2072,36 @@ export const CompsAnalysis = () => {
       {selectedProperty && (
         <Card className="border-2 border-green-200 bg-green-50">
           <CardContent className="pt-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-semibold">Cash Offer Amount:</Label>
-                {!editingOffer && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingOffer(true)}
-                  >
-                    <Edit2 className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                )}
-              </div>
+            <div className="flex gap-4">
+              {/* Property Photo */}
+              {selectedProperty.property_image_url && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={selectedProperty.property_image_url}
+                    alt={selectedProperty.address}
+                    className="w-32 h-24 object-cover rounded-lg border-2 border-green-300 shadow-md"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Offer Amount Section */}
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Cash Offer Amount:</Label>
+                  {!editingOffer && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingOffer(true)}
+                    >
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
 
               {editingOffer ? (
                 <div className="flex gap-2">
@@ -2138,6 +2154,7 @@ export const CompsAnalysis = () => {
                   )}
                 </div>
               )}
+              </div>
             </div>
           </CardContent>
         </Card>
