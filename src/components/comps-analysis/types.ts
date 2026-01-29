@@ -82,6 +82,7 @@ export interface ComparableProperty {
   // Manual comps fields
   url?: string;
   notes?: string;
+  originalSource?: string; // Original source from where the manual comp link came (zillow, trulia, etc.)
 }
 
 export interface MarketAnalysis {

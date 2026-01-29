@@ -247,25 +247,50 @@ export const CompsTable = ({
                 {/* Source */}
                 <TableCell>
                   {isManual ? (
-                    <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 mr-1">Manual</Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge className="bg-amber-500 text-white border-amber-600 text-xs font-bold">
+                        ✏️ MANUAL
+                      </Badge>
+                      {/* Show original link source */}
+                      {comp.originalSource && (
+                        <span className="text-xs text-muted-foreground">
+                          via {comp.originalSource}
+                        </span>
+                      )}
+                      {comp.url && (
+                        <a 
+                          href={comp.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          title="Open source link"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Link
+                        </a>
+                      )}
+                    </div>
                   ) : (
                     <>
                       {/* Mostrar fonte específica para comps automáticos */}
                       {comp.source === 'attom-v2' || comp.source === 'attom-v1' || comp.source === 'attom' ? (
-                        <Badge className="bg-green-100 text-green-800 border-green-200 mr-1">Attom</Badge>
+                        <Badge className="bg-green-500 text-white border-green-600 font-bold">
+                          🔌 ATTOM API
+                        </Badge>
                       ) : comp.source === 'zillow' || comp.source === 'zillow-api' ? (
-                        <Badge className="bg-blue-100 text-blue-800 border-blue-200 mr-1">Zillow</Badge>
+                        <Badge className="bg-blue-500 text-white border-blue-600 font-bold">
+                          🏠 ZILLOW API
+                        </Badge>
                       ) : comp.source === 'county-csv' || comp.source === 'county' ? (
-                        <Badge className="bg-orange-100 text-orange-800 border-orange-200 mr-1">County</Badge>
+                        <Badge className="bg-orange-500 text-white border-orange-600 font-bold">
+                          🏛️ COUNTY
+                        </Badge>
                       ) : (
-                        <Badge className="bg-gray-100 text-gray-800 border-gray-200 mr-1">Auto</Badge>
+                        <Badge className="bg-gray-500 text-white border-gray-600 font-bold">
+                          ⚡ AUTO
+                        </Badge>
                       )}
                     </>
-                  )}
-                  {isManual && comp.url && (
-                    <a href={comp.url} target="_blank" rel="noopener noreferrer" title="Open manual comp link">
-                      <ExternalLink className="h-4 w-4 inline ml-1 text-yellow-700" />
-                    </a>
                   )}
                 </TableCell>
 
