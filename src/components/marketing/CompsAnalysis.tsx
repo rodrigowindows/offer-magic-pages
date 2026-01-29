@@ -239,6 +239,7 @@ export const CompsAnalysis = () => {
         price_per_sqft: pricePerSqft,
         distance: link.distance || 0,
         source: 'manual',
+        originalSource: link.source || 'other', // zillow, trulia, redfin, realtor, other
         url: link.url || '',
         notes: link.notes || '',
         similarity_score: 0.5,
