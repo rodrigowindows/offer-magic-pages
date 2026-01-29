@@ -940,7 +940,7 @@ export const exportConsolidatedCompsPDF = async (
 
       currentY += 20;
 
-      // Data Source Badge (positioned above table) - ALWAYS show
+      // Data Source Badge - Only show for non-manual sources
       const sourceConfig: Record<string, { label: string; color: number[] }> = {
         attom: { label: 'MLS Data', color: [34, 197, 94] },
         'attom-v2': { label: 'MLS Data (V2)', color: [34, 197, 94] },
@@ -949,25 +949,26 @@ export const exportConsolidatedCompsPDF = async (
         'zillow-api': { label: 'Zillow API', color: [59, 130, 246] },
         'county-csv': { label: 'Public Records', color: [249, 115, 22] },
         demo: { label: 'Demo Data', color: [156, 163, 175] },
-        database: { label: 'Database Cache', color: [168, 85, 247] },
-        manual: { label: 'Manual Entry', color: [139, 92, 246] },
         combined: { label: 'Combined', color: [34, 197, 94] },
       };
 
       // Default to 'database' if dataSource is undefined
       const dataSource = analysis.dataSource || 'database';
-      const config = sourceConfig[dataSource] || sourceConfig.database;
+      const config = sourceConfig[dataSource];
 
-      // Draw badge rectangle (using rect instead of roundedRect for compatibility)
-      doc.setFillColor(config.color[0], config.color[1], config.color[2]);
-      doc.rect(140, currentY - 2, 50, 7, 'F');
+      // Only draw badge if we have a valid config (skip manual/database sources)
+      if (config) {
+        // Draw badge rectangle
+        doc.setFillColor(config.color[0], config.color[1], config.color[2]);
+        doc.rect(140, currentY - 2, 50, 7, 'F');
 
-      // Draw badge text
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.text(config.label, 165, currentY + 3, { align: 'center' });
-      doc.setFont('helvetica', 'normal');
+        // Draw badge text
+        doc.setFontSize(7);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text(config.label, 165, currentY + 3, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+      }
 
       // Demo warning below badge
       if (analysis.isDemo) {
