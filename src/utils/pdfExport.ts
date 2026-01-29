@@ -1039,16 +1039,21 @@ export const exportConsolidatedCompsPDF = async (
       doc.text('Comparable Sales', 20, currentY);
       currentY += 3;
 
-      const tableData = comparables.map((comp, index) => [
-        `#${index + 1}`,
-        comp.address.length > 30 ? comp.address.substring(0, 27) + '...' : comp.address,
-        format(comp.saleDate, 'MM/dd/yy'),
-        `$${Math.round(comp.salePrice / 1000)}K`,
-        comp.sqft.toLocaleString(),
-        `$${Math.round(comp.pricePerSqft || 0)}`,
-        `${comp.beds}/${comp.baths}`,
-        `${((comp as any).distanceMiles || (comp as any).distance || 0).toFixed(1)}mi`,
-      ]);
+      const tableData = comparables.map((comp, index) => {
+        const address = comp.address.length > 30 ? comp.address.substring(0, 27) + '...' : comp.address;
+        const hasUrl = (comp as any).url && (comp as any).url.length > 0;
+
+        return [
+          `#${index + 1}`,
+          hasUrl ? address + ' 🔗' : address,  // Add link icon if has URL
+          format(comp.saleDate, 'MM/dd/yy'),
+          `$${Math.round(comp.salePrice / 1000)}K`,
+          comp.sqft.toLocaleString(),
+          `$${Math.round(comp.pricePerSqft || 0)}`,
+          `${comp.beds}/${comp.baths}`,
+          `${((comp as any).distanceMiles || (comp as any).distance || 0).toFixed(1)}mi`,
+        ];
+      });
 
       autoTable(doc, {
         startY: currentY,
@@ -1069,21 +1074,33 @@ export const exportConsolidatedCompsPDF = async (
           fillColor: [249, 250, 251],
         },
         columnStyles: {
-          0: { cellWidth: 5 },   // # (reduzido)
-          1: { cellWidth: 44 },  // Address (reduzido)
-          2: { cellWidth: 17 },  // Date (reduzido)
-          3: { cellWidth: 15 },  // Price (reduzido)
-          4: { cellWidth: 13 },  // Sqft (reduzido)
-          5: { cellWidth: 13 },  // $/Sqft (reduzido)
-          6: { cellWidth: 11 },  // Bd/Ba (reduzido)
-          7: { cellWidth: 9 },   // Dist (reduzido)
+          0: { cellWidth: 5 },   // #
+          1: { cellWidth: 44 },  // Address
+          2: { cellWidth: 17 },  // Date
+          3: { cellWidth: 15 },  // Price
+          4: { cellWidth: 13 },  // Sqft
+          5: { cellWidth: 13 },  // $/Sqft
+          6: { cellWidth: 11 },  // Bd/Ba
+          7: { cellWidth: 9 },   // Dist
         },
         margin: { left: 20, right: 20 },
-        tableWidth: 127,  // Nova soma: 5+44+17+15+13+13+11+9 = 127
+        tableWidth: 127,
         styles: {
           overflow: 'linebreak',
           cellPadding: { top: 1, right: 1, bottom: 1, left: 1 },
           halign: 'left',
+        },
+        didDrawCell: (data: any) => {
+          // Add clickable link to address cell if URL exists
+          if (data.column.index === 1 && data.section === 'body') {
+            const comp = comparables[data.row.index];
+            const url = (comp as any).url;
+
+            if (url && url.length > 0) {
+              // Make the entire address cell clickable
+              doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: url });
+            }
+          }
         },
       });
 
