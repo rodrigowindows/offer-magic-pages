@@ -799,9 +799,9 @@ export const exportConsolidatedCompsPDF = async (
     doc.text('Subject Property', 20, currentY);
     currentY += 8;
 
-    // Property details box
+    // Property details box (larger to accommodate bigger image)
     doc.setFillColor(249, 250, 251);
-    doc.rect(20, currentY, 170, 45, 'F');
+    doc.rect(20, currentY, 170, 60, 'F');
 
     doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
@@ -827,19 +827,19 @@ export const exportConsolidatedCompsPDF = async (
     doc.text(`Estimated Value: $${(property.estimated_value || 0).toLocaleString()}`, 25, currentY + 25);
     doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 32);
 
-    // Add property image if available
+    // Add property image if available (larger size)
     if (property.property_image_url) {
       try {
         const imageData = await loadImageAsBase64(property.property_image_url);
         if (imageData) {
-          doc.addImage(imageData, 'JPEG', 130, currentY + 3, 55, 38);
+          doc.addImage(imageData, 'JPEG', 110, currentY + 3, 80, 55);
         } else {
           // Placeholder if image fails
           doc.setDrawColor(200, 200, 200);
-          doc.rect(130, currentY + 3, 55, 38);
+          doc.rect(110, currentY + 3, 80, 55);
           doc.setFontSize(8);
           doc.setTextColor(150, 150, 150);
-          doc.text('No Image', 157.5, currentY + 23, { align: 'center' });
+          doc.text('No Image', 150, currentY + 30, { align: 'center' });
         }
       } catch (error) {
         console.error('Error adding image:', error);
@@ -847,13 +847,13 @@ export const exportConsolidatedCompsPDF = async (
     } else {
       // No image placeholder
       doc.setDrawColor(200, 200, 200);
-      doc.rect(130, currentY + 3, 55, 38);
+      doc.rect(110, currentY + 3, 80, 55);
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);
-      doc.text('No Image Available', 157.5, currentY + 23, { align: 'center' });
+      doc.text('No Image Available', 150, currentY + 30, { align: 'center' });
     }
 
-    currentY += 52;
+    currentY += 62;
 
     // Get comparables for this property
     try {

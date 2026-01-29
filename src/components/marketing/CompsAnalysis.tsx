@@ -2079,7 +2079,7 @@ export const CompsAnalysis = () => {
                   <img
                     src={selectedProperty.property_image_url}
                     alt={selectedProperty.address}
-                    className="w-32 h-24 object-cover rounded-lg border-2 border-green-300 shadow-md"
+                    className="w-64 h-48 object-cover rounded-lg border-2 border-green-300 shadow-md"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
