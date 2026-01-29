@@ -824,8 +824,7 @@ export const exportConsolidatedCompsPDF = async (
 
     // Property details
     doc.setFontSize(9);
-    doc.text(`Estimated Value: $${(property.estimated_value || 0).toLocaleString()}`, 25, currentY + 25);
-    doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 32);
+    doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 25);
 
     // Add property image if available (larger size)
     if (property.property_image_url) {
@@ -898,22 +897,48 @@ export const exportConsolidatedCompsPDF = async (
         currentY + 13
       );
 
-      // Card 4: Market Trend
-      doc.setFillColor(239, 246, 255);
-      doc.rect(20 + (cardWidth + cardSpacing) * 2 + cardWidth + 25, currentY, cardWidth - 10, cardHeight, 'F');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text('Trend', 22 + (cardWidth + cardSpacing) * 2 + cardWidth + 25, currentY + 5);
-      doc.setFontSize(10);
-      const trendColor = analysis.marketTrend === 'up' ? [34, 197, 94] : analysis.marketTrend === 'down' ? [239, 68, 68] : [100, 116, 139];
-      doc.setTextColor(trendColor[0], trendColor[1], trendColor[2]);
-      doc.text(
-        `${(analysis.trendPercentage || 0) > 0 ? '+' : ''}${analysis.trendPercentage || 0}%`,
-        22 + (cardWidth + cardSpacing) * 2 + cardWidth + 25,
-        currentY + 13
-      );
-
       currentY += 25;
+
+      // ===== OFFER PERCENTAGES CARDS =====
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
+      doc.text('Quick Offer Calculator:', 20, currentY);
+      currentY += 6;
+
+      const avgPrice = analysis.avgSalePrice || property.estimated_value || 0;
+      const offers = [
+        { label: '70%', percent: 0.70, color: [239, 68, 68] },    // red
+        { label: '75%', percent: 0.75, color: [249, 115, 22] },   // orange
+        { label: '80%', percent: 0.80, color: [251, 191, 36] },   // amber
+        { label: '85%', percent: 0.85, color: [234, 179, 8] },    // yellow
+        { label: '90%', percent: 0.90, color: [34, 197, 94] },    // green
+      ];
+
+      const offerCardWidth = 32;
+      const offerCardHeight = 14;
+      const offerSpacing = 2;
+
+      offers.forEach((offer, index) => {
+        const x = 20 + index * (offerCardWidth + offerSpacing);
+        const offerValue = Math.round(avgPrice * offer.percent);
+
+        // Card background
+        doc.setFillColor(offer.color[0], offer.color[1], offer.color[2]);
+        doc.rect(x, currentY, offerCardWidth, offerCardHeight, 'F');
+
+        // Label
+        doc.setFontSize(7);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont(undefined, 'bold');
+        doc.text(offer.label, x + offerCardWidth / 2, currentY + 5, { align: 'center' });
+
+        // Value
+        doc.setFontSize(8);
+        doc.text(`$${Math.round(offerValue / 1000)}K`, x + offerCardWidth / 2, currentY + 11, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+      });
+
+      currentY += 20;
 
       // Data Source Badge (positioned above table) - ALWAYS show
       const sourceConfig: Record<string, { label: string; color: number[] }> = {

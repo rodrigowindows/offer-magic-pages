@@ -2160,6 +2160,44 @@ export const CompsAnalysis = () => {
         </Card>
       )}
 
+      {/* Quick Offer Calculator */}
+      {selectedProperty && analysis && (
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold">💰 Quick Offer Calculator</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {[
+                  { label: '70%', percent: 0.70, color: 'bg-red-600 hover:bg-red-700' },
+                  { label: '75%', percent: 0.75, color: 'bg-orange-600 hover:bg-orange-700' },
+                  { label: '80%', percent: 0.80, color: 'bg-amber-600 hover:bg-amber-700' },
+                  { label: '85%', percent: 0.85, color: 'bg-yellow-600 hover:bg-yellow-700' },
+                  { label: '90%', percent: 0.90, color: 'bg-green-600 hover:bg-green-700' },
+                ].map((offer) => {
+                  const avgPrice = analysis.avgSalePrice || selectedProperty.estimated_value || 0;
+                  const offerValue = Math.round(avgPrice * offer.percent);
+
+                  return (
+                    <button
+                      key={offer.label}
+                      onClick={() => setOfferAmount(offerValue)}
+                      className={`${offer.color} text-white p-3 rounded-lg transition-all hover:scale-105 shadow-md`}
+                    >
+                      <div className="text-xs font-semibold">{offer.label}</div>
+                      <div className="text-lg font-bold">${Math.round(offerValue / 1000)}K</div>
+                      <div className="text-xs opacity-90">${offerValue.toLocaleString()}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Based on avg sale price of ${Math.round((analysis.avgSalePrice || 0) / 1000)}K. Click to set offer amount.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* No Property Selected */}
       {!selectedProperty && (
         <Alert>
