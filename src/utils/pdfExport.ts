@@ -896,15 +896,15 @@ export const exportConsolidatedCompsPDF = async (
         if (isBelow) {
           // Below market (green badge)
           doc.setFillColor(220, 252, 231);
-          doc.rect(20, currentY, 50, 8, 'F');
+          doc.rect(20, currentY, 55, 8, 'F');
           doc.setTextColor(22, 163, 74);
-          doc.text(`↓ ${percentDiff.toFixed(1)}% below avg`, 22, currentY + 6);
+          doc.text(`${percentDiff.toFixed(1)}% below avg`, 22, currentY + 6);
         } else {
           // Above market (red badge)
           doc.setFillColor(254, 226, 226);
-          doc.rect(20, currentY, 50, 8, 'F');
+          doc.rect(20, currentY, 55, 8, 'F');
           doc.setTextColor(220, 38, 38);
-          doc.text(`↑ ${Math.abs(percentDiff).toFixed(1)}% above avg`, 22, currentY + 6);
+          doc.text(`${Math.abs(percentDiff).toFixed(1)}% above avg`, 22, currentY + 6);
         }
 
         doc.setFont(undefined, 'normal');
@@ -952,6 +952,13 @@ export const exportConsolidatedCompsPDF = async (
       );
 
       currentY += 25;
+
+      // Check if we need a new page for offer calculator
+      if (currentY > 240) {
+        doc.addPage();
+        addHeader(doc, `Property ${i + 1} of ${properties.length} - Offers`);
+        currentY = 65;
+      }
 
       // ===== OFFER PERCENTAGES CARDS =====
       doc.setFontSize(10);
@@ -1045,7 +1052,7 @@ export const exportConsolidatedCompsPDF = async (
 
         return [
           `#${index + 1}`,
-          hasUrl ? address + ' 🔗' : address,  // Add link icon if has URL
+          hasUrl ? address + ' [link]' : address,  // Add [link] text instead of emoji
           format(comp.saleDate, 'MM/dd/yy'),
           `$${Math.round(comp.salePrice / 1000)}K`,
           comp.sqft.toLocaleString(),
