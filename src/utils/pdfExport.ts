@@ -934,6 +934,7 @@ export const exportConsolidatedCompsPDF = async (
 
       const avgPrice = analysis.avgSalePrice || property.estimated_value || 0;
       const offers = [
+        { label: '60%', percent: 0.60, color: [185, 28, 28] },    // dark red
         { label: '70%', percent: 0.70, color: [239, 68, 68] },    // red
         { label: '75%', percent: 0.75, color: [249, 115, 22] },   // orange
         { label: '80%', percent: 0.80, color: [251, 191, 36] },   // amber
@@ -941,7 +942,7 @@ export const exportConsolidatedCompsPDF = async (
         { label: '90%', percent: 0.90, color: [34, 197, 94] },    // green
       ];
 
-      const offerCardWidth = 32;
+      const offerCardWidth = 27;  // Reduced from 32 to fit 6 cards
       const offerCardHeight = 14;
       const offerSpacing = 2;
 

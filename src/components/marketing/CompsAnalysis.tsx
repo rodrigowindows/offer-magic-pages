@@ -2198,8 +2198,9 @@ export const CompsAnalysis = () => {
           <CardContent className="pt-6">
             <div className="space-y-3">
               <Label className="text-sm font-semibold">💰 Quick Offer Calculator</Label>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-6 gap-2">
                 {[
+                  { label: '60%', percent: 0.60, color: 'bg-red-700 hover:bg-red-800' },
                   { label: '70%', percent: 0.70, color: 'bg-red-600 hover:bg-red-700' },
                   { label: '75%', percent: 0.75, color: 'bg-orange-600 hover:bg-orange-700' },
                   { label: '80%', percent: 0.80, color: 'bg-amber-600 hover:bg-amber-700' },
