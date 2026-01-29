@@ -56,6 +56,7 @@ interface SavedCompsLink {
     bedrooms?: number;
     bathrooms?: number;
     sale_date?: string;
+    image_url?: string;
   } | null;
   created_at: string;
   user_id?: string;
@@ -94,6 +95,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [saleDate, setSaleDate] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
 
   // Estado de edição
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
@@ -258,7 +260,8 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         square_feet: sqftNum,
         bedrooms: bedrooms ? parseInt(bedrooms) : undefined,
         bathrooms: bathrooms ? parseFloat(bathrooms) : undefined,
-        sale_date: saleDate || undefined
+        sale_date: saleDate || undefined,
+        image_url: imageUrl.trim() || undefined
       };
 
       const { error } = await supabase
@@ -293,6 +296,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBedrooms('');
       setBathrooms('');
       setSaleDate('');
+      setImageUrl('');
       loadLinks();
     } catch (error) {
       console.error('Error saving link:', error);
@@ -319,6 +323,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBedrooms(link.comp_data.bedrooms?.toString() || '');
       setBathrooms(link.comp_data.bathrooms?.toString() || '');
       setSaleDate(link.comp_data.sale_date || '');
+      setImageUrl(link.comp_data.image_url || '');
     }
 
     // Scroll para o topo
@@ -384,7 +389,8 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         square_feet: sqftNum,
         bedrooms: bedrooms ? parseInt(bedrooms) : undefined,
         bathrooms: bathrooms ? parseFloat(bathrooms) : undefined,
-        sale_date: saleDate || undefined
+        sale_date: saleDate || undefined,
+        image_url: imageUrl.trim() || undefined
       };
 
       const { error } = await supabase
@@ -413,6 +419,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
       setBedrooms('');
       setBathrooms('');
       setSaleDate('');
+      setImageUrl('');
 
       onLinkAdded?.();
       loadLinks();
@@ -1010,6 +1017,20 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
                   disabled={saving}
                 />
               </div>
+              <div className="col-span-2">
+                <Label htmlFor="image-url" className="text-xs">🖼️ Image URL (Optional)</Label>
+                <Input
+                  id="image-url"
+                  type="url"
+                  placeholder="Ex: https://photos.zillowstatic.com/..."
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  disabled={saving}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cole a URL da foto da propriedade (Zillow, Trulia, Redfin, etc.)
+                </p>
+              </div>
             </div>
           </div>
 
@@ -1180,6 +1201,7 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-24">Foto</TableHead>
                   <TableHead>Propriedade</TableHead>
                   <TableHead>Fonte</TableHead>
                   <TableHead className="text-right">Preço</TableHead>
@@ -1198,6 +1220,22 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
 
                   return (
                   <TableRow key={link.id}>
+                    <TableCell>
+                      {link.comp_data?.image_url ? (
+                        <img
+                          src={link.comp_data.image_url}
+                          alt={link.property_address}
+                          className="w-20 h-16 object-cover rounded border"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA4MCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iNjQiIGZpbGw9IiNFNUU3RUIiLz48cGF0aCBkPSJNMjggMjRMMzYgMzRMNDQgMjZMNTYgNDBIMjRMMjggMjRaIiBmaWxsPSIjOUM5RkE0Ii8+PGNpcmNsZSBjeD0iMzQiIGN5PSIyMiIgcj0iNCIgZmlsbD0iIzlDOUZBNCIvPjwvc3ZnPg==';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-20 h-16 flex items-center justify-center bg-gray-100 rounded border text-gray-400 text-xs">
+                          No Image
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">
                       {link.property_address}
                     </TableCell>

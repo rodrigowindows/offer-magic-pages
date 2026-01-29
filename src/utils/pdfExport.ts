@@ -1006,10 +1006,87 @@ export const exportConsolidatedCompsPDF = async (
         },
       });
 
-      // Add mini map if possible (small version for consolidated PDF)
+      // Add comparables photos if available
       const finalTableY = (doc as any).lastAutoTable?.finalY || currentY + 40;
-      
-      if (finalTableY < 200) {
+      let photoY = finalTableY + 8;
+
+      // Check if any comps have photos
+      const compsWithPhotos = comparables.filter(c => (c as any).image_url || (c as any).imageUrl);
+
+      if (compsWithPhotos.length > 0 && photoY < 200) {
+        doc.addPage();
+        addHeader(doc, `Property ${i + 1} of ${properties.length} - Photos`);
+        photoY = 65;
+
+        doc.setFontSize(12);
+        doc.setTextColor(15, 23, 42);
+        doc.text('Comparable Properties Photos', 20, photoY);
+        photoY += 8;
+
+        // Display photos in a 2-column grid
+        const photoWidth = 80;
+        const photoHeight = 55;
+        const colSpacing = 10;
+        let col = 0;
+        let row = 0;
+
+        for (const comp of compsWithPhotos.slice(0, 6)) { // Max 6 photos
+          const imageUrl = (comp as any).image_url || (comp as any).imageUrl;
+          if (!imageUrl) continue;
+
+          const x = 20 + col * (photoWidth + colSpacing);
+          const y = photoY + row * (photoHeight + 20);
+
+          // Stop if we run out of space
+          if (y + photoHeight > 270) break;
+
+          try {
+            const imageData = await loadImageAsBase64(imageUrl);
+            if (imageData) {
+              // Draw border
+              doc.setDrawColor(200, 200, 200);
+              doc.rect(x, y, photoWidth, photoHeight);
+
+              // Add image
+              doc.addImage(imageData, 'JPEG', x, y, photoWidth, photoHeight);
+
+              // Add address label below
+              doc.setFontSize(7);
+              doc.setTextColor(71, 85, 105);
+              const shortAddress = comp.address.length > 35 ? comp.address.substring(0, 32) + '...' : comp.address;
+              doc.text(shortAddress, x, y + photoHeight + 5);
+
+              // Add price below address
+              doc.setFontSize(8);
+              doc.setTextColor(37, 99, 235);
+              doc.setFont(undefined, 'bold');
+              doc.text(`$${Math.round(comp.salePrice / 1000)}K | ${comp.sqft.toLocaleString()} sqft`, x, y + photoHeight + 10);
+              doc.setFont(undefined, 'normal');
+            } else {
+              // Placeholder if image fails to load
+              doc.setDrawColor(200, 200, 200);
+              doc.rect(x, y, photoWidth, photoHeight);
+              doc.setFontSize(8);
+              doc.setTextColor(150, 150, 150);
+              doc.text('Image not available', x + photoWidth / 2, y + photoHeight / 2, { align: 'center' });
+            }
+          } catch (imgError) {
+            console.warn('Failed to load comp image:', imgError);
+          }
+
+          // Move to next position
+          col++;
+          if (col >= 2) {
+            col = 0;
+            row++;
+          }
+        }
+
+        photoY = photoY + row * (photoHeight + 20) + photoHeight + 15;
+      }
+
+      // Add mini map if possible (small version for consolidated PDF)
+      if (photoY < 200) {
         try {
           const mapUrl = generateMapboxStaticMap(property, comparables, 400, 200);
           if (mapUrl) {
@@ -1017,8 +1094,8 @@ export const exportConsolidatedCompsPDF = async (
             if (mapImageData) {
               doc.setFontSize(10);
               doc.setTextColor(15, 23, 42);
-              doc.text('Location Map', 20, finalTableY + 8);
-              doc.addImage(mapImageData, 'PNG', 20, finalTableY + 12, 170, 85);
+              doc.text('Location Map', 20, photoY);
+              doc.addImage(mapImageData, 'PNG', 20, photoY + 4, 170, 85);
             }
           }
         } catch (mapError) {
