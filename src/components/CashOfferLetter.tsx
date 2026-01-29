@@ -147,6 +147,14 @@ export const CashOfferLetter = ({
 
           <p className="text-sm text-muted-foreground mb-1 mt-2">{t.cashOffer}</p>
           <p className="text-5xl font-black text-primary">{formatOffer(property)}</p>
+          
+          {/* Show offer range if available (60% min/max) */}
+          {offerType === 'range' && currentOfferConfig.rangeMin && currentOfferConfig.rangeMax && (
+            <p className="text-sm font-semibold text-primary/80 mt-1">
+              {language === 'es' ? 'Rango de Oferta' : 'Offer Range'}: ${currentOfferConfig.rangeMin.toLocaleString()} - ${currentOfferConfig.rangeMax.toLocaleString()}
+            </p>
+          )}
+          
           <p className="text-xs text-muted-foreground mt-2">
             {t.fairMarketValue}: ${estimatedValue.toLocaleString()}
           </p>

@@ -15,6 +15,8 @@ interface PropertyData {
   zip_code: string;
   estimated_value: number;
   cash_offer_amount: number;
+  min_offer_amount?: number;
+  max_offer_amount?: number;
   property_image_url?: string | null;
   latitude?: number;
   longitude?: number;
@@ -396,7 +398,22 @@ export const exportCompsToPDF = async (
     doc.text(`Address: ${property.address}`, 25, currentY + 2);
     doc.text(`City: ${property.city}, ${property.state} ${property.zip_code}`, 25, currentY + 9);
     doc.text(`Estimated Value: $${(property.estimated_value || 0).toLocaleString()}`, 25, currentY + 16);
-    doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 23);
+    
+    // Current Offer - larger and darker
+    doc.setFontSize(12);
+    doc.setTextColor(15, 23, 42); // Darker text
+    doc.setFont(undefined, 'bold');
+    doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 24);
+    doc.setFont(undefined, 'normal');
+    
+    // Offer Range (60% min/max) if available
+    if (property.min_offer_amount && property.max_offer_amount) {
+      doc.setFontSize(10);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Offer Range: $${property.min_offer_amount.toLocaleString()} - $${property.max_offer_amount.toLocaleString()}`, 25, currentY + 31);
+    }
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
 
     currentY += 40;
 
@@ -822,9 +839,19 @@ export const exportConsolidatedCompsPDF = async (
     // Ajustar currentY baseado no número de linhas do endereço
     currentY += addressLineOffset;
 
-    // Property details
-    doc.setFontSize(9);
+    // Property details - Current Offer larger and darker
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42); // Darker text
+    doc.setFont(undefined, 'bold');
     doc.text(`Current Offer: $${(property.cash_offer_amount || 0).toLocaleString()}`, 25, currentY + 25);
+    doc.setFont(undefined, 'normal');
+    
+    // Offer Range (60% min/max) if available
+    if (property.min_offer_amount && property.max_offer_amount) {
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Offer Range: $${property.min_offer_amount.toLocaleString()} - $${property.max_offer_amount.toLocaleString()}`, 25, currentY + 32);
+    }
 
     // Add property image if available (larger size)
     if (property.property_image_url) {
