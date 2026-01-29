@@ -2162,27 +2162,35 @@ export const CompsAnalysis = () => {
                   </Button>
                 </div>
               ) : (
-                <div
-                  className="text-2xl font-bold text-green-700 cursor-pointer hover:bg-green-100 p-3 rounded-lg transition-colors border-2 border-dashed border-green-300"
-                  onClick={() => setEditingOffer(true)}
-                  title="Click to edit offer amount"
-                >
-                  {selectedProperty.cash_offer_amount
-                    ? `$${selectedProperty.cash_offer_amount.toLocaleString()}`
-                    : '💰 Click to set offer amount'}
-                </div>
-              )}
+                <div className="space-y-2">
+                  <div
+                    className="text-2xl font-bold text-green-700 cursor-pointer hover:bg-green-100 p-3 rounded-lg transition-colors border-2 border-dashed border-green-300"
+                    onClick={() => setEditingOffer(true)}
+                    title="Click to edit offer amount"
+                  >
+                    {selectedProperty.cash_offer_amount
+                      ? `$${selectedProperty.cash_offer_amount.toLocaleString()}`
+                      : '💰 Click to set offer amount'}
+                  </div>
 
-              {analysis && selectedProperty.cash_offer_amount && selectedProperty.cash_offer_amount > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Offer vs Market Avg: {selectedProperty.cash_offer_amount < analysis.avgSalePrice ? (
-                    <span className="text-green-600 font-semibold">
-                      {((1 - selectedProperty.cash_offer_amount / analysis.avgSalePrice) * 100).toFixed(1)}% below market
-                    </span>
-                  ) : (
-                    <span className="text-red-600 font-semibold">
-                      {((selectedProperty.cash_offer_amount / analysis.avgSalePrice - 1) * 100).toFixed(1)}% above market
-                    </span>
+                  {/* Show percentage difference */}
+                  {analysis && selectedProperty.cash_offer_amount && selectedProperty.cash_offer_amount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs text-muted-foreground">vs Comps Avg:</div>
+                      {selectedProperty.cash_offer_amount < analysis.avgSalePrice ? (
+                        <div className="px-3 py-1 bg-green-100 border border-green-300 rounded-md">
+                          <span className="text-green-700 font-bold text-sm">
+                            ↓ {((1 - selectedProperty.cash_offer_amount / analysis.avgSalePrice) * 100).toFixed(1)}% below
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="px-3 py-1 bg-red-100 border border-red-300 rounded-md">
+                          <span className="text-red-700 font-bold text-sm">
+                            ↑ {((selectedProperty.cash_offer_amount / analysis.avgSalePrice - 1) * 100).toFixed(1)}% above
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}

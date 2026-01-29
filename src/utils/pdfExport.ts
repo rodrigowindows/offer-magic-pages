@@ -885,6 +885,33 @@ export const exportConsolidatedCompsPDF = async (
     try {
       const { comparables, analysis } = await getComparablesForProperty(property);
 
+      // Add offer vs comps percentage difference badge
+      if (property.cash_offer_amount && property.cash_offer_amount > 0 && analysis.avgSalePrice) {
+        const percentDiff = ((1 - property.cash_offer_amount / analysis.avgSalePrice) * 100);
+        const isBelow = percentDiff > 0;
+
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'bold');
+
+        if (isBelow) {
+          // Below market (green badge)
+          doc.setFillColor(220, 252, 231);
+          doc.rect(20, currentY, 50, 8, 'F');
+          doc.setTextColor(22, 163, 74);
+          doc.text(`↓ ${percentDiff.toFixed(1)}% below avg`, 22, currentY + 6);
+        } else {
+          // Above market (red badge)
+          doc.setFillColor(254, 226, 226);
+          doc.rect(20, currentY, 50, 8, 'F');
+          doc.setTextColor(220, 38, 38);
+          doc.text(`↑ ${Math.abs(percentDiff).toFixed(1)}% above avg`, 22, currentY + 6);
+        }
+
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(71, 85, 105);
+        currentY += 12; // Add space after badge
+      }
+
       // Analysis summary cards
       const cardWidth = 38;
       const cardHeight = 18;
