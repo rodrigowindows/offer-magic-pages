@@ -1807,6 +1807,32 @@ export const CompsAnalysis = () => {
     }
   }, [selectedProperty, generateComparables, loadManualLinksCount]);
 
+  // Calculate analysis from manual comps when no auto comps available
+  useEffect(() => {
+    if (!analysis && filteredComparables.length > 0 && selectedProperty) {
+      console.log('📊 Calculating analysis from manual comps only');
+
+      const avgPrice = filteredComparables.reduce((sum, c) => sum + (c.salePrice || 0), 0) / filteredComparables.length;
+      const avgPricePerSqft = filteredComparables.reduce((sum, c) => sum + (c.pricePerSqft || 0), 0) / filteredComparables.length;
+
+      const calculatedAnalysis = {
+        avgSalePrice: avgPrice,
+        avgPricePerSqft: avgPricePerSqft,
+        suggestedValueMin: avgPrice * 0.9,
+        suggestedValueMax: avgPrice * 1.1,
+        marketTrend: 'stable' as const,
+        trendPercentage: 0,
+        medianSalePrice: avgPrice,
+        comparablesCount: filteredComparables.length,
+        dataSource: 'manual' as const,
+        isDemo: false,
+      };
+
+      setAnalysis(calculatedAnalysis);
+      console.log('✅ Analysis calculated from manual comps:', calculatedAnalysis);
+    }
+  }, [analysis, filteredComparables, selectedProperty]);
+
   // Update insights when analysis changes
   useEffect(() => {
     if (computedInsights) {
