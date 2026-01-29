@@ -272,8 +272,13 @@ export const CompsAnalysis = () => {
    * INCLUDES MANUAL COMPS when on 'combined' or 'auto' tab
    */
   const filteredComparables = useMemo(() => {
+    // Filter manual comps for ONLY the selected property
+    const manualCompsForSelectedProperty = selectedProperty
+      ? manualComps.filter(mc => mc.property_id === selectedProperty.id)
+      : [];
+
     // Convert manual comps to comparable format
-    const manualComparables = convertManualLinksToComparables(manualComps);
+    const manualComparables = convertManualLinksToComparables(manualCompsForSelectedProperty);
 
     // Combine auto + manual if on combined tab, otherwise just auto
     const allComparables = activeTab === 'combined' || activeTab === 'auto'
@@ -334,7 +339,7 @@ export const CompsAnalysis = () => {
 
       return true;
     });
-  }, [comparables, compsFilters, manualComps, activeTab, convertManualLinksToComparables]);
+  }, [comparables, compsFilters, manualComps, activeTab, selectedProperty, convertManualLinksToComparables]);
 
   /**
    * Filtered properties based on status and offer filters
