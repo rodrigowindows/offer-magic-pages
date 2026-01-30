@@ -2174,6 +2174,12 @@ export const CompsAnalysis = () => {
                         type="number"
                         value={offerAmount}
                         onChange={(e) => setOfferAmount(parseInt(e.target.value) || 0)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            saveOfferAmount();
+                          }
+                        }}
                         placeholder="0"
                         className="text-lg font-semibold"
                         autoFocus
