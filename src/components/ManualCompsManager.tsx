@@ -1289,6 +1289,7 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
 
         // Percentuais de oferta
         const offers = [
+          { label: '60%', percent: 0.60, color: 'text-rose-800 bg-rose-100 border-rose-400' },
           { label: '70%', percent: 0.70, color: 'text-red-700 bg-red-50 border-red-300' },
           { label: '75%', percent: 0.75, color: 'text-orange-700 bg-orange-50 border-orange-300' },
           { label: '80%', percent: 0.80, color: 'text-amber-700 bg-amber-50 border-amber-300' },
@@ -1337,7 +1338,7 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
                 <p className="text-xs text-muted-foreground mb-3">
                   Baseado no preço médio de ${Math.round(avgPrice).toLocaleString()}
                 </p>
-                <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-6 gap-2">
                   {offers.map(offer => {
                     const offerAmount = avgPrice * offer.percent;
                     return (
