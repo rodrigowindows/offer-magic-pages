@@ -2104,6 +2104,36 @@ export const CompsAnalysis = () => {
       {selectedProperty && (
         <Card className="border-2 border-green-200 bg-green-50">
           <CardContent className="pt-6">
+            {/* Full Address Display - Copyable */}
+            <div className="mb-4 p-3 bg-white rounded-lg border-2 border-green-300 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Property Address</Label>
+                  <div className="text-lg font-bold text-gray-900 mt-1">
+                    {selectedProperty.address}
+                    {selectedProperty.city && `, ${selectedProperty.city}`}
+                    {selectedProperty.state && `, ${selectedProperty.state}`}
+                    {selectedProperty.zip_code && ` ${selectedProperty.zip_code}`}
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const fullAddress = `${selectedProperty.address}${selectedProperty.city ? `, ${selectedProperty.city}` : ''}${selectedProperty.state ? `, ${selectedProperty.state}` : ''}${selectedProperty.zip_code ? ` ${selectedProperty.zip_code}` : ''}`;
+                    navigator.clipboard.writeText(fullAddress);
+                    toast({
+                      title: 'Copied!',
+                      description: 'Address copied to clipboard',
+                    });
+                  }}
+                  className="shrink-0"
+                >
+                  📋 Copy
+                </Button>
+              </div>
+            </div>
+
             <div className="flex gap-4">
               {/* Property Photo */}
               {selectedProperty.property_image_url && (
