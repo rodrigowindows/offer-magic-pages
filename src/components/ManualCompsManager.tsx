@@ -1330,6 +1330,38 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
                 </div>
               </div>
 
+              {/* Badge de diferença da oferta vs média */}
+              {(() => {
+                const selectedProp = properties.find(p => p.id === selectedPropertyId);
+                const cashOffer = selectedProp?.cash_offer_amount;
+                if (!cashOffer || cashOffer <= 0 || avgPrice <= 0) return null;
+                
+                const percentDiff = ((1 - cashOffer / avgPrice) * 100);
+                const isBelow = percentDiff > 0;
+                
+                return (
+                  <div className={`p-3 rounded-lg border-2 ${isBelow ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Sua Oferta vs Média dos Comps</p>
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-bold text-gray-900">
+                            ${cashOffer.toLocaleString()}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-sm font-bold ${isBelow ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
+                            {isBelow ? '↓' : '↑'} {Math.abs(percentDiff).toFixed(1)}% {isBelow ? 'abaixo' : 'acima'} da média
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Média Comps</p>
+                        <p className="text-lg font-semibold text-gray-700">${Math.round(avgPrice).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Calculadora de Proposta */}
               <div className="p-4 bg-white rounded-lg border-2 border-dashed border-purple-300">
                 <h4 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
