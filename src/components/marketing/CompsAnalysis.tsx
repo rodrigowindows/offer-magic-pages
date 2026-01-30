@@ -2402,6 +2402,7 @@ export const CompsAnalysis = () => {
             <TabsContent value="manual">
               <ManualCompsManager
                 preSelectedPropertyId={selectedProperty.id}
+                preSelectedProperty={selectedProperty}
                 onLinkAdded={() => {
                   loadManualLinksCount(selectedProperty.id);
                   loadAllManualComps(); // Refresh filter counts

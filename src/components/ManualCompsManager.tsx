@@ -73,10 +73,11 @@ interface Property {
 
 interface ManualCompsManagerProps {
   preSelectedPropertyId?: string;
+  preSelectedProperty?: Property; // Pass full property object for immediate access
   onLinkAdded?: () => void;
 }
 
-export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: ManualCompsManagerProps = {}) => {
+export const ManualCompsManager = ({ preSelectedPropertyId, preSelectedProperty, onLinkAdded }: ManualCompsManagerProps = {}) => {
   const { toast } = useToast();
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
   const [propertyAddress, setPropertyAddress] = useState('');
@@ -263,8 +264,11 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         sale_date: saleDate || undefined
       };
 
-      // Get property address - either from state or from property record
+      // Get property address - either from state, preSelectedProperty, or from properties array
       let addressToSave = propertyAddress.trim();
+      if (!addressToSave && preSelectedProperty) {
+        addressToSave = `${preSelectedProperty.address}, ${preSelectedProperty.city}, ${preSelectedProperty.state} ${preSelectedProperty.zip_code}`;
+      }
       if (!addressToSave && preSelectedPropertyId) {
         const property = properties.find(p => p.id === preSelectedPropertyId);
         if (property) {
@@ -587,13 +591,24 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
     loadLinks();
   }, []);
 
-  // Auto-select property if passed from parent
+  // IMMEDIATELY set property data if preSelectedProperty is provided (no waiting for properties to load)
   useEffect(() => {
-    if (preSelectedPropertyId && properties.length > 0) {
+    if (preSelectedProperty) {
+      const fullAddress = `${preSelectedProperty.address}, ${preSelectedProperty.city}, ${preSelectedProperty.state} ${preSelectedProperty.zip_code}`;
+      console.log('🏠 Immediately setting preSelectedProperty:', fullAddress);
+      setSelectedPropertyId(preSelectedProperty.id);
+      setPropertyAddress(fullAddress);
+      setFilterPropertyId(preSelectedProperty.id);
+    }
+  }, [preSelectedProperty]);
+
+  // Auto-select property if passed from parent (fallback if only ID is provided)
+  useEffect(() => {
+    if (preSelectedPropertyId && !preSelectedProperty && properties.length > 0) {
       const property = properties.find(p => p.id === preSelectedPropertyId);
       if (property) {
         const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
-        console.log('🏠 Auto-selecting property:', fullAddress);
+        console.log('🏠 Auto-selecting property from ID:', fullAddress);
         setSelectedPropertyId(preSelectedPropertyId);
         setPropertyAddress(fullAddress);
         setFilterPropertyId(preSelectedPropertyId);
@@ -601,7 +616,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         console.warn('⚠️ Property not found for preSelectedPropertyId:', preSelectedPropertyId);
       }
     }
-  }, [preSelectedPropertyId, properties]);
+  }, [preSelectedPropertyId, preSelectedProperty, properties]);
 
   // Filtrar links salvos
   const getFilteredLinks = () => {
