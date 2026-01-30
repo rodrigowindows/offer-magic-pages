@@ -175,7 +175,9 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
 
   // Salvar link no Supabase
   const handleSaveLink = async () => {
-    if (!propertyAddress.trim()) {
+    // If preSelectedPropertyId is set, we don't need propertyAddress validation
+    // because the address will be pulled from the property record
+    if (!preSelectedPropertyId && !propertyAddress.trim()) {
       toast({
         title: '⚠️ Endereço necessário',
         description: 'Digite o endereço da propriedade',
@@ -261,10 +263,19 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
         sale_date: saleDate || undefined
       };
 
+      // Get property address - either from state or from property record
+      let addressToSave = propertyAddress.trim();
+      if (!addressToSave && preSelectedPropertyId) {
+        const property = properties.find(p => p.id === preSelectedPropertyId);
+        if (property) {
+          addressToSave = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+        }
+      }
+
       const { error } = await supabase
         .from('manual_comps_links' as any)
         .insert([{
-          property_address: propertyAddress.trim(),
+          property_address: addressToSave,
           property_id: selectedPropertyId && selectedPropertyId !== 'manual' ? selectedPropertyId : null,
           url: compsUrl.trim(),
           source: detectSource(compsUrl),
@@ -581,9 +592,13 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
     if (preSelectedPropertyId && properties.length > 0) {
       const property = properties.find(p => p.id === preSelectedPropertyId);
       if (property) {
+        const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+        console.log('🏠 Auto-selecting property:', fullAddress);
         setSelectedPropertyId(preSelectedPropertyId);
-        setPropertyAddress(`${property.address}, ${property.city}, ${property.state} ${property.zip_code}`);
+        setPropertyAddress(fullAddress);
         setFilterPropertyId(preSelectedPropertyId);
+      } else {
+        console.warn('⚠️ Property not found for preSelectedPropertyId:', preSelectedPropertyId);
       }
     }
   }, [preSelectedPropertyId, properties]);
@@ -690,7 +705,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, onLinkAdded }: Manua
             <div className="grid grid-cols-3 gap-4">
               <div className="p-3 bg-white rounded-lg border">
                 <p className="text-xs text-muted-foreground mb-1">Endereço</p>
-                <p className="font-semibold text-sm">{propertyAddress}</p>
+                <p className="font-semibold text-sm">{propertyAddress || '⚠️ Loading...'}</p>
               </div>
               {properties.find(p => p.id === preSelectedPropertyId)?.estimated_value && (
                 <div className="p-3 bg-white rounded-lg border">
@@ -1155,25 +1170,27 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
                 </CardDescription>
               </div>
 
-              {/* Filtro por propriedade */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground" />
-                <Select value={filterPropertyId} onValueChange={setFilterPropertyId}>
-                  <SelectTrigger className="w-[250px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as Propriedades</SelectItem>
-                    {properties.filter(p =>
-                      savedLinks.some(link => link.property_id === p.id)
-                    ).map(property => (
-                      <SelectItem key={property.id} value={property.id}>
-                        {property.address}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Filtro por propriedade - only show if NOT pre-selected */}
+              {!preSelectedPropertyId && (
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <Select value={filterPropertyId} onValueChange={setFilterPropertyId}>
+                    <SelectTrigger className="w-[250px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as Propriedades</SelectItem>
+                      {properties.filter(p =>
+                        savedLinks.some(link => link.property_id === p.id)
+                      ).map(property => (
+                        <SelectItem key={property.id} value={property.id}>
+                          {property.address}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           </CardHeader>
           <CardContent>
