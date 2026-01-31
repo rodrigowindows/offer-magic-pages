@@ -95,10 +95,9 @@ const Property = () => {
         },
       });
 
-      // Determine source type: email, sms, carta, call, or direct
-      const sourceType = source === 'email' || source === 'sms' || source === 'carta' || source === 'call' 
-        ? source 
-        : 'direct';
+      // Determine source type - accept all valid sources including variants like email-qr
+      const validSources = ['email', 'sms', 'carta', 'call', 'email-qr', 'sms-qr', 'carta-qr', 'qr'];
+      const sourceType = validSources.includes(source) ? source : (source.startsWith('email') || source.startsWith('sms') || source.startsWith('carta') || source.startsWith('call')) ? source : 'direct';
 
       // Save to property_analytics table with source column
       const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
