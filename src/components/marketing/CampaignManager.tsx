@@ -653,6 +653,12 @@ export const CampaignManager = () => {
     }
 
     // ===== CONFIRMAÇÃO DETALHADA =====
+    // Calculate total contacts (not just properties)
+    const totalContacts = selectedProps.reduce((total, prop) => {
+      const contacts = selectedChannel === 'email' ? getAllEmails(prop).length : getAllPhones(prop).length;
+      return total + contacts;
+    }, 0);
+
     const contactSummary = selectedChannel === 'email'
       ? `${propsWithEmail}/${selectedProps.length} propriedades com email`
       : `${propsWithPhone}/${selectedProps.length} propriedades com telefone`;
@@ -662,9 +668,10 @@ export const CampaignManager = () => {
       `📧 Template: ${selectedTemplate.name}\n` +
       `📡 Canal: ${selectedChannel.toUpperCase()}\n` +
       `🏠 Propriedades: ${selectedProps.length}\n` +
-      `📞 Contatos válidos: ${contactSummary}\n\n` +
-      `⚠️  Esta ação irá enviar ${selectedProps.length} comunicações\n` +
-      `💰 Custo estimado: ${selectedChannel === 'sms' ? `$${(selectedProps.length * 0.05).toFixed(2)}` : selectedChannel === 'call' ? `$${(selectedProps.length * 0.10).toFixed(2)}` : '$0.00'}\n\n` +
+      `📞 Contatos válidos: ${contactSummary}\n` +
+      `📨 Total de mensagens: ${totalContacts} (cada contato receberá uma mensagem)\n\n` +
+      `⚠️  Esta ação irá enviar ${totalContacts} comunicações\n` +
+      `💰 Custo estimado: ${selectedChannel === 'sms' ? `$${(totalContacts * 0.05).toFixed(2)}` : selectedChannel === 'call' ? `$${(totalContacts * 0.10).toFixed(2)}` : '$0.00'}\n\n` +
       `❓ Tem certeza que deseja continuar?`
     );
 
@@ -1844,18 +1851,25 @@ export const CampaignManager = () => {
                     <CardTitle className="text-lg">
                       📧 Message Content Preview
                       <span className="text-sm text-muted-foreground font-normal ml-2">
-                        ({selectedProps.length} {selectedProps.length === 1 ? 'property' : 'properties'})
+                        ({selectedProps.length} {selectedProps.length === 1 ? 'property' : 'properties'} • {
+                          selectedProps.reduce((total, prop) => {
+                            const contacts = selectedChannel === 'email' ? getAllEmails(prop).length : getAllPhones(prop).length;
+                            return total + contacts;
+                          }, 0)
+                        } total contacts)
                       </span>
                     </CardTitle>
                     <CardDescription>
-                      Preview of actual messages that will be sent to all recipients
+                      Preview of actual messages that will be sent to all recipients (each contact will receive their own message)
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {selectedProps.length > 0 && selectedTemplate ? (
                       <div className="space-y-6">
                         {/* Render preview for EACH property */}
-                        {selectedProps.map((property, index) => (
+                        {selectedProps.map((property, index) => {
+                          const propertyContacts = selectedChannel === 'email' ? getAllEmails(property) : getAllPhones(property);
+                          return (
                           <div key={property.id || index} className="border-2 border-gray-200 rounded-lg p-4 bg-gradient-to-br from-white to-gray-50">
                             {/* Property Header */}
                             <div className="flex items-start justify-between mb-4 pb-3 border-b-2 border-gray-200">
@@ -1865,6 +1879,11 @@ export const CampaignManager = () => {
                                     {index + 1}
                                   </div>
                                   <h4 className="font-bold text-base text-gray-900">{property.address || 'N/A'}</h4>
+                                  {propertyContacts.length > 1 && (
+                                    <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                      {propertyContacts.length} contacts
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="text-sm text-gray-600 ml-8">
                                   {property.city || 'N/A'}, {property.state || 'FL'} {property.zip_code || 'N/A'}
@@ -1976,7 +1995,8 @@ export const CampaignManager = () => {
                               </div>
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
