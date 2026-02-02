@@ -148,6 +148,8 @@ export const CampaignManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<{id: string; label: string}[]>([]);
+  const [hasSkiptracePhoneFilter, setHasSkiptracePhoneFilter] = useState(false);
+  const [hasSkiptraceEmailFilter, setHasSkiptraceEmailFilter] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showHtmlCode, setShowHtmlCode] = useState(false);
   const [progressStats, setProgressStats] = useState({
@@ -191,6 +193,20 @@ export const CampaignManager = () => {
   // Remove filter
   const removeFilter = (id: string) => setActiveFilters(prev => prev.filter(f => f.id !== id));
 
+  // Helper to check if property has skiptrace phones (phone1-7)
+  const hasSkiptracePhones = (prop: CampaignProperty): boolean => {
+    return !!(prop.phone1 || prop.phone2 || prop.phone3 || prop.phone4 || prop.phone5 || prop.phone6 || prop.phone7);
+  };
+
+  // Helper to check if property has skiptrace emails (email1-2)
+  const hasSkiptraceEmails = (prop: CampaignProperty): boolean => {
+    return !!(prop.email1 || prop.email2);
+  };
+
+  // Count properties with skiptrace data
+  const countWithSkiptracePhones = properties.filter(hasSkiptracePhones).length;
+  const countWithSkiptraceEmails = properties.filter(hasSkiptraceEmails).length;
+
   // Get filtered properties
   const getFilteredProperties = () => {
     return properties.filter(p => {
@@ -198,6 +214,13 @@ export const CampaignManager = () => {
         p.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.owner_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.city.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      // Skiptrace phone filter
+      if (hasSkiptracePhoneFilter && !hasSkiptracePhones(p)) return false;
+      
+      // Skiptrace email filter
+      if (hasSkiptraceEmailFilter && !hasSkiptraceEmails(p)) return false;
+      
       return matchesSearch;
     });
   };
@@ -361,6 +384,18 @@ export const CampaignManager = () => {
     const allColumns = [...baseColumns];
     if (!allColumns.includes(phoneCol)) allColumns.push(phoneCol);
     if (!allColumns.includes(emailCol)) allColumns.push(emailCol);
+    
+    // Always include skiptrace phone columns for filtering
+    const skiptracePhoneCols = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7'];
+    skiptracePhoneCols.forEach(col => {
+      if (!allColumns.includes(col)) allColumns.push(col);
+    });
+    
+    // Always include skiptrace email columns for filtering
+    const skiptraceEmailCols = ['email1', 'email2'];
+    skiptraceEmailCols.forEach(col => {
+      if (!allColumns.includes(col)) allColumns.push(col);
+    });
     
     return allColumns.join(', ');
   };
@@ -1447,6 +1482,28 @@ export const CampaignManager = () => {
                       onClick={() => setFilterStatus('all')}
                     >
                       📋 All ({properties.length})
+                    </Button>
+                  </div>
+
+                  {/* Filtros de Skiptrace */}
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      variant={hasSkiptracePhoneFilter ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter)}
+                      className={hasSkiptracePhoneFilter ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                    >
+                      <Phone className="w-3 h-3 mr-1" />
+                      With Phones ({countWithSkiptracePhones})
+                    </Button>
+                    <Button
+                      variant={hasSkiptraceEmailFilter ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setHasSkiptraceEmailFilter(!hasSkiptraceEmailFilter)}
+                      className={hasSkiptraceEmailFilter ? 'bg-purple-600 hover:bg-purple-700' : ''}
+                    >
+                      <Mail className="w-3 h-3 mr-1" />
+                      With Emails ({countWithSkiptraceEmails})
                     </Button>
                   </div>
 
