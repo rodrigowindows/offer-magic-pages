@@ -679,8 +679,9 @@ export const CampaignManager = () => {
 
     // ===== INÍCIO DO ENVIO CONTROLADO =====
     setSending(true);
-    let successCount = 0;
+    let successCount = 0; // Conta propriedades processadas
     let failCount = 0;
+    let totalMessagesSent = 0; // Conta total de mensagens enviadas
     let completedCount = 0;
     const failedProperties: any[] = [];
     const batchSize = 5; // Processar em lotes para evitar sobrecarga
@@ -709,6 +710,8 @@ export const CampaignManager = () => {
         if (result.status === 'fulfilled') {
           if (result.value.success) {
             successCount++;
+            // Add the number of messages sent for this property
+            totalMessagesSent += result.value.messagesSent || 1;
           } else {
             failCount++;
             failedProperties.push(result.value.property);
@@ -737,7 +740,7 @@ export const CampaignManager = () => {
 
     toast({
       title: resultTitle,
-      description: `${successCount} enviados com sucesso, ${failCount} falharam. Taxa de sucesso: ${successRate}%`,
+      description: `${totalMessagesSent} mensagens enviadas para ${successCount} propriedades${failCount > 0 ? `, ${failCount} propriedades falharam` : ''}. Taxa de sucesso: ${successRate}%`,
     });
 
     // If there were failures, offer to retry
@@ -763,12 +766,13 @@ export const CampaignManager = () => {
       const allEmails = getAllEmails(prop);
 
       let sent = false;
+      let messagesSent = 0; // Track how many messages were actually sent
       let lastError: any = null;
       const trackingId = crypto.randomUUID();
 
       if (selectedChannel === 'sms') {
         if (allPhones.length === 0) {
-          return { success: false, property: prop, error: 'No phone available' };
+          return { success: false, property: prop, error: 'No phone available', messagesSent: 0 };
         }
 
         const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
@@ -802,6 +806,7 @@ export const CampaignManager = () => {
             });
 
             successCount++;
+            messagesSent++; // Increment total messages sent
             sent = true;
             // Removed break - continue to next phone number
           } catch (error) {
@@ -812,7 +817,7 @@ export const CampaignManager = () => {
         console.log(`✅ Sent SMS to ${successCount}/${allPhones.length} phone numbers for property ${fullAddress}`);
       } else if (selectedChannel === 'email') {
         if (allEmails.length === 0) {
-          return { success: false, property: prop, error: 'No email available' };
+          return { success: false, property: prop, error: 'No email available', messagesSent: 0 };
         }
 
         const { content, subject } = generateTemplateContent(selectedTemplate, prop, trackingId);
@@ -848,6 +853,7 @@ export const CampaignManager = () => {
             });
 
             successCount++;
+            messagesSent++; // Increment total messages sent
             sent = true;
             // Removed break - continue to next email
           } catch (error) {
@@ -858,7 +864,7 @@ export const CampaignManager = () => {
         console.log(`✅ Sent email to ${successCount}/${allEmails.length} email addresses for property ${fullAddress}`);
       } else if (selectedChannel === 'call') {
         if (allPhones.length === 0) {
-          return { success: false, property: prop, error: 'No phone available' };
+          return { success: false, property: prop, error: 'No phone available', messagesSent: 0 };
         }
 
         const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
@@ -896,6 +902,7 @@ export const CampaignManager = () => {
             });
 
             successCount++;
+            messagesSent++; // Increment total messages sent
             sent = true;
             // Removed break - continue to next phone number
           } catch (error) {
@@ -906,10 +913,10 @@ export const CampaignManager = () => {
         console.log(`✅ Called ${successCount}/${allPhones.length} phone numbers for property ${fullAddress}`);
       }
 
-      return { success: sent, property: prop, error: sent ? null : lastError };
+      return { success: sent, property: prop, error: sent ? null : lastError, messagesSent };
     } catch (error: any) {
       console.error(`Error sending to ${prop.id}:`, error);
-      return { success: false, property: prop, error };
+      return { success: false, property: prop, error, messagesSent: 0 };
     }
   };
 
@@ -2045,13 +2052,16 @@ export const CampaignManager = () => {
                         </h4>
                         <div className="pl-6 space-y-1 text-sm">
                           <div className="flex justify-between">
-                            <span>Total Selected:</span>
+                            <span>Properties Selected:</span>
                             <span className="font-medium">{selectedIds.length}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span>With Contact:</span>
-                            <span className={`font-medium ${(selectedChannel === 'email' ? propsWithEmail : propsWithPhone) === selectedIds.length ? 'text-green-600' : 'text-red-600'}`}>
-                              {selectedChannel === 'email' ? propsWithEmail : propsWithPhone} / {selectedIds.length}
+                            <span>Total Messages:</span>
+                            <span className="font-medium text-green-600">
+                              {selectedProps.reduce((total, prop) => {
+                                const contacts = selectedChannel === 'email' ? getAllEmails(prop).length : getAllPhones(prop).length;
+                                return total + contacts;
+                              }, 0)}
                             </span>
                           </div>
                         </div>
