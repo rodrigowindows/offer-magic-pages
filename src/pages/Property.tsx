@@ -96,8 +96,8 @@ const Property = () => {
       });
 
       // Determine source type - accept all valid sources including variants like email-qr
-      const validSources = ['email', 'sms', 'carta', 'call', 'email-qr', 'sms-qr', 'carta-qr', 'qr'];
-      const sourceType = validSources.includes(source) ? source : (source.startsWith('email') || source.startsWith('sms') || source.startsWith('carta') || source.startsWith('call')) ? source : 'direct';
+      const validSources = ['email', 'sms', 'carta', 'letter', 'call', 'email-qr', 'sms-qr', 'carta-qr', 'letter-qr', 'qr'];
+      const sourceType = validSources.includes(source) ? source : (source.startsWith('email') || source.startsWith('sms') || source.startsWith('carta') || source.startsWith('letter') || source.startsWith('call')) ? source : 'direct';
 
       // Save to property_analytics table with source column
       const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
@@ -118,8 +118,8 @@ const Property = () => {
         console.log('✅ [Property] Analytics saved:', analyticsData);
       }
 
-      // 🔥 UPDATE campaign_logs when someone clicks the link from email/sms
-      if (eventType === 'page_view' && (source === 'email' || source === 'sms' || source === 'call')) {
+      // 🔥 UPDATE campaign_logs when someone clicks the link from email/sms/letter
+      if (eventType === 'page_view' && (source === 'email' || source === 'sms' || source === 'call' || source === 'letter' || source === 'carta')) {
         console.log('🔍 Looking for campaign log...', { propertyId, source });
 
         // Find the most recent campaign log for this property and channel
