@@ -766,6 +766,8 @@ export const CampaignManager = () => {
 
         const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
 
+        // Send to ALL phones, not just the first one
+        let successCount = 0;
         for (const phone of allPhones) {
           try {
             await sendSMS({
@@ -792,13 +794,15 @@ export const CampaignManager = () => {
               }
             });
 
+            successCount++;
             sent = true;
-            break;
+            // Removed break - continue to next phone number
           } catch (error) {
             lastError = error;
             console.error(`SMS failed for ${phone}:`, error);
           }
         }
+        console.log(`✅ Sent SMS to ${successCount}/${allPhones.length} phone numbers for property ${fullAddress}`);
       } else if (selectedChannel === 'email') {
         if (allEmails.length === 0) {
           return { success: false, property: prop, error: 'No email available' };
@@ -806,6 +810,8 @@ export const CampaignManager = () => {
 
         const { content, subject } = generateTemplateContent(selectedTemplate, prop, trackingId);
 
+        // Send to ALL emails, not just the first one
+        let successCount = 0;
         for (const email of allEmails) {
           try {
             await sendEmail({
@@ -834,13 +840,15 @@ export const CampaignManager = () => {
               }
             });
 
+            successCount++;
             sent = true;
-            break;
+            // Removed break - continue to next email
           } catch (error) {
             lastError = error;
             console.error(`Email failed for ${email}:`, error);
           }
         }
+        console.log(`✅ Sent email to ${successCount}/${allEmails.length} email addresses for property ${fullAddress}`);
       } else if (selectedChannel === 'call') {
         if (allPhones.length === 0) {
           return { success: false, property: prop, error: 'No phone available' };
@@ -848,6 +856,8 @@ export const CampaignManager = () => {
 
         const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
 
+        // Call ALL phone numbers, not just the first one
+        let successCount = 0;
         for (const phone of allPhones) {
           try {
             await initiateCall({
@@ -878,13 +888,15 @@ export const CampaignManager = () => {
               }
             });
 
+            successCount++;
             sent = true;
-            break;
+            // Removed break - continue to next phone number
           } catch (error) {
             lastError = error;
             console.error(`Call failed for ${phone}:`, error);
           }
         }
+        console.log(`✅ Called ${successCount}/${allPhones.length} phone numbers for property ${fullAddress}`);
       }
 
       return { success: sent, property: prop, error: sent ? null : lastError };
