@@ -1586,13 +1586,40 @@ export const CampaignManager = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card className="group hover:shadow-lg transition-all duration-300">
                       <CardHeader>
-                        <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                          📋 Available Properties
-                        </CardTitle>
-                        <CardDescription>
-                          {getFilteredProperties().length} propriedades encontradas
-                          {searchTerm && ` para "${searchTerm}"`}
-                        </CardDescription>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                              📋 Available Properties
+                            </CardTitle>
+                            <CardDescription>
+                              {getFilteredProperties().length} propriedades encontradas
+                              {searchTerm && ` para "${searchTerm}"`}
+                            </CardDescription>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const filteredIds = getFilteredProperties().map(p => p.id);
+                                setSelectedIds(filteredIds);
+                              }}
+                              className="hover:bg-primary/10 hover:border-primary"
+                            >
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Select All ({getFilteredProperties().length})
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedIds([])}
+                              className="hover:bg-red-50 hover:border-red-300 hover:text-red-600"
+                              disabled={selectedIds.length === 0}
+                            >
+                              Clear
+                            </Button>
+                          </div>
+                        </div>
                       </CardHeader>
                       <CardContent>
                         <ScrollArea className="h-[400px] pr-4">
