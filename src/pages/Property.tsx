@@ -103,7 +103,7 @@ const Property = () => {
       const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
         property_id: propertyId,
         event_type: eventType,
-        referrer: document.referrer || 'direct',
+        referrer: window.location.href, // Save full URL with query params like ?src=sms
         user_agent: navigator.userAgent,
         ip_address: ipData?.ip || null,
         city: ipData?.city || null,
