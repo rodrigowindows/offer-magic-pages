@@ -203,10 +203,12 @@ export const ClicksAnalytics = () => {
       case 'sms':
         return MessageSquare;
       case 'email':
+      case 'email-qr':
         return Mail;
       case 'call':
         return Phone;
       case 'carta':
+      case 'letter':
         return Mail; // Use Mail icon for letters too
       default:
         return MousePointerClick;
@@ -218,10 +220,12 @@ export const ClicksAnalytics = () => {
       case 'sms':
         return 'text-blue-600';
       case 'email':
+      case 'email-qr':
         return 'text-green-600';
       case 'call':
         return 'text-purple-600';
       case 'carta':
+      case 'letter':
         return 'text-orange-600';
       default:
         return 'text-gray-600';
