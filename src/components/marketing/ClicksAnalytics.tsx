@@ -527,6 +527,21 @@ export const ClicksAnalytics = () => {
                           )}
                         </div>
 
+                        {/* Referrer URL - if available */}
+                        {click.referrer && (
+                          <div className="mb-2 text-xs">
+                            <span className="font-medium text-muted-foreground">🔗 Link: </span>
+                            <a
+                              href={click.referrer}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline break-all"
+                            >
+                              {click.referrer}
+                            </a>
+                          </div>
+                        )}
+
                         {/* Location & Time Info */}
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                           {(click.city || click.country) && (
