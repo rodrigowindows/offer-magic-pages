@@ -71,6 +71,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
 
 /**
+ * Calculate estimated value using Avg $/Sqft × Property Sqft
+ * This is more accurate than using the simple average of sale prices
+ * because it accounts for the subject property's size.
+ *
+ * @param avgPricePerSqft Average price per square foot from comparables
+ * @param propertySqft Square footage of the subject property
+ * @returns Estimated value or 0 if sqft is not available
+ */
+function calculateEstimatedValue(
+  avgPricePerSqft: number,
+  propertySqft: number | null | undefined
+): number {
+  if (!propertySqft || propertySqft <= 0 || !avgPricePerSqft || avgPricePerSqft <= 0) {
+    return 0;
+  }
+  return Math.round(avgPricePerSqft * propertySqft);
+}
+
+/**
  * Main CompsAnalysis Component
  */
 export const CompsAnalysis = () => {
@@ -614,8 +633,23 @@ export const CompsAnalysis = () => {
           throw new Error('No valid comparables found');
         }
         setComparables(formattedComps);
-        const avgPrice = formattedComps.reduce((sum, c) => sum + (c.sale_price || 0), 0) / formattedComps.length || 0;
-        const avgPricePerSqft = formattedComps.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / formattedComps.length || 0;
+
+        // Validate comps have sqft data
+        const compsWithSqft = formattedComps.filter(c => c.price_per_sqft && c.price_per_sqft > 0);
+        const compsWithoutSqft = formattedComps.length - compsWithSqft.length;
+
+        if (compsWithoutSqft > 0) {
+          logger.warn(`⚠️ [CompsAnalysis] ${compsWithoutSqft} of ${formattedComps.length} comps missing sqft data`);
+        }
+
+        const avgPricePerSqft = compsWithSqft.length > 0
+          ? compsWithSqft.reduce((sum, c) => sum + (c.price_per_sqft || 0), 0) / compsWithSqft.length
+          : 0;
+
+        // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+        const estimatedValue = calculateEstimatedValue(avgPricePerSqft, selectedProperty?.square_feet);
+        // Fallback to simple average if no sqft available
+        const avgPrice = estimatedValue > 0 ? estimatedValue : (formattedComps.reduce((sum, c) => sum + (c.sale_price || 0), 0) / formattedComps.length || 0);
         // Detectar fonte dos dados
         const detectedSource = compsData[0]?.source || 'demo';
         const isDemoData = detectedSource === 'demo';
@@ -623,8 +657,9 @@ export const CompsAnalysis = () => {
         const calculatedAnalysis = {
           avgSalePrice: avgPrice,
           avgPricePerSqft: avgPricePerSqft,
-          suggestedValueMin: avmMinValue || avgPrice * 0.9,
-          suggestedValueMax: avmMaxValue || avgPrice * 1.1,
+          // Use AVM values if available, otherwise use estimated value (Avg $/Sqft × Property Sqft)
+          suggestedValueMin: avmMinValue || (avgPrice > 0 ? avgPrice * 0.9 : 0),
+          suggestedValueMax: avmMaxValue || (avgPrice > 0 ? avgPrice * 1.1 : 0),
           marketTrend: 'stable' as const,
           trendPercentage: 0,
           medianSalePrice: avgPrice,
@@ -1259,15 +1294,19 @@ export const CompsAnalysis = () => {
             // Update analysis if manual comps were added
             let updatedAnalysis = cached.analysis;
             if (hasManualComps) {
-              const avgSalePrice = allComps.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / allComps.length || 0;
               const avgPricePerSqft = allComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || c.price_per_sqft || 0), 0) / allComps.length || 0;
+              // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+              const estimatedValue = calculateEstimatedValue(avgPricePerSqft, property.square_feet);
+              // Fallback to simple average if no sqft available
+              const avgSalePrice = estimatedValue > 0 ? estimatedValue : (allComps.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / allComps.length || 0);
               updatedAnalysis = {
                 ...cached.analysis,
                 avgSalePrice,
                 avgPricePerSqft,
                 medianSalePrice: avgSalePrice,
-                suggestedValueMin: avgSalePrice * 0.95,
-                suggestedValueMax: avgSalePrice * 1.05,
+                // suggestedValueMin/Max based on calculated estimated value
+                suggestedValueMin: avgSalePrice > 0 ? avgSalePrice * 0.95 : 0,
+                suggestedValueMax: avgSalePrice > 0 ? avgSalePrice * 1.05 : 0,
                 comparablesCount: allComps.length,
                 dataSource: 'combined' as const,
                 isDemo: false,
@@ -1304,15 +1343,19 @@ export const CompsAnalysis = () => {
             // Update analysis if manual comps were added
             let updatedAnalysis = analysis;
             if (hasManualComps) {
-              const avgSalePrice = allComps.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / allComps.length || 0;
               const avgPricePerSqft = allComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || c.price_per_sqft || 0), 0) / allComps.length || 0;
+              // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+              const estimatedValue = calculateEstimatedValue(avgPricePerSqft, property.square_feet);
+              // Fallback to simple average if no sqft available
+              const avgSalePrice = estimatedValue > 0 ? estimatedValue : (allComps.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / allComps.length || 0);
               updatedAnalysis = {
                 ...analysis,
                 avgSalePrice,
                 avgPricePerSqft,
                 medianSalePrice: avgSalePrice,
-                suggestedValueMin: avgSalePrice * 0.95,
-                suggestedValueMax: avgSalePrice * 1.05,
+                // suggestedValueMin/Max based on calculated estimated value
+                suggestedValueMin: avgSalePrice > 0 ? avgSalePrice * 0.95 : 0,
+                suggestedValueMax: avgSalePrice > 0 ? avgSalePrice * 1.05 : 0,
                 comparablesCount: allComps.length,
                 dataSource: 'combined' as const,
                 isDemo: false,
@@ -1359,22 +1402,26 @@ export const CompsAnalysis = () => {
                     console.log(`✅ Found ${manualCompsForProperty.length} manual comps (demo/expired cache):`, property.address);
                     
                     if (manualCompsForProperty.length > 0) {
-                      const avgSalePrice = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / manualCompsForProperty.length || 0;
                       const avgPricePerSqft = manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.pricePerSqft || c.price_per_sqft || 0), 0) / manualCompsForProperty.length || 0;
-                      
+                      // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+                      const estimatedValue = calculateEstimatedValue(avgPricePerSqft, property.square_feet);
+                      // Fallback to simple average if no sqft available
+                      const avgSalePrice = estimatedValue > 0 ? estimatedValue : (manualCompsForProperty.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / manualCompsForProperty.length || 0);
+
                       const manualAnalysis = {
                         avgSalePrice: avgSalePrice || 0,
                         medianSalePrice: avgSalePrice || 0,
                         avgPricePerSqft: avgPricePerSqft || 0,
-                        suggestedValueMin: (avgSalePrice || 0) * 0.95,
-                        suggestedValueMax: (avgSalePrice || 0) * 1.05,
+                        // suggestedValueMin/Max based on calculated estimated value
+                        suggestedValueMin: avgSalePrice > 0 ? avgSalePrice * 0.95 : 0,
+                        suggestedValueMax: avgSalePrice > 0 ? avgSalePrice * 1.05 : 0,
                         trendPercentage: 0,
                         marketTrend: 'stable' as const,
                         comparablesCount: manualCompsForProperty.length,
                         dataSource: 'manual' as const,
                         isDemo: false,
                       };
-                      
+
                       return { comparables: manualCompsForProperty, analysis: manualAnalysis };
                     }
                   }
@@ -1423,13 +1470,17 @@ export const CompsAnalysis = () => {
 
                 // Recalculate averages if manual comps were added
                 if (hasManualComps) {
-                  const avgSalePrice = allComps.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / allComps.length || 0;
                   const avgPricePerSqft = allComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || c.price_per_sqft || 0), 0) / allComps.length || 0;
+                  // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+                  const estimatedValue = calculateEstimatedValue(avgPricePerSqft, property.square_feet);
+                  // Fallback to simple average if no sqft available
+                  const avgSalePrice = estimatedValue > 0 ? estimatedValue : (allComps.reduce((sum: number, c: any) => sum + (c.salePrice || c.sale_price || 0), 0) / allComps.length || 0);
                   restoredAnalysis.avgSalePrice = avgSalePrice;
                   restoredAnalysis.avgPricePerSqft = avgPricePerSqft;
                   restoredAnalysis.medianSalePrice = avgSalePrice;
-                  restoredAnalysis.suggestedValueMin = avgSalePrice * 0.95;
-                  restoredAnalysis.suggestedValueMax = avgSalePrice * 1.05;
+                  // suggestedValueMin/Max based on calculated estimated value
+                  restoredAnalysis.suggestedValueMin = avgSalePrice > 0 ? avgSalePrice * 0.95 : 0;
+                  restoredAnalysis.suggestedValueMax = avgSalePrice > 0 ? avgSalePrice * 1.05 : 0;
                 }
 
                 // Update memory cache for next time
@@ -1490,24 +1541,28 @@ export const CompsAnalysis = () => {
         }
 
         // Calculate analysis from manual comps only
-        const avgSalePrice = manualCompsForProperty.reduce((sum: number, c: any) => {
-          const price = c.salePrice || c.sale_price || 0;
-          return sum + price;
-        }, 0) / manualCompsForProperty.length || 0;
-        
         const avgPricePerSqft = manualCompsForProperty.reduce((sum: number, c: any) => {
           const pricePerSqft = c.pricePerSqft || c.price_per_sqft || 0;
           return sum + pricePerSqft;
         }, 0) / manualCompsForProperty.length || 0;
-        
-        console.log(`💰 Calculated analysis: avgSalePrice=${avgSalePrice}, avgPricePerSqft=${avgPricePerSqft}`);
+
+        // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+        const estimatedValue = calculateEstimatedValue(avgPricePerSqft, property.square_feet);
+        // Fallback to simple average if no sqft available
+        const avgSalePrice = estimatedValue > 0 ? estimatedValue : (manualCompsForProperty.reduce((sum: number, c: any) => {
+          const price = c.salePrice || c.sale_price || 0;
+          return sum + price;
+        }, 0) / manualCompsForProperty.length || 0);
+
+        console.log(`💰 Calculated analysis: avgSalePrice=${avgSalePrice}, avgPricePerSqft=${avgPricePerSqft}, propertySqft=${property.square_feet}`);
 
         const calculatedAnalysis = {
           avgSalePrice: avgSalePrice || 0,
           medianSalePrice: avgSalePrice || 0,
           avgPricePerSqft: avgPricePerSqft || 0,
-          suggestedValueMin: (avgSalePrice || 0) * 0.95,
-          suggestedValueMax: (avgSalePrice || 0) * 1.05,
+          // suggestedValueMin/Max based on calculated estimated value
+          suggestedValueMin: avgSalePrice > 0 ? avgSalePrice * 0.95 : 0,
+          suggestedValueMax: avgSalePrice > 0 ? avgSalePrice * 1.05 : 0,
           trendPercentage: 0,
           marketTrend: 'stable' as const,
           comparablesCount: manualCompsForProperty.length,
@@ -1634,14 +1689,17 @@ export const CompsAnalysis = () => {
             throw new Error('No valid comparables found for this property');
           }
 
-          const avgSalePrice = allComps.reduce((sum: number, c: any) => sum + (c.salePrice || 0), 0) / allComps.length || 0;
           const avgPricePerSqft = allComps.reduce((sum: number, c: any) => sum + (c.pricePerSqft || 0), 0) / allComps.length || 0;
+          // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+          const estimatedValue = calculateEstimatedValue(avgPricePerSqft, property.square_feet);
+          // Fallback to simple average if no sqft available
+          const avgSalePrice = estimatedValue > 0 ? estimatedValue : (allComps.reduce((sum: number, c: any) => sum + (c.salePrice || 0), 0) / allComps.length || 0);
 
           // Detectar fonte dos dados (para PDF export)
           // Se tem manual comps, usar "combined", senão usar source da API
           const hasManualComps = manualCompsForProperty.length > 0;
-          const detectedSource = hasManualComps 
-            ? 'combined' 
+          const detectedSource = hasManualComps
+            ? 'combined'
             : (compsData[0]?.source || 'database');
           const isDemoData = !hasManualComps && detectedSource === 'demo';
 
@@ -1649,8 +1707,9 @@ export const CompsAnalysis = () => {
             avgSalePrice: avgSalePrice || 0,
             medianSalePrice: avgSalePrice || 0,
             avgPricePerSqft: avgPricePerSqft || 0,
-            suggestedValueMin: (avgSalePrice || 0) * 0.95,
-            suggestedValueMax: (avgSalePrice || 0) * 1.05,
+            // suggestedValueMin/Max based on calculated estimated value
+            suggestedValueMin: avgSalePrice > 0 ? avgSalePrice * 0.95 : 0,
+            suggestedValueMax: avgSalePrice > 0 ? avgSalePrice * 1.05 : 0,
             trendPercentage: 0,
             marketTrend: 'stable' as const,
             comparablesCount: allComps.length,
@@ -1812,14 +1871,18 @@ export const CompsAnalysis = () => {
     if (!analysis && filteredComparables.length > 0 && selectedProperty) {
       console.log('📊 Calculating analysis from manual comps only');
 
-      const avgPrice = filteredComparables.reduce((sum, c) => sum + (c.salePrice || 0), 0) / filteredComparables.length;
       const avgPricePerSqft = filteredComparables.reduce((sum, c) => sum + (c.pricePerSqft || 0), 0) / filteredComparables.length;
+      // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
+      const estimatedValue = calculateEstimatedValue(avgPricePerSqft, selectedProperty.square_feet);
+      // Fallback to simple average if no sqft available
+      const avgPrice = estimatedValue > 0 ? estimatedValue : (filteredComparables.reduce((sum, c) => sum + (c.salePrice || 0), 0) / filteredComparables.length);
 
       const calculatedAnalysis = {
         avgSalePrice: avgPrice,
         avgPricePerSqft: avgPricePerSqft,
-        suggestedValueMin: avgPrice * 0.9,
-        suggestedValueMax: avgPrice * 1.1,
+        // suggestedValueMin/Max based on calculated estimated value (Avg $/Sqft × Property Sqft)
+        suggestedValueMin: avgPrice > 0 ? avgPrice * 0.9 : 0,
+        suggestedValueMax: avgPrice > 0 ? avgPrice * 1.1 : 0,
         marketTrend: 'stable' as const,
         trendPercentage: 0,
         medianSalePrice: avgPrice,
@@ -2270,6 +2333,16 @@ export const CompsAnalysis = () => {
               <p className="text-xs text-muted-foreground">
                 Based on avg sale price of ${Math.round((analysis.avgSalePrice || 0) / 1000)}K. Click to set offer amount.
               </p>
+
+              {/* Warning when property has no square_feet data */}
+              {selectedProperty && (!selectedProperty.square_feet || selectedProperty.square_feet <= 0) && (
+                <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <p className="text-xs text-amber-700">
+                    ⚠️ Property sqft not available - using simple average of comp prices instead of $/sqft calculation
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -69,6 +69,7 @@ interface Property {
   zip_code: string;
   estimated_value?: number;
   cash_offer_amount?: number;
+  square_feet?: number;
 }
 
 interface ManualCompsManagerProps {
@@ -108,7 +109,7 @@ export const ManualCompsManager = ({ preSelectedPropertyId, preSelectedProperty,
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount')
+        .select('id, address, city, state, zip_code, estimated_value, cash_offer_amount, square_feet')
         .order('created_at', { ascending: false })
         .limit(100);
 
@@ -1309,15 +1310,26 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
 
         if (linksWithData.length === 0) return null;
 
-        const avgPrice = linksWithData.reduce((sum, link) =>
-          sum + (link.comp_data!.sale_price || 0), 0
-        ) / linksWithData.length;
+        // Calculate average price per sqft from comps
+        const avgPricePerSqft = linksWithData.reduce((sum, link) => {
+          const price = link.comp_data!.sale_price || 0;
+          const sqft = link.comp_data!.square_feet || 1;
+          return sum + (price / sqft);
+        }, 0) / linksWithData.length;
+
+        // Get the selected property's square feet
+        const selectedProp = properties.find(p => p.id === selectedPropertyId);
+        const propertySqft = selectedProp?.square_feet;
+
+        // Calculate estimated value: Avg $/Sqft × Property Sqft (more accurate)
+        // Fallback to simple average if property sqft is not available
+        const avgPrice = propertySqft && propertySqft > 0
+          ? Math.round(avgPricePerSqft * propertySqft)
+          : linksWithData.reduce((sum, link) => sum + (link.comp_data!.sale_price || 0), 0) / linksWithData.length;
 
         const avgSqft = linksWithData.reduce((sum, link) =>
           sum + (link.comp_data!.square_feet || 0), 0
         ) / linksWithData.length;
-
-        const avgPricePerSqft = avgPrice / avgSqft;
 
         // Percentuais de oferta
         const offers = [
@@ -1343,15 +1355,24 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
               {/* Médias */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="p-4 bg-white rounded-lg border-2 border-green-200">
-                  <p className="text-xs text-muted-foreground mb-1">Preço Médio</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {propertySqft ? 'Valor Estimado' : 'Preço Médio'}
+                  </p>
                   <p className="text-2xl font-bold text-green-700">
                     ${Math.round(avgPrice).toLocaleString()}
                   </p>
+                  {propertySqft && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ($/sqft × {propertySqft.toLocaleString()} sqft)
+                    </p>
+                  )}
                 </div>
                 <div className="p-4 bg-white rounded-lg border-2 border-blue-200">
-                  <p className="text-xs text-muted-foreground mb-1">Sqft Médio</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {propertySqft ? 'Sqft da Propriedade' : 'Sqft Médio'}
+                  </p>
                   <p className="text-2xl font-bold text-blue-700">
-                    {Math.round(avgSqft).toLocaleString()}
+                    {propertySqft ? propertySqft.toLocaleString() : Math.round(avgSqft).toLocaleString()}
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border-2 border-purple-200">
@@ -1362,31 +1383,30 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
                 </div>
               </div>
 
-              {/* Badge de diferença da oferta vs média */}
+              {/* Badge de diferença da oferta vs valor estimado */}
               {(() => {
-                const selectedProp = properties.find(p => p.id === selectedPropertyId);
                 const cashOffer = selectedProp?.cash_offer_amount;
                 if (!cashOffer || cashOffer <= 0 || avgPrice <= 0) return null;
-                
+
                 const percentDiff = ((1 - cashOffer / avgPrice) * 100);
                 const isBelow = percentDiff > 0;
-                
+
                 return (
                   <div className={`p-3 rounded-lg border-2 ${isBelow ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Sua Oferta vs Média dos Comps</p>
+                        <p className="text-xs text-muted-foreground mb-1">Sua Oferta vs {propertySqft ? 'Valor Estimado' : 'Média dos Comps'}</p>
                         <div className="flex items-center gap-3">
                           <span className="text-lg font-bold text-gray-900">
                             ${cashOffer.toLocaleString()}
                           </span>
                           <span className={`px-3 py-1 rounded-full text-sm font-bold ${isBelow ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>
-                            {isBelow ? '↓' : '↑'} {Math.abs(percentDiff).toFixed(1)}% {isBelow ? 'abaixo' : 'acima'} da média
+                            {isBelow ? '↓' : '↑'} {Math.abs(percentDiff).toFixed(1)}% {isBelow ? 'abaixo' : 'acima'} do valor
                           </span>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-xs text-muted-foreground">Média Comps</p>
+                        <p className="text-xs text-muted-foreground">{propertySqft ? 'Valor Estimado' : 'Média Comps'}</p>
                         <p className="text-lg font-semibold text-gray-700">${Math.round(avgPrice).toLocaleString()}</p>
                       </div>
                     </div>
@@ -1400,7 +1420,8 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
                   💰 Calculadora de Proposta Rápida
                 </h4>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Baseado no preço médio de ${Math.round(avgPrice).toLocaleString()}
+                  Baseado no {propertySqft ? 'valor estimado' : 'preço médio'} de ${Math.round(avgPrice).toLocaleString()}
+                  {propertySqft && ` ($/sqft × ${propertySqft.toLocaleString()} sqft)`}
                 </p>
                 <div className="grid grid-cols-6 gap-2">
                   {offers.map(offer => {

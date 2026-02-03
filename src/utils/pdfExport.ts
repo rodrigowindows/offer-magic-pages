@@ -20,6 +20,7 @@ interface PropertyData {
   property_image_url?: string | null;
   latitude?: number;
   longitude?: number;
+  square_feet?: number;
 }
 
 interface ComparableProperty {
@@ -735,7 +736,7 @@ export const exportCompsToSimplePDF = (
   currentY += 8;
 
   doc.setFontSize(10);
-  doc.text(`Average Sale Price: $${(analysis.avgSalePrice || 0).toLocaleString()}`, 20, currentY);
+  doc.text(`Estimated Value: $${(analysis.avgSalePrice || 0).toLocaleString()}`, 20, currentY);
   currentY += 6;
   doc.text(`Average $/Sqft: $${Math.round(analysis.avgPricePerSqft || 0)}`, 20, currentY);
   currentY += 6;
@@ -922,7 +923,7 @@ export const exportConsolidatedCompsPDF = async (
       doc.rect(20, currentY, cardWidth, cardHeight, 'F');
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text('Avg Sale Price', 22, currentY + 5);
+      doc.text('Estimated Value', 22, currentY + 5);
       doc.setFontSize(11);
       doc.setTextColor(37, 99, 235);
       doc.text(`$${Math.round((analysis.avgSalePrice || 0) / 1000)}K`, 22, currentY + 13);
