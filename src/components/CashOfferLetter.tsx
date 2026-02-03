@@ -101,7 +101,8 @@ export const CashOfferLetter = ({
   const t = content[language];
 
   // Format phone number for better readability
-  const formatPhone = (phoneNumber: string): string => {
+  const formatPhone = (phoneNumber: string | null | undefined): string => {
+    if (!phoneNumber) return "786 882 8251"; // Default phone
     const cleaned = phoneNumber.replace(/\D/g, '');
     if (cleaned.length === 10) {
       return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
