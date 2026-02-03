@@ -28,7 +28,7 @@ const content = {
     headline: "We Want to Buy Your Home",
     subheadline: "No Repairs • No Fees • Close When You Want",
     cashOffer: "Your Cash Offer Awaits",
-    fairMarketValue: "Market Value",
+    fairMarketValue: "",
     urgency: "This offer is valid for 14 days",
     weHelpYou: "Why Sell to Us?",
     benefit1: "Stop tax foreclosure",
@@ -52,7 +52,7 @@ const content = {
     headline: "Queremos Comprar Su Casa",
     subheadline: "Sin Reparaciones • Sin Comisiones • Cierre Cuando Quiera",
     cashOffer: "Su Oferta en Efectivo le Espera",
-    fairMarketValue: "Valor de Mercado",
+    fairMarketValue: "",
     urgency: "Esta oferta es válida por 14 días",
     weHelpYou: "¿Por Qué Vendernos?",
     benefit1: "Detener la ejecución fiscal",
@@ -145,13 +145,9 @@ export const CashOfferLetter = ({
             {t.urgency}
           </div>
 
-          <p className="text-lg text-muted-foreground mb-1 mt-2">{t.cashOffer}</p>
-          <p className="text-3xl font-black text-primary mt-3">
+          <p className="text-lg text-muted-foreground mb-1 mt-4">{t.cashOffer}</p>
+          <p className="text-3xl font-black text-primary mt-3 mb-4">
             {language === 'es' ? 'Llame o Escanee para Ver Su Oferta' : 'Call or Scan to See Your Offer'}
-          </p>
-
-          <p className="text-xs text-muted-foreground mt-3">
-            {t.fairMarketValue}: ${estimatedValue.toLocaleString()}
           </p>
         </div>
 
@@ -206,19 +202,24 @@ export const CashOfferLetter = ({
         </div>
 
         {/* CTA Section */}
-        <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center space-y-2">
-          <h2 className="text-lg font-bold">{t.cta}</h2>
-          <div className="flex items-center justify-center gap-2 text-2xl font-bold">
-            <Phone className="h-6 w-6" />
-            {phone}
+        <div className="bg-primary text-primary-foreground rounded-xl p-5 text-center space-y-3">
+          <h2 className="text-xl font-bold">{t.cta}</h2>
+
+          {/* Phone Number - HIGHLIGHTED */}
+          <div className="bg-white/10 rounded-lg py-3 px-4">
+            <div className="flex items-center justify-center gap-3 text-3xl font-extrabold tracking-wide">
+              <Phone className="h-8 w-8" />
+              <span>{phone}</span>
+            </div>
           </div>
-          <p className="text-xs opacity-90">{t.ctaDescription}</p>
+
+          <p className="text-sm opacity-90 font-medium">{t.ctaDescription}</p>
 
           {/* QR Code - LARGER SIZE */}
-          <div className="pt-2 border-t border-primary-foreground/20 mt-3">
-            <p className="text-xs opacity-75 mb-2">{t.orText}</p>
+          <div className="pt-3 border-t border-primary-foreground/20 mt-4">
+            <p className="text-sm opacity-90 mb-3 font-medium">{t.orText}</p>
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-white p-3 rounded-lg">
+              <div className="bg-white p-3 rounded-lg shadow-lg">
                 <QRCodeSVG value={offerUrl} size={140} level="H" />
               </div>
             </div>
