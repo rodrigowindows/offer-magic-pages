@@ -141,4 +141,20 @@ Você terá:
 
 ---
 
+## 🧪 **TESTES - PROMPT COMPLETO:**
+
+Para executar todos os testes do sistema (unit, E2E, manuais), veja o arquivo:
+
+**`PROMPT_TESTES_TODO.md`**
+
+Este arquivo contém:
+- Verificacao de alteracoes (REVIEW_AND_CHANGES.md e TESTING_CHECKLIST.md)
+- Instrucoes para testes unitarios (Vitest)
+- Instrucoes para testes E2E (Playwright)
+- Checklist de testes manuais para Marketing System
+- Checklist de testes manuais para Comps e integracoes (Retell, Mapbox, PDF)
+- Formato de resposta padronizado
+
+---
+
 **PRIORIDADE #1:** Rodar migration do banco! 🔴

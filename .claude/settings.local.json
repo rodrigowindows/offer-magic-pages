@@ -15,7 +15,11 @@
       "Bash(npm run:*)",
       "Bash(cat:*)",
       "Bash(tasklist)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(npx vite:*)",
+      "Bash(del test-attom-direct.ts)",
+      "Bash(rm:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []
