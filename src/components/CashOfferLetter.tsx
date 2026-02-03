@@ -27,7 +27,7 @@ const content = {
   en: {
     headline: "We Want to Buy Your Home",
     subheadline: "No Repairs • No Fees • Close When You Want",
-    cashOffer: "Your Cash Offer",
+    cashOffer: "Your Cash Offer Awaits",
     fairMarketValue: "Market Value",
     urgency: "This offer is valid for 14 days",
     weHelpYou: "Why Sell to Us?",
@@ -35,9 +35,9 @@ const content = {
     benefit2: "Pay off your tax debt",
     benefit3: "Sell as-is (any condition)",
     benefit4: "You pick the closing date",
-    cta: "Claim Your Cash Offer Today",
+    cta: "Get Your Cash Offer Now",
     ctaDescription: "Call now for your free, no-obligation consultation",
-    orText: "or scan to view online",
+    orText: "or scan the QR code below",
     scanToView: "Scan for instant offer details",
     since: "Trusted Miami Investors Since 2015",
     footer: "Zero commissions • Zero closing costs • 100% confidential",
@@ -51,7 +51,7 @@ const content = {
   es: {
     headline: "Queremos Comprar Su Casa",
     subheadline: "Sin Reparaciones • Sin Comisiones • Cierre Cuando Quiera",
-    cashOffer: "Su Oferta en Efectivo",
+    cashOffer: "Su Oferta en Efectivo le Espera",
     fairMarketValue: "Valor de Mercado",
     urgency: "Esta oferta es válida por 14 días",
     weHelpYou: "¿Por Qué Vendernos?",
@@ -59,9 +59,9 @@ const content = {
     benefit2: "Pagar su deuda de impuestos",
     benefit3: "Vender tal como está",
     benefit4: "Usted elige la fecha de cierre",
-    cta: "Reclame Su Oferta Hoy",
+    cta: "Obtenga Su Oferta Ahora",
     ctaDescription: "Llame ahora para su consulta gratuita y sin compromiso",
-    orText: "o escanee para ver en línea",
+    orText: "o escanee el código QR abajo",
     scanToView: "Escanee para ver detalles",
     since: "Inversionistas de Miami Desde 2015",
     footer: "Cero comisiones • Cero costos de cierre • 100% confidencial",
@@ -138,24 +138,19 @@ export const CashOfferLetter = ({
           <p className="text-sm font-medium text-primary mt-2">{fullAddress}</p>
         </div>
 
-        {/* Main Offer Box with Urgency */}
+        {/* Main Offer Box with Urgency - NO PRICE SHOWN */}
         <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary rounded-xl p-5 text-center">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {t.urgency}
           </div>
 
-          <p className="text-sm text-muted-foreground mb-1 mt-2">{t.cashOffer}</p>
-          <p className="text-5xl font-black text-primary">{formatOffer(property)}</p>
-          
-          {/* Show offer range if available (60% min/max) */}
-          {offerType === 'range' && currentOfferConfig.rangeMin && currentOfferConfig.rangeMax && (
-            <p className="text-sm font-semibold text-primary/80 mt-1">
-              {language === 'es' ? 'Rango de Oferta' : 'Offer Range'}: ${currentOfferConfig.rangeMin.toLocaleString()} - ${currentOfferConfig.rangeMax.toLocaleString()}
-            </p>
-          )}
-          
-          <p className="text-xs text-muted-foreground mt-2">
+          <p className="text-lg text-muted-foreground mb-1 mt-2">{t.cashOffer}</p>
+          <p className="text-3xl font-black text-primary mt-3">
+            {language === 'es' ? 'Llame o Escanee para Ver Su Oferta' : 'Call or Scan to See Your Offer'}
+          </p>
+
+          <p className="text-xs text-muted-foreground mt-3">
             {t.fairMarketValue}: ${estimatedValue.toLocaleString()}
           </p>
         </div>
@@ -213,27 +208,19 @@ export const CashOfferLetter = ({
         {/* CTA Section */}
         <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center space-y-2">
           <h2 className="text-lg font-bold">{t.cta}</h2>
-          <div className="flex items-center justify-center gap-2 text-xl font-bold">
-            <Phone className="h-5 w-5" />
+          <div className="flex items-center justify-center gap-2 text-2xl font-bold">
+            <Phone className="h-6 w-6" />
             {phone}
           </div>
           <p className="text-xs opacity-90">{t.ctaDescription}</p>
-          
-          {/* QR Code */}
+
+          {/* QR Code - LARGER SIZE */}
           <div className="pt-2 border-t border-primary-foreground/20 mt-3">
             <p className="text-xs opacity-75 mb-2">{t.orText}</p>
             <div className="flex flex-col items-center gap-2">
-              <div className="bg-white p-2 rounded-lg">
-                <QRCodeSVG value={offerUrl} size={80} level="H" />
+              <div className="bg-white p-3 rounded-lg">
+                <QRCodeSVG value={offerUrl} size={140} level="H" />
               </div>
-              <a
-                href={offerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-xs mt-1"
-              >
-                View Full Offer Details
-              </a>
             </div>
           </div>
         </div>
