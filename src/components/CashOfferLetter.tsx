@@ -39,7 +39,9 @@ const content = {
     ctaDescription: "Call now for your free, no-obligation consultation",
     orText: "or scan the QR code below",
     scanToView: "Scan for instant offer details",
-    since: "Trusted Miami Investors Since 2015",
+    qrCallout: "Scan Now for Your Exclusive Offer",
+    qrSubtext: "Instant Access • No Email Required",
+    since: "Trusted Miami Investors Since 2015 • 500+ Happy Homeowners",
     footer: "Zero commissions • Zero closing costs • 100% confidential",
     dear: "Dear",
     guarantee: "100% Free, No Obligation",
@@ -63,7 +65,9 @@ const content = {
     ctaDescription: "Llame ahora para su consulta gratuita y sin compromiso",
     orText: "o escanee el código QR abajo",
     scanToView: "Escanee para ver detalles",
-    since: "Inversionistas de Miami Desde 2015",
+    qrCallout: "Escanee Ahora para Su Oferta Exclusiva",
+    qrSubtext: "Acceso Instantáneo • Sin Email Requerido",
+    since: "Inversionistas de Miami Desde 2015 • 500+ Propietarios Satisfechos",
     footer: "Cero comisiones • Cero costos de cierre • 100% confidencial",
     dear: "Estimado/a",
     guarantee: "100% Gratis, Sin Compromiso",
@@ -95,6 +99,16 @@ export const CashOfferLetter = ({
   const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
   const offerUrl = `${window.location.origin}/property/${propertySlug}?src=${source}`;
   const t = content[language];
+
+  // Format phone number for better readability
+  const formatPhone = (phoneNumber: string): string => {
+    const cleaned = phoneNumber.replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    }
+    return phoneNumber;
+  };
+  const formattedPhone = formatPhone(phone);
 
   // Use new offer config or fallback to legacy props
   const currentOfferConfig = offerConfig || {
@@ -209,18 +223,22 @@ export const CashOfferLetter = ({
           <div className="bg-white/10 rounded-lg py-3 px-4">
             <div className="flex items-center justify-center gap-3 text-3xl font-extrabold tracking-wide">
               <Phone className="h-8 w-8" />
-              <span>{phone}</span>
+              <span>{formattedPhone}</span>
             </div>
           </div>
 
           <p className="text-sm opacity-90 font-medium">{t.ctaDescription}</p>
 
-          {/* QR Code - LARGER SIZE */}
+          {/* QR Code - LARGER SIZE WITH PERSUASIVE TEXT */}
           <div className="pt-3 border-t border-primary-foreground/20 mt-4">
             <p className="text-sm opacity-90 mb-3 font-medium">{t.orText}</p>
             <div className="flex flex-col items-center gap-2">
               <div className="bg-white p-3 rounded-lg shadow-lg">
                 <QRCodeSVG value={offerUrl} size={140} level="H" />
+              </div>
+              <div className="mt-2 text-center">
+                <p className="text-sm font-bold text-primary-foreground">{t.qrCallout}</p>
+                <p className="text-xs opacity-75 mt-1">{t.qrSubtext}</p>
               </div>
             </div>
           </div>
