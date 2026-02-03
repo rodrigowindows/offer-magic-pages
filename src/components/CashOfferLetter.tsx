@@ -131,8 +131,8 @@ export const CashOfferLetter = ({
   const savings = estimatedValue - averageOffer;
   
   return (
-    <div className="print:scale-[4.5] print:origin-top-left print:w-[22.22%]">
-      <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden">
+    <div className="print:scale-100 print:origin-top-left print:w-full">
+      <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none print:max-w-none overflow-hidden">
         {/* Professional Header */}
         <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
@@ -142,7 +142,7 @@ export const CashOfferLetter = ({
         <p className="text-sm opacity-90">{t.since}</p>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-4 space-y-3 print:p-3 print:space-y-2">
         {/* Personalized Greeting & Property */}
         <div className="text-center space-y-1">
           {ownerName && (
@@ -217,7 +217,7 @@ export const CashOfferLetter = ({
         </div>
 
         {/* CTA Section */}
-        <div className="bg-primary text-primary-foreground rounded-xl p-5 text-center space-y-3">
+        <div className="bg-primary text-primary-foreground rounded-xl p-4 text-center space-y-2 print:p-3">
           <h2 className="text-xl font-bold">{t.cta}</h2>
 
           {/* Phone Number - HIGHLIGHTED */}
@@ -230,16 +230,16 @@ export const CashOfferLetter = ({
 
           <p className="text-sm opacity-90 font-medium">{t.ctaDescription}</p>
 
-          {/* QR Code - LARGER SIZE WITH PERSUASIVE TEXT */}
-          <div className="pt-3 border-t border-primary-foreground/20 mt-4">
-            <p className="text-sm opacity-90 mb-3 font-medium">{t.orText}</p>
-            <div className="flex flex-col items-center gap-2">
-              <div className="bg-white p-3 rounded-lg shadow-lg">
-                <QRCodeSVG value={offerUrl} size={140} level="H" />
+          {/* QR Code - Smaller for print */}
+          <div className="pt-2 border-t border-primary-foreground/20 mt-2">
+            <p className="text-xs opacity-90 mb-2 font-medium">{t.orText}</p>
+            <div className="flex flex-col items-center gap-1">
+              <div className="bg-white p-2 rounded-lg shadow-lg print:p-1">
+                <QRCodeSVG value={offerUrl} size={100} level="H" className="print:w-20 print:h-20" />
               </div>
-              <div className="mt-2 text-center">
-                <p className="text-sm font-bold text-primary-foreground">{t.qrCallout}</p>
-                <p className="text-xs opacity-75 mt-1">{t.qrSubtext}</p>
+              <div className="mt-1 text-center">
+                <p className="text-xs font-bold text-primary-foreground">{t.qrCallout}</p>
+                <p className="text-[10px] opacity-75">{t.qrSubtext}</p>
               </div>
             </div>
           </div>
