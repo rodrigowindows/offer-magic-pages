@@ -193,7 +193,7 @@ export const CampaignManager = () => {
   // Remove filter
   const removeFilter = (id: string) => setActiveFilters(prev => prev.filter(f => f.id !== id));
 
-  // Helper to check if property has skiptrace phones (includes all person phones)
+  // Helper to check if property has skiptrace phones (includes all person phones + tags)
   const hasSkiptracePhones = (prop: CampaignProperty): boolean => {
     // Main person phones
     if (prop.phone1 || prop.phone2 || prop.phone3 || prop.phone4 || prop.phone5 || prop.phone6 || prop.phone7) return true;
@@ -203,10 +203,12 @@ export const CampaignManager = () => {
     if (prop.person2_phone1 || prop.person2_phone2 || prop.person2_phone3 || prop.person2_phone4 || prop.person2_phone5 || prop.person2_phone6 || prop.person2_phone7) return true;
     // Person 3 phones
     if (prop.person3_phone1 || prop.person3_phone2 || prop.person3_phone3 || prop.person3_phone4 || prop.person3_phone5 || prop.person3_phone6 || prop.person3_phone7) return true;
+    // Check tags for pref_phone: or manual_phone:
+    if (Array.isArray(prop.tags) && prop.tags.some(t => typeof t === 'string' && (t.startsWith('pref_phone:') || t.startsWith('manual_phone:')))) return true;
     return false;
   };
 
-  // Helper to check if property has skiptrace emails (includes all person emails)
+  // Helper to check if property has skiptrace emails (includes all person emails + tags)
   const hasSkiptraceEmails = (prop: CampaignProperty): boolean => {
     // Main person emails
     if (prop.email1 || prop.email2) return true;
@@ -214,6 +216,8 @@ export const CampaignManager = () => {
     if (prop.person2_email1 || prop.person2_email2) return true;
     // Person 3 emails
     if (prop.person3_email1 || prop.person3_email2) return true;
+    // Check tags for pref_email: or manual_email:
+    if (Array.isArray(prop.tags) && prop.tags.some(t => typeof t === 'string' && (t.startsWith('pref_email:') || t.startsWith('manual_email:')))) return true;
     return false;
   };
 
