@@ -193,14 +193,28 @@ export const CampaignManager = () => {
   // Remove filter
   const removeFilter = (id: string) => setActiveFilters(prev => prev.filter(f => f.id !== id));
 
-  // Helper to check if property has skiptrace phones (phone1-7)
+  // Helper to check if property has skiptrace phones (includes all person phones)
   const hasSkiptracePhones = (prop: CampaignProperty): boolean => {
-    return !!(prop.phone1 || prop.phone2 || prop.phone3 || prop.phone4 || prop.phone5 || prop.phone6 || prop.phone7);
+    // Main person phones
+    if (prop.phone1 || prop.phone2 || prop.phone3 || prop.phone4 || prop.phone5 || prop.phone6 || prop.phone7) return true;
+    // Owner phone
+    if (prop.owner_phone) return true;
+    // Person 2 phones
+    if (prop.person2_phone1 || prop.person2_phone2 || prop.person2_phone3 || prop.person2_phone4 || prop.person2_phone5 || prop.person2_phone6 || prop.person2_phone7) return true;
+    // Person 3 phones
+    if (prop.person3_phone1 || prop.person3_phone2 || prop.person3_phone3 || prop.person3_phone4 || prop.person3_phone5 || prop.person3_phone6 || prop.person3_phone7) return true;
+    return false;
   };
 
-  // Helper to check if property has skiptrace emails (email1-2)
+  // Helper to check if property has skiptrace emails (includes all person emails)
   const hasSkiptraceEmails = (prop: CampaignProperty): boolean => {
-    return !!(prop.email1 || prop.email2);
+    // Main person emails
+    if (prop.email1 || prop.email2) return true;
+    // Person 2 emails
+    if (prop.person2_email1 || prop.person2_email2) return true;
+    // Person 3 emails
+    if (prop.person3_email1 || prop.person3_email2) return true;
+    return false;
   };
 
   // Count properties with skiptrace data
