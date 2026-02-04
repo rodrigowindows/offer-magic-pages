@@ -235,7 +235,7 @@ export const CashOfferLetter = ({
             <p className="text-sm opacity-90 mb-3 font-medium">{t.orText}</p>
             <div className="flex flex-col items-center gap-2">
               <div className="bg-white p-3 rounded-lg shadow-lg">
-                <QRCodeSVG value={offerUrl} size={120} level="H" />
+                <QRCodeSVG value={offerUrl} size={144} level="H" />
               </div>
               <div className="mt-2 text-center">
                 <p className="text-sm font-bold text-primary-foreground">{t.qrCallout}</p>
