@@ -131,7 +131,7 @@ export const CashOfferLetter = ({
   const savings = estimatedValue - averageOffer;
   
   return (
-    <div className="print:scale-[2.8] print:origin-top-left print:w-[35.71%]">
+    <div className="print:scale-[3.3] print:origin-top-left print:w-[30.3%]">
       <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden">
         {/* Professional Header */}
         <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 print:p-4 text-center">
