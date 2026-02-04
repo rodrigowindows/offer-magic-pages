@@ -162,6 +162,9 @@ export const CampaignManager = () => {
     estimatedTimeRemaining: '0s'
   });
 
+  // SMS delay configuration (in milliseconds)
+  const [smsDelay, setSmsDelay] = useState<number>(1000);
+
   // Simulation states
   const [simulating, setSimulating] = useState(false);
   const [showSimulationModal, setShowSimulationModal] = useState(false);
@@ -171,10 +174,13 @@ export const CampaignManager = () => {
   // Toggle theme
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
 
-  // Update progress
+  // Update progress - considers SMS delay for time estimation
   const updateProgress = (completed: number, total: number, success: number, fail: number) => {
     const remaining = total - completed;
-    const avgTime = 0.5; // seconds per message
+    // Calculate average time per message considering SMS delay (in seconds)
+    const baseTime = 0.5; // base time per API call in seconds
+    const delaySeconds = selectedChannel === 'sms' ? smsDelay / 1000 : 0;
+    const avgTime = baseTime + delaySeconds;
     const estimatedSeconds = Math.round(remaining * avgTime);
     const estimatedTimeRemaining = estimatedSeconds > 60
       ? `${Math.round(estimatedSeconds / 60)}m`
@@ -832,7 +838,15 @@ export const CampaignManager = () => {
 
         // Send to ALL phones, not just the first one
         let successCount = 0;
-        for (const phone of allPhones) {
+        for (let phoneIndex = 0; phoneIndex < allPhones.length; phoneIndex++) {
+          const phone = allPhones[phoneIndex];
+          
+          // Apply SMS delay between messages (not before first one)
+          if (phoneIndex > 0 && smsDelay > 0) {
+            console.log(`⏱️ Aguardando ${smsDelay}ms antes de enviar para ${phone}...`);
+            await new Promise(resolve => setTimeout(resolve, smsDelay));
+          }
+          
           try {
             await sendSMS({
               phone_number: phone,
@@ -852,16 +866,16 @@ export const CampaignManager = () => {
               metadata: {
                 template_id: selectedTemplate.id,
                 template_name: selectedTemplate.name,
-                contact_index: allPhones.indexOf(phone),
+                contact_index: phoneIndex,
                 total_contacts: allPhones.length,
-                batch_index: globalIndex
+                batch_index: globalIndex,
+                sms_delay_ms: smsDelay
               }
             });
 
             successCount++;
-            messagesSent++; // Increment total messages sent
+            messagesSent++;
             sent = true;
-            // Removed break - continue to next phone number
           } catch (error) {
             lastError = error;
             console.error(`SMS failed for ${phone}:`, error);
@@ -2414,6 +2428,33 @@ export const CampaignManager = () => {
                     <Label className="text-sm font-medium">Canal</Label>
                     <p className="text-sm text-muted-foreground">{selectedChannel.toUpperCase()}</p>
                   </div>
+                  
+                  {/* SMS Delay Configuration - Only show for SMS channel */}
+                  {selectedChannel === 'sms' && (
+                    <div className="col-span-2 mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        ⏱️ Delay entre envios de SMS
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Tempo de espera entre cada mensagem SMS para evitar bloqueios
+                      </p>
+                      <Select value={smsDelay.toString()} onValueChange={(value) => setSmsDelay(parseInt(value))}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="500">500ms (rápido)</SelectItem>
+                          <SelectItem value="1000">1 segundo</SelectItem>
+                          <SelectItem value="2000">2 segundos</SelectItem>
+                          <SelectItem value="5000">5 segundos</SelectItem>
+                          <SelectItem value="10000">10 segundos</SelectItem>
+                          <SelectItem value="15000">15 segundos</SelectItem>
+                          <SelectItem value="30000">30 segundos</SelectItem>
+                          <SelectItem value="60000">1 minuto</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
