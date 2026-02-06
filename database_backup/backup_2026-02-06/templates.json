@@ -1,0 +1,98 @@
+[
+  {
+    "id": "call-voicemail-urgent",
+    "name": "Urgent Voicemail",
+    "channel": "call",
+    "subject": "",
+    "body": "Hi {name}, {seller_name} from {company_name}. URGENT: Our cash offer of {cash_offer} for {address} expires in 24 hours. This is a unique opportunity - view full details at {property_url} or call immediately at {phone}. Don't miss out!",
+    "is_default": false,
+    "edited_manually": false,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-01-13T22:57:41.244196+00:00"
+  },
+  {
+    "id": "call-voicemail-follow-up",
+    "name": "Follow-up Voicemail",
+    "channel": "call",
+    "subject": "",
+    "body": "Hi {name}, {seller_name} from {company_name} following up. Our {cash_offer} cash offer for your property at {address} is still available. No fees, no hassle. See all details at {property_url} or call when you can: {phone}.",
+    "is_default": false,
+    "edited_manually": false,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-01-13T22:57:41.244196+00:00"
+  },
+  {
+    "id": "sms-cash-offer-default",
+    "name": "Cash Offer Standard",
+    "channel": "sms",
+    "subject": "",
+    "body": "Hi {name}! We have a personalized offer for your property at {address}. Valid for 7 days. See details: {property_url} Call: {phone}",
+    "is_default": true,
+    "edited_manually": true,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-02-02T17:37:07.919018+00:00"
+  },
+  {
+    "id": "sms-urgent",
+    "name": "Urgent SMS",
+    "channel": "sms",
+    "subject": "",
+    "body": "🚨 LAST CHANCE: {name}! {property_url} Call: {phone}offer expires today! View now: {property_url} Call NOW: {phone}",
+    "is_default": false,
+    "edited_manually": false,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-02-02T17:37:42.836112+00:00"
+  },
+  {
+    "id": "sms-follow-up",
+    "name": "Follow-up SMS",
+    "channel": "sms",
+    "subject": "",
+    "body": "Hi {name}, our offer for {address} is still available. We can close fast! Details: {property_url} Call: {phone}",
+    "is_default": false,
+    "edited_manually": false,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-02-02T17:38:08.923408+00:00"
+  },
+  {
+    "id": "call-voicemail-default",
+    "name": "Default Voicemail",
+    "channel": "call",
+    "subject": "",
+    "body": "Hi {name}, this is {seller_name} from {company_name}. We have a cash offer for your property at {address}. We can close in as little as 7 days with no repairs needed. call us back at {phone}. Thank you!",
+    "is_default": true,
+    "edited_manually": true,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-02-04T15:34:04.253567+00:00"
+  },
+  {
+    "id": "email-follow-up",
+    "name": "Follow-up Email",
+    "channel": "email",
+    "subject": "Following up on your property at {address}",
+    "body": "<!DOCTYPE html>\n<html>...</html>",
+    "is_default": false,
+    "edited_manually": false,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-01-23T21:26:45.706863+00:00"
+  },
+  {
+    "id": "email-cash-offer-default",
+    "name": "Default Email",
+    "channel": "email",
+    "subject": "Cash Offer for Your Property at {address}",
+    "body": "<!DOCTYPE html>\n<html>...</html>",
+    "is_default": true,
+    "edited_manually": true,
+    "version": 1,
+    "created_at": "2026-01-01T00:00:00+00:00",
+    "updated_at": "2026-01-23T21:17:58.802318+00:00"
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "4d73f088-87d5-4400-af53-f860830c2c8b",
+    "property_id": "47c4a989-f115-4763-9953-68834a0719e1",
+    "full_name": "Rodrigo Martins Alves",
+    "email": "malloryk14@gmail.com",
+    "phone": "2405814595",
+    "is_owner": true,
+    "selling_timeline": "exploring",
+    "interest_level": "high",
+    "status": "new",
+    "contacted": false,
+    "contacted_at": null,
+    "contacted_by": null,
+    "offer_viewed_at": null,
+    "ip_address": null,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+    "notes": null,
+    "created_at": "2026-01-16T13:59:26.437754+00:00",
+    "updated_at": "2026-01-16T13:59:26.437754+00:00"
+  }
+]
