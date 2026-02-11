@@ -50,14 +50,15 @@ const createPropertySlug = (address: string, city: string, zip: string): string 
   return `${addressSlug}-${citySlug}-${zip}`;
 };
 
-// Generate property URL
+// Generate property URL with server-side tracking
 const generatePropertyUrl = (property: any, channel: Channel): string => {
   const propertySlug = createPropertySlug(
     property.address || 'property',
     property.city || 'orlando',
     property.zip_code || '00000'
   );
-  return `https://offer.mylocalinvest.com/property/${propertySlug}?src=${channel.toLowerCase()}`;
+  // Use server-side tracking URL for reliable mobile analytics capture
+  return `https://atwdkhlyrffbaugkaker.supabase.co/functions/v1/track-link-click?slug=${propertySlug}&src=${channel.toLowerCase()}`;
 };
 
 // Generate QR Code URL

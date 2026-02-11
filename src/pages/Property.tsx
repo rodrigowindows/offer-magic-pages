@@ -41,7 +41,17 @@ const Property = () => {
 
   useEffect(() => {
     if (slug) {
-      fetchProperty(slug);
+      // Check if already tracked server-side via track-link-click edge function
+      const urlParams = new URLSearchParams(INITIAL_SEARCH || window.location.search);
+      const isServerTracked = urlParams.get('tracked') === '1' || 
+        document.referrer.includes('functions/v1/track-link-click') ||
+        sessionStorage.getItem('server_tracked_' + slug) === 'true';
+      
+      if (isServerTracked) {
+        try { sessionStorage.setItem('server_tracked_' + slug, 'true'); } catch(e) {}
+      }
+      
+      fetchProperty(slug, isServerTracked);
     }
   }, [slug]);
 
@@ -191,7 +201,7 @@ const Property = () => {
     }
   };
 
-  const fetchProperty = async (propertySlug: string) => {
+  const fetchProperty = async (propertySlug: string, skipTracking = false) => {
     const { data, error } = await supabase
       .from("properties")
       .select("*")
@@ -203,8 +213,10 @@ const Property = () => {
       console.error("Error fetching property:", error);
     } else {
       setProperty(data);
-      if (data) {
+      if (data && !skipTracking) {
         trackAnalytics(data.id, 'page_view');
+      } else if (data && skipTracking) {
+        console.log('📊 [Property] Skipping client-side tracking (already tracked server-side)');
       }
     }
     setLoading(false);
