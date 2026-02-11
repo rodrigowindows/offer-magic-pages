@@ -35,15 +35,17 @@ const Property = () => {
 
   const trackAnalytics = async (propertyId: string, eventType: string) => {
     try {
-      // Get tracking parameters from URL
-      const source = searchParams.get('src') || searchParams.get('source') || 'direct';
-      const campaign = searchParams.get('campaign') || searchParams.get('c') || null;
-      const contactPhone = searchParams.get('phone') || searchParams.get('p') || null;
-      const contactEmail = searchParams.get('email') || searchParams.get('e') || null;
-      const contactName = searchParams.get('name') || searchParams.get('n') || null;
-      const utmSource = searchParams.get('utm_source');
-      const utmMedium = searchParams.get('utm_medium');
-      const utmCampaign = searchParams.get('utm_campaign');
+      // Use window.location.search as primary source (more reliable on mobile)
+      // React's useSearchParams can be empty on first render in some mobile browsers
+      const urlParams = new URLSearchParams(window.location.search);
+      const source = urlParams.get('src') || urlParams.get('source') || searchParams.get('src') || searchParams.get('source') || 'direct';
+      const campaign = urlParams.get('campaign') || urlParams.get('c') || searchParams.get('campaign') || searchParams.get('c') || null;
+      const contactPhone = urlParams.get('phone') || urlParams.get('p') || searchParams.get('phone') || searchParams.get('p') || null;
+      const contactEmail = urlParams.get('email') || urlParams.get('e') || searchParams.get('email') || searchParams.get('e') || null;
+      const contactName = urlParams.get('name') || urlParams.get('n') || searchParams.get('name') || searchParams.get('n') || null;
+      const utmSource = urlParams.get('utm_source') || searchParams.get('utm_source');
+      const utmMedium = urlParams.get('utm_medium') || searchParams.get('utm_medium');
+      const utmCampaign = urlParams.get('utm_campaign') || searchParams.get('utm_campaign');
 
       console.log('📊 [Property] Track Analytics Called:', {
         propertyId,
