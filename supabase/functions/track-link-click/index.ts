@@ -38,13 +38,29 @@ const handler = async (req: Request): Promise<Response> => {
       const siteUrl = 'https://offer.mylocalinvest.com';
       const fullLandingUrl = `${siteUrl}/property/${slug}${url.search}`;
       
-      // Find property
-      const { data: property } = await supabase
+      // Find property - try exact match first, then partial match
+      let property = null;
+      const { data: exactMatch } = await supabase
         .from('properties')
         .select('id')
         .eq('slug', slug)
         .eq('status', 'active')
         .maybeSingle();
+      
+      property = exactMatch;
+      
+      // If no exact match, try matching just the address part (first segment before city-zip)
+      if (!property) {
+        const { data: likeMatch } = await supabase
+          .from('properties')
+          .select('id')
+          .ilike('slug', `${slug.split('-').slice(0, -2).join('-')}%`)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+        property = likeMatch;
+        if (property) console.log(`Matched property via partial slug: ${slug}`);
+      }
 
       if (property) {
         // Get location
