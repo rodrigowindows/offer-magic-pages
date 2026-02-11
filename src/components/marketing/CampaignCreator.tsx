@@ -206,7 +206,8 @@ export default function CampaignCreator() {
 
   const generatePropertyUrl = (property: CampaignProperty, source: string = 'sms'): string => {
     const slug = createPropertySlug(property.address, property.city, property.zip_code);
-    return `https://offer.mylocalinvest.com/property/${slug}?src=${source}`;
+    // Use server-side tracking URL for reliable mobile analytics capture
+    return `https://atwdkhlyrffbaugkaker.supabase.co/functions/v1/track-link-click?slug=${slug}&src=${source}`;
   };
 
   const generateTemplateContent = (template: SavedTemplate, property: CampaignProperty) => {

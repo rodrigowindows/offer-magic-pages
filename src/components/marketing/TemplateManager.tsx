@@ -75,13 +75,11 @@ const createPropertySlug = (address: string, city: string, zip: string): string 
   return `${addressSlug}-${citySlug}-${zip}`;
 };
 
-// Helper functions for template URLs and tracking
+// Helper functions for template URLs and tracking (server-side tracking for mobile reliability)
 const generatePropertyUrl = (address: string = '25217 MATHEW ST', city: string = 'UNINCORPORATED', zip: string = '32709', sourceChannel: string = 'email') => {
-  // Create SEO-friendly slug: "25217-mathew-st-unincorporated-32709"
   const propertySlug = createPropertySlug(address, city, zip);
-
-  // Build URL with source tracking: https://offer.mylocalinvest.com/property/25217-mathew-st-unincorporated-32709?src=email
-  return `https://offer.mylocalinvest.com/property/${propertySlug}?src=${sourceChannel.toLowerCase()}`;
+  // Use server-side tracking URL for reliable mobile analytics capture
+  return `https://atwdkhlyrffbaugkaker.supabase.co/functions/v1/track-link-click?slug=${propertySlug}&src=${sourceChannel.toLowerCase()}`;
 };
 
 const generateQrCodeUrl = (address: string = '25217 MATHEW ST', city: string = 'UNINCORPORATED', zip: string = '32709', sourceChannel: string = 'email') => {

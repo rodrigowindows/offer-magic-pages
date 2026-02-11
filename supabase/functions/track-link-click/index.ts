@@ -15,33 +15,101 @@ const handler = async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
     const trackingId = url.searchParams.get("id");
     const redirectUrl = url.searchParams.get("redirect");
+    // NEW: Support direct slug+src params for SMS/campaign links
+    const slug = url.searchParams.get("slug");
+    const srcParam = url.searchParams.get("src") || url.searchParams.get("source") || 'direct';
+    const campaignParam = url.searchParams.get("campaign") || null;
 
-    console.log(`Link click tracking request - ID: ${trackingId}, Redirect: ${redirectUrl}`);
-
-    if (!trackingId) {
-      console.error("No tracking ID provided");
-      return new Response("Missing tracking ID", { 
-        status: 400,
-        headers: corsHeaders 
-      });
-    }
+    console.log(`Link click tracking request - ID: ${trackingId}, Redirect: ${redirectUrl}, Slug: ${slug}, Src: ${srcParam}`);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get device/IP info
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const realIp = req.headers.get('x-real-ip');
+    const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
+    const deviceType = /Mobile|Android|iPhone/i.test(userAgent) ? 'mobile' : /Tablet|iPad/i.test(userAgent) ? 'tablet' : 'desktop';
+
+    // === MODE 1: Direct slug-based tracking (for SMS/email campaign links) ===
+    if (slug) {
+      const siteUrl = 'https://offer.mylocalinvest.com';
+      const fullLandingUrl = `${siteUrl}/property/${slug}${url.search}`;
+      
+      // Find property
+      const { data: property } = await supabase
+        .from('properties')
+        .select('id')
+        .eq('slug', slug)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (property) {
+        // Get location
+        let city = null, country = null;
+        try {
+          const ipResp = await fetch(`http://ip-api.com/json/${ipAddress}`);
+          const ipData = await ipResp.json();
+          if (ipData.status === 'success') { city = ipData.city; country = ipData.country; }
+        } catch (_e) { /* ignore */ }
+
+        const validSources = ['email', 'sms', 'carta', 'letter', 'call', 'email-qr', 'sms-qr', 'carta-qr', 'letter-qr', 'qr'];
+        const sourceType = validSources.includes(srcParam) ? srcParam : 'direct';
+
+        // Save to property_analytics (server-side, 100% reliable)
+        await supabase.from('property_analytics').insert({
+          property_id: property.id,
+          event_type: 'page_view',
+          referrer: fullLandingUrl,
+          user_agent: userAgent,
+          ip_address: ipAddress,
+          city, country,
+          device_type: deviceType,
+          source: sourceType,
+        });
+        console.log(`✅ Server-side analytics saved: slug=${slug}, source=${sourceType}, device=${deviceType}`);
+
+        // Update campaign_logs
+        if (['email', 'sms', 'call', 'letter', 'carta'].includes(srcParam)) {
+          const { data: cl } = await supabase.from('campaign_logs')
+            .select('id, click_count')
+            .eq('property_id', property.id)
+            .eq('channel', srcParam)
+            .order('sent_at', { ascending: false })
+            .limit(1).maybeSingle();
+          if (cl) {
+            await supabase.from('campaign_logs').update({
+              link_clicked: true,
+              click_count: (cl.click_count || 0) + 1,
+              first_response_at: cl.click_count ? undefined : new Date().toISOString(),
+            }).eq('id', cl.id);
+            console.log(`✅ Campaign click tracked: ${cl.id}`);
+          }
+        }
+      }
+
+      // Redirect to property page (keep src param so page knows source)
+      return new Response(null, {
+        status: 302,
+        headers: { ...corsHeaders, "Location": `${siteUrl}/property/${slug}?src=${srcParam}&tracked=1` },
+      });
+    }
+
+    // === MODE 2: Legacy tracking-ID based (existing behavior) ===
+    if (!trackingId) {
+      return new Response("Missing tracking ID or slug", { status: 400, headers: corsHeaders });
+    }
+
     // Extract click source from redirect URL if present
-    let clickSource = 'direct';
-    if (redirectUrl) {
+    let clickSource = srcParam;
+    if (clickSource === 'direct' && redirectUrl) {
       try {
         const redirectUrlObj = new URL(redirectUrl);
-        const srcParam = redirectUrlObj.searchParams.get('src');
-        if (srcParam) {
-          clickSource = srcParam;
-        }
-      } catch (urlError) {
-        console.log('Could not parse redirect URL for source:', urlError);
-      }
+        const rSrc = redirectUrlObj.searchParams.get('src');
+        if (rSrc) clickSource = rSrc;
+      } catch (_urlError) { /* ignore */ }
     }
 
     // Find the campaign log

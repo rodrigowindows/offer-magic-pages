@@ -23,6 +23,12 @@ export const generatePropertySlug = (property: {
 /**
  * Gera URL completa da propriedade com parâmetros de tracking
  */
+/**
+ * URL da edge function de tracking server-side
+ * Captura source/campaign no servidor antes de redirecionar (funciona 100% no mobile)
+ */
+const TRACK_CLICK_URL = `https://atwdkhlyrffbaugkaker.supabase.co/functions/v1/track-link-click`;
+
 export const generatePropertyUrl = (
   property: {
     id: string;
@@ -39,9 +45,33 @@ export const generatePropertyUrl = (
 };
 
 /**
+ * Gera URL trackável via server-side redirect (recomendado para SMS/email campaigns)
+ * O clique passa pela edge function que salva analytics antes de redirecionar
+ */
+export const generateTrackedPropertyUrl = (
+  property: {
+    id: string;
+    address: string;
+    city: string;
+    state: string;
+    zip_code: string;
+  },
+  sourceChannel: 'sms' | 'email' | 'call' = 'sms',
+  campaign?: string
+): string => {
+  const slug = generatePropertySlug(property);
+  const params = new URLSearchParams({ slug, src: sourceChannel });
+  if (campaign) params.set('campaign', campaign);
+  return `${TRACK_CLICK_URL}?${params.toString()}`;
+};
+
+/**
  * Gera URL de tracking para cliques em links
  * Note: Tracking is now handled via pixel and analytics, not URL redirect
  * Returns direct property URL for better user experience
+ */
+/**
+ * @deprecated Use generateTrackedPropertyUrl instead for server-side tracking
  */
 export const generateTrackableUrl = (
   property: {
@@ -54,8 +84,6 @@ export const generateTrackableUrl = (
   sourceChannel: 'sms' | 'email' | 'call' = 'sms',
   trackingId?: string
 ): string => {
-  // Always return direct property URL
-  // Tracking is handled via pixel and analytics, not URL redirect
-  const propertyUrl = generatePropertyUrl(property, sourceChannel);
-  return propertyUrl;
+  // Use server-side tracking for reliable mobile capture
+  return generateTrackedPropertyUrl(property, sourceChannel);
 };
