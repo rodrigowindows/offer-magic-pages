@@ -3,9 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Phone, Mail, Download } from "lucide-react";
+import { Check, Phone, Mail, Download, Loader2 } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
 
 interface UltraSimpleVariantProps {
   property: OfferData & {
@@ -20,6 +23,10 @@ interface UltraSimpleVariantProps {
 export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const [showContactForm, setShowContactForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [formType, setFormType] = useState<'accept' | 'questions'>('accept');
+  const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -31,20 +38,121 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
 
   const handleAccept = () => {
     trackABEvent(property.id, 'ultra-simple', 'clicked_accept');
+    setFormType('accept');
     setShowContactForm(true);
   };
 
   const handleQuestions = () => {
     trackABEvent(property.id, 'ultra-simple', 'clicked_questions');
-    // Open contact form or modal
+    setFormType('questions');
     setShowContactForm(true);
+  };
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    trackABEvent(property.id, 'ultra-simple', 'clicked_download_pdf');
+    try {
+      const offerAmount = property.cash_offer_amount || property.estimated_value * 0.7;
+      const doc = new jsPDF();
+      
+      doc.setFillColor(34, 197, 94);
+      doc.rect(0, 0, 210, 40, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(22);
+      doc.text('Cash Offer Letter', 105, 18, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text('My Local Invest', 105, 28, { align: 'center' });
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
+      doc.text('Property:', 20, 55);
+      doc.setFontSize(12);
+      doc.text(`${property.address}, ${property.city}, ${property.state}`, 20, 63);
+
+      doc.setFontSize(14);
+      doc.text('Your Fair Cash Offer:', 20, 80);
+      doc.setFontSize(28);
+      doc.setTextColor(34, 197, 94);
+      doc.text(formatCurrency(offerAmount), 20, 95);
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(14);
+      doc.text('What We Offer:', 20, 115);
+      doc.setFontSize(11);
+      const benefits = [
+        '✓ Close in 7-14 Days - Fast closing guaranteed',
+        '✓ No Repairs Needed - We buy as-is',
+        '✓ No Realtor Fees - Save thousands',
+        '✓ No Hidden Costs - What you see is what you get',
+        '✓ No Obligation - Accept or decline freely',
+      ];
+      benefits.forEach((b, i) => doc.text(b, 25, 125 + i * 8));
+
+      doc.setFontSize(14);
+      doc.text('Ready to move forward?', 20, 175);
+      doc.setFontSize(11);
+      doc.text('Visit: https://offer.mylocalinvest.com', 20, 185);
+      doc.text('Or call us to discuss this offer.', 20, 193);
+
+      doc.setFontSize(9);
+      doc.setTextColor(128, 128, 128);
+      doc.text(`Generated on ${new Date().toLocaleDateString()}`, 105, 280, { align: 'center' });
+
+      doc.save(`Cash-Offer-${property.address.replace(/\s+/g, '-')}.pdf`);
+
+      await supabase.from('property_analytics').insert({
+        property_id: property.id,
+        event_type: 'pdf_download',
+        user_agent: navigator.userAgent,
+        referrer: document.referrer || 'direct',
+      });
+
+      toast({ title: "PDF Downloaded!", description: "Your offer letter has been saved." });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({ title: "Error", description: "Failed to generate PDF.", variant: "destructive" });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     trackABEvent(property.id, 'ultra-simple', 'form_submitted', formData);
-    // Save to database
-    alert('Thanks! We\'ll contact you shortly.');
+    
+    try {
+      const { error } = await supabase.from('property_leads').insert({
+        property_id: property.id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        source: 'property_page',
+        status: formType === 'accept' ? 'interested' : 'question',
+        notes: formType === 'accept' ? 'Accepted offer from property page' : 'Has questions about offer',
+      });
+
+      if (error) throw error;
+
+      await supabase.from('property_analytics').insert({
+        property_id: property.id,
+        event_type: formType === 'accept' ? 'offer_accepted' : 'inquiry_submitted',
+        user_agent: navigator.userAgent,
+        referrer: document.referrer || 'direct',
+      });
+
+      toast({
+        title: formType === 'accept' ? "Offer Accepted!" : "Question Received!",
+        description: "We'll contact you shortly.",
+      });
+      setFormData({ name: '', email: '', phone: '' });
+      setShowContactForm(false);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const offerType = getOfferType(property);
@@ -112,9 +220,9 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                     <Mail className="mr-2 h-5 w-5" />
                     I Have Questions
                   </Button>
-                  <Button variant="outline" size="lg">
-                    <Download className="mr-2 h-5 w-5" />
-                    Download PDF
+                  <Button variant="outline" size="lg" onClick={handleDownloadPDF} disabled={isDownloading}>
+                    {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
+                    {isDownloading ? 'Generating...' : 'Download PDF'}
                   </Button>
                 </div>
               </div>
@@ -150,9 +258,9 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  <Phone className="mr-2 h-5 w-5" />
-                  Submit - We'll Call You
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Phone className="mr-2 h-5 w-5" />}
+                  {isSubmitting ? 'Submitting...' : "Submit - We'll Call You"}
                 </Button>
               </form>
             )}
