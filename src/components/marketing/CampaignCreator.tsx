@@ -58,6 +58,7 @@ import type { SavedTemplate, Channel } from '@/types/marketing.types';
 
 interface CampaignProperty {
   id: string;
+  slug: string;
   address: string;
   city: string;
   state: string;
@@ -205,7 +206,8 @@ export default function CampaignCreator() {
   };
 
   const generatePropertyUrl = (property: CampaignProperty, source: string = 'sms'): string => {
-    const slug = createPropertySlug(property.address, property.city, property.zip_code);
+    // Use the real slug from the database for reliable matching
+    const slug = property.slug || createPropertySlug(property.address, property.city, property.zip_code);
     // Use server-side tracking URL for reliable mobile analytics capture
     return `https://atwdkhlyrffbaugkaker.supabase.co/functions/v1/track-link-click?slug=${slug}&src=${source}`;
   };

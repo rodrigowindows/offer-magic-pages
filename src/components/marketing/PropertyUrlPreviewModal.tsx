@@ -52,7 +52,8 @@ const createPropertySlug = (address: string, city: string, zip: string): string 
 
 // Generate property URL with server-side tracking
 const generatePropertyUrl = (property: any, channel: Channel): string => {
-  const propertySlug = createPropertySlug(
+  // Use the real slug from the database for reliable matching
+  const propertySlug = property.slug || createPropertySlug(
     property.address || 'property',
     property.city || 'orlando',
     property.zip_code || '00000'
