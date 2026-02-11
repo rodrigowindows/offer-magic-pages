@@ -21,6 +21,18 @@ interface PropertyData {
   zillow_url: string | null;
 }
 
+// Capture query params IMMEDIATELY on script load (before React hydration can lose them)
+const INITIAL_SEARCH = window.location.search;
+const INITIAL_HREF = window.location.href;
+
+// Also persist to sessionStorage so they survive any SPA navigation
+if (INITIAL_SEARCH && INITIAL_SEARCH.length > 1) {
+  try {
+    sessionStorage.setItem('landing_params', INITIAL_SEARCH);
+    sessionStorage.setItem('landing_href', INITIAL_HREF);
+  } catch (e) { /* ignore */ }
+}
+
 const Property = () => {
   const { slug } = useParams();
   const [searchParams] = useSearchParams();
@@ -35,23 +47,34 @@ const Property = () => {
 
   const trackAnalytics = async (propertyId: string, eventType: string) => {
     try {
-      // Use window.location.search as primary source (more reliable on mobile)
-      // React's useSearchParams can be empty on first render in some mobile browsers
-      const urlParams = new URLSearchParams(window.location.search);
-      const source = urlParams.get('src') || urlParams.get('source') || searchParams.get('src') || searchParams.get('source') || 'direct';
-      const campaign = urlParams.get('campaign') || urlParams.get('c') || searchParams.get('campaign') || searchParams.get('c') || null;
-      const contactPhone = urlParams.get('phone') || urlParams.get('p') || searchParams.get('phone') || searchParams.get('p') || null;
-      const contactEmail = urlParams.get('email') || urlParams.get('e') || searchParams.get('email') || searchParams.get('e') || null;
-      const contactName = urlParams.get('name') || urlParams.get('n') || searchParams.get('name') || searchParams.get('n') || null;
-      const utmSource = urlParams.get('utm_source') || searchParams.get('utm_source');
-      const utmMedium = urlParams.get('utm_medium') || searchParams.get('utm_medium');
-      const utmCampaign = urlParams.get('utm_campaign') || searchParams.get('utm_campaign');
+      // Use multiple fallback sources for query params (mobile browsers often lose them)
+      // Priority: 1) Captured at script load, 2) sessionStorage, 3) current window, 4) React Router
+      const savedSearch = sessionStorage.getItem('landing_params') || '';
+      const initialParams = new URLSearchParams(INITIAL_SEARCH);
+      const savedParams = new URLSearchParams(savedSearch);
+      const currentParams = new URLSearchParams(window.location.search);
+      
+      const getParam = (key: string): string | null => {
+        return initialParams.get(key) || savedParams.get(key) || currentParams.get(key) || searchParams.get(key);
+      };
+
+      const source = getParam('src') || getParam('source') || 'direct';
+      const campaign = getParam('campaign') || getParam('c') || null;
+      const contactPhone = getParam('phone') || getParam('p') || null;
+      const contactEmail = getParam('email') || getParam('e') || null;
+      const contactName = getParam('name') || getParam('n') || null;
+      const utmSource = getParam('utm_source');
+      const utmMedium = getParam('utm_medium');
+      const utmCampaign = getParam('utm_campaign');
 
       console.log('📊 [Property] Track Analytics Called:', {
         propertyId,
         eventType,
         source,
         campaign,
+        initialSearch: INITIAL_SEARCH,
+        savedSearch: sessionStorage.getItem('landing_params'),
+        currentSearch: window.location.search,
         hasContact: !!(contactPhone || contactEmail || contactName)
       });
 
@@ -101,11 +124,13 @@ const Property = () => {
       const validSources = ['email', 'sms', 'carta', 'letter', 'call', 'email-qr', 'sms-qr', 'carta-qr', 'letter-qr', 'qr'];
       const sourceType = validSources.includes(source) ? source : (source.startsWith('email') || source.startsWith('sms') || source.startsWith('carta') || source.startsWith('letter') || source.startsWith('call')) ? source : 'direct';
 
+      const landingHref = sessionStorage.getItem('landing_href') || INITIAL_HREF || window.location.href;
+      
       // Save to property_analytics table with source column
       const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
         property_id: propertyId,
         event_type: eventType,
-        referrer: window.location.href, // Save full URL with query params like ?src=sms
+        referrer: landingHref, // Save full landing URL with query params
         user_agent: navigator.userAgent,
         ip_address: ipData?.ip || null,
         city: ipData?.city || null,
