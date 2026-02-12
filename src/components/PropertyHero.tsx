@@ -1,8 +1,10 @@
 import { MapPin, Home } from "lucide-react";
 import { useEffect, useState } from "react";
+import { generateTrackedPropertyUrlBySlug } from "@/utils/urlUtils";
 
 interface PropertyHeroProps {
   address?: string;
+  propertySlug?: string;
   imageUrl?: string;
   qrCodeUrl?: string;
   offerValue?: number | string;
@@ -10,6 +12,7 @@ interface PropertyHeroProps {
 
 const PropertyHero = ({ 
   address = "123 Main Street, Miami, FL 33101",
+  propertySlug,
   imageUrl = "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80",
   qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://mylocalinvest.com",
   offerValue = "$70,000"
@@ -30,6 +33,10 @@ const PropertyHero = ({
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     setImageError(true);
   };
+
+  const fallbackSlug = address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const trackedOfferUrl = generateTrackedPropertyUrlBySlug(propertySlug || fallbackSlug, 'sms');
+
   return (
     <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-12 md:py-20">
       <div className="container mx-auto px-4">
@@ -136,7 +143,7 @@ const PropertyHero = ({
                 {/* Property Link */}
                 <div className="mt-6 pt-4 border-t border-gray-200">
                   <a
-                    href={`https://offer.mylocalinvest.com/property/${address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}?src=sms`}
+                    href={trackedOfferUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-sm"

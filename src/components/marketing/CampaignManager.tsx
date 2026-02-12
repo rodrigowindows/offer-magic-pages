@@ -76,6 +76,7 @@ import { sendSMS, sendEmail, initiateCall, checkHealth } from '@/services/market
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplatesDB';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
+import { generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 
 // Colunas de telefone disponíveis na tabela properties
 const PHONE_COLUMNS = [
@@ -104,6 +105,7 @@ const EMAIL_COLUMNS = [
 
 interface CampaignProperty {
   id: string;
+  slug?: string;
   address: string;
   city: string;
   state: string;
@@ -295,10 +297,10 @@ export const CampaignManager = () => {
 
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     // Use SEO-friendly slug: "1025-s-washington-ave"
-    const propertySlug = createPropertySlug(prop.address);
-    const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
+    const propertySlug = prop.slug || createPropertySlug(prop.address);
+    const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, selectedChannel);
     // QR Code URL has different source to track QR scans separately
-    const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}-qr`;
+    const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${selectedChannel}-qr`);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 
     // Google Maps static image for property location
@@ -349,14 +351,13 @@ export const CampaignManager = () => {
     console.log('🔧 [generateTemplateContent] property_image_url:', (prop as any).property_image_url);
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     // Use SEO-friendly slug for property URL (address only)
-    const propertySlug = createPropertySlug(prop.address);
-    const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}`;
+    const propertySlug = prop.slug || createPropertySlug(prop.address);
+    const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, selectedChannel);
     // QR Code URL has different source to track QR scans separately
-    const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}?src=${selectedChannel}-qr`;
+    const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${selectedChannel}-qr`);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 
-    // Use direct property URL without wrapping in tracking redirect
-    // Tracking is handled via pixel and analytics, not URL redirect
+    // Campaign URLs always use server-side track-link-click for reliable source capture.
     const trackablePropertyUrl = propertyUrl;
 
     const trackingPixel = trackingId ? `<img src="${window.location.origin}/track/open?tid=${trackingId}" width="1" height="1" style="display:none;" alt="" />` : '';
@@ -400,7 +401,7 @@ export const CampaignManager = () => {
 
   // Build select columns based on selected phone/email columns
   const getSelectColumns = () => {
-    const baseColumns = ['id', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'tags', 'property_image_url', 'estimated_value'];
+    const baseColumns = ['id', 'slug', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'tags', 'property_image_url', 'estimated_value'];
     const phoneCol = selectedPhoneColumn;
     const emailCol = selectedEmailColumn;
     

@@ -49,6 +49,7 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
 
       <PropertyHero 
         address={fullAddress}
+        propertySlug={property.slug}
         imageUrl={imageUrl}
         qrCodeUrl={qrCodeUrl}
         offerValue={property.cash_offer_amount}

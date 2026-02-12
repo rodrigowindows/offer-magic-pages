@@ -18,6 +18,7 @@ const handler = async (req: Request): Promise<Response> => {
     // NEW: Support direct slug+src params for SMS/campaign links
     const slug = url.searchParams.get("slug");
     const srcParam = url.searchParams.get("src") || url.searchParams.get("source") || 'direct';
+    const normalizedSrcParam = srcParam.trim().toLowerCase();
     const campaignParam = url.searchParams.get("campaign") || null;
 
     console.log(`Link click tracking request - ID: ${trackingId}, Redirect: ${redirectUrl}, Slug: ${slug}, Src: ${srcParam}`);
@@ -71,8 +72,11 @@ const handler = async (req: Request): Promise<Response> => {
           if (ipData.status === 'success') { city = ipData.city; country = ipData.country; }
         } catch (_e) { /* ignore */ }
 
-        const validSources = ['email', 'sms', 'carta', 'letter', 'call', 'email-qr', 'sms-qr', 'carta-qr', 'letter-qr', 'qr'];
-        const sourceType = validSources.includes(srcParam) ? srcParam : 'direct';
+        const validSources = [
+          'email', 'sms', 'whatsapp', 'carta', 'letter', 'call',
+          'email-qr', 'sms-qr', 'whatsapp-qr', 'call-qr', 'carta-qr', 'letter-qr', 'qr'
+        ];
+        const sourceType = validSources.includes(normalizedSrcParam) ? normalizedSrcParam : 'direct';
 
         // Save to property_analytics (server-side, 100% reliable)
         await supabase.from('property_analytics').insert({
@@ -88,11 +92,11 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`✅ Server-side analytics saved: slug=${slug}, source=${sourceType}, device=${deviceType}`);
 
         // Update campaign_logs
-        if (['email', 'sms', 'call', 'letter', 'carta'].includes(srcParam)) {
+        if (['email', 'sms', 'call', 'letter', 'carta', 'whatsapp'].includes(normalizedSrcParam)) {
           const { data: cl } = await supabase.from('campaign_logs')
             .select('id, click_count')
             .eq('property_id', property.id)
-            .eq('channel', srcParam)
+            .eq('channel', normalizedSrcParam)
             .order('sent_at', { ascending: false })
             .limit(1).maybeSingle();
           if (cl) {
@@ -109,7 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
       // Redirect to property page (keep src param so page knows source)
       return new Response(null, {
         status: 302,
-        headers: { ...corsHeaders, "Location": `${siteUrl}/property/${slug}?src=${srcParam}&tracked=1` },
+        headers: { ...corsHeaders, "Location": `${siteUrl}/property/${slug}?src=${normalizedSrcParam}&tracked=1` },
       });
     }
 
@@ -119,7 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Extract click source from redirect URL if present
-    let clickSource = srcParam;
+    let clickSource = normalizedSrcParam;
     if (clickSource === 'direct' && redirectUrl) {
       try {
         const redirectUrlObj = new URL(redirectUrl);

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { sendEmail } from "@/services/marketingService";
+import { generateTrackedPropertyUrlBySlug } from "@/utils/urlUtils";
 import type { OfferConfig } from "./OfferConfiguration";
 
 interface Property {
@@ -56,7 +57,10 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
     });
   }
 
-  const offerUrl = `${window.location.origin}/property/${property.slug}`;
+  const getTrackedOfferUrl = (source: string) =>
+    generateTrackedPropertyUrlBySlug(property.slug, source);
+  const smsOfferUrl = getTrackedOfferUrl("sms");
+  const emailOfferUrl = getTrackedOfferUrl("email");
 
   // Gerar texto baseado na configuração da oferta
   const getOfferText = () => {
@@ -69,8 +73,8 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   const offerText = getOfferText();
 
   const smsText = language === "en"
-    ? `Hi${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! ${offerText} cash for ${property.address}. No repairs, close in 7 days. Reply YES → ${offerUrl}?src=sms`
-    : `¡Hola${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! ${offerText} en efectivo por ${property.address}. Sin reparaciones, cierre en 7 días. Responda SÍ → ${offerUrl}?src=sms`;
+    ? `Hi${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! ${offerText} cash for ${property.address}. No repairs, close in 7 days. Reply YES → ${smsOfferUrl}`
+    : `¡Hola${property.owner_name ? ` ${property.owner_name.split(' ')[0]}` : ''}! ${offerText} en efectivo por ${property.address}. Sin reparaciones, cierre en 7 días. Responda SÍ → ${smsOfferUrl}`;
 
   const whatsappText = encodeURIComponent(smsText);
   const whatsappUrl = property.owner_phone 
@@ -94,7 +98,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   };
 
   const handleCopyUrl = (source: string) => {
-    const url = `${offerUrl}?src=${source}`;
+    const url = getTrackedOfferUrl(source);
     navigator.clipboard.writeText(url);
     toast({
       title: "Link copied",
@@ -160,7 +164,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
             <p>This offer is valid for 30 days from the date of this letter. To accept this offer, please contact us at:</p>
             <p><strong>Phone:</strong> ${phone}</p>
             <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Website:</strong> <a href="${offerUrl}">${offerUrl}</a></p>
+            <p><strong>Website:</strong> <a href="${emailOfferUrl}">${emailOfferUrl}</a></p>
             <div class="signature">
               <p>Sincerely,</p>
               <p><strong>MyLocalInvest Team</strong></p>
@@ -338,28 +342,28 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">Letter:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=letter</code>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{getTrackedOfferUrl('letter')}</code>
                     <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("letter")}>
                       <Copy className="w-3 h-3" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">SMS:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=sms</code>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{getTrackedOfferUrl('sms')}</code>
                     <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("sms")}>
                       <Copy className="w-3 h-3" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">WhatsApp:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=whatsapp</code>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{getTrackedOfferUrl('whatsapp')}</code>
                     <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("whatsapp")}>
                       <Copy className="w-3 h-3" />
                     </Button>
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-muted-foreground">Email:</span>
-                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{offerUrl}?src=email</code>
+                    <code className="flex-1 px-2 py-1 bg-muted rounded text-xs truncate">{getTrackedOfferUrl('email')}</code>
                     <Button size="sm" variant="ghost" onClick={() => handleCopyUrl("email")}>
                       <Copy className="w-3 h-3" />
                     </Button>

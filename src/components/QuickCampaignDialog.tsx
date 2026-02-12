@@ -18,6 +18,7 @@ import { useMarketing } from '@/hooks/useMarketing';
 import { useTemplates } from '@/hooks/useTemplatesDB';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { supabase } from '@/integrations/supabase/client';
+import { generatePropertySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 import {
   Rocket,
   MessageSquare,
@@ -34,6 +35,7 @@ import {
 
 interface Property {
   id: string;
+  slug?: string;
   address: string;
   city: string;
   state: string;
@@ -539,9 +541,15 @@ export const QuickCampaignDialog = ({
     let subject = template.subject || '';
 
     const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
-    const propertyUrl = `https://offer.mylocalinvest.com/property/${property.id}?src=${channel}`;
+    const propertySlug = property.slug || generatePropertySlug({
+      address: property.address,
+      city: property.city,
+      state: property.state,
+      zip_code: property.zip_code,
+    });
+    const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, channel);
     // QR Code URL has different source to track QR scans separately
-    const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${property.id}?src=${channel}-qr`;
+    const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${channel}-qr`);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
     const trackingPixel = generateTrackingPixel(property.id, channel);
     const unsubscribeUrl = generateUnsubscribeUrl(property.id);

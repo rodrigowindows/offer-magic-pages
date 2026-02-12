@@ -48,6 +48,7 @@ import type { SavedTemplate } from '@/types/marketing.types';
 import { useFeatureToggle } from '@/contexts/FeatureToggleContext';
 import { useTrackFeature } from '@/hooks/useTrackFeature';
 import { useAdaptiveContactHelpers, useActivePreset } from '@/hooks/useFeatureToggleHelpers';
+import { generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 
 interface CampaignTemplate {
   id: string;
@@ -62,6 +63,7 @@ interface CampaignTemplate {
 
 interface Property {
   id: string;
+  slug?: string;
   address: string;
   city: string;
   state: string;
@@ -218,7 +220,7 @@ const createPropertySlug = (address: string, city: string, zip: string): string 
 const renderTemplateContent = (content: string, property: any, channel?: string): string => {
   if (!property || typeof property !== 'object') {
     // Fallback values when no property is available
-    const fallbackPropertyUrl = 'https://offer.mylocalinvest.com/property/sample?src=preview';
+    const fallbackPropertyUrl = generateTrackedPropertyUrlBySlug('sample', channel || 'preview');
     const fallbackQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(fallbackPropertyUrl)}`;
 
     const fallbackReplacements: Record<string, string> = {
@@ -244,19 +246,16 @@ const renderTemplateContent = (content: string, property: any, channel?: string)
   }
 
   // Create SEO-friendly URL slug: "25217-mathew-st-unincorporated-32709"
-  const propertySlug = createPropertySlug(
+  const propertySlug = property.slug || createPropertySlug(
     property.address || 'property',
     property.city || 'orlando',
     property.zip_code || '00000'
   );
-
-  // Build tracking URL based on channel
-  const sourceParam = channel ? `?src=${channel}` : '?src=campaign';
-  const propertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}${sourceParam}`;
+  const sourceChannel = channel || 'campaign';
+  const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, sourceChannel);
 
   // Generate QR code with different source to track QR scans separately
-  const qrSourceParam = channel ? `?src=${channel}-qr` : '?src=campaign-qr';
-  const qrPropertyUrl = `https://offer.mylocalinvest.com/property/${propertySlug}${qrSourceParam}`;
+  const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${sourceChannel}-qr`);
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
 
   // Unsubscribe URL (can be improved with property-specific tokens)
@@ -285,7 +284,7 @@ const renderTemplateContent = (content: string, property: any, channel?: string)
     '{qr_code_url}': qrCodeUrl,
     '{unsubscribe_url}': unsubscribeUrl,
     '{tracking_pixel}': trackingPixel,
-    '{source_channel}': channel || 'campaign'
+    '{source_channel}': sourceChannel
   };
 
   return content.replace(/{([^}]+)}/g, (match, key) => {
@@ -373,6 +372,7 @@ export const CampaignWizard = () => {
     try {
       let query = supabase.from('properties').select(`
         id,
+        slug,
         address,
         city,
         state,
