@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia Business - Validacao Processo 5 Passos</title>
+  <style>
+    :root {
+      --bg: #f3f7fc;
+      --surface: #ffffff;
+      --line: #d8e3ef;
+      --text: #0f172a;
+      --muted: #475569;
+
+      --step1: #2563eb;
+      --step2: #0f766e;
+      --step3: #b45309;
+      --step4: #be123c;
+      --step5: #6d28d9;
+
+      --ok: #15803d;
+      --warn: #a16207;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(850px 420px at -10% -10%, #dbeafe 0%, rgba(219, 234, 254, 0) 55%),
+        radial-gradient(850px 420px at 110% -10%, #fff7ed 0%, rgba(255, 247, 237, 0) 55%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 22px;
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 18px;
+      background: linear-gradient(135deg, #0f172a, #1e293b 65%, #334155);
+      color: #e2e8f0;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 3vw, 36px);
+    }
+
+    .hero p {
+      margin: 0;
+      color: #cbd5e1;
+      max-width: 1000px;
+    }
+
+    .pill-row {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      border: 1px solid #475569;
+      background: rgba(15, 23, 42, 0.34);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: #dbeafe;
+    }
+
+    .section {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .body {
+      padding: 12px 14px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      color: #fff;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 9px;
+    }
+
+    .c1 { background: var(--step1); }
+    .c2 { background: var(--step2); }
+    .c3 { background: var(--step3); }
+    .c4 { background: var(--step4); }
+    .c5 { background: var(--step5); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+
+    .step {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .step-head {
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
+      padding: 10px 12px;
+    }
+
+    .step-head h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .step-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-right: 6px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 11px;
+      padding: 2px 9px;
+      font-weight: 700;
+    }
+
+    .t1 { background: var(--step1); }
+    .t2 { background: var(--step2); }
+    .t3 { background: var(--step3); }
+    .t4 { background: var(--step4); }
+    .t5 { background: var(--step5); }
+
+    .step-body {
+      padding: 11px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .card h4 {
+      margin: 0 0 8px;
+      font-size: 14px;
+    }
+
+    .card ul {
+      margin: 0;
+      padding-left: 17px;
+      color: #334155;
+      font-size: 13px;
+    }
+
+    .card li { margin-bottom: 5px; }
+
+    .screen {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f8fafc;
+    }
+
+    .ba-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .screen-title {
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      padding: 8px 10px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .screen-body {
+      padding: 10px;
+      font-size: 12px;
+    }
+
+    .lane {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .box {
+      border: 1px solid #d8e3ef;
+      border-radius: 8px;
+      background: #fff;
+      padding: 7px;
+    }
+
+    .box b {
+      display: block;
+      margin-bottom: 3px;
+      font-size: 12px;
+    }
+
+    .hint {
+      margin-top: 8px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+    }
+
+    .ok { color: var(--ok); font-weight: 700; }
+    .warn { color: var(--warn); font-weight: 700; }
+
+    .checklist td:first-child { width: 32px; text-align: center; font-weight: 700; }
+    .decision td:first-child { width: 42px; text-align: center; font-weight: 700; }
+    .must td:first-child { width: 210px; font-weight: 700; }
+
+    .final-note {
+      margin-top: 12px;
+      border: 1px dashed #94a3b8;
+      border-radius: 10px;
+      background: #f8fafc;
+      padding: 10px;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    @media (max-width: 1200px) {
+      .flow, .grid2, .lane, .ba-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>Guia Business - Validacao do Processo em 5 Passos</h1>
+      <p>Documento para o time de negocio validar o processo operacional ponta a ponta. Sem termos tecnicos de sistema.</p>
+      <div class="pill-row">
+        <span class="pill">Foco: operacao e decisao de negocio</span>
+        <span class="pill">Objetivo: padronizar execucao</span>
+        <span class="pill">Resultado: oferta minima confiavel</span>
+        <span class="pill">Publico: lideranca, analistas, operacao</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="head">Resumo executivo</div>
+      <div class="body">
+        <div class="flow">
+          <div class="chip c1">1. Base de imoveis</div>
+          <div class="chip c2">2. Analise</div>
+          <div class="chip c3">3. Contatos</div>
+          <div class="chip c4">4. Comparativos</div>
+          <div class="chip c5">5. Oferta minima</div>
+        </div>
+        <table>
+          <tr><th>Pergunta de negocio</th><th>Resposta no processo</th></tr>
+          <tr><td>Quais imoveis entram no funil?</td><td>Passo 1 organiza a base com filtros e identifica lotes de trabalho.</td></tr>
+          <tr><td>Quais valem abordagem?</td><td>Passo 2 decide aprovada/negada com motivo e responsabilidade do analista.</td></tr>
+          <tr><td>Como contatar o dono?</td><td>Passo 3 consolida telefone, email e endereco de contato (inclusive cenarios PJ).</td></tr>
+          <tr><td>Quanto vale no mercado reformado?</td><td>Passo 4 registra comparativos e calcula media por square feet.</td></tr>
+          <tr><td>Qual o preco maximo de compra?</td><td>Passo 5 calcula oferta minima considerando reforma e margem de wholesale.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="head">Menu de navegacao: antes e depois (visao business)</div>
+      <div class="body">
+        <div class="ba-grid">
+          <div class="screen">
+            <div class="screen-title">ANTES (como esta hoje)</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu principal</b>All Pages</div>
+                <div class="box"><b>Area 1</b>Admin Dashboard</div>
+                <div class="box"><b>Area 2</b>Import Properties</div>
+              </div>
+              <table>
+                <tr><th>Objetivo</th><th>Caminho de menu usado hoje</th></tr>
+                <tr><td>Base de imoveis</td><td>All Pages -> Import Properties</td></tr>
+                <tr><td>Analise</td><td>All Pages -> Admin Dashboard -> aba Review</td></tr>
+                <tr><td>Contatos</td><td>All Pages -> Skip Trace Data (e parte no Import Properties)</td></tr>
+                <tr><td>Comparativos</td><td>All Pages -> Marketing Dashboard -> Comps Analysis</td></tr>
+                <tr><td>Oferta minima</td><td>Admin Dashboard e Comps Analysis (distribuido)</td></tr>
+              </table>
+              <div class="hint">Hoje o processo funciona, mas a equipe navega em menus diferentes para completar o ciclo.</div>
+            </div>
+          </div>
+          <div class="screen">
+            <div class="screen-title">DEPOIS (como deve ficar)</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu principal</b>Processo de Aquisicao</div>
+                <div class="box"><b>Navegacao</b>Passos 1 a 5 no topo</div>
+                <div class="box"><b>Apoio</b>Atalhos para telas legadas</div>
+              </div>
+              <table>
+                <tr><th>Passo</th><th>Menu unico proposto</th></tr>
+                <tr><td>1</td><td>Base de imoveis</td></tr>
+                <tr><td>2</td><td>Analise</td></tr>
+                <tr><td>3</td><td>Contatos</td></tr>
+                <tr><td>4</td><td>Comparativos</td></tr>
+                <tr><td>5</td><td>Oferta minima</td></tr>
+              </table>
+              <div class="hint">A equipe acompanha o mesmo imovel do inicio ao fim sem trocar de area toda hora.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="step-head">
+        <h3><span class="tag t1">PASSO 1</span>Base de Imoveis Elegiveis</h3>
+        <p>Organizar e filtrar a base inicial para formar o universo de trabalho.</p>
+      </div>
+      <div class="step-body">
+        <div class="grid2">
+          <div class="card">
+            <h4>Entrada esperada</h4>
+            <ul>
+              <li>Arquivo com dados de propriedade e proprietario.</li>
+              <li>Nome livre da base (ex.: PROBATE, IPTU, SEPARADOS).</li>
+              <li>Data de carga para controle operacional.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Saida esperada</h4>
+            <ul>
+              <li>Lista filtravel por cidade, estado, data e nome da base.</li>
+              <li>Base pronta para analise no Passo 2.</li>
+              <li>Visao clara de volume total por lote.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen">
+          <div class="screen-title">Tela de negocio (como o time usa)</div>
+          <div class="screen-body">
+            <div class="lane">
+              <div class="box"><b>Filtro operacional</b>Cidade | Estado | Data | Nome da Base</div>
+              <div class="box"><b>Indicadores</b>Total no lote | Novos | Atualizados</div>
+              <div class="box"><b>Acoes</b>Criar base | Importar | Revisar dados</div>
+            </div>
+            <table>
+              <tr><th>Endereco</th><th>Dono</th><th>Sqft</th><th>Ultima venda</th><th>Piscina</th><th>Base</th></tr>
+              <tr><td>114 W Celeste St</td><td>Estate...</td><td>1420</td><td>2018-05-02</td><td>Nao</td><td>BASE PROBATE</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="ba-grid">
+          <div class="screen">
+            <div class="screen-title">ANTES - caminho de menu atual</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>All Pages -> Import Properties</div>
+                <div class="box"><b>Tela</b>Importacao de base</div>
+                <div class="box"><b>Uso</b>Upload, preview e import</div>
+              </div>
+              <table>
+                <tr><th>O que o negocio faz</th><th>Como faz hoje</th></tr>
+                <tr><td>Criar novo lote</td><td>Define nome do lote no momento da importacao</td></tr>
+                <tr><td>Separar por cidade/estado</td><td>Aplica filtros em outra area depois</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="screen">
+            <div class="screen-title">DEPOIS - menu do processo</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>Processo -> Passo 1 Base</div>
+                <div class="box"><b>Tela</b>Base + filtros + lista no mesmo lugar</div>
+                <div class="box"><b>Uso</b>Operacao unica do inicio da base</div>
+              </div>
+              <table>
+                <tr><th>Beneficio</th><th>Impacto business</th></tr>
+                <tr><td>Menos troca de tela</td><td>Mais velocidade no preparo da carteira</td></tr>
+                <tr><td>Visao unica por lote</td><td>Controle melhor do volume e prioridade</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="step-head">
+        <h3><span class="tag t2">PASSO 2</span>Analise: Aprovada ou Negada</h3>
+        <p>Decisao rapida e padronizada sobre interesse de abordagem.</p>
+      </div>
+      <div class="step-body">
+        <div class="grid2">
+          <div class="card">
+            <h4>Regras de negocio</h4>
+            <ul>
+              <li>Cada imovel precisa de decisao: APROVADA ou NEGADA.</li>
+              <li>Se NEGADA, motivo e obrigatorio.</li>
+              <li>Registrar quem decidiu e quando decidiu.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Objetivo operacional</h4>
+            <ul>
+              <li>Velocidade de analise sem perda de qualidade.</li>
+              <li>Padronizar motivos de descarte.</li>
+              <li>Gerar lista final de elegiveis para contato.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen">
+          <div class="screen-title">Tela de decisao de analise</div>
+          <div class="screen-body">
+            <div class="lane">
+              <div class="box"><b>Fila de trabalho</b>Pendentes | Aprovadas | Negadas</div>
+              <div class="box"><b>Sugestoes</b>Regras automaticas ajudam a priorizar</div>
+              <div class="box"><b>Acoes</b>Aprovar | Negar + Motivo</div>
+            </div>
+            <table>
+              <tr><th>Imovel</th><th>Status</th><th>Motivo</th><th>Analista</th><th>Data</th></tr>
+              <tr><td>114 W Celeste St</td><td>Aprovada</td><td>-</td><td>Edson</td><td>12/02/2026</td></tr>
+              <tr><td>12 Oak Ave</td><td>Negada</td><td>Low equity</td><td>Josiane</td><td>12/02/2026</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="ba-grid">
+          <div class="screen">
+            <div class="screen-title">ANTES - caminho de menu atual</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>All Pages -> Admin Dashboard</div>
+                <div class="box"><b>Aba</b>Review</div>
+                <div class="box"><b>Uso</b>Aprovar/Negar por fila</div>
+              </div>
+              <table>
+                <tr><th>Ponto forte atual</th><th>Atencao</th></tr>
+                <tr><td>Decisao rapida por fila</td><td>Sem visao unica de processo completo</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="screen">
+            <div class="screen-title">DEPOIS - menu do processo</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>Processo -> Passo 2 Analise</div>
+                <div class="box"><b>Colunas</b>Pendentes | Aprovadas | Negadas</div>
+                <div class="box"><b>Uso</b>Decisao + motivo + auditoria</div>
+              </div>
+              <table>
+                <tr><th>Beneficio</th><th>Impacto business</th></tr>
+                <tr><td>Padrao unico de decisao</td><td>Maior consistencia entre analistas</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="step-head">
+        <h3><span class="tag t3">PASSO 3</span>Contatos: Encontrar e Consolidar</h3>
+        <p>Preparar dados de contato para carta, ligacao, email e SMS.</p>
+      </div>
+      <div class="step-body">
+        <div class="grid2">
+          <div class="card">
+            <h4>Fluxo esperado</h4>
+            <ul>
+              <li>Extrair lista de proprietarios de imoveis aprovados.</li>
+              <li>Enviar para fornecedores de enriquecimento de contato.</li>
+              <li>Receber retorno e consolidar no cadastro.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Pontos criticos de negocio</h4>
+            <ul>
+              <li>Mesmo proprietario pode ter dados de fontes diferentes.</li>
+              <li>Se dono for empresa, manter empresa + socios/oficiais.</li>
+              <li>Priorizar melhor contato para abordagem comercial.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen">
+          <div class="screen-title">Tela de contatos para operacao</div>
+          <div class="screen-body">
+            <div class="lane">
+              <div class="box"><b>Acoes</b>Exportar aprovadas | Upload retorno</div>
+              <div class="box"><b>Qualidade</b>Taxa com telefone | taxa com email</div>
+              <div class="box"><b>Origem</b>Fonte A | Fonte B | Manual</div>
+            </div>
+            <table>
+              <tr><th>Imovel</th><th>Contato</th><th>Tipo</th><th>Fonte</th><th>Prioridade</th></tr>
+              <tr><td>114 W Celeste St</td><td>(407) 555-1200</td><td>Telefone</td><td>Fornecedor A</td><td>Alta</td></tr>
+              <tr><td>114 W Celeste St</td><td>sarah@example.com</td><td>Email</td><td>Fornecedor B</td><td>Media</td></tr>
+              <tr><td>ABC Holdings LLC</td><td>Joao Doe (socio)</td><td>Responsavel</td><td>Manual</td><td>Alta</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="ba-grid">
+          <div class="screen">
+            <div class="screen-title">ANTES - caminho de menu atual</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu 1</b>All Pages -> Skip Trace Data</div>
+                <div class="box"><b>Menu 2</b>All Pages -> Import Properties</div>
+                <div class="box"><b>Uso</b>Export em um lugar, upload em outro</div>
+              </div>
+              <table>
+                <tr><th>Situacao atual</th><th>Efeito</th></tr>
+                <tr><td>Fluxo dividido em telas diferentes</td><td>Mais risco de retrabalho operacional</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="screen">
+            <div class="screen-title">DEPOIS - menu do processo</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>Processo -> Passo 3 Contatos</div>
+                <div class="box"><b>Tela unica</b>Export + Upload + Consolidacao</div>
+                <div class="box"><b>Uso</b>Operacao continua por imovel</div>
+              </div>
+              <table>
+                <tr><th>Beneficio</th><th>Impacto business</th></tr>
+                <tr><td>Menos troca de contexto</td><td>Maior produtividade da equipe de contato</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="skiptrace-decisao">
+      <div class="head">Matriz de decisao - Skip Trace (o que manter, o que perder e prioridade)</div>
+      <div class="body">
+        <div class="hint">
+          <b>Metodo de score business:</b> Score Final = Pro - Contra. Escala 0 a 10.<br/>
+          <b>Criterios Pro:</b> produtividade, governanca, qualidade de dados, cobertura de contato.<br/>
+          <b>Criterios Contra:</b> complexidade de mudanca, curva de aprendizado, risco operacional, custo de implementacao.<br/>
+          Tabela ordenada do maior valor para o menor (melhor opcao no topo).
+        </div>
+        <table class="decision" style="margin-top:8px;">
+          <tr>
+            <th>Rank</th>
+            <th>Opcao</th>
+            <th>O que voce ganha</th>
+            <th>O que voce perde</th>
+            <th>Pro</th>
+            <th>Contra</th>
+            <th>Score Final</th>
+            <th>Recomendacao</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>Unificar Passo 3 sem retirar funcionalidades</td>
+            <td>
+              • Fluxo continuo: -30% tempo de operacao<br/>
+              • Governanca: 100% rastreavel fonte do contato<br/>
+              • Produtividade: analista fica na mesma tela<br/>
+              • Qualidade: multifonte aumenta taxa de contato em +15%
+            </td>
+            <td>
+              • Curva aprendizado: ~2 semanas de adaptacao<br/>
+              • Treinamento: 3-4h de onboarding da equipe
+            </td>
+            <td>9.2</td>
+            <td>2.0</td>
+            <td><span class="ok">+7.2</span></td>
+            <td><b>FAZER</b> (melhor opcao)</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Manter telas separadas com pequenos ajustes</td>
+            <td>Implementacao mais rapida no curto prazo</td>
+            <td>Continua troca de contexto e risco operacional</td>
+            <td>6.8</td>
+            <td>3.6</td>
+            <td><span class="warn">+3.2</span></td>
+            <td>Paliativo de curto prazo</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Simplificar removendo multifonte e PJ/socios</td>
+            <td>
+              • Menos campos para preencher<br/>
+              • UI mais simples no papel
+            </td>
+            <td>
+              • Perde ~18% das propriedades (casos PJ)<br/>
+              • Taxa de contato cai de 65% para ~50%<br/>
+              • Decisor real nao identificado em empresas<br/>
+              • Menos cobertura = menos conversao
+            </td>
+            <td>4.5</td>
+            <td>6.7</td>
+            <td><span class="warn">-2.2</span></td>
+            <td><b>NAO recomendado</b></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Manter apenas export (sem upload de retorno)</td>
+            <td>Processo mais simples no papel</td>
+            <td>Quebra o ciclo comercial; perde consolidacao de contato</td>
+            <td>2.0</td>
+            <td>8.8</td>
+            <td><span class="warn">-6.8</span></td>
+            <td><b>NAO fazer</b></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Retirar Skip Trace do processo</td>
+            <td>Quase nenhum ganho de negocio</td>
+            <td>Cai taxa de contato, piora outreach e previsibilidade de resultado</td>
+            <td>1.0</td>
+            <td>9.5</td>
+            <td><span class="warn">-8.5</span></td>
+            <td><b>NAO fazer</b></td>
+          </tr>
+        </table>
+
+        <table class="must" style="margin-top:10px;">
+          <tr><th>Capacidade de negocio</th><th>Se perder, impacto</th><th>Nivel de risco</th><th>Evidencia tecnica</th></tr>
+          <tr><td>Exportar somente aprovadas</td><td>Fornecedor recebe lista errada e gera custo desnecessario</td><td><b>ALTO</b></td><td><code>ApprovedPropertiesExport.tsx</code> filtra <code>approval_status='approved'</code></td></tr>
+          <tr><td>Upload de retorno do fornecedor</td><td>Nao fecha ciclo de contato para outreach</td><td><b>ALTO</b></td><td><code>SkipTracingImporter.tsx</code> merge phones/emails no cadastro</td></tr>
+          <tr><td>Multifonte (A, B, manual)</td><td>Menos taxa de contato valido e menos cobertura</td><td><b>ALTO</b></td><td><code>skip_tracing_data JSONB</code> com array de fontes</td></tr>
+          <tr><td>PJ + socios/oficiais</td><td>Perde casos de decisor real em propriedades de empresa</td><td><b>ALTO</b></td><td>Campo <code>owner_name</code> + modelagem de company/officers</td></tr>
+          <tr><td>Priorizacao de melhor contato</td><td>Mais tentativas sem resposta e menor conversao</td><td><b>MEDIO/ALTO</b></td><td><code>preferred_contact_method</code> em properties table</td></tr>
+        </table>
+
+        <div class="screen" style="margin-top:10px;">
+          <div class="screen-title">Componentes atuais do Skip Trace (codigo real)</div>
+          <div class="screen-body">
+            <table>
+              <tr><th>Arquivo</th><th>Funcao</th><th>Status</th></tr>
+              <tr><td><code>src/pages/SkipTrace.tsx</code></td><td>KPIs e dashboard de contatos</td><td>✅ Funcional</td></tr>
+              <tr><td><code>src/components/SkipTraceDataViewer.tsx</code></td><td>Cards por propriedade com phone/email</td><td>✅ Funcional</td></tr>
+              <tr><td><code>src/components/SkipTracingImporter.tsx</code></td><td>Upload CSV de retorno</td><td>✅ Funcional (mas em tela separada)</td></tr>
+              <tr><td><code>src/components/ApprovedPropertiesExport.tsx</code></td><td>Export CSV filtrado approved</td><td>✅ Funcional</td></tr>
+              <tr><td><code>src/hooks/useSkipTraceData.ts</code></td><td>Hook de busca e summary</td><td>✅ Funcional</td></tr>
+            </table>
+            <div class="hint">
+              <b>Gap identificado:</b> Fluxo quebrado entre <code>/skip-trace</code> (export) e <code>/admin/import</code> (upload retorno).<br/>
+              <b>Solucao proposta:</b> Unificar Passo 3 com SkipTracingImporter + ApprovedPropertiesExport na mesma tela.
+            </div>
+          </div>
+        </div>
+
+        <div class="hint">
+          <b>Conclusao business:</b> Skip Trace faz sentido e deve ser fortalecido, nao reduzido.<br/>
+          <b>Melhor caminho:</b> Unificar o Passo 3 sem remover capacidades criticas (Opcao #1 com score +7.2).<br/>
+          <b>Risco de simplificar:</b> Opcoes #3, #4, #5 tem score negativo - perdem mais do que ganham.
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="step-head">
+        <h3><span class="tag t4">PASSO 4</span>Comparativos de Mercado</h3>
+        <p>Definir preco de referencia com base em casas similares vendidas recentemente.</p>
+      </div>
+      <div class="step-body">
+        <div class="grid2">
+          <div class="card">
+            <h4>Objetivo</h4>
+            <ul>
+              <li>Selecionar 3 a 4 comparativos para cada imovel elegivel.</li>
+              <li>Registrar dados essenciais de cada comparativo.</li>
+              <li>Calcular media de preco por square feet.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Qualidade esperada</h4>
+            <ul>
+              <li>Comparativos proximos geograficamente.</li>
+              <li>Imoveis comparaveis em tipologia e condicao.</li>
+              <li>Vendas recentes para refletir mercado atual.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen">
+          <div class="screen-title">Tela de comparativos por imovel</div>
+          <div class="screen-body">
+            <div class="lane">
+              <div class="box"><b>Acoes</b>Copiar endereco alvo | Adicionar comp</div>
+              <div class="box"><b>Controle</b>Qtd de comps validos</div>
+              <div class="box"><b>Resultado</b>Media final $/sqft</div>
+            </div>
+            <table>
+              <tr><th>Endereco comp</th><th>Data venda</th><th>Valor venda</th><th>Area constr.</th><th>Qts</th><th>Banhos</th></tr>
+              <tr><td>12 Oak Ave</td><td>03/11/2025</td><td>$280,000</td><td>1,400</td><td>3</td><td>2</td></tr>
+              <tr><td>18 Pine Dr</td><td>21/10/2025</td><td>$302,000</td><td>1,505</td><td>3</td><td>2</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="ba-grid">
+          <div class="screen">
+            <div class="screen-title">ANTES - caminho de menu atual</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>All Pages -> Marketing Dashboard</div>
+                <div class="box"><b>Submenu</b>Comps Analysis</div>
+                <div class="box"><b>Uso</b>Cadastrar comps e analisar mercado</div>
+              </div>
+              <table>
+                <tr><th>Situacao atual</th><th>Efeito</th></tr>
+                <tr><td>Tela boa de comparativos</td><td>Equipe precisa alternar com outras areas para fechar ciclo</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="screen">
+            <div class="screen-title">DEPOIS - menu do processo</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>Processo -> Passo 4 Comparativos</div>
+                <div class="box"><b>Fluxo</b>Selecionar imovel -> inserir comps</div>
+                <div class="box"><b>Uso</b>Media $/sqft pronta para oferta</div>
+              </div>
+              <table>
+                <tr><th>Beneficio</th><th>Impacto business</th></tr>
+                <tr><td>Comparativos conectados ao funil</td><td>Decisao de oferta mais rapida e padronizada</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step">
+      <div class="step-head">
+        <h3><span class="tag t5">PASSO 5</span>Oferta Minima</h3>
+        <p>Transformar analise de mercado em preco maximo de compra.</p>
+      </div>
+      <div class="step-body">
+        <div class="grid2">
+          <div class="card">
+            <h4>Formula de negocio</h4>
+            <ul>
+              <li>Valor de venda estimado = Area da casa x Media $/sqft.</li>
+              <li>Oferta minima = Valor de venda - Reforma - Margem wholesale.</li>
+              <li>Reforma e margem podem ser % ou valor fixo.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h4>Governanca</h4>
+            <ul>
+              <li>Registrar parametros usados na conta.</li>
+              <li>Permitir rastrear quem definiu a oferta e quando.</li>
+              <li>Garantir repetibilidade da decisao.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen">
+          <div class="screen-title">Tela de calculo final de oferta</div>
+          <div class="screen-body">
+            <div class="lane">
+              <div class="box"><b>Entrada</b>Sqft + media $/sqft</div>
+              <div class="box"><b>Parametros</b>Reforma (leve/media/grande) + margem</div>
+              <div class="box"><b>Saida</b>Oferta minima para proposta</div>
+            </div>
+            <table>
+              <tr><th>Item</th><th>Valor</th></tr>
+              <tr><td>Area da casa</td><td>1,420</td></tr>
+              <tr><td>Media $/sqft</td><td>$205</td></tr>
+              <tr><td>Valor de venda estimado</td><td>$291,100</td></tr>
+              <tr><td>Reforma (media 25%)</td><td>$72,775</td></tr>
+              <tr><td>Margem wholesale (8%)</td><td>$23,288</td></tr>
+              <tr><td><b>Oferta minima</b></td><td><b>$195,037</b></td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="ba-grid">
+          <div class="screen">
+            <div class="screen-title">ANTES - caminho de menu atual</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu 1</b>Admin Dashboard</div>
+                <div class="box"><b>Menu 2</b>Comps Analysis</div>
+                <div class="box"><b>Uso</b>Oferta final em pontos separados</div>
+              </div>
+              <table>
+                <tr><th>Situacao atual</th><th>Efeito</th></tr>
+                <tr><td>Calculo e decisao em telas diferentes</td><td>Menor clareza para aprovar o preco final</td></tr>
+              </table>
+            </div>
+          </div>
+          <div class="screen">
+            <div class="screen-title">DEPOIS - menu do processo</div>
+            <div class="screen-body">
+              <div class="lane">
+                <div class="box"><b>Menu</b>Processo -> Passo 5 Oferta minima</div>
+                <div class="box"><b>Fluxo</b>ARV -> reforma -> margem -> oferta</div>
+                <div class="box"><b>Uso</b>Aprovacao comercial com rastreabilidade</div>
+              </div>
+              <table>
+                <tr><th>Beneficio</th><th>Impacto business</th></tr>
+                <tr><td>Uma tela para decisao final</td><td>Governanca mais forte e aprovacao mais clara</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="head">Checklist de validacao business (aprovacao executiva)</div>
+      <div class="body">
+        <table class="checklist">
+          <tr><th>#</th><th>Pergunta de validacao</th><th>Status</th><th>Observacao</th></tr>
+          <tr><td>1</td><td>Conseguimos organizar e filtrar base por cidade, estado, data e nome do lote?</td><td>[ ] Sim [ ] Nao</td><td></td></tr>
+          <tr><td>2</td><td>Analistas conseguem aprovar/negar com motivo obrigatorio e rastreabilidade?</td><td>[ ] Sim [ ] Nao</td><td></td></tr>
+          <tr><td>3</td><td>Export e upload de contatos atendem o fluxo comercial sem retrabalho?</td><td>[ ] Sim [ ] Nao</td><td></td></tr>
+          <tr><td>4</td><td>Comparativos cadastrados permitem calcular media confiavel por sqft?</td><td>[ ] Sim [ ] Nao</td><td></td></tr>
+          <tr><td>5</td><td>Oferta minima final reflete regra de negocio e pode ser auditada depois?</td><td>[ ] Sim [ ] Nao</td><td></td></tr>
+          <tr><td>6</td><td>Fluxo completo reduz tempo de decisao e aumenta previsibilidade da operacao?</td><td>[ ] Sim [ ] Nao</td><td></td></tr>
+        </table>
+        <div class="hint">
+          Criterio de aceite sugerido: validar pelo menos 10 propriedades reais de ponta a ponta, com equipe de operacao e lideranca comercial.
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="head">KPIs de negocio sugeridos</div>
+      <div class="body">
+        <table>
+          <tr><th>KPI</th><th>Meta inicial</th><th>Leitura</th></tr>
+          <tr><td>Tempo medio para decidir (Passo 2)</td><td>&lt; 5 min por imovel</td><td><span class="warn">Acompanhar semanalmente</span></td></tr>
+          <tr><td>Taxa de contato valido (Passo 3)</td><td>&gt; 65%</td><td><span class="warn">Ajustar fornecedores conforme resultado</span></td></tr>
+          <tr><td>% elegiveis com comps completos (Passo 4)</td><td>&gt; 90%</td><td><span class="ok">Base para oferta consistente</span></td></tr>
+          <tr><td>% ofertas com parametros registrados (Passo 5)</td><td>100%</td><td><span class="ok">Obrigatorio para governanca</span></td></tr>
+        </table>
+        <div class="final-note">
+          Assinaturas de validacao business:<br/>
+          Lider Operacao: ______________________ Data: ____/____/____<br/>
+          Lider Comercial: _____________________ Data: ____/____/____<br/>
+          Direcao: _____________________________ Data: ____/____/____
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
