@@ -11,6 +11,11 @@ interface AnalyticsRequest {
   eventType: string;
   referrer?: string;
   userAgent?: string;
+  source?: string;
+  ipAddress?: string;
+  city?: string;
+  country?: string;
+  deviceType?: string;
 }
 
 const getDeviceType = (userAgent: string): string => {
@@ -47,23 +52,33 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { propertyId, eventType, referrer, userAgent }: AnalyticsRequest = await req.json();
+    const { propertyId, eventType, referrer, userAgent, source, ipAddress, city, country, deviceType: clientDeviceType }: AnalyticsRequest = await req.json();
 
-    // Get IP address from request headers
+    // Get IP address - prefer client-provided, fallback to headers
     const forwardedFor = req.headers.get('x-forwarded-for');
     const realIp = req.headers.get('x-real-ip');
-    const ipAddress = forwardedFor?.split(',')[0] || realIp || 'unknown';
+    const finalIp = ipAddress || forwardedFor?.split(',')[0] || realIp || 'unknown';
 
     console.log('Tracking analytics:', {
       propertyId,
       eventType,
-      ipAddress,
+      source,
+      ipAddress: finalIp,
       userAgent,
     });
 
-    // Get location from IP
-    const location = await getLocationFromIP(ipAddress);
-    const deviceType = userAgent ? getDeviceType(userAgent) : 'unknown';
+    // Use client-provided location if available, otherwise lookup
+    let locationCity = city;
+    let locationCountry = country;
+    if (!locationCity && !locationCountry) {
+      const location = await getLocationFromIP(finalIp);
+      locationCity = location.city;
+      locationCountry = location.country;
+    }
+    const deviceType = clientDeviceType || (userAgent ? getDeviceType(userAgent) : 'unknown');
+
+    // Determine source - use provided source, default to 'direct'
+    const finalSource = source || 'direct';
 
     // Insert analytics data
     const { error } = await supabase
@@ -71,12 +86,13 @@ serve(async (req: Request) => {
       .insert({
         property_id: propertyId,
         event_type: eventType,
-        ip_address: ipAddress,
-        country: location.country,
-        city: location.city,
+        ip_address: finalIp,
+        country: locationCountry,
+        city: locationCity,
         user_agent: userAgent,
         referrer: referrer,
         device_type: deviceType,
+        source: finalSource,
       });
 
     if (error) {
