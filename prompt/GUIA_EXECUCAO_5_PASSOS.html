@@ -1,0 +1,595 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GUIA_EXECUCAO_5_PASSOS - AS-IS x TO-BE</title>
+  <style>
+    :root {
+      --bg: #edf2f9;
+      --surface: #ffffff;
+      --line: #d8e2ee;
+      --text: #0f172a;
+      --muted: #475569;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #a16207;
+      --red: #b91c1c;
+      --step1: #2563eb;
+      --step2: #0f766e;
+      --step3: #b45309;
+      --step4: #be123c;
+      --step5: #6d28d9;
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: radial-gradient(900px 420px at -10% -10%, #dbeafe 0%, rgba(219, 234, 254, 0) 55%), radial-gradient(900px 420px at 110% -10%, #fff7ed 0%, rgba(255, 247, 237, 0) 55%), var(--bg);
+      color: var(--text);
+      padding: 20px;
+      line-height: 1.4;
+    }
+    .container { max-width: 1480px; margin: 0 auto; }
+    .hero {
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 18px;
+      background: linear-gradient(135deg, #0f172a, #1e293b 60%, #334155);
+      color: #e2e8f0;
+      box-shadow: var(--shadow);
+    }
+    .hero h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 36px); }
+    .hero p { margin: 0; color: #cbd5e1; max-width: 1200px; }
+    .grid4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 12px; }
+    .hbox { border: 1px solid #475569; border-radius: 10px; padding: 8px; font-size: 12px; background: rgba(15,23,42,.34); }
+    .section {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .head { padding: 12px 14px; border-bottom: 1px solid var(--line); background: #f8fafc; font-weight: 700; font-size: 18px; }
+    .body { padding: 12px 14px; }
+    .flow { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; margin-bottom: 10px; }
+    .chip { color: #fff; text-align: center; border-radius: 9px; padding: 8px; font-weight: 700; font-size: 12px; }
+    .c1 { background: var(--step1); } .c2 { background: var(--step2); } .c3 { background: var(--step3); } .c4 { background: var(--step4); } .c5 { background: var(--step5); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid var(--line); padding: 7px; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; }
+    code { background: #f1f5f9; border: 1px solid #dce4ef; border-radius: 4px; padding: 1px 4px; font-size: 12px; }
+    .ok { color: var(--green); font-weight: 700; } .warn { color: var(--amber); font-weight: 700; } .bad { color: var(--red); font-weight: 700; }
+    .routes { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 8px; }
+    .route { border: 1px solid var(--line); border-radius: 10px; padding: 9px; font-size: 12px; background: #fff; }
+    .route b { display: block; margin-bottom: 4px; font-size: 13px; }
+    .route ul { margin: 0; padding-left: 16px; color: var(--muted); }
+    .palette { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pcard { border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+    .sw { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin-top: 8px; }
+    .sw div { border: 1px solid var(--line); border-radius: 8px; padding: 6px; font-size: 11px; text-align: center; }
+    .s1 { background: #eff6ff; } .s2 { background: #dbeafe; } .s3 { background: #f0fdf4; } .s4 { background: #dcfce7; }
+    .s5 { background: #fefce8; } .s6 { background: #fef9c3; } .s7 { background: #fef2f2; } .s8 { background: #fee2e2; }
+
+    .step { margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; background: #fff; box-shadow: var(--shadow); overflow: hidden; }
+    .step-head { padding: 10px 12px; border-bottom: 1px solid var(--line); background: #f8fafc; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+    .step-head h3 { margin: 0; font-size: 18px; }
+    .step-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .tag { color: #fff; border-radius: 999px; padding: 2px 8px; font-size: 11px; margin-right: 6px; }
+    .t1 { background: var(--step1); } .t2 { background: var(--step2); } .t3 { background: var(--step3); } .t4 { background: var(--step4); } .t5 { background: var(--step5); }
+    .plink { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .plink a { text-decoration: none; border: 1px solid #cbd5e1; border-radius: 999px; padding: 3px 9px; font-size: 12px; color: #0f172a; font-weight: 700; background: #fff; }
+    .step-body { padding: 10px; }
+    .state-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .state { border: 1px solid var(--line); border-radius: 10px; padding: 9px; }
+    .state h4 { margin: 0 0 6px; font-size: 14px; }
+    .state ul { margin: 0; padding-left: 16px; font-size: 13px; color: #334155; }
+    .state li { margin-bottom: 4px; }
+    .screen-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    .screen-wrap { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .screen-label { padding: 7px 9px; border-bottom: 1px solid var(--line); background: #f8fafc; font-size: 12px; font-weight: 700; }
+    .screen { min-height: 360px; background: #f8fafc; }
+    .topbar { height: 38px; border-bottom: 1px solid #dbe4ef; background: #fff; display: flex; justify-content: space-between; align-items: center; padding: 0 9px; font-size: 12px; }
+    .canvas { display: grid; grid-template-columns: 205px 1fr; min-height: 322px; }
+    .side { border-right: 1px solid #dbe4ef; background: #fff; padding: 8px; font-size: 12px; }
+    .sb { border: 1px solid #dbe4ef; border-radius: 8px; padding: 7px; background: #f8fafc; margin-bottom: 7px; }
+    .sb b { display: block; margin-bottom: 3px; }
+    .sb ul { margin: 0; padding-left: 15px; color: #475569; }
+    .main { padding: 8px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+    .btn { border: 1px solid #cbd5e1; border-radius: 999px; padding: 2px 8px; font-size: 11px; background: #fff; }
+    .btn.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .btn.success { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .btn.danger { background: #dc2626; border-color: #dc2626; color: #fff; }
+    .row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 7px; margin-bottom: 7px; }
+    .row2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .card { border: 1px solid #dbe4ef; border-radius: 8px; padding: 7px; background: #fff; font-size: 12px; }
+    .card b { display: block; margin-bottom: 3px; }
+    .card.blue { background: #eff6ff; border-color: #bfdbfe; }
+    .card.green { background: #f0fdf4; border-color: #bbf7d0; }
+    .card.yellow { background: #fefce8; border-color: #fde68a; }
+    .card.red { background: #fef2f2; border-color: #fecaca; }
+    .tiny { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .tiny th, .tiny td { border: 1px solid #e2e8f0; padding: 4px; }
+    .tiny th { background: #f8fafc; text-transform: uppercase; font-size: 10px; }
+    .hint { margin-top: 7px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; border-radius: 8px; padding: 7px; font-size: 12px; }
+
+    .pm-note { border: 1px solid #bfdbfe; background: #eff6ff; color: #1e3a8a; border-radius: 8px; padding: 8px; margin-bottom: 8px; font-size: 13px; }
+    .pm td { font-size: 12px; }
+    .pm a { text-decoration: none; color: #1d4ed8; font-weight: 700; }
+    .foot { margin-top: 10px; border: 1px dashed #94a3b8; border-radius: 8px; background: #f8fafc; padding: 8px; font-size: 12px; color: #334155; }
+
+    @media (max-width: 1200px) {
+      .grid4, .routes, .palette, .state-grid, .screen-grid { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .canvas { grid-template-columns: 1fr; }
+      .side { border-right: 0; border-bottom: 1px solid #dbe4ef; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>GUIA_EXECUCAO_5_PASSOS - Transformação Visual do Sistema</h1>
+      <p>Guia técnico detalhado mostrando estado atual (AS-IS) versus estado futuro (TO-BE) de cada etapa do processo. Baseado em código real com exemplos de dados, componentes React, e estrutura SQL para implementação precisa.</p>
+      <div class="grid4">
+        <div class="hbox"><b>Rotas existentes</b><br/><code>/admin</code> (6 tabs), <code>/admin/import</code> (CSV upload), <code>/skip-trace</code> (KPIs), <code>/marketing/comps</code> (análise)</div>
+        <div class="hbox"><b>Navegação atual</b><br/><code>MainNavigation.tsx</code> → Admin tabs → Marketing sidebar. Nova estrutura: 5 passos sequenciais com progresso visual</div>
+        <div class="hbox"><b>Design system</b><br/><code>src/index.css</code> tokens HSL + Tailwind utilities. Padrão: blue=info, green=success, yellow=warning, red=error</div>
+        <div class="hbox"><b>Meta final</b><br/>Workspace unificado: 1 propriedade × 5 etapas (Base → Análise → Contatos → Comps → Oferta) com dados persistentes e rastreáveis</div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="head">Visao geral do processo e status atual</div>
+      <div class="body">
+        <div class="flow">
+          <div class="chip c1">Passo 1<br/>Base</div>
+          <div class="chip c2">Passo 2<br/>Analise</div>
+          <div class="chip c3">Passo 3<br/>Contatos</div>
+          <div class="chip c4">Passo 4<br/>Comparativos</div>
+          <div class="chip c5">Passo 5<br/>Oferta minima</div>
+        </div>
+        <table>
+          <tr><th>Passo</th><th>Status</th><th>Ja existe</th><th>Falta principal</th><th>Prompts</th></tr>
+          <tr><td>1</td><td><span class="warn">Parcial</span></td><td>Import forte com mapeamento dinamico em <code>ImportProperties.tsx</code></td><td>Campos last sale/pool + tela unica operacional</td><td>03, 04, 05</td></tr>
+          <tr><td>2</td><td><span class="ok">Bom baseline</span></td><td><code>ReviewQueue</code> + <code>PropertyApprovalDialog</code></td><td>Pre-negacao por regra + permissao formal de analista</td><td>06, 07, 08</td></tr>
+          <tr><td>3</td><td><span class="warn">Parcial</span></td><td>Export e upload existem</td><td>Unificar em uma pagina + multifonte + PJ/socios</td><td>09, 10</td></tr>
+          <tr><td>4</td><td><span class="ok">Bom baseline</span></td><td><code>CompsAnalysis</code> + <code>ManualCompsManager</code></td><td>Padronizar 8 campos e calculo robusto transparente</td><td>11, 12</td></tr>
+          <tr><td>5</td><td><span class="warn">Parcial</span></td><td>Campos de offer existem</td><td>Formula ARV - reforma - wholesale + historico de parametros</td><td>13, 14, 15</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="head">Mapa real de rotas e componentes (codigo atual)</div>
+      <div class="body">
+        <div class="routes">
+          <div class="route"><b>/admin</b><ul><li><code>src/pages/Admin.tsx</code></li><li>Tabs: dashboard/review/properties/campaigns/analytics/features</li><li>ReviewQueue, filtros, tabela, kanban, map</li></ul></div>
+          <div class="route"><b>/admin/import</b><ul><li><code>src/pages/ImportProperties.tsx</code></li><li>Config + imagens + CSV + preview + import</li><li>Inclui <code>SkipTracingImporter</code></li></ul></div>
+          <div class="route"><b>/skip-trace</b><ul><li><code>src/pages/SkipTrace.tsx</code></li><li>Cards de KPI + info card azul</li><li><code>SkipTraceDataViewer</code> com cards por propriedade</li></ul></div>
+          <div class="route"><b>/marketing/comps</b><ul><li><code>CompsAnalysis.tsx</code></li><li>Sidebar Marketing + tabs auto/manual/map/history</li><li>Cards de filtro, offer e quick calculator</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="head">Paleta e padrao visual real do codigo</div>
+      <div class="body">
+        <div class="palette">
+          <div class="pcard">
+            <b>Tokens principais (<code>src/index.css</code>)</b>
+            <table style="margin-top:8px;">
+              <tr><th>Token</th><th>Valor</th><th>Uso</th></tr>
+              <tr><td><code>--primary</code></td><td>211 100% 50%</td><td>Acoes principais</td></tr>
+              <tr><td><code>--secondary</code></td><td>140 60% 45%</td><td>Sucesso</td></tr>
+              <tr><td><code>--background</code></td><td>0 0% 98%</td><td>Fundo geral</td></tr>
+              <tr><td><code>--card</code></td><td>0 0% 100%</td><td>Superficie dos cards</td></tr>
+              <tr><td><code>--border</code></td><td>220 15% 85%</td><td>Bordas padrao</td></tr>
+            </table>
+          </div>
+          <div class="pcard">
+            <b>Cores utilitarias usadas nas telas</b>
+            <div class="sw">
+              <div class="s1">bg-blue-50</div><div class="s2">bg-blue-100</div><div class="s3">bg-green-50</div><div class="s4">bg-green-100</div>
+              <div class="s5">bg-yellow-50</div><div class="s6">bg-yellow-100</div><div class="s7">bg-red-50</div><div class="s8">bg-red-100</div>
+            </div>
+            <ul style="margin:8px 0 0; padding-left:16px; font-size:12px; color:var(--muted);">
+              <li><b>bg-blue-50/100:</b> Info, preview, filtros (ex: <code>ImportProperties.tsx</code> preview, <code>CompsAnalysis.tsx</code> filtro gradiente)</li>
+              <li><b>bg-green-50/100:</b> Sucesso, aprovações, novos registros (ex: <code>PropertyApprovalDialog.tsx</code> aprovar, contador "Novos")</li>
+              <li><b>bg-yellow-50/100:</b> Warning, atualizações, pendências (ex: contador "Atualizados", reforma no Passo 5)</li>
+              <li><b>bg-red-50/100:</b> Erro, rejeições, valores críticos (ex: <code>PropertyApprovalDialog.tsx</code> negar, wholesale no Passo 5)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="passo1">
+      <div class="step-head">
+        <div>
+          <h3><span class="tag t1">PASSO 1</span>Base de imoveis elegiveis</h3>
+          <p>Upload + filtros + lista operacional com campos completos da base.</p>
+        </div>
+        <div class="plink">
+          <a href="./03_migracao_schema_passo1.md">Prompt 03</a>
+          <a href="./04_import_mapeamento_passo1.md">Prompt 04</a>
+          <a href="./05_ui_passo1_base_imoveis.md">Prompt 05</a>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="state-grid">
+          <div class="state">
+            <h4>AS-IS (codigo hoje)</h4>
+            <ul>
+              <li><code>/admin/import</code> com cards de import completos e preview detalhado.</li>
+              <li><code>batchName</code>, <code>import_date</code> e mapeamento CSV dinamico ja existentes.</li>
+              <li>Campos faltantes do processo: ultima venda, valor ultima venda, piscina.</li>
+              <li>Falta uma aba unica de operacao com filtros fixos cidade/estado/data/base.</li>
+            </ul>
+          </div>
+          <div class="state">
+            <h4>TO-BE (como deve ficar)</h4>
+            <ul>
+              <li>Workspace Passo 1 com upload e tabela no mesmo contexto operacional.</li>
+              <li>Campos mapeados: <code>last_sale_date</code>, <code>last_sale_value</code>, <code>has_pool</code>.</li>
+              <li>Nome de base livre via <code>import_batch</code> (ou <code>base_name</code> documentado).</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen-grid">
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira AS-IS - /admin/import</div>
+            <div class="screen">
+              <div class="topbar"><div><b>MyLocalInvest</b></div><div>/admin/import | Sample CSV</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Config import</b><ul><li>batchName</li><li>updateExisting</li></ul></div>
+                  <div class="sb"><b>SkipTracingImporter</b><ul><li>upload retorno</li><li>merge phone/email</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="toolbar"><span class="btn">Upload imagens</span><span class="btn">Upload CSV</span><span class="btn primary">Importar</span></div>
+                  <div class="row"><div class="card green"><b>Novos</b><div>18 propriedades</div></div><div class="card yellow"><b>Atualizados</b><div>3 com skip-trace</div></div><div class="card blue"><b>Total CSV</b><div>21 linhas</div></div></div>
+                  <div class="card blue"><b>Preview da importacao</b><table class="tiny"><tr><th>Address</th><th>Owner</th><th>Sqft</th><th>Batch</th></tr><tr><td>114 W Celeste St Apopka</td><td>JACKSON SARAH ESTATE</td><td>1420</td><td>Import-2026-02-12</td></tr><tr><td>25217 Mathew St</td><td>Smith John</td><td>1850</td><td>Import-2026-02-12</td></tr></table><div style="margin-top:6px;font-size:11px;color:#475569;">⚠️ Faltam campos: last_sale_date, last_sale_value, has_pool</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira TO-BE - Passo 1 operacional</div>
+            <div class="screen">
+              <div class="topbar"><div><b>Processo 5 Passos</b></div><div>[1 Base] [2 Analise] [3 Contatos] [4 Comps] [5 Oferta]</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Filtros fixos</b><ul><li>Cidade</li><li>Estado</li><li>Data upload</li><li>Base</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="toolbar"><span class="btn primary">Nova base</span><span class="btn">Recalcular preview</span><span class="btn success">Importar</span></div>
+                  <div class="card"><b>Tabela base com novos campos</b><table class="tiny"><tr><th>Endereco</th><th>Owner</th><th>Sqft</th><th>Ult venda</th><th>Valor venda</th><th>Piscina</th><th>Base</th></tr><tr><td>114 W Celeste St Apopka</td><td>JACKSON SARAH ESTATE</td><td>1420</td><td>2018-05-02</td><td>$145,000</td><td>No</td><td>BASE PROBATE</td></tr><tr><td>25217 Mathew St</td><td>Smith John</td><td>1850</td><td>2021-03-15</td><td>$220,000</td><td>Yes</td><td>BASE TAX DEED</td></tr></table><div style="margin-top:6px;font-size:11px;color:#15803d;">✅ Novos campos: last_sale_date, last_sale_value, has_pool mapeados</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="passo2">
+      <div class="step-head">
+        <div>
+          <h3><span class="tag t2">PASSO 2</span>Analise: aprovar ou negar</h3>
+          <p>Fila rapida de decisao com motivo obrigatorio para negacao e rastreio de analista.</p>
+        </div>
+        <div class="plink">
+          <a href="./06_ui_passo2_analise.md">Prompt 06</a>
+          <a href="./07_regras_pre_negacao_sugestao.md">Prompt 07</a>
+          <a href="./08_permissoes_analistas_passo2.md">Prompt 08</a>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="state-grid">
+          <div class="state">
+            <h4>AS-IS (codigo hoje)</h4>
+            <ul>
+              <li><code>ReviewQueue.tsx</code> ja tem KPI de produtividade e navegacao entre propriedades.</li>
+              <li><code>PropertyApprovalDialog.tsx</code> exige motivo na rejeicao e salva dados de decisao.</li>
+              <li>Atalhos prontos: A aprovar, R rejeitar, 1..9 para motivo.</li>
+              <li>Falta motor de pre-negacao sugerida e permissao formal por role/policy.</li>
+            </ul>
+          </div>
+          <div class="state">
+            <h4>TO-BE (como deve ficar)</h4>
+            <ul>
+              <li>Aba Passo 2 dedicada e focada em throughput (pendentes/sugeridas/elegiveis).</li>
+              <li>Sugestao automatica por regra sem bloquear decisao humana.</li>
+              <li>Usuario sem permissao deve ficar read-only (frontend + backend).</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen-grid">
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira AS-IS - Review Queue atual</div>
+            <div class="screen">
+              <div class="topbar"><div><b>/admin - review</b></div><div>dashboard | review | properties | campaigns</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Filtros</b><ul><li>Pendente</li><li>Aprovados</li><li>Negados</li></ul></div>
+                  <div class="sb"><b>Atalhos</b><ul><li>A aprovar</li><li>R rejeitar</li><li>1..9 motivo</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="row"><div class="card"><b>Revisadas</b><div>47 hoje</div></div><div class="card green"><b>Aprovadas</b><div>28 (60%)</div></div><div class="card red"><b>Rejeitadas</b><div>19 (40%)</div></div></div>
+                  <div class="toolbar"><span class="btn">Anterior (←)</span><span class="btn primary">Revisar propriedade (Enter)</span><span class="btn">Próxima (→)</span></div>
+                  <table class="tiny"><tr><th>Endereco</th><th>Owner</th><th>Sqft</th><th>Estimated</th><th>Status</th><th>Ação</th></tr><tr><td>114 W Celeste St</td><td>JACKSON SARAH ESTATE</td><td>1420</td><td>$285,000</td><td>pending</td><td>[A] Aprovar | [R] Rejeitar</td></tr><tr><td>25217 Mathew St</td><td>Smith John</td><td>1850</td><td>$370,000</td><td>approved</td><td>✅ Por: Ana | 2026-02-11</td></tr></table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira TO-BE - Passo 2 com sugestoes e permissao</div>
+            <div class="screen">
+              <div class="topbar"><div><b>Processo 5 Passos - Passo 2</b></div><div>[Todos] [Sugeridas negar] [Elegiveis]</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Regras sugeridas</b><ul><li>built &lt; 20y</li><li>sold &lt; 2y</li><li>low-equity</li><li>commercial</li></ul></div>
+                  <div class="sb"><b>Permissao</b><ul><li>role analyst: write</li><li>sem role: read-only</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="toolbar"><span class="btn">Todos (47)</span><span class="btn success">Aprovadas (28)</span><span class="btn danger">Negadas (19)</span></div>
+                  <table class="tiny"><tr><th>Endereco</th><th>Owner</th><th>Sugestão sistema</th><th>Decisão</th><th>Analista</th><th>Data</th></tr><tr><td>114 W Celeste St</td><td>JACKSON SARAH</td><td>⚠️ recent-sale (&lt;2y), low-equity</td><td><span class="btn success">Aprovar</span> <span class="btn danger">Negar</span></td><td>-</td><td>-</td></tr><tr><td>25217 Mathew St</td><td>Smith John</td><td>✅ Elegível</td><td>Aprovada</td><td>Ana Silva</td><td>2026-02-11 14:23</td></tr><tr><td>890 Oak Ave</td><td>Brown Co LLC</td><td>🚫 commercial</td><td>Negada: "Propriedade comercial"</td><td>Edson Costa</td><td>2026-02-12 09:15</td></tr></table>
+                  <div class="hint">✅ Sistema sugere mas analista decide. Negação sempre com motivo obrigatório + trilha completa (user_id + timestamp + rejection_reason).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="passo3">
+      <div class="step-head">
+        <div>
+          <h3><span class="tag t3">PASSO 3</span>Contatos: export + upload skip-trace</h3>
+          <p>Extrair aprovadas para fornecedores e reimportar retorno com contato multifonte e dados PJ/socios.</p>
+        </div>
+        <div class="plink">
+          <a href="./09_passo3_export_skiptrace_aprovadas.md">Prompt 09</a>
+          <a href="./10_passo3_upload_skiptrace_multifonte_pj.md">Prompt 10</a>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="state-grid">
+          <div class="state">
+            <h4>AS-IS (codigo hoje)</h4>
+            <ul>
+              <li><code>/skip-trace</code> mostra KPIs e cards de contato por propriedade.</li>
+              <li><code>ApprovedPropertiesExport.tsx</code> existe, e importador de skip trace tambem existe.</li>
+              <li>Fluxo ainda quebrado: consulta em <code>/skip-trace</code> e upload em <code>/admin/import</code>.</li>
+              <li>Modelagem PJ/socios ainda generica e sem normalizacao por vendor/source/date.</li>
+            </ul>
+          </div>
+          <div class="state">
+            <h4>TO-BE (como deve ficar)</h4>
+            <ul>
+              <li>Passo 3 unificado: botao export aprovadas + upload retorno na mesma tela.</li>
+              <li>Consolidacao de multiplas fontes sem perder historico de origem.</li>
+              <li>Estrutura explicita para owner empresa e socios/oficiais.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen-grid">
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira AS-IS - /skip-trace e upload separado</div>
+            <div class="screen">
+              <div class="topbar"><div><b>/skip-trace</b></div><div>Total | Phones | Emails | Contact rate</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>KPIs</b><ul><li>Total properties</li><li>With phones</li><li>With emails</li></ul></div>
+                  <div class="sb"><b>Busca</b><ul><li>search + paginacao</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="card blue"><b>Info card azul</b><div>border-blue-200 bg-blue-50/50</div></div>
+                  <div class="toolbar"><span class="btn primary">Export approved</span><span class="btn">Ver detalhes</span></div>
+                  <table class="tiny"><tr><th>Property</th><th>Owner</th><th>Phones</th><th>Emails</th><th>Fonte</th><th>Preferido</th></tr><tr><td>114 W Celeste St</td><td>JACKSON SARAH</td><td>(407) 555-1200</td><td>sarah@example.com</td><td>Vendor A (2026-02-10)</td><td>✅ phone</td></tr><tr><td>25217 Mathew St</td><td>Smith John</td><td>(407) 555-9999</td><td>john.smith@mail.com</td><td>Vendor B (2026-02-11)</td><td>✅ email</td></tr></table>
+                  <div class="hint">⚠️ Hoje: export em <code>/skip-trace</code> mas upload retorno está em <code>/admin/import</code> (fluxo quebrado, difícil rastrear origem).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira TO-BE - Passo 3 unificado</div>
+            <div class="screen">
+              <div class="topbar"><div><b>Processo 5 Passos - Passo 3</b></div><div>Export aprovadas | Upload retorno | Consolidacao por fonte</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Export</b><ul><li>CSV approved only</li><li>owner + base + endereco</li></ul></div>
+                  <div class="sb"><b>Upload retorno</b><ul><li>Vendor A / Vendor B</li><li>merge com historico</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="toolbar"><span class="btn primary">Exportar aprovadas (CSV)</span><span class="btn success">Upload retorno</span><span class="btn">Download template</span></div>
+                  <div class="row row2"><div class="card green"><b>Consolidação multifonte</b><div>28 aprovadas × 2 vendors = 56 contatos</div></div><div class="card blue"><b>PJ/Sócios</b><div>3 empresas + 7 officers rastreados</div></div></div>
+                  <table class="tiny"><tr><th>Property</th><th>Owner</th><th>Contato</th><th>Tipo</th><th>Fonte</th><th>Data importação</th><th>Preferido</th></tr><tr><td>114 W Celeste St</td><td>JACKSON SARAH ESTATE</td><td>(407) 555-1200</td><td>phone</td><td>Vendor A</td><td>2026-02-11</td><td>✅</td></tr><tr><td>114 W Celeste St</td><td>JACKSON SARAH ESTATE</td><td>sarah.j@email.com</td><td>email</td><td>Vendor B</td><td>2026-02-11</td><td></td></tr><tr><td>890 Oak Ave</td><td>ABC Holdings LLC</td><td>John Doe (Officer)</td><td>company_officer</td><td>Manual research</td><td>2026-02-12</td><td>✅</td></tr></table>
+                  <div class="hint">✅ Nova estrutura: skip_tracing_data { phones: [{value, source, date}], emails: [{value, source, date}], company: {name, officers: [{name, role}]} } com histórico completo</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="passo4">
+      <div class="step-head">
+        <div>
+          <h3><span class="tag t4">PASSO 4</span>Comparativos (comps)</h3>
+          <p>Workspace por propriedade elegivel com copy address, CRUD de comps e media de $/sqft.</p>
+        </div>
+        <div class="plink">
+          <a href="./11_passo4_ui_comparativos.md">Prompt 11</a>
+          <a href="./12_passo4_calculo_medio_sqft.md">Prompt 12</a>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="state-grid">
+          <div class="state">
+            <h4>AS-IS (codigo hoje)</h4>
+            <ul>
+              <li><code>/marketing/comps</code> com sidebar e tabs: auto/manual/map/history.</li>
+              <li>Cards visuais fortes: filtro azul gradiente, offer management verde, quick calculator azul.</li>
+              <li><code>ManualCompsManager</code> e <code>CompsAnalysis</code> ja fazem parte do calculo.</li>
+              <li>Falta padrao explicito dos 8 campos obrigatorios no mesmo fluxo operacional.</li>
+            </ul>
+          </div>
+          <div class="state">
+            <h4>TO-BE (como deve ficar)</h4>
+            <ul>
+              <li>Passo 4 com foco operacional: selecionar elegivel, copiar endereco, inserir 3-4 comps.</li>
+              <li>Campos obrigatorios por comp: endereco, link, data venda, valor, area construida, area total, quartos, banheiros.</li>
+              <li>Calculo medio por sqft transparente com regra de validacao e contagem de comps validos.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen-grid">
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira AS-IS - /marketing/comps atual</div>
+            <div class="screen">
+              <div class="topbar"><div><b>/marketing/comps</b></div><div>Sidebar Marketing | Dashboard | Campaigns | Comps</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Filtros</b><ul><li>Status all/approved/pending/rejected</li><li>with offer/no offer</li><li>manual comps</li></ul></div>
+                  <div class="sb"><b>Tabs</b><ul><li>auto</li><li>manual</li><li>map</li><li>history</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="card blue"><b>Card filtros</b><div>border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50</div></div>
+                  <div class="row row2"><div class="card green"><b>Offer management</b><div>copy address + save offer</div></div><div class="card blue"><b>Quick offer calculator</b><div>60%..90%</div></div></div>
+                  <div class="toolbar"><span class="btn">Auto</span><span class="btn">Manual</span><span class="btn">Map</span><span class="btn">History</span><span class="btn primary">Add Comp</span></div>
+                  <table class="tiny"><tr><th>Comp</th><th>Link</th><th>Sale Date</th><th>Sale Price</th><th>Sqft</th><th>Lot</th><th>$/Sqft</th><th>Beds/Baths</th></tr><tr><td>12 Oak Ave</td><td>zillow.com/...</td><td>2025-11-03</td><td>$280,000</td><td>1400</td><td>6000</td><td>$200.00</td><td>3bd/2ba</td></tr><tr><td>8 Maple Dr</td><td>redfin.com/...</td><td>2025-10-20</td><td>$285,000</td><td>1420</td><td>6200</td><td>$200.70</td><td>3bd/2ba</td></tr></table>
+                  <div class="hint">⚠️ Faltam campos obrigatórios estruturados: Link, Sale Date, Lot size, Beds, Baths (inconsistência entre fontes)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira TO-BE - Passo 4 orientado ao processo</div>
+            <div class="screen">
+              <div class="topbar"><div><b>Processo 5 Passos - Passo 4</b></div><div>Selecionar elegivel | Copiar endereco | Inserir comps | Calcular media</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Elegiveis</b><ul><li>lista filtrada</li><li>status comps</li></ul></div>
+                  <div class="sb"><b>Acoes</b><ul><li>Copiar endereco</li><li>Abrir Zillow/Redfin</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="toolbar"><span class="btn primary">📋 Copiar endereco: 114 W Celeste St Apopka FL</span><span class="btn">Abrir Zillow</span><span class="btn">Abrir Redfin</span><span class="btn success">+ Salvar comp</span></div>
+                  <table class="tiny"><tr><th>Endereco comp</th><th>Link fonte</th><th>Sale date</th><th>Sale price</th><th>Sqft</th><th>Lot (sqft)</th><th>Beds</th><th>Baths</th><th>$/Sqft</th><th>Ações</th></tr><tr><td>12 Oak Ave Orlando</td><td><a href="#">zillow.com/h/12...</a></td><td>2025-11-03</td><td>$280,000</td><td>1400</td><td>6000</td><td>3</td><td>2</td><td>$200.00</td><td>[Edit][Del]</td></tr><tr><td>8 Maple Dr Apopka</td><td><a href="#">redfin.com/...</a></td><td>2025-10-20</td><td>$285,000</td><td>1420</td><td>6200</td><td>3</td><td>2</td><td>$200.70</td><td>[Edit][Del]</td></tr><tr><td>15 Pine St Orlando</td><td><a href="#">zillow.com/...</a></td><td>2025-09-15</td><td>$292,500</td><td>1450</td><td>6500</td><td>3</td><td>2</td><td>$201.72</td><td>[Edit][Del]</td></tr></table>
+                  <div class="row row2"><div class="card green"><b>Comps válidos</b><div>✅ 3 de 3 (todos com 8 campos)</div></div><div class="card blue"><b>Média $/sqft calculada</b><div>(200.00 + 200.70 + 201.72) / 3 = <b>$200.81</b></div></div></div>
+                  <div class="hint">✅ Fórmula transparente: soma(sale_price/sqft) / count(comps válidos). Outliers >20% da mediana são marcados para revisão.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="step" id="passo5">
+      <div class="step-head">
+        <div>
+          <h3><span class="tag t5">PASSO 5</span>Oferta minima</h3>
+          <p>Formula completa: ARV - reforma - wholesale, com parametros em % ou valor e persistencia auditavel.</p>
+        </div>
+        <div class="plink">
+          <a href="./13_passo5_oferta_minima_formula.md">Prompt 13</a>
+          <a href="./14_integracao_5_abas_fluxo.md">Prompt 14</a>
+          <a href="./15_validacao_final_regressao_release.md">Prompt 15</a>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="state-grid">
+          <div class="state">
+            <h4>AS-IS (codigo hoje)</h4>
+            <ul>
+              <li>Campos de oferta ja existem: <code>cash_offer_amount</code>, <code>min_offer_amount</code>, <code>max_offer_amount</code>.</li>
+              <li>Atalhos percentuais em comps (60%-90%) e edicao de offer no admin.</li>
+              <li>Falta formalizar reforma/comissao em % ou valor com historico de parametros.</li>
+            </ul>
+          </div>
+          <div class="state">
+            <h4>TO-BE (como deve ficar)</h4>
+            <ul>
+              <li>ARV = sqft elegivel x media $/sqft (do Passo 4).</li>
+              <li>Compra minima = ARV - reforma - comissao wholesale.</li>
+              <li>Salvar parametros usados, resultado, autor e timestamp.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="screen-grid">
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira AS-IS - oferta distribuida</div>
+            <div class="screen">
+              <div class="topbar"><div><b>Admin/Comps (atual)</b></div><div>cash_offer | min/max | offer shortcuts</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Componentes atuais</b><ul><li>OfferEditPanel</li><li>OfferConfiguration</li><li>CompsAnalysis save offer</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="row"><div class="card"><b>Estimated Value</b><div>$291,100</div></div><div class="card green"><b>Cash Offer (atual)</b><div>$195,000</div></div><div class="card yellow"><b>Min/Max Range</b><div>Opcional, manual</div></div></div>
+                  <div class="toolbar"><span class="btn">60%</span><span class="btn">70%</span><span class="btn">75%</span><span class="btn">80%</span><span class="btn">85%</span><span class="btn success">90%</span></div>
+                  <table class="tiny"><tr><th>Gap identificado</th><th>Problema</th><th>Impacto</th></tr><tr><td>Sem ARV baseado em comps</td><td>Oferta usa "estimated_value" genérico</td><td>❌ Sem base em dados reais</td></tr><tr><td>Sem reforma/wholesale explícito</td><td>Percentual aplicado sem documentação</td><td>❌ Auditoria impossível</td></tr><tr><td>Sem histórico de parâmetros</td><td>Alteração de oferta sem rastreio</td><td>❌ Não sabemos "por quê R$195k"</td></tr></table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="screen-wrap">
+            <div class="screen-label">Tela inteira TO-BE - Calculadora formal Passo 5</div>
+            <div class="screen">
+              <div class="topbar"><div><b>Processo 5 Passos - Passo 5</b></div><div>ARV | Reforma | Wholesale | Min Offer | Historico</div></div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Defaults</b><ul><li>Leve 10%</li><li>Media 25%</li><li>Grande 40%</li></ul></div>
+                  <div class="sb"><b>Entrada</b><ul><li>Modo percentual</li><li>Modo valor fixo</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="card blue"><b>Propriedade selecionada:</b> 114 W Celeste St Apopka | Owner: JACKSON SARAH ESTATE | Sqft: 1420 | Comps: 3 válidos</div>
+                  <div class="row row2"><div class="card blue"><b>1. ARV (After Repair Value)</b><div>Sqft × Média comps: <b>1420 × $200.81 = $285,151</b></div></div><div class="card yellow"><b>2. Reforma estimada</b><div>Modo: % ARV | Nível: Média (25%) = <b>$71,288</b></div></div></div>
+                  <div class="row row2"><div class="card red"><b>3. Comissão wholesale</b><div>Modo: % ARV | Taxa: 8% = <b>$22,812</b></div></div><div class="card green"><b>4. OFERTA MÍNIMA</b><div>ARV - Reforma - Wholesale = <b>$191,051</b></div></div></div>
+                  <div class="toolbar"><span class="btn primary">💾 Salvar como min_offer_amount</span><span class="btn success">📋 Copiar cálculo</span><span class="btn">📊 Ver histórico</span></div>
+                  <table class="tiny"><tr><th>Campo DB</th><th>Valor salvo</th><th>Observação</th></tr><tr><td>min_offer_amount</td><td>$191,051</td><td>Resultado da fórmula</td></tr><tr><td>offer_calc_params (JSONB)</td><td><code>{arv:285151, sqft:1420, avg_sqft_price:200.81, reforma_mode:"pct", reforma_value:25, reforma_amount:71288, wholesale_mode:"pct", wholesale_value:8, wholesale_amount:22812, calculated_by:"ana.silva@company.com", calculated_at:"2026-02-12T10:30:00Z"}</code></td><td>✅ Auditável e reproduzível</td></tr><tr><td>comps_snapshot_ids</td><td>[uuid1, uuid2, uuid3]</td><td>IDs dos 3 comps usados no cálculo</td></tr></table>
+                  <div class="hint">✅ Transparência total: fórmula + parâmetros + autor + timestamp + comps exatos salvos. Qualquer alteração futura gera novo registro no histórico.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="prompts">
+      <div class="head">Matriz detalhada dos 15 prompts (entrega, reaproveitamento, alteracao e validacao)</div>
+      <div class="body">
+        <div class="pm-note">Execucao recomendada: 01 -> 15. O proximo prompt sempre valida o que o anterior entregou.</div>
+        <table class="pm">
+          <tr><th>Prompt</th><th>Entrega</th><th>Reaproveitar</th><th>Alterar/Criar</th><th>Validar</th></tr>
+          <tr><td><a href="./01_auditoria_estado_atual.md">01</a></td><td>Auditoria real sem implementar</td><td>Arquivos mapeados em src/supabase</td><td><code>docs/process5/01-auditoria-*.md</code></td><td><code>rg</code> + <code>type-check</code></td></tr>
+          <tr><td><a href="./02_validacao_auditoria_e_plano.md">02</a></td><td>Plano em fases com riscos/rollback</td><td>Resultado do 01</td><td><code>02-plano-fases.md</code>, <code>02-backlog-priorizado.md</code></td><td><code>type-check</code></td></tr>
+          <tr><td><a href="./03_migracao_schema_passo1.md">03</a></td><td>Schema Passo 1</td><td>Tabela properties atual</td><td>migracao para last sale/pool/base</td><td><code>type-check</code>, <code>build</code></td></tr>
+          <tr><td><a href="./04_import_mapeamento_passo1.md">04</a></td><td>Mapear novos campos no import</td><td>ImportProperties/CSVImporter</td><td>parse normalizado data/numero/bool</td><td>import CSV real</td></tr>
+          <tr><td><a href="./05_ui_passo1_base_imoveis.md">05</a></td><td>UI Passo 1 unificada</td><td>UI atual de import + filtros admin</td><td>workspace upload + filtros + tabela</td><td><code>build</code> + checklist 5 cenarios</td></tr>
+          <tr><td><a href="./06_ui_passo2_analise.md">06</a></td><td>UI Passo 2 rapida</td><td>ReviewQueue + ApprovalDialog</td><td>fluxo dedicado por status</td><td>aprovar/negar com motivo</td></tr>
+          <tr><td><a href="./07_regras_pre_negacao_sugestao.md">07</a></td><td>Engine pre-negacao</td><td>dados de propriedade existentes</td><td>service de regras + UI de sugestao</td><td>testes unitarios</td></tr>
+          <tr><td><a href="./08_permissoes_analistas_passo2.md">08</a></td><td>Permissao de analista</td><td>auth atual</td><td>role/policy frontend+backend</td><td>teste autorizado/nao autorizado</td></tr>
+          <tr><td><a href="./09_passo3_export_skiptrace_aprovadas.md">09</a></td><td>Export approved para skip-trace</td><td>ApprovedPropertiesExport</td><td>layout CSV final no Passo 3</td><td>CSV sem negadas</td></tr>
+          <tr><td><a href="./10_passo3_upload_skiptrace_multifonte_pj.md">10</a></td><td>Upload retorno multifonte + PJ</td><td>SkipTracingImporter/Viewer</td><td>modelo normalizado por source/vendor/date</td><td>2 fornecedores na mesma property</td></tr>
+          <tr><td><a href="./11_passo4_ui_comparativos.md">11</a></td><td>UI comps por elegivel</td><td>CompsAnalysis + ManualCompsManager</td><td>copy address + 8 campos obrigatorios</td><td>CRUD comp completo</td></tr>
+          <tr><td><a href="./12_passo4_calculo_medio_sqft.md">12</a></td><td>Calculo medio $/sqft robusto</td><td>calculos parciais atuais</td><td>service unico + outlier handling</td><td>testes unitarios + formula visivel</td></tr>
+          <tr><td><a href="./13_passo5_oferta_minima_formula.md">13</a></td><td>Formula oferta minima</td><td>campos de offer existentes</td><td>ARV/reforma/wholesale com persistencia</td><td>4 cenarios de calculo</td></tr>
+          <tr><td><a href="./14_integracao_5_abas_fluxo.md">14</a></td><td>Integrar menu fluxo 5 abas</td><td>paginas legadas atuais</td><td>navegacao por etapa + progresso</td><td>teste ponta a ponta</td></tr>
+          <tr><td><a href="./15_validacao_final_regressao_release.md">15</a></td><td>Validacao final e release</td><td>entregas 01-14</td><td>relatorio final + pendencias + release notes</td><td><code>type-check</code> + <code>build</code> + regressao</td></tr>
+        </table>
+        <div class="foot">Arquivos usados para este guia: <code>src/pages/Admin.tsx</code>, <code>src/pages/ImportProperties.tsx</code>, <code>src/pages/SkipTrace.tsx</code>, <code>src/components/ReviewQueue.tsx</code>, <code>src/components/PropertyApprovalDialog.tsx</code>, <code>src/components/SkipTraceDataViewer.tsx</code>, <code>src/components/SkipTracingImporter.tsx</code>, <code>src/components/marketing/CompsAnalysis.tsx</code>, <code>src/components/ManualCompsManager.tsx</code>, <code>src/index.css</code>.</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
