@@ -1794,6 +1794,7 @@ export type Database = {
       property_analytics: {
         Row: {
           city: string | null
+          click_url: string | null
           country: string | null
           created_at: string | null
           device_type: string | null
@@ -1801,12 +1802,14 @@ export type Database = {
           id: string
           ip_address: string | null
           property_id: string
+          query_params: string | null
           referrer: string | null
           source: string | null
           user_agent: string | null
         }
         Insert: {
           city?: string | null
+          click_url?: string | null
           country?: string | null
           created_at?: string | null
           device_type?: string | null
@@ -1814,12 +1817,14 @@ export type Database = {
           id?: string
           ip_address?: string | null
           property_id: string
+          query_params?: string | null
           referrer?: string | null
           source?: string | null
           user_agent?: string | null
         }
         Update: {
           city?: string | null
+          click_url?: string | null
           country?: string | null
           created_at?: string | null
           device_type?: string | null
@@ -1827,6 +1832,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           property_id?: string
+          query_params?: string | null
           referrer?: string | null
           source?: string | null
           user_agent?: string | null
