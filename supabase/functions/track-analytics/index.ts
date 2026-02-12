@@ -102,8 +102,8 @@ serve(async (req: Request) => {
 
     // Create notification for important events
     if (eventType === 'inquiry_submitted' || eventType === 'page_view') {
-      const cityText = location.city || 'Unknown';
-      const countryText = location.country || 'Unknown';
+      const cityText = locationCity || 'Unknown';
+      const countryText = locationCountry || 'Unknown';
       
       let message = '';
       if (eventType === 'page_view') {
@@ -119,8 +119,8 @@ serve(async (req: Request) => {
           event_type: eventType,
           message,
           metadata: {
-            city: location.city,
-            country: location.country,
+            city: locationCity,
+            country: locationCountry,
             device_type: deviceType,
             ip_address: ipAddress,
           },
