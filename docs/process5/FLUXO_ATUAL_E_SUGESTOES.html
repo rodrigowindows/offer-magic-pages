@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Processo 5 Passos – Onde está hoje e sugestões</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+      --step1: #818cf8;
+      --step2: #f472b6;
+      --step3: #34d399;
+      --step4: #fb923c;
+      --step5: #a78bfa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    h1 {
+      font-size: 1.75rem;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 0.5rem;
+      margin-top: 0;
+    }
+    h2 {
+      font-size: 1.25rem;
+      margin-top: 2.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--accent);
+    }
+    h3 { font-size: 1.1rem; margin-top: 1.5rem; color: var(--muted); }
+    p { margin: 0.5rem 0; color: var(--text); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+    }
+    .step-badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .step-1 { background: var(--step1); color: #fff; }
+    .step-2 { background: var(--step2); color: #fff; }
+    .step-3 { background: var(--step3); color: #fff; }
+    .step-4 { background: var(--step4); color: #fff; }
+    .step-5 { background: var(--step5); color: #fff; }
+    .where { color: var(--ok); }
+    .missing { color: var(--warn); }
+    .img-placeholder {
+      background: var(--border);
+      border: 2px dashed var(--muted);
+      border-radius: 8px;
+      min-height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin: 1rem 0;
+      padding: 1rem;
+      text-align: center;
+    }
+    .flow-diagram {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      overflow-x: auto;
+    }
+    .flow-diagram svg { max-width: 100%; height: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    th { background: var(--card); color: var(--accent); }
+    ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+    li { margin: 0.25rem 0; }
+    .suggestion { border-left: 4px solid var(--accent); padding-left: 1rem; margin: 1rem 0; }
+    .toc { margin: 1.5rem 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .toc li { margin: 0.35rem 0; }
+    code { background: var(--border); padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.9em; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+  </style>
+</head>
+<body>
+
+  <h1>Processo 5 Passos – Onde está hoje e sugestões</h1>
+  <p class="muted" style="color: var(--muted); margin-top: 0;">Orlando / Step 5 - Outreach & Campaigns. Este documento descreve o fluxo atual da aplicação, em que tela/rota cada parte do processo vive, e sugestões de melhoria.</p>
+
+  <nav class="toc">
+    <h2>Índice</h2>
+    <ol>
+      <li><a href="#fluxo-geral">Fluxo geral hoje (rotas e menu)</a></li>
+      <li><a href="#passo1">Passo 1 – Base de imóveis</a></li>
+      <li><a href="#passo2">Passo 2 – Análise (aprovar/negar)</a></li>
+      <li><a href="#passo3">Passo 3 – Contatos (skip-trace)</a></li>
+      <li><a href="#passo4">Passo 4 – Comparativos</a></li>
+      <li><a href="#passo5">Passo 5 – Oferta mínima</a></li>
+      <li><a href="#sugestoes">Sugestões de integração (menu Processo)</a></li>
+    </ol>
+  </nav>
+
+  <hr />
+
+  <h2 id="fluxo-geral">1. Fluxo geral hoje (rotas e menu)</h2>
+
+  <p>Hoje não existe um “menu Processo” com 5 abas. Tudo está distribuído em <strong>Admin</strong>, <strong>Admin → Import</strong>, <strong>Skip Trace</strong> e <strong>Marketing</strong>.</p>
+
+  <div class="img-placeholder">
+    [Sugestão: coloque aqui um screenshot do menu principal (MainNavigation) aberto – “All Pages” com Admin Dashboard, Import Properties, Skip Trace Data, etc.]
+  </div>
+
+  <div class="flow-diagram">
+    <p style="margin-top:0;"><strong>Rotas atuais</strong></p>
+    <svg viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="10" width="120" height="36" rx="6" fill="#1e293b" stroke="#334155"/>
+      <text x="70" y="32" fill="#e2e8f0" text-anchor="middle" font-size="11">/admin</text>
+      <rect x="10" y="56" width="120" height="28" rx="4" fill="#1e293b" stroke="#334155"/>
+      <text x="70" y="74" fill="#94a3b8" text-anchor="middle" font-size="10">Dashboard</text>
+      <rect x="10" y="88" width="120" height="28" rx="4" fill="#1e293b" stroke="#334155"/>
+      <text x="70" y="106" fill="#94a3b8" text-anchor="middle" font-size="10">Review Queue</text>
+      <rect x="10" y="120" width="120" height="28" rx="4" fill="#1e293b" stroke="#334155"/>
+      <text x="70" y="138" fill="#94a3b8" text-anchor="middle" font-size="10">Properties</text>
+      <rect x="10" y="152" width="120" height="28" rx="4" fill="#1e293b" stroke="#334155"/>
+      <text x="70" y="170" fill="#94a3b8" text-anchor="middle" font-size="10">Campaigns...</text>
+
+      <line x1="140" y1="88" x2="180" y2="88" stroke="#475569" stroke-width="1"/>
+      <rect x="180" y="70" width="130" height="36" rx="6" fill="#1e293b" stroke="#38bdf8"/>
+      <text x="245" y="92" fill="#38bdf8" text-anchor="middle" font-size="11">/admin/import</text>
+      <text x="245" y="108" fill="#94a3b8" text-anchor="middle" font-size="9">Upload CSV + Skip</text>
+
+      <line x1="140" y1="200" x2="180" y2="200" stroke="#475569"/>
+      <rect x="180" y="182" width="130" height="36" rx="6" fill="#1e293b" stroke="#34d399"/>
+      <text x="245" y="204" fill="#34d399" text-anchor="middle" font-size="11">/skip-trace</text>
+      <text x="245" y="220" fill="#94a3b8" text-anchor="middle" font-size="9">Ver dados</text>
+
+      <rect x="340" y="70" width="160" height="36" rx="6" fill="#1e293b" stroke="#fb923c"/>
+      <text x="420" y="92" fill="#fb923c" text-anchor="middle" font-size="11">/marketing/comps</text>
+      <text x="420" y="108" fill="#94a3b8" text-anchor="middle" font-size="9">Comparativos</text>
+
+      <text x="350" y="260" fill="#94a3b8" font-size="10">Menu: MainNavigation.tsx – um dropdown “All Pages”</text>
+      <text x="350" y="278" fill="#94a3b8" font-size="10">com links para /admin, /admin/import, /skip-trace, /marketing...</text>
+    </svg>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Rota</th><th>O que é</th><th>Uso no processo</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>/admin</code></td><td>Página Admin</td><td>Dashboard, Review Queue (aprovar/negar), Properties (lista + filtros), Campaigns, Analytics</td></tr>
+      <tr><td><code>/admin/import</code></td><td>ImportProperties</td><td>Upload CSV de imóveis + nome do batch + SkipTracingImporter (upload resultado skip-trace)</td></tr>
+      <tr><td><code>/skip-trace</code></td><td>SkipTrace</td><td>Visualizar dados de contato (estatísticas + viewer)</td></tr>
+      <tr><td><code>/marketing/comps</code></td><td>CompsAnalysis (dentro de Marketing)</td><td>Comps manuais por propriedade + ManualCompsManager + cálculo $/sqft</td></tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h2 id="passo1"><span class="step-badge step-1">Passo 1</span> Base de imóveis</h2>
+
+  <h3>O que o processo pede</h3>
+  <p>Upload de base com endereço, dono, metragem, data construção, data/valor última venda, quartos, banheiros, piscina. Filtros por cidade, estado, data do upload. Nome da base livre (ex.: “BASE DE PROBATE”).</p>
+
+  <h3>Onde está hoje</h3>
+  <ul>
+    <li><strong>Upload:</strong> página <code>/admin/import</code> (<code>ImportProperties.tsx</code>). Nome do lote = campo “batch” (ex.: Import-2025-12-20).</li>
+    <li><strong>Filtros (cidade, estado, data, nome da base):</strong> dentro do Admin, aba <strong>Properties</strong>, no painel de filtros avançados (<code>AdvancedPropertyFilters</code>): city, county, importBatch, importDateFrom, importDateTo.</li>
+  </ul>
+
+  <div class="img-placeholder">
+    [Screenshot: tela /admin/import – upload CSV, mapeamento de colunas, campo “Nome do batch”, botão de importar]
+  </div>
+
+  <div class="img-placeholder">
+    [Screenshot: Admin → aba Properties → filtros (Approval, Lead Status, etc.) e botão “Advanced” com city, import batch, import date]
+  </div>
+
+  <div class="card">
+    <strong>Já existe:</strong> Upload CSV, mapeamento de colunas, <code>import_batch</code> e <code>import_date</code> no banco, filtros por cidade/estado/import_batch/import_date na aba Properties.<br />
+    <strong>Falta:</strong> Campos <code>last_sale_date</code>, <code>last_sale_value</code>, <code>has_pool</code> no banco; mapeá-los no import; permitir nome da base livre na UI (hoje é “Import-YYYY-MM-DD”). Opcional: uma tela “Passo 1” que reúna upload + lista filtrada.
+  </div>
+
+  <hr />
+
+  <h2 id="passo2"><span class="step-badge step-2">Passo 2</span> Análise (aprovar/negar)</h2>
+
+  <h3>O que o processo pede</h3>
+  <p>Decisão APROVADA ou NEGADA para abordagem; se NEGADA, motivo obrigatório. Registrar analista e data. Pré-sugestões de negação (ex.: &lt;20 anos, venda &lt;2 anos, multi-family, comercial). Ver só elegíveis (aprovadas).</p>
+
+  <h3>Onde está hoje</h3>
+  <ul>
+    <li><strong>Aprovar/Negar:</strong> componente <code>PropertyApprovalDialog</code> – abre ao clicar na propriedade (cards ou tabela). Tem lista de motivos (recent-sale, llc-owned, commercial, etc.) e grava <code>approved_by</code>, <code>approved_at</code>, <code>rejection_reason</code>.</li>
+    <li><strong>Lista para análise:</strong> aba <strong>Review Queue</strong> no Admin (<code>ReviewQueue</code>) e também a aba <strong>Properties</strong> com filtros.</li>
+    <li><strong>Ver só elegíveis:</strong> em Properties, filtro “Approval” = Approved. Export de aprovadas no Dashboard.</li>
+  </ul>
+
+  <div class="img-placeholder">
+    [Screenshot: Admin → aba Review Queue – lista de propriedades pendentes com botões Aprovar/Rejeitar]
+  </div>
+
+  <div class="img-placeholder">
+    [Screenshot: PropertyApprovalDialog aberto – opções Aprovar / Rejeitar, dropdown de motivo, campo de notas]
+  </div>
+
+  <div class="card">
+    <strong>Já existe:</strong> Dialog de aprovar/negar, motivos, analista e data no banco, filtro por approval status, export de aprovadas.<br />
+    <strong>Falta:</strong> Motor de pré-negação (regras: &lt;20 anos, &lt;2 anos venda, Casa Boa, Multi-Family, HOI, Land, Low-Equity, corretor, comercial) exibindo sugestões na tela. Opcional: restringir quem pode aprovar/negar (ex.: Edson, Josiane, Rodrigo).
+  </div>
+
+  <hr />
+
+  <h2 id="passo3"><span class="step-badge step-3">Passo 3</span> Contatos (skip-trace)</h2>
+
+  <h3>O que o processo pede</h3>
+  <p>Exportar lista de proprietários (só aprovadas) para enviar ao fornecedor de skip-trace. Na mesma tela, fazer upload do arquivo de retorno (telefone, email, endereço). Suporte a múltiplas fontes e dono empresa + sócios.</p>
+
+  <h3>Onde está hoje</h3>
+  <ul>
+    <li><strong>Export “aprovadas”:</strong> no <strong>Dashboard</strong> do Admin existe <code>ApprovedPropertiesExport</code> – gera CSV só de aprovadas. Colunas atuais incluem Address, City, State, ZIP, Owner Name, Owner Phone, etc.; não inclui <code>owner_address</code> nem <code>import_batch</code> no CSV básico.</li>
+    <li><strong>Upload do retorno:</strong> o componente <code>SkipTracingImporter</code> está na página <strong>/admin/import</strong> (mesma do upload de imóveis), não na página /skip-trace. A página <strong>/skip-trace</strong> é para visualizar dados já importados.</li>
+  </ul>
+
+  <div class="img-placeholder">
+    [Screenshot: Admin → Dashboard – área onde está o botão de export (ApprovedPropertiesExport)]
+  </div>
+
+  <div class="img-placeholder">
+    [Screenshot: /admin/import – seção de upload de resultado skip-trace (SkipTracingImporter)]
+  </div>
+
+  <div class="card">
+    <strong>Já existe:</strong> Export CSV de aprovadas (ApprovedPropertiesExport), upload de resultado (SkipTracingImporter em /admin/import), estrutura de contatos (phone1–7, person2, person3).<br />
+    <strong>Falta:</strong> Variante do export “para skip-trace” com colunas mínimas (property_id, address, city, state, zip_code, owner_name, owner_address, import_batch). Opcional: tela “Passo 3” reunindo export + upload; modelo empresa + sócios.
+  </div>
+
+  <hr />
+
+  <h2 id="passo4"><span class="step-badge step-4">Passo 4</span> Comparativos</h2>
+
+  <h3>O que o processo pede</h3>
+  <p>Copiar endereço da propriedade para colar no Zillow/Redfin. Para cada elegível, cadastrar 3–4 comps com: endereço, link, data venda, valor venda, área construída, área total, quartos, banheiros. Calcular preço médio por sqft.</p>
+
+  <h3>Onde está hoje</h3>
+  <ul>
+    <li><strong>Comps manuais:</strong> dentro do <strong>Marketing</strong>, rota <code>/marketing/comps</code> – tela <code>CompsAnalysis</code>, que contém o <code>ManualCompsManager</code>. Não fica no Admin.</li>
+    <li>Cadastro de comps com link (Zillow/Redfin), endereço, e <code>comp_data</code> (sale_price, square_feet, bedrooms, bathrooms, sale_date). Cálculo de média $/sqft e valor estimado já existe no ManualCompsManager.</li>
+    <li>Não há botão explícito “Copiar endereço” para colar no Zillow/Redfin.</li>
+  </ul>
+
+  <div class="img-placeholder">
+    [Screenshot: /marketing/comps – seleção de propriedade, lista de comps, formulário de comp com link e dados]
+  </div>
+
+  <div class="card">
+    <strong>Já existe:</strong> ManualCompsManager, tabela manual_comps_links, comp_data (sale_price, square_feet, beds, baths, sale_date), cálculo avg $/sqft.<br />
+    <strong>Falta:</strong> Botão “Copiar endereço” na tela de comps. Garantir os 8 campos por comp (incl. área total). Opcional: aba “Passo 4” ou link no menu que liste só elegíveis e abra o workspace de comps.
+  </div>
+
+  <hr />
+
+  <h2 id="passo5"><span class="step-badge step-5">Passo 5</span> Oferta mínima</h2>
+
+  <h3>O que o processo pede</h3>
+  <p>ARV = sqft da elegível × preço médio $/sqft (dos comps). Valor compra = ARV − reforma (leve/média/grande %) − comissão wholesale (%). Persistir oferta mínima.</p>
+
+  <h3>Onde está hoje</h3>
+  <ul>
+    <li>Os campos <code>min_offer_amount</code> e <code>max_offer_amount</code> existem na tabela <code>properties</code> e são editados no <strong>Admin</strong>, no formulário de edição da propriedade (modal ou painel).</li>
+    <li>No ManualCompsManager há cálculo de “valor estimado” (avg $/sqft × sqft) e faixas em % (60%, 70%, … 90%), mas não a fórmula “ARV − reforma % − comissão %”.</li>
+    <li>Não existe tela dedicada “Passo 5” com inputs de tipo de reforma (leve/média/grande) e comissão wholesale.</li>
+  </ul>
+
+  <div class="img-placeholder">
+    [Screenshot: Admin → edição de propriedade – campos de oferta (min_offer_amount, max_offer_amount ou cash offer)]
+  </div>
+
+  <div class="card">
+    <strong>Já existe:</strong> Campos min_offer_amount, max_offer_amount; edição no Admin; cálculo de ARV (avg $/sqft × sqft) no ManualCompsManager.<br />
+    <strong>Falta:</strong> Tela ou seção “Passo 5” com: (1) tipo de reforma (leve 10% / média 25% / grande 40% ou valor), (2) comissão wholesale (% ou valor), (3) cálculo Valor_compra = ARV − reforma − comissão, (4) gravar em min_offer_amount. Parâmetros globais opcionais.
+  </div>
+
+  <hr />
+
+  <h2 id="sugestoes">Sugestões de integração (menu Processo)</h2>
+
+  <p>Para deixar o fluxo dos 5 passos óbvio para o usuário:</p>
+
+  <div class="suggestion">
+    <strong>Menu “Processo” ou “Pipeline”</strong><br />
+    No <code>MainNavigation.tsx</code>, adicionar um item (dropdown ou seção) “Processo” com 5 links:<br />
+    Base de imóveis → /admin/import (ou nova /process/step1) | Análise → /admin (tab Review) | Contatos → /skip-trace ou /process/step3 | Comparativos → /marketing/comps | Oferta mínima → /process/step5 (nova página).
+  </div>
+
+  <div class="flow-diagram">
+    <p style="margin-top:0;"><strong>Sugestão de fluxo unificado</strong></p>
+    <svg viewBox="0 0 620 140" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="40" width="100" height="50" rx="8" fill="#818cf8" stroke="#6366f1"/>
+      <text x="60" y="68" fill="#fff" text-anchor="middle" font-size="11">1. Base</text>
+      <text x="60" y="82" fill="#c7d2fe" text-anchor="middle" font-size="9">imóveis</text>
+      <line x1="110" y1="65" x2="145" y2="65" stroke="#64748b"/>
+      <rect x="145" y="40" width="100" height="50" rx="8" fill="#f472b6" stroke="#ec4899"/>
+      <text x="195" y="68" fill="#fff" text-anchor="middle" font-size="11">2. Análise</text>
+      <text x="195" y="82" fill="#fce7f3" text-anchor="middle" font-size="9">aprovar/negar</text>
+      <line x1="245" y1="65" x2="280" y2="65" stroke="#64748b"/>
+      <rect x="280" y="40" width="100" height="50" rx="8" fill="#34d399" stroke="#10b981"/>
+      <text x="330" y="68" fill="#fff" text-anchor="middle" font-size="11">3. Contatos</text>
+      <text x="330" y="82" fill="#d1fae5" text-anchor="middle" font-size="9">export + upload</text>
+      <line x1="380" y1="65" x2="415" y2="65" stroke="#64748b"/>
+      <rect x="415" y="40" width="100" height="50" rx="8" fill="#fb923c" stroke="#f97316"/>
+      <text x="465" y="68" fill="#fff" text-anchor="middle" font-size="11">4. Comps</text>
+      <text x="465" y="82" fill="#ffedd5" text-anchor="middle" font-size="9">Zillow/Redfin</text>
+      <line x1="515" y1="65" x2="550" y2="65" stroke="#64748b"/>
+      <rect x="550" y="40" width="100" height="50" rx="8" fill="#a78bfa" stroke="#8b5cf6"/>
+      <text x="600" y="68" fill="#fff" text-anchor="middle" font-size="11">5. Oferta</text>
+      <text x="600" y="82" fill="#ede9fe" text-anchor="middle" font-size="9">mínima</text>
+      <text x="310" y="125" fill="#94a3b8" text-anchor="middle" font-size="10">Cada caixa = uma tela ou aba; setas = ordem sugerida do processo</text>
+    </svg>
+  </div>
+
+  <p style="color: var(--muted); font-size: 0.9rem;">Documento gerado a partir do plano em <code>.cursor/plans/análise_processo_5_passos_4c1c37a4.plan.md</code>. Para adicionar screenshots reais, substitua os blocos “[Screenshot: …]” por tags <code>&lt;img src="caminho/da/imagem.png" alt="..." /&gt;</code>.</p>
+
+<p style="color: var(--muted); font-size: 0.9rem; margin-top: 1.5rem;"><strong>Prompts de implementação:</strong> os prompts numerados (01 a 15) que guiam a implementação do processo em 5 passos ficam na pasta <code>prompt/</code> na raiz do projeto. Veja <code>prompt/README.md</code> para a lista e ordem de execução.</p>
+
+</body>
+</html>
