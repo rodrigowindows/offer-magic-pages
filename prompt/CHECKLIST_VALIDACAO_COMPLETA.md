@@ -20,12 +20,13 @@
 - [x] `15_validacao_final_regressao_release.md` - Validação final e release
 - [x] `README.md` - Guia de execução dos prompts
 
-### Guias HTML (3 arquivos)
+### Guias HTML (6 arquivos)
 - [x] `prompt/GUIA_EXECUCAO_5_PASSOS.html` - Guia técnico visual AS-IS vs TO-BE
 - [x] `docs/process5/GUIA_EXECUCAO_5_PASSOS.html` - Cópia na pasta docs
 - [x] `docs/process5/GUIA_BUSINESS_VALIDACAO_5_PASSOS.html` - Guia business com matriz de decisão
 - [x] `prompt/GUIA_BUSINESS_VALIDACAO_5_PASSOS.html` - Cópia na pasta prompts
 - [x] `docs/process5/FLUXO_ATUAL_E_SUGESTOES.html` - Complementar (já existia)
+- [x] `prompt/DECISAO_SKIP_TRACE.html` - ⭐ **NOVO:** Matriz executiva standalone com métricas
 
 ## 🎯 MATRIZ DE DECISÃO SKIP TRACE
 
