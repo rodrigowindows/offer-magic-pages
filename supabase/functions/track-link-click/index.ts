@@ -38,7 +38,14 @@ const handler = async (req: Request): Promise<Response> => {
     if (slug) {
       const siteUrl = 'https://offer.mylocalinvest.com';
       const fullLandingUrl = `${siteUrl}/property/${slug}${url.search}`;
-      
+
+      // 🔍 DEBUG: Capture the complete incoming URL for debugging
+      const incomingClickUrl = req.url;
+      const queryString = url.search;
+
+      console.log(`🔍 [track-link-click] Incoming click URL: ${incomingClickUrl}`);
+      console.log(`🔍 [track-link-click] Query params: ${queryString}`);
+
       // Find property - try exact match first, then partial match
       let property = null;
       const { data: exactMatch } = await supabase
@@ -79,6 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
         const sourceType = validSources.includes(normalizedSrcParam) ? normalizedSrcParam : 'direct';
 
         // Save to property_analytics (server-side, 100% reliable)
+        // 🔍 SAVE COMPLETE URL FOR DEBUGGING
         await supabase.from('property_analytics').insert({
           property_id: property.id,
           event_type: 'page_view',
@@ -88,8 +96,10 @@ const handler = async (req: Request): Promise<Response> => {
           city, country,
           device_type: deviceType,
           source: sourceType,
+          click_url: incomingClickUrl,  // 🔍 Save complete incoming URL
+          query_params: queryString,     // 🔍 Save query string separately
         });
-        console.log(`✅ Server-side analytics saved: slug=${slug}, source=${sourceType}, device=${deviceType}`);
+        console.log(`✅ Server-side analytics saved: slug=${slug}, source=${sourceType}, device=${deviceType}, click_url=${incomingClickUrl}`);
 
         // Update campaign_logs
         if (['email', 'sms', 'call', 'letter', 'carta', 'whatsapp'].includes(normalizedSrcParam)) {

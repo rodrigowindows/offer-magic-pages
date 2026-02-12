@@ -135,7 +135,14 @@ const Property = () => {
       const sourceType = validSources.includes(source) ? source : (source.startsWith('email') || source.startsWith('sms') || source.startsWith('carta') || source.startsWith('letter') || source.startsWith('call')) ? source : 'direct';
 
       const landingHref = sessionStorage.getItem('landing_href') || INITIAL_HREF || window.location.href;
-      
+
+      // 🔍 DEBUG: Capture complete URL for debugging mobile tracking
+      const currentUrl = window.location.href;
+      const queryParams = window.location.search;
+
+      console.log('🔍 [Property] Client-side tracking - Full URL:', currentUrl);
+      console.log('🔍 [Property] Query string:', queryParams);
+
       // Save to property_analytics table with source column
       const { data: analyticsData, error: analyticsError } = await supabase.from('property_analytics').insert({
         property_id: propertyId,
@@ -147,6 +154,8 @@ const Property = () => {
         country: ipData?.country_name || null,
         device_type: deviceType,
         source: sourceType,
+        click_url: currentUrl,      // 🔍 Save complete current URL
+        query_params: queryParams,  // 🔍 Save query string separately
       }).select();
 
       if (analyticsError) {
