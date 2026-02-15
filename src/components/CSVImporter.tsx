@@ -300,11 +300,18 @@ export const CSVImporter = () => {
       });
 
       // Map to properties table fields - convert property_address to address
+      const addressValue = String(mappedRow.property_address || '').trim();
+      const mappedZipCode = String(mappedRow.zip_code || '').trim();
+      const extractedZipMatches = addressValue.match(/\b\d{5}(?:-\d{4})?\b/g);
+      const extractedZipCode = extractedZipMatches?.length
+        ? extractedZipMatches[extractedZipMatches.length - 1].slice(0, 5)
+        : '';
+
       const propertyData: Record<string, any> = {
-        address: mappedRow.property_address || '',
+        address: addressValue,
         city: (mappedRow.city as string) || 'Unknown',
         state: (mappedRow.state as string) || 'FL',
-        zip_code: (mappedRow.zip_code as string) || '00000',
+        zip_code: mappedZipCode || extractedZipCode,
         estimated_value: 0,
         cash_offer_amount: 0,
         slug: `prop-${Date.now()}-${i}`,

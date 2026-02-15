@@ -886,19 +886,19 @@ const ImportProperties = () => {
           propertyData.slug = generateSlug(propertyAddress || accountNumber);
 
           // Extract ZIP from property_address if not mapped
+          // Use the LAST 5-digit group to avoid capturing house numbers like "25217"
           if (!propertyData.zip_code && propertyAddress) {
-            const zipMatch = propertyAddress.match(/\b(\d{5})(?:-\d{4})?\b/);
-            if (zipMatch) {
-              propertyData.zip_code = zipMatch[1];
+            const zipMatches = propertyAddress.match(/\b\d{5}(?:-\d{4})?\b/g);
+            if (zipMatches && zipMatches.length > 0) {
+              const lastZip = zipMatches[zipMatches.length - 1];
+              propertyData.zip_code = lastZip.slice(0, 5);
             }
           }
 
           // Set defaults
           if (!propertyData.city) propertyData.city = 'Orlando';
           if (!propertyData.state) propertyData.state = 'FL';
-          if (!propertyData.zip_code) {
-            propertyData.zip_code = '32801'; // Default Orlando ZIP
-          }
+          // Do not force a generic ZIP (e.g., 32801) - keep real source ZIP only
 
           // Handle estimated_value
           if (!propertyData.estimated_value || propertyData.estimated_value === 0) {
