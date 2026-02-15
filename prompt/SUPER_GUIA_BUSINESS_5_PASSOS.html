@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SUPER GUIA - Processo de Aquisição (5 Passos)</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --primary: #1e293b;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --warning: #ca8a04;
+      --danger: #dc2626;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    /* Header & Capa */
+    .hero {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #fff;
+      padding: 60px 40px;
+      border-radius: 24px;
+      margin-bottom: 40px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    .hero h1 { font-size: 42px; margin-bottom: 16px; font-weight: 800; }
+    .hero p { font-size: 18px; color: #94a3b8; max-width: 800px; margin: 0 auto; }
+    .roi-badge {
+      display: inline-block;
+      margin-top: 24px;
+      background: rgba(37, 99, 235, 0.2);
+      border: 1px solid var(--accent);
+      color: #fff;
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* Seções do Processo */
+    .section {
+      background: var(--surface);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      padding: 40px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow);
+    }
+    .section h2 {
+      font-size: 28px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .step-tag {
+      background: var(--accent);
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* Grid de Comparação Antes/Depois */
+    .comp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .comp-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .comp-label {
+      padding: 12px 16px;
+      font-weight: 700;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .label-as-is { background: #fee2e2; color: #991b1b; }
+    .label-to-be { background: #dcfce7; color: #166534; }
+
+    /* Mockups de UI (Realistas) */
+    .ui-mockup {
+      background: #f1f5f9;
+      padding: 16px;
+      min-height: 300px;
+      font-size: 11px;
+    }
+    .ui-header {
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+    .ui-body {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-top: none;
+      padding: 12px;
+      border-radius: 0 0 8px 8px;
+    }
+    .ui-btn {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      cursor: default;
+    }
+    .ui-btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .ui-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .ui-table th { text-align: left; padding: 6px; border-bottom: 1px solid #e2e8f0; color: var(--text-muted); }
+    .ui-table td { padding: 6px; border-bottom: 1px solid #f1f5f9; }
+
+    /* Cards de Impacto */
+    .impact-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .impact-card {
+      padding: 16px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border-left: 4px solid var(--accent);
+    }
+    .impact-card b { display: block; margin-bottom: 4px; color: var(--accent); }
+
+    /* Footer / Decisão */
+    .footer {
+      background: #eff6ff;
+      border: 2px solid var(--accent);
+      padding: 40px;
+      border-radius: 24px;
+      text-align: center;
+    }
+    .footer h3 { font-size: 24px; margin-bottom: 16px; }
+    .btn-action {
+      background: var(--accent);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .comp-grid, .impact-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <div class="step-tag" style="background: rgba(255,255,255,0.2); margin-bottom: 10px;">ESTRATÉGIA BUSINESS 2026</div>
+      <h1>Processo de Aquisição em 5 Passos</h1>
+      <p>Padronização operacional para escalar a compra de imóveis com foco em governança, dados multifonte e oferta mínima auditável.</p>
+      <div class="roi-badge">🎯 META: -30% Tempo de Operação | +15% Taxa de Contato</div>
+    </div>
+
+    <!-- PASSO 1 -->
+    <div class="section">
+      <h2><span class="step-tag">PASSO 1</span> Base de Imóveis Elegíveis</h2>
+      <p>O início do funil: Importação de lotes (Probate, Tax Delinquent, etc) e saneamento inicial da base.</p>
+      
+      <div class="comp-grid">
+        <div class="comp-card">
+          <div class="comp-label label-as-is">Como é Hoje (Fragmentado)</div>
+          <div class="ui-mockup">
+            <div class="ui-header">Menu: All Pages > Import Properties</div>
+            <div class="ui-body">
+              <div style="margin-bottom: 8px;"><b>Batch Name:</b> Import-2026-02-12</div>
+              <div style="border: 1px dashed #cbd5e1; padding: 20px; text-align:center; border-radius: 8px; background: #fff;">
+                📁 Drop CSV file here
+              </div>
+              <div style="margin-top: 8px; font-size: 10px; color: var(--text-muted);">
+                * Mapeamento de colunas em Modal separado.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card">
+          <div class="comp-label label-to-be">Como Será (Fluxo Único)</div>
+          <div class="ui-mockup">
+            <div class="ui-header">Passo 1: Gestão de Inventário</div>
+            <div class="ui-body">
+              <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <div class="ui-btn ui-btn-primary">+ Nova Base</div>
+                <div class="ui-btn">Filtrar por Cidade</div>
+              </div>
+              <table class="ui-table">
+                <tr><th>Lote</th><th>Total</th><th>Status</th></tr>
+                <tr><td>PROBATE_ORLANDO_FEV</td><td>450</td><td><span style="color:var(--success)">● Pronto</span></td></tr>
+                <tr><td>TAX_DEFERRED_LAKE</td><td>120</td><td><span style="color:var(--warning)">● Analisando</span></td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 2 -->
+    <div class="section">
+      <h2><span class="step-tag">PASSO 2</span> Análise: Aprovada ou Negada</h2>
+      <p>Decisão rápida do analista baseada em critérios de equity, localização e condição.</p>
+      
+      <div class="impact-row">
+        <div class="impact-card"><b>Rastreabilidade</b>Saber exatamente quem aprovou e por que.</div>
+        <div class="impact-card"><b>Motivo Obrigatório</b>Garantir dados para entender por que perdemos deals.</div>
+        <div class="impact-card"><b>Fila de Trabalho</b>Analista não "escolhe" o que analisar, segue a ordem.</div>
+      </div>
+    </div>
+
+    <!-- PASSO 3 - O CORAÇÃO DA MUDANÇA -->
+    <div class="section" style="border: 2px solid var(--accent); background: #f0f7ff;">
+      <h2><span class="step-tag">PASSO 3</span> Contatos: Skip Trace Unificado</h2>
+      <p>A maior mudança de produtividade. Unificação do export de aprovadas e import de retorno de vendors.</p>
+      
+      <div class="comp-grid">
+        <div class="comp-card">
+          <div class="comp-label label-as-is">ANTES (Quebra de Contexto)</div>
+          <div class="ui-mockup">
+            <div style="opacity: 0.6;">
+              <div class="ui-header">Tela A: /skip-trace (Dashboard)</div>
+              <div class="ui-body">Visualize KPIs e Lista...</div>
+              <div style="text-align:center; padding: 10px; color: var(--danger); font-weight: 800;">⬆️ ANALISTA TROCA DE TELA ⬇️</div>
+              <div class="ui-header">Tela B: /admin/import (Upload)</div>
+              <div class="ui-body">Upload CSV Retorno...</div>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card">
+          <div class="comp-label label-to-be">DEPOIS (Fluxo Contínuo)</div>
+          <div class="ui-mockup" style="background: #fff; border: 2px solid var(--success);">
+            <div class="ui-header" style="background: #f0fdf4;">Workspace de Contatos</div>
+            <div class="ui-body">
+              <div style="display:flex; justify-content: space-between; margin-bottom: 10px;">
+                <div class="ui-btn ui-btn-primary">1. Exportar Aprovadas</div>
+                <div class="ui-btn" style="border-color: var(--success); color: var(--success);">2. Importar Retorno</div>
+              </div>
+              <div style="background: #f8fafc; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+                <b>Consolidação Multifonte:</b> 
+                <span style="font-size: 10px; display: block;">Propriedade A: Vendor 1 (Phone) + Vendor 2 (Email)</span>
+              </div>
+              <table class="ui-table">
+                <tr><th>Owner</th><th>Fonte</th><th>Status</th></tr>
+                <tr><td>John Doe</td><td>Vendor A</td><td>✅ Phone Found</td></tr>
+                <tr><td>XYZ LLC</td><td>Manual</td><td>✅ Officer Found</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 4 & 5 -->
+    <div class="section">
+      <h2><span class="step-tag">PASSO 4 & 5</span> Comparativos e Oferta Mínima</h2>
+      <p>Transformação de dados de mercado em proposta comercial real.</p>
+      
+      <div class="ui-mockup" style="min-height: 200px;">
+        <div class="ui-header">Calculadora de Oferta Mínima (Auditável)</div>
+        <div class="ui-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+              <p><b>Mercado (Comps):</b></p>
+              <p>Média $/sqft: $205.00</p>
+              <p>ARV Estimado: $291,100</p>
+            </div>
+            <div style="border-left: 1px solid #e2e8f0; padding-left: 20px;">
+              <p><b>Cálculo Oferta:</b></p>
+              <p>(-) Reforma (Med): $72,775</p>
+              <p>(-) Margem (8%): $23,288</p>
+              <p style="font-size: 14px; color: var(--success);"><b>OFERTA FINAL: $195,037</b></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DECISÃO FINAL -->
+    <div class="footer">
+      <h3>Validar Implementação do Fluxo Unificado?</h3>
+      <p>Ao aprovar, iniciaremos a unificação do Passo 3 e a estruturação das 5 abas de processo, eliminando a navegação fragmentada atual.</p>
+      
+      <div style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
+        <div style="text-align: left; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #bfdbfe;">
+          <b>Impacto Comercial:</b>
+          <ul style="font-size: 13px; margin-top: 8px; color: var(--text-muted);">
+            <li>✓ 100% dos dados PJ identificados (Sócios)</li>
+            <li>✓ Rastreio de custo por lead de contato</li>
+            <li>✓ Redução de erro humano no upload</li>
+          </ul>
+        </div>
+        <div style="text-align: left; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #bfdbfe;">
+          <b>Impacto Operacional:</b>
+          <ul style="font-size: 13px; margin-top: 8px; color: var(--text-muted);">
+            <li>✓ Analista faz tudo em uma única sequência</li>
+            <li>✓ Dashboard de performance por passo</li>
+            <li>✓ Histórico completo de cada imóvel</li>
+          </ul>
+        </div>
+      </div>
+
+      <a href="#" class="btn-action">APROVAR E INICIAR PASSO 3</a>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: var(--text-muted); font-size: 12px;">
+      Documento gerado para análise de negócio - Gemini CLI Agent v2.0
+    </div>
+  </div>
+</body>
+</html>

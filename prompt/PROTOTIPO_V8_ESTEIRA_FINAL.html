@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow V8 - Esteira de Produção Final</title>
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --warning: #ca8a04;
+      --danger: #dc2626;
+      --bg: #f1f5f9;
+      --border: #e2e8f0;
+      --purple: #9333ea;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--primary); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar - Cards e Filtros */
+    .sidebar { width: 360px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); background: #f8fafc; }
+    .property-list { flex-grow: 1; overflow-y: auto; padding: 15px; background: #f1f5f9; }
+    
+    .prop-card { 
+      background: #fff; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 12px; 
+      cursor: pointer; overflow: hidden; transition: 0.2s; position: relative;
+    }
+    .prop-card.active { border: 2px solid var(--accent); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+    .prop-img { width: 100%; height: 90px; object-fit: cover; background: #cbd5e1; }
+    .prop-info { padding: 10px; }
+    .prop-address { font-weight: 800; font-size: 13px; display: block; margin-bottom: 2px; }
+    .prop-meta { font-size: 10px; color: #64748b; }
+
+    /* Main Area */
+    .main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .wizard-nav { background: #fff; padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: center; gap: 10px; }
+    .step-dot { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #94a3b8; padding: 6px 12px; border-radius: 8px; }
+    .step-dot.active { background: #eff6ff; color: var(--accent); }
+    .step-dot.done { color: var(--success); }
+
+    /* Workspace */
+    .workspace { flex-grow: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    .content-container { width: 100%; max-width: 1000px; background: #fff; border-radius: 16px; border: 1px solid var(--border); display: flex; flex-direction: column; min-height: 580px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+    .content-body { padding: 30px; flex-grow: 1; }
+    .content-footer { padding: 20px 30px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px; }
+
+    /* UI Components */
+    .btn { padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); font-size: 14px; }
+    .btn-primary { background: var(--accent); color: #fff; border: none; }
+    .btn-success { background: var(--success); color: #fff; border: none; }
+    .btn-outline { background: #fff; }
+    
+    .table-ui { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+    .table-ui th { text-align: left; padding: 10px; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 11px; text-transform: uppercase; }
+    .table-ui td { padding: 10px; border-bottom: 1px solid #f1f5f9; }
+
+    .warning-box { background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 12px; border-radius: 8px; font-size: 12px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+    .quick-offer-calc { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 15px; }
+    .calc-btn { border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; }
+    .calc-btn:hover { background: #f0f7ff; border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2 style="font-size: 14px; font-weight: 800; color: var(--purple);">Communication System</h2>
+      <p style="font-size: 10px; color: #64748b;">Lote: PROBATE_ORLANDO_26</p>
+    </div>
+    <div class="property-list" id="propList"></div>
+  </aside>
+
+  <main class="main">
+    <nav class="wizard-nav">
+      <div class="step-dot" id="dot1">1. BASE</div>
+      <div class="step-dot" id="dot2">2. ANÁLISE</div>
+      <div class="step-dot" id="dot3">3. SKIP TRACE</div>
+      <div class="step-dot" id="dot4">4. MERCADO</div>
+      <div class="step-dot" id="dot5">5. OFERTA</div>
+    </nav>
+
+    <div class="workspace">
+      <div class="content-container">
+        <div class="content-body" id="stepContent"></div>
+        <div class="content-footer">
+          <button class="btn btn-outline" onclick="moveStep(-1)" id="backBtn">Voltar</button>
+          <div id="stepInfo" style="font-size: 12px; font-weight: 700; color: #64748b;">PASSO 1 DE 5</div>
+          <button class="btn btn-primary" onclick="moveStep(1)" id="nextBtn">Avançar →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const properties = [
+      { id: 1, address: "1025 S WASHINGTON AVE", city: "Orlando", beds: 3, baths: 2, sqft: 0, year: 1958, avm: 212000, img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400" },
+      { id: 2, address: "890 Oak Ave", city: "Kissimmee", beds: 4, baths: 3, sqft: 2100, year: 2005, avm: 410000, img: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400" }
+    ];
+
+    let currentStep = 1;
+    let selectedId = 1;
+
+    function renderSidebar() {
+      const container = document.getElementById('propList');
+      container.innerHTML = properties.map(p => `
+        <div class="prop-card ${p.id === selectedId ? 'active' : ''}" onclick="selectProp(${p.id})">
+          <img src="${p.img}" class="prop-img">
+          <div class="prop-info">
+            <span class="prop-address">${p.address}</span>
+            <span class="prop-meta">${p.beds}bd | ${p.baths}ba | ${p.sqft || 'N/A'}sqft</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderContent() {
+      const body = document.getElementById('stepContent');
+      const prop = properties.find(p => p.id === selectedId);
+      
+      for(let i=1; i<=5; i++) {
+        const dot = document.getElementById('dot'+i);
+        dot.className = 'step-dot ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : '');
+      }
+
+      document.getElementById('stepInfo').innerText = `PASSO ${currentStep} DE 5`;
+      document.getElementById('backBtn').style.display = currentStep === 1 ? 'none' : 'block';
+
+      if(currentStep === 1) {
+        body.innerHTML = `<h3>Passo 1: Identificação da Base</h3>
+          <p style="color: #64748b; margin-bottom: 20px;">Confirmando dados de importação para <b>${prop.address}</b>.</p>
+          <div style="display:flex; gap:20px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
+            <img src="${prop.img}" style="width:200px; height:130px; object-fit:cover; border-radius:8px;">
+            <div>
+              <p><b>Lote:</b> PROBATE_ORLANDO_26</p>
+              <p><b>Status Inicial:</b> <span style="color:var(--accent)">Novo Registro</span></p>
+              <div style="margin-top:10px; color:var(--success); font-weight:700;">✅ Nenhuma duplicidade encontrada.</div>
+            </div>
+          </div>`;
+      } else if (currentStep === 2) {
+        body.innerHTML = `<h3>Passo 2: Análise de Viabilidade</h3>
+          <p style="color: #64748b; margin-bottom: 20px;">Triagem rápida de equity para aprovação de custos de Skip Trace.</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid var(--border);">
+              <p style="font-size:11px; color:#64748b;">POTENTIAL EQUITY</p>
+              <p style="font-size:28px; font-weight:900; color:var(--success);">$92,000</p>
+              <div style="margin-top:15px;">
+                <button class="btn btn-success" style="width:100%;" onclick="moveStep(1)">APROVAR IMÓVEL</button>
+                <button class="btn btn-outline" style="width:100%; margin-top:8px; color:var(--danger);">NEGAR</button>
+              </div>
+            </div>
+            <img src="${prop.img}" style="width:100%; border-radius:12px; height:180px; object-fit:cover;">
+          </div>`;
+      } else if (currentStep === 3) {
+        body.innerHTML = `<h3>Passo 3: Skip Trace (Contatos)</h3>
+          <p style="color: #64748b; margin-bottom: 20px;">Importação de dados de contato do fornecedor.</p>
+          <div style="border:2px dashed var(--border); padding:40px; text-align:center; border-radius:12px; cursor:pointer; background:#f8fafc;">
+            <p style="font-weight:700; color:var(--accent);">📁 Clique para subir o Retorno (.CSV)</p>
+          </div>
+          <table class="table-ui">
+            <thead><tr><th>Nome</th><th>Contato</th><th>Fonte</th></tr></thead>
+            <tbody>
+              <tr><td>Sarah Jackson</td><td>(407) 555-0101</td><td>Vendor A</td></tr>
+              <tr><td>John Doe (Officer)</td><td>john@doe.com</td><td>Manual</td></tr>
+            </tbody>
+          </table>`;
+      } else if (currentStep === 4) {
+        body.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Passo 4: Mercado (Comps Analysis)</h3>
+            <span style="background:var(--purple); color:#fff; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:800;">ZILLOW COMPS</span>
+          </div>
+          ${prop.sqft === 0 ? `
+            <div class="warning-box">
+              <span>⚠️</span>
+              <span><b>Property sqft not available</b> - using simple average instead of $/sqft.</span>
+            </div>` : ''}
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin-top:15px;">
+            <div style="padding:15px; border:1px solid var(--border); border-radius:8px;"><span>Avg Sale</span><b>$212K</b></div>
+            <div style="padding:15px; border:1px solid var(--border); border-radius:8px;"><span>Comps</span><b>3</b></div>
+            <div style="padding:15px; border:1px solid var(--border); border-radius:8px;"><span>Market</span><b>Stable</b></div>
+          </div>
+          <table class="table-ui">
+            <thead><tr><th>Address</th><th>Price</th><th>Quality</th></tr></thead>
+            <tbody>
+              <tr><td>1025 S WASHINGTON...</td><td>$410,000</td><td>Fair (50%)</td></tr>
+              <tr><td>1025 S WASHINGTON...</td><td>$190,000</td><td>Fair (50%)</td></tr>
+            </tbody>
+          </table>`;
+      } else if (currentStep === 5) {
+        body.innerHTML = `<h3>Passo 5: Calculadora de Oferta</h3>
+          <div class="quick-offer-calc">
+            <div class="calc-btn"><b>60%</b><br><small>$127K</small></div>
+            <div class="calc-btn"><b>70%</b><br><small>$148K</small></div>
+            <div class="calc-btn" style="border-color:var(--accent); background:#eff6ff;"><b>75%</b><br><small>$159K</small></div>
+            <div class="calc-btn"><b>80%</b><br><small>$169K</small></div>
+            <div class="calc-btn"><b>85%</b><br><small>$180K</small></div>
+            <div class="calc-btn"><b>90%</b><br><small>$191K</small></div>
+          </div>
+          <div style="margin-top:30px; background:var(--primary); color:#fff; padding:30px; border-radius:12px;">
+            <p style="font-size:11px; color:#94a3b8;">CURRENT CASH OFFER</p>
+            <p style="font-size:32px; font-weight:900; color:var(--success);">$140,000</p>
+            <p style="font-size:12px; color:var(--danger); margin-top:10px;">↓ 33.9% below market average</p>
+          </div>
+          <button class="btn btn-primary" style="width:100%; height:50px; margin-top:20px;">FINALIZAR E GERAR CARTA</button>`;
+      }
+    }
+
+    function selectProp(id) { selectedId = id; currentStep = 1; renderSidebar(); renderContent(); }
+    function moveStep(delta) { 
+      currentStep += delta; 
+      if(currentStep > 5) currentStep = 5; 
+      if(currentStep < 1) currentStep = 1; 
+      renderContent(); 
+    }
+
+    renderSidebar(); renderContent();
+  </script>
+</body>
+</html>

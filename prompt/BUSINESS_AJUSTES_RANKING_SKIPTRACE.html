@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Ajustes - Ranking Skip Trace</title>
+  <style>
+    :root {
+      --bg: #f3f7fc;
+      --surface: #ffffff;
+      --line: #d8e3ef;
+      --text: #0f172a;
+      --muted: #475569;
+      --ok: #15803d;
+      --warn: #a16207;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background:
+        radial-gradient(850px 420px at -10% -10%, #dbeafe 0%, rgba(219, 234, 254, 0) 55%),
+        radial-gradient(850px 420px at 110% -10%, #fff7ed 0%, rgba(255, 247, 237, 0) 55%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding: 22px;
+    }
+
+    .container { max-width: 1220px; margin: 0 auto; }
+
+    .hero {
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 18px;
+      background: linear-gradient(135deg, #0f172a, #1e293b 65%, #334155);
+      color: #e2e8f0;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 { margin: 0 0 8px; font-size: clamp(24px, 3vw, 34px); }
+    .hero p { margin: 0; color: #cbd5e1; }
+
+    .section {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .body { padding: 12px 14px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th { background: #f1f5f9; font-weight: 700; }
+    td:first-child { width: 44px; text-align: center; font-weight: 700; }
+    .score-ok { color: var(--ok); font-weight: 700; }
+    .score-warn { color: var(--warn); font-weight: 700; }
+
+    .note {
+      margin-top: 10px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 12px;
+    }
+
+    .decision {
+      margin-top: 10px;
+      border: 1px dashed #94a3b8;
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 10px;
+      font-size: 12px;
+      color: #334155;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>Business Ajustes - Ranking de Decisao (Skip Trace)</h1>
+      <p>Documento curto para decisao de negocio: comparacao de opcoes, ganhos, perdas e recomendacao final.</p>
+    </section>
+
+    <section class="section">
+      <div class="head">Matriz de ranking (priorizada)</div>
+      <div class="body">
+        <table>
+          <tr>
+            <th>Rank</th>
+            <th>Opcao</th>
+            <th>O que voce ganha</th>
+            <th>O que voce perde</th>
+            <th>Pro</th>
+            <th>Contra</th>
+            <th>Score Final</th>
+            <th>Recomendacao</th>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>Unificar Passo 3 sem retirar funcionalidades</td>
+            <td>Fluxo continuo, menos retrabalho, melhor produtividade, melhor governanca</td>
+            <td>Pequena curva de adaptacao da equipe</td>
+            <td>9.2</td>
+            <td>2.0</td>
+            <td><span class="score-ok">+7.2</span></td>
+            <td><b>FAZER (melhor opcao)</b></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Manter telas separadas com pequenos ajustes</td>
+            <td>Implementacao mais rapida no curto prazo</td>
+            <td>Continua troca de contexto e risco operacional</td>
+            <td>6.8</td>
+            <td>3.6</td>
+            <td><span class="score-warn">+3.2</span></td>
+            <td>Paliativo de curto prazo</td>
+          </tr>
+        </table>
+
+        <div class="note">
+          Formula usada: <b>Score Final = Pro - Contra</b>.
+          Quanto maior o score final, maior o valor de negocio da opcao.
+        </div>
+
+        <div class="decision">
+          <b>Decisao sugerida:</b> seguir com a opcao Rank 1 e manter todas as capacidades criticas do Skip Trace.
+          <br />
+          Se quiser, no proximo passo eu ajusto os pesos do score com a sua regra (ex.: priorizar mais conversao ou mais custo operacional).
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

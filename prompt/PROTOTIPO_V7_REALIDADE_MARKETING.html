@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow V7 - Realidade Marketing System</title>
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --warning: #ca8a04;
+      --danger: #dc2626;
+      --bg: #f1f5f9;
+      --border: #e2e8f0;
+      --purple: #9333ea;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--primary); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar - Real Filters */
+    .sidebar { width: 320px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
+    .filter-group { padding: 15px 20px; border-bottom: 1px solid #f1f5f9; }
+    .filter-label { font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 10px; display: block; }
+    .filter-item { font-size: 13px; padding: 6px 0; display: flex; justify-content: space-between; cursor: pointer; color: #475569; }
+    .filter-item.active { color: var(--accent); font-weight: 700; }
+    .count { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+
+    /* Main Area */
+    .main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .wizard-nav { background: #fff; padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: center; gap: 8px; }
+    .step-dot { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #94a3b8; padding: 6px 12px; border-radius: 8px; }
+    .step-dot.active { background: #eff6ff; color: var(--accent); }
+
+    /* Workspace */
+    .workspace { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    .content-container { width: 100%; max-width: 1100px; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid var(--border); display: flex; flex-direction: column; min-height: 600px; }
+    .content-body { padding: 25px; flex-grow: 1; }
+    
+    /* Real UI Elements from Print */
+    .prop-header-real { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px; }
+    .status-approved { color: var(--success); font-weight: 800; font-size: 12px; display: flex; align-items: center; gap: 4px; }
+    
+    .quick-offer-calc { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 15px; }
+    .calc-btn { border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+    .calc-btn:hover { border-color: var(--accent); background: #f0f7ff; }
+    .calc-perc { font-size: 14px; font-weight: 800; display: block; }
+    .calc-val { font-size: 11px; color: #64748b; }
+
+    .warning-box { background: #fffbeb; border: 1px solid #fef3c7; color: #92400e; padding: 12px; border-radius: 8px; font-size: 12px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+
+    .insight-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+    .insight-box { padding: 15px; border-radius: 10px; border: 1px solid var(--border); background: #f8fafc; }
+    .insight-box b { font-size: 16px; display: block; }
+    .insight-box span { font-size: 10px; color: #64748b; text-transform: uppercase; }
+
+    /* Footer */
+    .content-footer { padding: 15px 25px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 12px 12px; }
+    .btn-primary { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+    .btn-outline { background: #fff; border: 1px solid var(--border); padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2 style="font-size: 14px; font-weight: 800; color: var(--purple);">Communication System</h2>
+      <p style="font-size: 10px; color: #64748b;">Production Mode (Live)</p>
+    </div>
+    
+    <div class="filter-group">
+      <span class="filter-label">Filter by Status</span>
+      <div class="filter-item">All <span class="count">223</span></div>
+      <div class="filter-item active">✓ Approved <span class="count">25</span></div>
+      <div class="filter-item">⏱ Pending <span class="count">195</span></div>
+      <div class="filter-item">✗ Rejected <span class="count">3</span></div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Filter by Offer</span>
+      <div class="filter-item">💰 With Offer <span class="count">206</span></div>
+      <div class="filter-item">📝 No Offer <span class="count">17</span></div>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Manual Comps</span>
+      <div class="filter-item">📋 Has Manual Comps <span class="count">25</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <nav class="wizard-nav">
+      <div class="step-dot" id="dot1">1. BASE</div>
+      <div class="step-dot" id="dot2">2. ANÁLISE</div>
+      <div class="step-dot" id="dot3">3. SKIP TRACE</div>
+      <div class="step-dot" id="dot4">4. MERCADO</div>
+      <div class="step-dot" id="dot5">5. OFERTA</div>
+    </nav>
+
+    <div class="workspace">
+      <div class="content-container">
+        <div class="content-body" id="stepContent">
+          <!-- Dinâmico -->
+        </div>
+        <div class="content-footer">
+          <button class="btn-outline" onclick="moveStep(-1)" id="backBtn">Voltar</button>
+          <div id="stepInfo" style="font-size: 11px; font-weight: 700; color: #64748b;">PASSO 4 DE 5</div>
+          <button class="btn-primary" onclick="moveStep(1)" id="nextBtn">Próximo Passo →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let currentStep = 4;
+
+    function renderContent() {
+      const body = document.getElementById('stepContent');
+      
+      for(let i=1; i<=5; i++) {
+        const dot = document.getElementById('dot'+i);
+        dot.className = 'step-dot ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : '');
+      }
+
+      if(currentStep === 4) {
+        body.innerHTML = `
+          <div class="prop-header-real">
+            <div>
+              <span class="status-approved">✓ APPROVED</span>
+              <h3 style="margin-top:5px;">1025 S WASHINGTON AVE</h3>
+              <p style="font-size:12px; color:#64748b;">Orlando, FL 32801</p>
+            </div>
+            <button class="btn-outline" style="font-size:11px;">Copy Address</button>
+          </div>
+
+          <div class="warning-box">
+            <span>⚠️</span>
+            <span><b>Property sqft not available</b> - using simple average of comp prices instead of $/sqft calculation.</span>
+          </div>
+
+          <div class="insight-grid">
+            <div class="insight-box"><span>Avg Sale</span><b>$212K</b></div>
+            <div class="insight-box"><span>Price/sqft</span><b>$146</b></div>
+            <div class="insight-box"><span>Comps</span><b>3</b></div>
+            <div class="insight-box"><span>Source</span><b style="color:var(--purple)">DEMO</b></div>
+          </div>
+
+          <div style="background:#f0f9ff; padding:15px; border-radius:8px; border-left:4px solid var(--accent); margin-bottom:20px;">
+            <p style="font-size:12px; font-weight:700; color:#1e40af;">💡 Smart Market Insights</p>
+            <p style="font-size:11px; color:#1e40af; margin-top:5px;">Stable market: 0.0% vs last month. Avg time on market: NaN days. Limited comps - Consider expanding radius.</p>
+          </div>
+
+          <table class="table-ui">
+            <thead style="background:#f8fafc;">
+              <tr><th>Address</th><th>Dist</th><th>Price</th><th>Date</th><th>Quality</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1025 S WASHINGTON AVE...</td><td>0.00 mi</td><td>$410,000</td><td>Jan 2026</td><td><span style="color:var(--warning)">Fair (50%)</span></td></tr>
+              <tr><td>1025 S WASHINGTON AVE...</td><td>0.00 mi</td><td>$190,000</td><td>Jan 2026</td><td><span style="color:var(--warning)">Fair (50%)</span></td></tr>
+            </tbody>
+          </table>
+        `;
+      } else if (currentStep === 5) {
+        body.innerHTML = `
+          <h3>💰 Quick Offer Calculator</h3>
+          <p class="subtitle">Based on avg sale price of <b>$212K</b>. Click to set offer amount.</p>
+          
+          <div class="quick-offer-calc">
+            <div class="calc-btn"><span class="calc-perc">60%</span><span class="calc-val">$127,100</span></div>
+            <div class="calc-btn"><span class="calc-perc">70%</span><span class="calc-val">$148,283</span></div>
+            <div class="calc-btn" style="border-color:var(--accent); background:#eff6ff;"><span class="calc-perc">75%</span><span class="calc-val">$158,875</span></div>
+            <div class="calc-btn"><span class="calc-perc">80%</span><span class="calc-val">$169,467</span></div>
+            <div class="calc-btn"><span class="calc-perc">85%</span><span class="calc-val">$180,058</span></div>
+            <div class="calc-btn"><span class="calc-perc">90%</span><span class="calc-val">$190,650</span></div>
+          </div>
+
+          <div style="margin-top:30px; background:var(--primary); color:#fff; padding:30px; border-radius:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <p style="font-size:11px; color:#94a3b8;">CURRENT CASH OFFER</p>
+                <p style="font-size:32px; font-weight:900; color:var(--success);">$140,000</p>
+              </div>
+              <div style="text-align:right;">
+                <p style="font-size:11px; color:#94a3b8;">VS COMPS AVG</p>
+                <p style="font-size:18px; font-weight:700; color:var(--danger);">↓ 33.9% below</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; gap:10px;">
+            <button class="btn-primary" style="flex:1;">GENERATE LETTER</button>
+            <button class="btn-outline" style="flex:1;">SEND TO CAMPAIGN</button>
+          </div>
+        `;
+      }
+    }
+
+    function moveStep(delta) { currentStep += delta; if(currentStep > 5) currentStep = 5; if(currentStep < 1) currentStep = 1; renderContent(); }
+    renderContent();
+  </script>
+</body>
+</html>

@@ -22,7 +22,7 @@
       justify-content: center;
     }
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       width: 100%;
       background: #fff;
       border-radius: 20px;
@@ -189,6 +189,161 @@
       color: var(--yellow);
       background: linear-gradient(135deg, #fefce8, #fef9c3);
     }
+
+    /* Mockups de tela */
+    .screen-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 30px;
+    }
+    .screen-wrap {
+      border: 1px solid #d8e3ef;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .screen-label {
+      padding: 10px 12px;
+      border-bottom: 1px solid #d8e3ef;
+      background: #f1f5f9;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    .screen {
+      min-height: 380px;
+      background: #f8fafc;
+    }
+    .topbar {
+      height: 40px;
+      border-bottom: 1px solid #dbe4ef;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+    }
+    .canvas {
+      display: grid;
+      grid-template-columns: 215px 1fr;
+      min-height: 340px;
+    }
+    .side {
+      border-right: 1px solid #dbe4ef;
+      background: #fff;
+      padding: 10px;
+      font-size: 12px;
+    }
+    .sb {
+      border: 1px solid #dbe4ef;
+      border-radius: 8px;
+      padding: 8px;
+      background: #f8fafc;
+      margin-bottom: 8px;
+    }
+    .sb b {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #1e293b;
+    }
+    .sb ul {
+      margin: 0;
+      padding-left: 16px;
+      color: #475569;
+      font-size: 11px;
+    }
+    .sb li {
+      margin-bottom: 2px;
+    }
+    .main {
+      padding: 10px;
+      background: #f8fafc;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .btn {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: 11px;
+      background: #fff;
+      font-weight: 500;
+      display: inline-block;
+    }
+    .btn.primary {
+      background: hsl(211, 100%, 50%);
+      border-color: hsl(211, 100%, 50%);
+      color: #fff;
+    }
+    .btn.success {
+      background: hsl(140, 60%, 45%);
+      border-color: hsl(140, 60%, 45%);
+      color: #fff;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .card {
+      border: 1px solid #dbe4ef;
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+      font-size: 12px;
+    }
+    .card b {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+    .card.blue {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .card.green {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .tiny {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      background: #fff;
+    }
+    .tiny th,
+    .tiny td {
+      border: 1px solid #e2e8f0;
+      padding: 5px;
+      text-align: left;
+    }
+    .tiny th {
+      background: #f8fafc;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .hint {
+      margin-top: 8px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1e3a8a;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
     .footer {
       background: linear-gradient(135deg, #f0fdf4, #dcfce7);
       border-top: 3px solid var(--green);
@@ -212,6 +367,11 @@
       font-weight: 700;
       font-size: 18px;
     }
+    @media (max-width: 1200px) {
+      .screen-grid { grid-template-columns: 1fr; }
+      .canvas { grid-template-columns: 1fr; }
+      .side { border-right: 0; border-bottom: 1px solid #dbe4ef; }
+    }
     @media (max-width: 768px) {
       body { padding: 20px 10px; }
       .header h1 { font-size: 26px; }
@@ -231,7 +391,7 @@
   <div class="container">
     <div class="header">
       <h1>🎯 Matriz de Decisão - Skip Trace (Passo 3)</h1>
-      <p>Comparação das 2 principais opções de implementação</p>
+      <p>Comparação das 2 principais opções de implementação com mockups visuais</p>
     </div>
 
     <div class="content">
@@ -309,6 +469,120 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Mockups de telas -->
+      <div style="margin-top:40px;">
+        <h2 style="font-size:24px;margin-bottom:20px;color:#1e293b;font-weight:900;">📺 Visualização das Telas: Como É × Como Será</h2>
+
+        <div class="screen-grid">
+          <!-- AS-IS: Tela /skip-trace -->
+          <div class="screen-wrap">
+            <div class="screen-label">❌ ANTES - Tela 1: /skip-trace (Export aprovadas)</div>
+            <div class="screen">
+              <div class="topbar">
+                <div><b>/skip-trace</b></div>
+                <div>Total | Phones | Emails | Contact rate</div>
+              </div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>KPIs</b><ul><li>Total properties</li><li>With phones</li><li>With emails</li></ul></div>
+                  <div class="sb"><b>Busca</b><ul><li>search + paginacao</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="card blue"><b>Info card azul</b><div>border-blue-200 bg-blue-50/50</div></div>
+                  <div class="toolbar"><span class="btn primary">Export approved</span><span class="btn">Ver detalhes</span></div>
+                  <table class="tiny">
+                    <tr><th>Property</th><th>Owner</th><th>Phones</th><th>Emails</th><th>Fonte</th></tr>
+                    <tr><td>114 W Celeste St</td><td>JACKSON SARAH</td><td>(407) 555-1200</td><td>sarah@example.com</td><td>Vendor A</td></tr>
+                    <tr><td>25217 Mathew St</td><td>Smith John</td><td>(407) 555-9999</td><td>john@mail.com</td><td>Vendor B</td></tr>
+                  </table>
+                  <div class="hint">⚠️ Hoje: export em <code>/skip-trace</code> mas upload retorno está em <code>/admin/import</code> (fluxo quebrado).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AS-IS: Tela /admin/import -->
+          <div class="screen-wrap">
+            <div class="screen-label">❌ ANTES - Tela 2: /admin/import (Upload retorno)</div>
+            <div class="screen">
+              <div class="topbar">
+                <div><b>/admin/import</b></div>
+                <div>Config | Images | CSV | SkipTracingImporter</div>
+              </div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Config import</b><ul><li>batchName</li><li>updateExisting</li></ul></div>
+                  <div class="sb"><b>SkipTracingImporter</b><ul><li>upload retorno</li><li>merge phone/email</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="toolbar"><span class="btn">Upload CSV</span><span class="btn primary">Importar</span></div>
+                  <div class="card blue"><b>Upload retorno de skip-trace</b><div>Arquivos CSV com phone/email</div></div>
+                  <table class="tiny">
+                    <tr><th>Property</th><th>Phone</th><th>Email</th><th>Vendor</th></tr>
+                    <tr><td>114 W Celeste St</td><td>(407) 555-1200</td><td>-</td><td>?</td></tr>
+                  </table>
+                  <div class="hint">⚠️ Problema: Upload está em tela separada, sem rastreio de fonte/data, PJ/sócios genérico.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin:20px 0;font-size:28px;color:#b91c1c;font-weight:900;">⬇️ QUEBRA DE CONTEXTO: ANALISTA TROCA DE TELA ⬇️</div>
+
+        <div class="screen-grid">
+          <!-- TO-BE: Tela unificada -->
+          <div class="screen-wrap" style="grid-column: 1 / -1;">
+            <div class="screen-label" style="background:#dcfce7;color:#15803d;">✅ DEPOIS - Tela única: Processo → Passo 3 Contatos (Tudo em 1 lugar)</div>
+            <div class="screen">
+              <div class="topbar">
+                <div><b>Processo 5 Passos - Passo 3</b></div>
+                <div>Export aprovadas | Upload retorno | Consolidacao por fonte</div>
+              </div>
+              <div class="canvas">
+                <div class="side">
+                  <div class="sb"><b>Export</b><ul><li>CSV approved only</li><li>owner + base + endereco</li></ul></div>
+                  <div class="sb"><b>Upload retorno</b><ul><li>Vendor A / Vendor B</li><li>merge com historico</li></ul></div>
+                </div>
+                <div class="main">
+                  <div class="toolbar"><span class="btn primary">Exportar aprovadas (CSV)</span><span class="btn success">Upload retorno</span><span class="btn">Download template</span></div>
+                  <div class="row"><div class="card green"><b>Consolidação multifonte</b><div>28 aprovadas × 2 vendors = 56 contatos</div></div><div class="card blue"><b>PJ/Sócios</b><div>3 empresas + 7 officers rastreados</div></div></div>
+                  <table class="tiny">
+                    <tr><th>Property</th><th>Owner</th><th>Contato</th><th>Tipo</th><th>Fonte</th><th>Data importação</th><th>Preferido</th></tr>
+                    <tr><td>114 W Celeste St</td><td>JACKSON SARAH ESTATE</td><td>(407) 555-1200</td><td>phone</td><td>Vendor A</td><td>2026-02-11</td><td>✅</td></tr>
+                    <tr><td>114 W Celeste St</td><td>JACKSON SARAH ESTATE</td><td>sarah.j@email.com</td><td>email</td><td>Vendor B</td><td>2026-02-11</td><td></td></tr>
+                    <tr><td>890 Oak Ave</td><td>ABC Holdings LLC</td><td>John Doe (Officer)</td><td>company_officer</td><td>Manual research</td><td>2026-02-12</td><td>✅</td></tr>
+                  </table>
+                  <div class="hint">✅ Nova estrutura: skip_tracing_data { phones: [{value, source, date}], emails: [{value, source, date}], company: {name, officers: [{name, role}]} } com histórico completo</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:30px;padding:20px;background:linear-gradient(135deg,#dcfce7,#bbf7d0);border-left:5px solid #15803d;border-radius:12px;">
+          <h3 style="font-size:18px;margin:0 0 12px;color:#15803d;font-weight:900;">✅ Ganhos Visuais da Opção #1</h3>
+          <ul style="margin:0;padding-left:20px;color:#334155;font-size:15px;line-height:1.8;">
+            <li><strong>Fluxo contínuo:</strong> Export e Upload na mesma tela → <strong>-30% tempo de operação</strong></li>
+            <li><strong>Multifonte preservado:</strong> Vendor A, Vendor B, Manual → cada fonte com data rastreável</li>
+            <li><strong>PJ + Sócios:</strong> Propriedades de empresa LLC com identificação de officers</li>
+            <li><strong>100% rastreável:</strong> Origem, data de importação, contato preferido marcado</li>
+            <li><strong>Tabela consolidada:</strong> Mesma propriedade mostra múltiplos contatos de diferentes fontes</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:20px;padding:20px;background:linear-gradient(135deg,#fef9c3,#fde68a);border-left:5px solid #a16207;border-radius:12px;">
+          <h3 style="font-size:18px;margin:0 0 12px;color:#a16207;font-weight:900;">⚠️ Limitações da Opção #2</h3>
+          <ul style="margin:0;padding-left:20px;color:#334155;font-size:15px;line-height:1.8;">
+            <li><strong>Fluxo quebrado:</strong> Continua navegando entre /skip-trace e /admin/import</li>
+            <li><strong>Sem consolidação:</strong> Difícil ver múltiplas fontes para a mesma propriedade</li>
+            <li><strong>Rastreio limitado:</strong> Não identifica claramente origem e data de cada contato</li>
+            <li><strong>Risco operacional:</strong> Troca de contexto aumenta erro humano</li>
+            <li><strong>Gap de produtividade:</strong> Score +3.2 vs +7.2 da Opção #1</li>
+          </ul>
+        </div>
+      </div>
 
       <div class="footer">
         <h2>✅ Recomendação Final</h2>

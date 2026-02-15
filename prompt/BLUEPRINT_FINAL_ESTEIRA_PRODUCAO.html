@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blueprint Operacional - Esteira de Aquisição 5 Passos</title>
+  <style>
+    :root {
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #ca8a04;
+      --bg: #f8fafc;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--primary); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar - Fila de Trabalho */
+    .sidebar { width: 320px; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); background: #f8fafc; }
+    .property-list { flex-grow: 1; overflow-y: auto; padding: 12px; }
+    .prop-card { padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; position: relative; }
+    .prop-card.active { border: 2px solid var(--accent); background: #eff6ff; }
+    .prop-card b { display: block; font-size: 13px; margin-bottom: 4px; }
+    .prop-card span { font-size: 10px; color: #64748b; }
+
+    /* Main Area */
+    .main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .wizard-nav { background: #fff; padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: center; gap: 10px; }
+    .step-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #94a3b8; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; }
+    .step-item.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .step-item.done { color: var(--success); border-color: #bbf7d0; background: #f0fdf4; }
+
+    /* Workspace */
+    .workspace { flex-grow: 1; padding: 25px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+    .content-card { width: 100%; max-width: 1000px; background: #fff; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 20px rgba(0,0,0,0.05); min-height: 600px; display: flex; flex-direction: column; }
+    .content-body { padding: 30px; flex-grow: 1; }
+    .content-footer { padding: 20px 30px; border-top: 1px solid var(--border); background: #f8fafc; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 16px 16px; }
+
+    /* Forms & Tables */
+    h3 { font-size: 22px; font-weight: 800; margin-bottom: 15px; }
+    .subtitle { color: #64748b; font-size: 13px; margin-bottom: 25px; line-height: 1.4; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    label { font-size: 11px; font-weight: 700; color: #64748b; display: block; margin-bottom: 5px; text-transform: uppercase; }
+    input, select { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+    
+    .btn { padding: 12px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); font-size: 14px; }
+    .btn-primary { background: var(--accent); color: #fff; border: none; }
+    .btn-success { background: var(--success); color: #fff; border: none; }
+    .btn-danger { background: var(--danger); color: #fff; border: none; }
+    .btn-outline { background: #fff; }
+
+    .table-ui { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+    .table-ui th { text-align: left; padding: 10px; background: #f8fafc; border-bottom: 2px solid var(--border); color: #64748b; }
+    .table-ui td { padding: 10px; border-bottom: 1px solid var(--border); }
+
+    .calc-summary { background: #0f172a; color: #fff; padding: 25px; border-radius: 12px; margin-top: 20px; }
+    .calc-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+    .calc-total { font-size: 28px; font-weight: 900; color: var(--success); border-top: 1px solid #334155; margin-top: 15px; padding-top: 15px; }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2 style="font-size: 14px; font-weight: 800;">Fila de Aquisição</h2>
+      <p style="font-size: 10px; color: #64748b;">Orlando Real Estate Hub</p>
+    </div>
+    <div class="property-list" id="propList">
+      <!-- Injetado via JS -->
+    </div>
+  </aside>
+
+  <main class="main">
+    <nav class="wizard-nav" id="wizardNav">
+      <div class="step-item" onclick="jumpToStep(1)" id="step1">1. BASE</div>
+      <div class="step-item" onclick="jumpToStep(2)" id="step2">2. ANÁLISE</div>
+      <div class="step-item" onclick="jumpToStep(3)" id="step3">3. CONTATOS</div>
+      <div class="step-item" onclick="jumpToStep(4)" id="step4">4. MERCADO</div>
+      <div class="step-item" onclick="jumpToStep(5)" id="step5">5. OFERTA</div>
+    </nav>
+
+    <div class="workspace">
+      <div class="content-card">
+        <div class="content-body" id="stepContent">
+          <!-- Conteúdo dinâmico aqui -->
+        </div>
+        <div class="content-footer">
+          <button class="btn btn-outline" id="prevBtn" onclick="moveStep(-1)">Voltar</button>
+          <div id="stepCounter" style="font-size: 11px; font-weight: 700; color: #94a3b8;">PASSO 1 DE 5</div>
+          <button class="btn btn-primary" id="nextBtn" onclick="moveStep(1)">Próximo Passo →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const properties = [
+      { id: 1, address: "1025 S WASHINGTON AVE", city: "Orlando", state: "FL", sqft: 1420, owner: "Sarah Jackson Estate", status: "New" }
+    ];
+
+    let currentStep = 1;
+    let selectedId = 1;
+
+    function renderContent() {
+      const body = document.getElementById('stepContent');
+      const prop = properties[0];
+      
+      // Update Wizard
+      for(let i=1; i<=5; i++) {
+        const el = document.getElementById('step'+i);
+        el.className = 'step-item ' + (i < currentStep ? 'done' : i === currentStep ? 'active' : '');
+      }
+
+      document.getElementById('stepCounter').innerText = `PASSO ${currentStep} DE 5`;
+      document.getElementById('prevBtn').style.display = currentStep === 1 ? 'none' : 'block';
+
+      if(currentStep === 1) {
+        body.innerHTML = `
+          <h3>Passo 1: Subir Base de Imóveis Elegíveis</h3>
+          <p class="subtitle">Upload completo de dados. Mapeie os campos obrigatórios da base.</p>
+          <div class="field-grid">
+            <div><label>Nome da Base (Livre)</label><input type="text" placeholder="Ex: BASE DE PROBATE FEVEREIRO"></div>
+            <div><label>Data do Upload</label><input type="date" value="2026-02-12"></div>
+          </div>
+          <div style="border: 2px dashed var(--border); padding: 40px; text-align: center; border-radius: 12px; background: #f8fafc; cursor: pointer;">
+            <p style="font-weight: 700; color: var(--accent);">📤 Clique para selecionar arquivo .CSV</p>
+            <p style="font-size: 11px; color: #64748b; margin-top: 8px;">Dados esperados: Endereço, Nome Dono, Residência, Sqft, Lote, Ano, Última Venda, Piscina, Quartos/Banhos.</p>
+          </div>
+          <div style="margin-top: 20px;">
+            <label>Filtro de Visualização</label>
+            <div style="display:flex; gap:10px;">
+              <select style="flex:1;"><option>Orlando</option><option>Kissimmee</option></select>
+              <select style="flex:1;"><option>FL</option></select>
+            </div>
+          </div>
+        `;
+      } else if (currentStep === 2) {
+        body.innerHTML = `
+          <h3>Passo 2: Triagem e Seleção</h3>
+          <p class="subtitle">Decisão rápida de interesse. Registre quem analisou e o motivo em caso de negação.</p>
+          <div class="field-grid">
+            <div><label>Analista Responsável</label><select><option>Edson</option><option>Josiane</option><option>Rodrigo</option></select></div>
+            <div><label>Data da Decisão</label><input type="date" value="2026-02-12"></div>
+          </div>
+          <div style="background:#eff6ff; padding:15px; border-radius:10px; margin-bottom:20px;">
+            <p><b>Propriedade:</b> ${prop.address}</p>
+            <p style="font-size:12px; color:var(--warning); font-weight:700; margin-top:5px;">⚠️ Sugestão de Pré-Negação: Low Equity detectado.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-success" style="flex:1;" onclick="moveStep(1)">APROVAR IMÓVEL</button>
+            <div style="flex:1;">
+              <select style="margin-bottom:10px;"><option>Selecionar motivo de negação...</option><option>Propriedade Nova (<20 anos)</option><option>Recém Vendida (<2 anos)</option><option>Low-Equity</option><option>Imóvel Comercial</option></select>
+              <button class="btn btn-danger" style="width:100%;">NEGAR IMÓVEL</button>
+            </div>
+          </div>
+        `;
+      } else if (currentStep === 3) {
+        body.innerHTML = `
+          <h3>Passo 3: Captura de Contatos (Skip Trace)</h3>
+          <p class="subtitle">Extração para mercado e upload de retorno multifonte. Foco em Donos e Sócios.</p>
+          <div style="display:flex; gap:10px; margin-bottom:20px;">
+            <button class="btn btn-outline" style="flex:1;">📥 Exportar Nomes p/ Pesquisa</button>
+            <button class="btn btn-primary" style="flex:1;">📤 Upload Retorno (CSV)</button>
+          </div>
+          <p><b>Estrutura de Contato (PJ/Empresa):</b></p>
+          <table class="table-ui">
+            <thead><tr><th>Entidade/Pessoa</th><th>Papel</th><th>Fone/Email</th><th>Fonte</th></tr></thead>
+            <tbody>
+              <tr><td>ABC HOLDINGS LLC</td><td>Proprietário</td><td>(407) 555-0000</td><td>Vendor A</td></tr>
+              <tr><td><b>John Doe</b></td><td>Sócio/CEO</td><td>john@doe.com</td><td>Vendor B</td></tr>
+              <tr><td><b>Jane Smith</b></td><td>Officer</td><td>(407) 555-1212</td><td>Manual</td></tr>
+            </tbody>
+          </table>
+        `;
+      } else if (currentStep === 4) {
+        body.innerHTML = `
+          <h3>Passo 4: Definição de Comparativos</h3>
+          <p class="subtitle">Encontre casas reformadas e vendidas recentemente no Zillow/Redfin.</p>
+          <div style="background:#f8fafc; padding:15px; border-radius:10px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+            <span><b>Alvo:</b> ${prop.address}</span>
+            <button class="btn btn-outline" style="font-size:11px;">Copiar Endereço</button>
+          </div>
+          <p style="font-weight:700; font-size:12px; margin-bottom:10px;">Inserir 3 ou 4 Comparativos:</p>
+          <div class="field-grid" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
+            <input type="text" placeholder="Endereço do Comp">
+            <input type="number" placeholder="Venda $">
+            <input type="number" placeholder="Sqft">
+            <button class="btn btn-primary" style="padding:5px;">Add</button>
+          </div>
+          <table class="table-mock" style="width:100%; border-collapse:collapse; margin-top:15px;">
+            <tr style="background:#f1f5f9; font-size:11px;"><th>Endereço Comp</th><th>Valor</th><th>Sqft</th><th>$/sqft</th></tr>
+            <tr style="font-size:12px;"><td>12 Oak Ave</td><td>$280,000</td><td>1,400</td><td>$200.00</td></tr>
+            <tr style="font-size:12px;"><td>18 Pine Dr</td><td>$310,000</td><td>1,500</td><td>$206.66</td></tr>
+          </table>
+          <div style="text-align:right; margin-top:15px; font-weight:800; color:var(--accent);">MÉDIA MERCADO: $203.33 /sqft</div>
+        `;
+      } else if (currentStep === 5) {
+        body.innerHTML = `
+          <h3>Passo 5: Preço de Oferta Mínima</h3>
+          <p class="subtitle">Cálculo matemático baseado na média do Passo 4 e parâmetros de reforma.</p>
+          <div class="field-grid">
+            <div>
+              <label>Tipo de Reforma</label>
+              <select id="refSelect">
+                <option value="0.10">Leve (10% do Valor)</option>
+                <option value="0.25" selected>Média (25% do Valor)</option>
+                <option value="0.40">Grande (40% do Valor)</option>
+              </select>
+            </div>
+            <div>
+              <label>Comissão Wholesale (Valor ou %)</label>
+              <input type="text" value="8%" placeholder="Ex: 8% ou 20000">
+            </div>
+          </div>
+          <div class="calc-summary">
+            <div class="calc-row"><span>ARV (Valor Reformada)</span><span>$288,728</span></div>
+            <div class="calc-row" style="color:#94a3b8;"><span>(-) Reforma (25%)</span><span>$72,182</span></div>
+            <div class="calc-row" style="color:#94a3b8;"><span>(-) Comissão (8%)</span><span>$23,098</span></div>
+            <div class="calc-total">
+              <div style="font-size:11px; color:#94a3b8; font-weight:400; margin-bottom:5px;">OFERTA MÁXIMA DE COMPRA</div>
+              $193,448
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width:100%; height:50px; margin-top:20px;">GERAR DOCUMENTO DE PROPOSTA</button>
+        `;
+      }
+    }
+
+    function renderSidebar() {
+      const list = document.getElementById('propList');
+      list.innerHTML = properties.map(p => `
+        <div class="prop-card ${selectedId === p.id ? 'active' : ''}" onclick="selectProp(${p.id})">
+          <b>${p.address}</b>
+          <span>${p.city}, ${p.state} | ${p.sqft} sqft</span>
+        </div>
+      `).join('');
+    }
+
+    function moveStep(delta) { 
+      currentStep += delta; 
+      if(currentStep > 5) currentStep = 5; 
+      if(currentStep < 1) currentStep = 1; 
+      renderContent(); 
+    }
+    
+    function jumpToStep(s) { currentStep = s; renderContent(); }
+    function selectProp(id) { selectedId = id; currentStep = 1; renderSidebar(); renderContent(); }
+
+    renderSidebar(); renderContent();
+  </script>
+</body>
+</html>

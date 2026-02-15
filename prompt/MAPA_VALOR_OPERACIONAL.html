@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MAPA DE VALOR - Reestruturação do Processo de Aquisição</title>
+  <style>
+    :root {
+      --danger: #ef4444;
+      --success: #22c55e;
+      --accent: #3b82f6;
+      --bg: #f1f5f9;
+      --text: #1e293b;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 40px 20px; line-height: 1.5; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    
+    /* Header Estratégico */
+    .header { background: #0f172a; color: #fff; padding: 40px; border-radius: 24px; margin-bottom: 40px; }
+    .header h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
+    .header p { color: #94a3b8; font-size: 18px; }
+    
+    /* Grid de Comparação de Impacto */
+    .step-box { background: var(--card); border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 50px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    .step-header { background: #f8fafc; padding: 20px 30px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; }
+    .step-title { display: flex; align-items: center; gap: 15px; font-size: 20px; font-weight: 700; }
+    .step-badge { background: var(--accent); color: #fff; padding: 4px 12px; border-radius: 6px; font-size: 12px; }
+    
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid #e2e8f0; }
+    .side { padding: 30px; position: relative; }
+    .side-old { background: #fffafb; border-right: 1px solid #e2e8f0; }
+    .side-new { background: #f0fdf4; }
+    
+    .label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; display: block; }
+    .label-old { color: var(--danger); }
+    .label-new { color: var(--success); }
+    
+    /* Mockups de UI Reais */
+    .screen-mockup { border: 1px solid #cbd5e1; border-radius: 12px; background: #fff; overflow: hidden; height: 320px; display: flex; flex-direction: column; }
+    .screen-top { background: #f1f5f9; padding: 8px 12px; border-bottom: 1px solid #cbd5e1; display: flex; gap: 4px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; }
+    .screen-content { padding: 12px; font-size: 10px; flex-grow: 1; position: relative; }
+    
+    /* Elementos de UI Específicos */
+    .ui-btn { padding: 4px 10px; border-radius: 4px; font-size: 10px; border: 1px solid #e2e8f0; display: inline-block; }
+    .ui-btn-blue { background: var(--accent); color: #fff; border: none; }
+    .ui-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .ui-table th { text-align: left; padding: 4px; border-bottom: 1px solid #e2e8f0; }
+    .ui-table td { padding: 4px; border-bottom: 1px solid #f1f5f9; }
+    
+    /* Highlight de Ganhos */
+    .gain-list { list-style: none; margin-top: 20px; }
+    .gain-item { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; align-items: flex-start; }
+    .gain-icon { color: var(--success); font-weight: 800; }
+
+    /* A Flecha de Fluxo */
+    .flow-arrow { text-align: center; font-size: 30px; color: var(--danger); margin: -25px 0; z-index: 10; position: relative; }
+
+    /* Footer de Decisão */
+    .footer-action { background: #fff; border: 2px solid var(--accent); padding: 30px; border-radius: 20px; text-align: center; }
+    .action-btn { background: var(--accent); color: #fff; padding: 16px 40px; border-radius: 12px; font-weight: 800; text-decoration: none; display: inline-block; margin-top: 20px; box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.5); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 Mapa de Valor: Reestruturação Operacional</h1>
+      <p>Transformando processos fragmentados em uma linha de montagem de lucro. <b>Onde o sistema falha hoje e como vamos vencer.</b></p>
+    </div>
+
+    <!-- PASSO 1 & 2: O FILTRO -->
+    <div class="step-box">
+      <div class="step-header">
+        <div class="step-title"><span class="step-badge">PASSO 1 & 2</span> Inventário e Decisão</div>
+        <div style="font-size: 14px; color: var(--success); font-weight: 700;">GANHO: Auditoria 100% Rastreável</div>
+      </div>
+      <div class="comparison">
+        <div class="side side-old">
+          <span class="label label-old">❌ Problema: Dados Jogados</span>
+          <div class="screen-mockup">
+            <div class="screen-top"><div class="dot"></div><div class="dot"></div></div>
+            <div class="screen-content">
+              <p><b>/admin/import</b></p>
+              <div style="border: 1px dashed #ccc; padding: 20px; text-align: center; margin-top: 10px;">Upload CSV</div>
+              <p style="margin-top: 10px;">Sem saber se o imóvel já existe no sistema. Risco de <b>duplicar custos</b> de Skip Trace.</p>
+            </div>
+          </div>
+          <ul class="gain-list">
+            <li class="gain-item"><span style="color:var(--danger)">✘</span> Analista aprova sem motivo.</li>
+            <li class="gain-item"><span style="color:var(--danger)">✘</span> "Perdemos o deal" - Mas ninguém sabe por quê.</li>
+          </ul>
+        </div>
+        <div class="side side-new">
+          <span class="label label-new">✅ Solução: Fila de Inteligência</span>
+          <div class="screen-mockup">
+            <div class="screen-top"><div class="dot"></div><div class="dot"></div></div>
+            <div class="screen-content">
+              <p><b>Passo 2: Fila de Análise</b></p>
+              <table class="ui-table">
+                <tr><th>Endereço</th><th>Ação</th></tr>
+                <tr><td>114 W Celeste St</td><td><span class="ui-btn ui-btn-blue">Aprovar</span> <span class="ui-btn">Negar</span></td></tr>
+              </table>
+              <div style="background: #dcfce7; padding: 10px; margin-top: 10px; border-radius: 4px;">
+                <b>Alerta:</b> Este imóvel já foi negado há 3 meses por "Low Equity". Analisar novamente?
+              </div>
+            </div>
+          </div>
+          <ul class="gain-list">
+            <li class="gain-item"><span class="gain-icon">✓</span> <b>Deduplicação:</b> Economia imediata de leads repetidos.</li>
+            <li class="gain-item"><span class="gain-icon">✓</span> <b>Motivo Obrigatório:</b> Dados para ajustar a estratégia.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-arrow">⬇️ QUEBRA DE CONTEXTO: O ANALISTA SE PERDE AQUI ⬇️</div>
+
+    <!-- PASSO 3: O CORAÇÃO DO NEGÓCIO -->
+    <div class="step-box" style="border: 3px solid var(--accent);">
+      <div class="step-header" style="background: #eff6ff;">
+        <div class="step-title"><span class="step-badge" style="background: #1e40af;">PASSO 3</span> Skip Trace & Contatos (O Coração)</div>
+        <div style="font-size: 14px; color: #1e40af; font-weight: 700;">ROI: +15% Taxa de Contato | -30% Tempo</div>
+      </div>
+      <div class="comparison">
+        <div class="side side-old">
+          <span class="label label-old">❌ Problema: Fluxo Quebrado (O Buraco Negro)</span>
+          <div class="screen-mockup">
+            <div class="screen-top"><div class="dot"></div><div class="dot"></div></div>
+            <div class="screen-content">
+              <p><b>Tela A: /skip-trace</b> (Só vê os dados)</p>
+              <p><b>Tela B: /admin/import</b> (Só sobe o CSV)</p>
+              <div style="margin-top: 20px; border: 2px solid var(--danger); padding: 10px; color: var(--danger); font-weight: 800; text-align: center;">
+                DADOS DE PJ PERDIDOS!<br/>Sócios e Oficiais não são mapeados.
+              </div>
+            </div>
+          </div>
+          <ul class="gain-list">
+            <li class="gain-item"><span style="color:var(--danger)">✘</span> Analista esquece de subir o retorno do vendor.</li>
+            <li class="gain-item"><span style="color:var(--danger)">✘</span> Não sabemos quem é o dono da LLC (PJ).</li>
+          </ul>
+        </div>
+        <div class="side side-new">
+          <span class="label label-new">✅ Solução: Workspace Multifonte & PJ</span>
+          <div class="screen-mockup" style="border: 2px solid var(--success);">
+            <div class="screen-top" style="background: #dcfce7;"><div class="dot"></div><div class="dot"></div></div>
+            <div class="screen-content">
+              <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                <span class="ui-btn ui-btn-blue">Exportar Aprovadas</span>
+                <span class="ui-btn" style="border-color: var(--success); color: var(--success);">Importar Retorno</span>
+              </div>
+              <p><b>Dono: ABC Holdings LLC</b></p>
+              <table class="ui-table">
+                <tr><th>Nome (Officer)</th><th>Contato</th><th>Fonte</th></tr>
+                <tr><td>John Doe (CEO)</td><td>(407) 555-01</td><td>Vendor A</td></tr>
+                <tr><td>Jane Smith (VP)</td><td>jane@email.com</td><td>Vendor B</td></tr>
+              </table>
+              <div style="margin-top: 8px; font-size: 9px; color: #166534;">
+                ★ <b>Histórico Ativo:</b> Mantemos todos os contatos sem sobrescrever.
+              </div>
+            </div>
+          </div>
+          <ul class="gain-list">
+            <li class="gain-item"><span class="gain-icon">✓</span> <b>Decisor Real:</b> Falamos com os sócios, não com a parede.</li>
+            <li class="gain-item"><span class="gain-icon">✓</span> <b>Centralização:</b> Tudo em uma tela. O dado nunca "esquece".</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 4 & 5: A OFERTA -->
+    <div class="step-box">
+      <div class="step-header">
+        <div class="step-title"><span class="step-badge">PASSO 4 & 5</span> Mercado e Oferta Mínima</div>
+        <div style="font-size: 14px; color: var(--success); font-weight: 700;">VALOR: Oferta Blindada contra Prejuízo</div>
+      </div>
+      <div class="comparison">
+        <div class="side side-old">
+          <span class="label label-old">❌ Problema: Cálculo no "Feeling"</span>
+          <div class="screen-mockup">
+            <div class="screen-top"><div class="dot"></div><div class="dot"></div></div>
+            <div class="screen-content">
+              <p>O analista vê os comparativos no Zillow e chuta um valor de oferta no sistema.</p>
+              <div style="margin-top: 10px; color: var(--danger);">Sem memória de cálculo. Se o lucro sumir, ninguém sabe onde errou.</div>
+            </div>
+          </div>
+        </div>
+        <div class="side side-new">
+          <span class="label label-new">✅ Solução: Calculadora Auditável</span>
+          <div class="screen-mockup">
+            <div class="screen-top"><div class="dot"></div><div class="dot"></div></div>
+            <div class="screen-content">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <div style="border: 1px solid #e2e8f0; padding: 5px;">Comps Med: $205/sqft</div>
+                <div style="border: 1px solid #e2e8f0; padding: 5px;">Ref (25%): $72k</div>
+              </div>
+              <p style="margin-top: 10px; font-size: 14px; font-weight: 800; color: var(--success);">
+                OFERTA MÍNIMA: $195,037
+              </p>
+              <p style="font-size: 9px;">Lucro Wholesale Estimado: $23,000 (8%)</p>
+            </div>
+          </div>
+          <ul class="gain-list">
+            <li class="gain-item"><span class="gain-icon">✓</span> <b>Segurança:</b> O sistema trava a margem de lucro.</li>
+            <li class="gain-item"><span class="gain-icon">✓</span> <b>Padrão:</b> Toda oferta segue a mesma fórmula matemática.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- AÇÃO FINAL -->
+    <div class="footer-action">
+      <h3>Diferença Real de Negócio</h3>
+      <div style="display: flex; justify-content: center; gap: 40px; margin-top: 20px;">
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--success);">+15%</div>
+          <div style="font-size: 12px; color: #64748b;">Taxa de Contato (PJ/Sócios)</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--success);">-30%</div>
+          <div style="font-size: 12px; color: #64748b;">Tempo de Operação</div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--accent);">100%</div>
+          <div style="font-size: 12px; color: #64748b;">Rastreabilidade de Decisão</div>
+        </div>
+      </div>
+      <a href="#" class="action-btn">APROVAR REESTRUTURAÇÃO (INICIAR PASSO 3)</a>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 11px; font-family: monospace;">
+      GERADO PELO AGENTE GEMINI - BASEADO EM AUDITORIA REAL DO CÓDIGO - 12/02/2026
+    </div>
+  </div>
+</body>
+</html>

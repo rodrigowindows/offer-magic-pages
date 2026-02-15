@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketing Pipeline - Orlando Probate System</title>
+  <style>
+    :root {
+      --primary: #1e293b;
+      --accent: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --purple: #8b5cf6;
+      --border: #e2e8f0;
+      --bg: #f8fafc;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--primary);
+    }
+    .app-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: 100vh;
+    }
+    .sidebar {
+      background: white;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 20px;
+    }
+    .sidebar h2 {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .property-card {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .property-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    .property-card.active {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+    .property-card img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .property-card h3 {
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: var(--primary);
+    }
+    .property-card .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      background: var(--warning);
+      color: white;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .main-content {
+      padding: 30px;
+      overflow-y: auto;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+    }
+    .header h1 {
+      font-size: 24px;
+      color: var(--primary);
+    }
+    .logo {
+      font-size: 11px;
+      color: #64748b;
+      text-align: right;
+    }
+    .logo strong {
+      display: block;
+      font-size: 14px;
+      color: var(--purple);
+    }
+    .step-indicator {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    .step {
+      flex: 1;
+      padding: 12px;
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .step.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: white;
+    }
+    .step.completed {
+      border-color: var(--success);
+      background: var(--success);
+      color: white;
+    }
+    .content-body {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      min-height: 400px;
+    }
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    .btn-success:hover { background: #059669; }
+    .btn-outline {
+      background: white;
+      border: 2px solid var(--border);
+      color: var(--primary);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .table-ui {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    .table-ui th {
+      background: var(--bg);
+      padding: 12px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: #64748b;
+      border-bottom: 2px solid var(--border);
+    }
+    .table-ui td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .warning-box {
+      background: #fef3c7;
+      border-left: 4px solid var(--warning);
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 8px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .quick-offer-calc {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .calc-btn {
+      border: 2px solid var(--border);
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .calc-btn:hover {
+      border-color: var(--accent);
+      background: #eff6ff;
+    }
+    .calc-btn b {
+      display: block;
+      font-size: 20px;
+      color: var(--primary);
+    }
+    .calc-btn small {
+      font-size: 12px;
+      color: #64748b;
+    }
+    .nav-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main-content">
+      <div class="header">
+        <h1>Marketing Pipeline</h1>
+        <div class="logo">
+          <strong>Orlando Probate</strong>
+          Communication System
+        </div>
+      </div>
+      <div class="step-indicator" id="stepIndicator"></div>
+      <div class="content-body" id="contentBody"></div>
+      <div class="nav-buttons">
+        <button class="btn btn-outline" id="backBtn" onclick="moveStep(-1)">← Voltar</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="moveStep(1)">Avançar →</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const properties = [
+      { id: 1, address: '1025 S WASHINGTON ST', city: 'Apopka, FL 32703', status: 'PROBATE', sqft: 1200, img: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop' },
+      { id: 2, address: '742 OAK RIDGE RD', city: 'Orlando, FL 32801', status: 'PROBATE', sqft: 0, img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&h=300&fit=crop' },
+      { id: 3, address: '1523 SUNSET BLVD', city: 'Winter Park, FL 32789', status: 'PROBATE', sqft: 1850, img: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&h=300&fit=crop' }
+    ];
+
+    let selectedId = 1;
+    let currentStep = 1;
+
+    function renderSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.innerHTML = '<h2>📋 Fila de Trabalho</h2>';
+      properties.forEach(prop => {
+        const card = document.createElement('div');
+        card.className = `property-card ${prop.id === selectedId ? 'active' : ''}`;
+        card.onclick = () => selectProp(prop.id);
+        card.innerHTML = `
+          <img src="${prop.img}" alt="${prop.address}">
+          <h3>${prop.address}</h3>
+          <p style="font-size: 12px; color: #64748b; margin: 6px 0;">${prop.city}</p>
+          <span class="badge">${prop.status}</span>
+        `;
+        sidebar.appendChild(card);
+      });
+    }
+
+    function renderContent() {
+      const prop = properties.find(p => p.id === selectedId);
+      const body = document.getElementById('contentBody');
+      const stepIndicator = document.getElementById('stepIndicator');
+
+      // Render step indicator
+      stepIndicator.innerHTML = '';
+      const steps = ['Base', 'Análise', 'Skip Trace', 'Mercado', 'Oferta'];
+      steps.forEach((name, idx) => {
+        const step = document.createElement('div');
+        step.className = `step ${idx + 1 === currentStep ? 'active' : ''} ${idx + 1 < currentStep ? 'completed' : ''}`;
+        step.textContent = `${idx + 1}. ${name}`;
+        step.onclick = () => { currentStep = idx + 1; renderContent(); };
+        stepIndicator.appendChild(step);
+      });
+
+      // Update navigation buttons
+      document.getElementById('nextBtn').style.display = currentStep === 5 ? 'none' : 'block';
+      document.getElementById('backBtn').style.display = currentStep === 1 ? 'none' : 'block';
+
+      // Render step content
+      if(currentStep === 1) {
+        body.innerHTML = `<h3>Passo 1: Identificação da Base</h3>
+          <p style="color: #64748b; margin-bottom: 20px;">Confirmando dados de importação para <b>${prop.address}</b>.</p>
+          <div style="display:flex; gap:20px; background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
+            <img src="${prop.img}" style="width:200px; height:130px; object-fit:cover; border-radius:8px;">
+            <div>
+              <p style="margin-bottom: 8px;"><b>Lote:</b> PROBATE_ORLANDO_26</p>
+              <p style="margin-bottom: 8px;"><b>Status Inicial:</b> <span style="color:var(--accent)">Novo Registro</span></p>
+              <p style="margin-bottom: 8px;"><b>SQFT:</b> ${prop.sqft > 0 ? prop.sqft + ' sqft' : '<span style="color:var(--danger)">Não disponível</span>'}</p>
+              <div style="margin-top:15px; color:var(--success); font-weight:700;">✅ Nenhuma duplicidade encontrada.</div>
+            </div>
+          </div>`;
+      } else if (currentStep === 2) {
+        body.innerHTML = `<h3>Passo 2: Análise de Viabilidade</h3>
+          <p style="color: #64748b; margin-bottom: 20px;">Triagem rápida de equity para aprovação de custos de Skip Trace.</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+            <div style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid var(--border);">
+              <p style="font-size:11px; color:#64748b;">POTENTIAL EQUITY</p>
+              <p style="font-size:28px; font-weight:900; color:var(--success);">$92,000</p>
+              <p style="font-size:12px; color:#64748b; margin-top:8px;">Baseado em valores do condado</p>
+              <div style="margin-top:15px;">
+                <button class="btn btn-success" style="width:100%;" onclick="moveStep(1)">✓ APROVAR IMÓVEL</button>
+                <button class="btn btn-outline" style="width:100%; margin-top:8px; color:var(--danger);">✗ NEGAR</button>
+              </div>
+            </div>
+            <img src="${prop.img}" style="width:100%; border-radius:12px; height:220px; object-fit:cover;">
+          </div>`;
+      } else if (currentStep === 3) {
+        body.innerHTML = `<h3>Passo 3: Skip Trace (Contatos)</h3>
+          <p style="color: #64748b; margin-bottom: 20px;">Importação de dados de contato do fornecedor.</p>
+          <div style="border:2px dashed var(--border); padding:40px; text-align:center; border-radius:12px; cursor:pointer; background:#f8fafc;" onclick="alert('Funcionalidade de upload em desenvolvimento')">
+            <p style="font-weight:700; color:var(--accent);">📁 Clique para subir o Retorno (.CSV)</p>
+            <p style="font-size:12px; color:#64748b; margin-top:8px;">Formatos aceitos: CSV, XLSX</p>
+          </div>
+          <table class="table-ui">
+            <thead><tr><th>Nome</th><th>Contato</th><th>Tipo</th><th>Fonte</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><b>Sarah Jackson</b></td>
+                <td>(407) 555-0101</td>
+                <td><span style="color:var(--accent);">Owner</span></td>
+                <td>Vendor A</td>
+              </tr>
+              <tr>
+                <td>John Doe</td>
+                <td>john.doe@gmail.com</td>
+                <td><span style="color:#64748b;">Officer</span></td>
+                <td>Manual</td>
+              </tr>
+              <tr>
+                <td>Mary Smith</td>
+                <td>(407) 555-0202</td>
+                <td><span style="color:#64748b;">Officer</span></td>
+                <td>Vendor A</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:20px; padding:15px; background:#f0fdf4; border:1px solid var(--success); border-radius:8px;">
+            <b style="color:var(--success);">✓ 3 contatos importados</b> - 1 Owner, 2 Officers
+          </div>`;
+      } else if (currentStep === 4) {
+        body.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Passo 4: Mercado (Comps Analysis)</h3>
+            <span style="background:var(--purple); color:#fff; padding:6px 12px; border-radius:4px; font-size:10px; font-weight:800;">🏠 ZILLOW COMPS</span>
+          </div>
+          ${prop.sqft === 0 ? `
+            <div class="warning-box">
+              <span style="font-size:24px;">⚠️</span>
+              <span><b>Property sqft not available</b> - usando média simples ao invés de $/sqft para análise.</span>
+            </div>` : ''}
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px; margin-top:15px;">
+            <div style="padding:20px; border:1px solid var(--border); border-radius:8px; background:#f8fafc;">
+              <span style="font-size:11px; color:#64748b; display:block; margin-bottom:8px;">AVG SALE PRICE</span>
+              <b style="font-size:24px; color:var(--primary);">$212,000</b>
+            </div>
+            <div style="padding:20px; border:1px solid var(--border); border-radius:8px; background:#f8fafc;">
+              <span style="font-size:11px; color:#64748b; display:block; margin-bottom:8px;">COMPS FOUND</span>
+              <b style="font-size:24px; color:var(--primary);">3</b>
+            </div>
+            <div style="padding:20px; border:1px solid var(--border); border-radius:8px; background:#f8fafc;">
+              <span style="font-size:11px; color:#64748b; display:block; margin-bottom:8px;">MARKET STATUS</span>
+              <b style="font-size:24px; color:var(--success);">Stable</b>
+            </div>
+          </div>
+          <table class="table-ui">
+            <thead><tr><th>Address</th><th>Price</th><th>Distance</th><th>Quality</th></tr></thead>
+            <tbody>
+              <tr><td>1025 S WASHINGTON AVE</td><td><b>$410,000</b></td><td>0.2 mi</td><td><span style="color:var(--warning);">Fair (50%)</span></td></tr>
+              <tr><td>1025 S WASHINGTON CT</td><td><b>$190,000</b></td><td>0.3 mi</td><td><span style="color:var(--warning);">Fair (50%)</span></td></tr>
+              <tr><td>1020 S WASHINGTON ST</td><td><b>$235,000</b></td><td>0.1 mi</td><td><span style="color:var(--success);">Good (80%)</span></td></tr>
+            </tbody>
+          </table>`;
+      } else if (currentStep === 5) {
+        const arv = 212000;
+        body.innerHTML = `<h3>Passo 5: Calculadora de Oferta</h3>
+          <p style="color: #64748b; margin-bottom: 20px;">Selecione a porcentagem do ARV para calcular a oferta.</p>
+          <div class="quick-offer-calc">
+            <div class="calc-btn" onclick="selectOffer(60, ${arv})"><b>60%</b><br><small>$${Math.round(arv * 0.6).toLocaleString()}</small></div>
+            <div class="calc-btn" onclick="selectOffer(65, ${arv})"><b>65%</b><br><small>$${Math.round(arv * 0.65).toLocaleString()}</small></div>
+            <div class="calc-btn" onclick="selectOffer(70, ${arv})"><b>70%</b><br><small>$${Math.round(arv * 0.70).toLocaleString()}</small></div>
+            <div class="calc-btn" onclick="selectOffer(75, ${arv})" style="border-color:var(--accent); background:#eff6ff;"><b>75%</b><br><small>$${Math.round(arv * 0.75).toLocaleString()}</small></div>
+            <div class="calc-btn" onclick="selectOffer(80, ${arv})"><b>80%</b><br><small>$${Math.round(arv * 0.80).toLocaleString()}</small></div>
+            <div class="calc-btn" onclick="selectOffer(85, ${arv})"><b>85%</b><br><small>$${Math.round(arv * 0.85).toLocaleString()}</small></div>
+          </div>
+          <div style="margin-top:30px; background:var(--primary); color:#fff; padding:30px; border-radius:12px;">
+            <p style="font-size:11px; color:#94a3b8;">CURRENT CASH OFFER</p>
+            <p style="font-size:36px; font-weight:900; color:#fff; margin-top:8px;" id="offerAmount">$159,000</p>
+            <p style="font-size:13px; color:#fbbf24; margin-top:10px;" id="offerDiscount">↓ 25% below market average</p>
+          </div>
+          <button class="btn btn-primary" style="width:100%; height:55px; margin-top:20px; font-size:16px;" onclick="alert('Gerando carta personalizada...')">📧 FINALIZAR E GERAR CARTA</button>`;
+      }
+    }
+
+    function selectOffer(percentage, arv) {
+      const offer = Math.round(arv * (percentage / 100));
+      const discount = Math.round(((arv - offer) / arv) * 100);
+      document.getElementById('offerAmount').textContent = '$' + offer.toLocaleString();
+      document.getElementById('offerDiscount').textContent = `↓ ${discount}% below market average`;
+    }
+
+    function selectProp(id) {
+      selectedId = id;
+      currentStep = 1;
+      renderSidebar();
+      renderContent();
+    }
+
+    function moveStep(delta) {
+      currentStep += delta;
+      if(currentStep > 5) currentStep = 5;
+      if(currentStep < 1) currentStep = 1;
+      renderContent();
+    }
+
+    renderSidebar();
+    renderContent();
+  </script>
+</body>
+</html>

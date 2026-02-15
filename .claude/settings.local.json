@@ -19,7 +19,11 @@
       "Bash(npx vite:*)",
       "Bash(del test-attom-direct.ts)",
       "Bash(rm:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(gcloud auth:*)",
+      "Bash(gcloud config:*)",
+      "Bash(code:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BLUEPRINT OPERACIONAL - Reestruturação 5 Passos</title>
+  <style>
+    :root {
+      --sidebar-w: 260px;
+      --primary: #0f172a;
+      --accent: #2563eb;
+      --success: #16a34a;
+      --border: #e2e8f0;
+      --bg-light: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #fff; color: #1e293b; display: flex; min-height: 100vh; }
+    
+    /* Sidebar Mockup */
+    .sidebar { width: var(--sidebar-w); background: var(--primary); color: #fff; padding: 20px; flex-shrink: 0; }
+    .sidebar h2 { font-size: 12px; text-transform: uppercase; color: #64748b; margin-bottom: 20px; letter-spacing: 1px; }
+    .nav-item { padding: 10px 12px; border-radius: 8px; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; color: #94a3b8; }
+    .nav-item.active { background: var(--accent); color: #fff; }
+    .nav-group { margin-bottom: 30px; }
+    .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; }
+    .active .nav-dot { background: #fff; }
+
+    /* Main Content */
+    .main { flex-grow: 1; background: var(--bg-light); padding: 40px; overflow-y: auto; }
+    .header { margin-bottom: 40px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    .header h1 { font-size: 32px; font-weight: 800; color: var(--primary); }
+    
+    /* Comparison Sections */
+    .blueprint-section { background: #fff; border-radius: 16px; border: 1px solid var(--border); padding: 30px; margin-bottom: 40px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .step-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+    .step-num { background: var(--accent); color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    .box { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .box-title { background: #f1f5f9; padding: 12px 16px; font-weight: 700; font-size: 13px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+    .tag-old { color: #991b1b; }
+    .tag-new { color: #166534; }
+    
+    .content-p { padding: 20px; font-size: 13px; }
+    .ui-stub { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin-top: 10px; font-family: monospace; }
+    
+    ul { list-style: none; }
+    li { margin-bottom: 10px; padding-left: 20px; position: relative; }
+    li::before { content: "→"; position: absolute; left: 0; color: var(--accent); }
+
+    .change-highlight { background: #eff6ff; border-left: 4px solid var(--accent); padding: 15px; margin-top: 15px; border-radius: 0 8px 8px 0; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div style="margin-bottom: 40px;">
+      <h1 style="font-size: 20px;">Gemini Real Estate</h1>
+    </div>
+
+    <div class="nav-group">
+      <h2>Processo de Aquisição</h2>
+      <div class="nav-item"><div class="nav-dot"></div> Passo 1: Base</div>
+      <div class="nav-item"><div class="nav-dot"></div> Passo 2: Análise</div>
+      <div class="nav-item active"><div class="nav-dot"></div> Passo 3: Contatos</div>
+      <div class="nav-item"><div class="nav-dot"></div> Passo 4: Mercado</div>
+      <div class="nav-item"><div class="nav-dot"></div> Passo 5: Oferta</div>
+    </div>
+
+    <div class="nav-group">
+      <h2>Administração</h2>
+      <div class="nav-item">Dashboard</div>
+      <div class="nav-item">Configurações</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="header">
+      <h1>Blueprint Operacional: O Novo Fluxo 5 Passos</h1>
+      <p style="color: #64748b; margin-top: 8px;">De processos fragmentados para uma linha de montagem comercial de alta performance.</p>
+    </div>
+
+    <!-- PASSO 1 -->
+    <div class="blueprint-section">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <h2>Passo 1: Base de Imóveis (Inventário)</h2>
+      </div>
+      <div class="grid">
+        <div class="box">
+          <div class="box-title"><span class="tag-old">COMO É HOJE</span> <span>Fragmentado</span></div>
+          <div class="content-p">
+            O analista sobe o CSV em uma tela genérica, define um lote e os imóveis "caem" no sistema sem um destino claro.
+            <div class="ui-stub">URL: /admin/import</div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title"><span class="tag-new">COMO SERÁ</span> <span>Focado em Lote</span></div>
+          <div class="content-p">
+            Tela dedicada para gestão de lotes. Cada importação gera um "card" de progresso.
+            <ul>
+              <li>Filtro por nome da Base (ex: PROBATE)</li>
+              <li>Visão de "Novos" vs "Já Existentes"</li>
+              <li>Botão direto: "Enviar para Análise"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 2 -->
+    <div class="blueprint-section">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <h2>Passo 2: Análise e Seleção (Triagem)</h2>
+      </div>
+      <div class="grid">
+        <div class="box">
+          <div class="box-title"><span class="tag-old">COMO É HOJE</span> <span>Lista Geral</span></div>
+          <div class="content-p">
+            Aprovação em massa sem obrigatoriedade de motivo. Dados de negação são perdidos.
+            <div class="ui-stub">URL: /admin (Aba Review)</div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title"><span class="tag-new">COMO SERÁ</span> <span>Fila de Decisão</span></div>
+          <div class="content-p">
+            Foco em produtividade. Uma lista de cartões com fotos e dados críticos.
+            <ul>
+              <li><b>Botão Negar:</b> Abre modal de motivos (Low equity, Bad area, etc)</li>
+              <li><b>Botão Aprovar:</b> Move instantaneamente para o Passo 3</li>
+              <li>Rastreio: "Aprovado por [Nome] em [Data]"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 3 -->
+    <div class="blueprint-section" style="border: 2px solid var(--accent);">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <h2>Passo 3: Skip Trace (Enriquecimento de Contatos)</h2>
+      </div>
+      <div class="grid">
+        <div class="box">
+          <div class="box-title"><span class="tag-old">COMO É HOJE</span> <span>Fluxo Quebrado</span></div>
+          <div class="content-p">
+            Exporta aprovadas em uma tela. O retorno do fornecedor precisa ser subido em outra tela (/admin/import) que o analista de Skip Trace nem sempre acessa.
+          </div>
+        </div>
+        <div class="box" style="background: #f0f9ff;">
+          <div class="box-title"><span class="tag-new">COMO SERÁ</span> <span>Workspace Unificado</span></div>
+          <div class="content-p">
+            <b>TUDO EM UMA TELA:</b>
+            <ul>
+              <li><b>Lado Esquerdo:</b> Botão "Exportar Aprovadas do Dia" (Gera CSV para vendor)</li>
+              <li><b>Lado Direito:</b> Dropzone "Upload Retorno Vendor" (Processa e cruza dados)</li>
+              <li><b>Centro:</b> Tabela de contatos com <b>Histórico Multifonte</b> (Vendor A, Vendor B, Manual)</li>
+            </ul>
+            <div class="change-highlight">
+              <b>Diferencial PJ:</b> Identificação automática de Officers/Sócios em empresas LLC/Inc.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASSO 4 & 5 -->
+    <div class="blueprint-section">
+      <div class="step-header">
+        <div class="step-num">4/5</div>
+        <h2>Análise de Mercado e Oferta Final</h2>
+      </div>
+      <div class="grid">
+        <div class="box">
+          <div class="box-title"><span class="tag-old">COMO É HOJE</span> <span>Cálculo Manual</span></div>
+          <div class="content-p">
+            Comparativos são inseridos, mas o cálculo da oferta final muitas vezes é feito "por fora" ou em campos desconectados.
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-title"><span class="tag-new">COMO SERÁ</span> <span>Calculadora Auditável</span></div>
+          <div class="content-p">
+            O sistema sugere a oferta baseada nos comparativos reais inseridos.
+            <ul>
+              <li><b>ARV (After Repair Value):</b> Média dos comps</li>
+              <li><b>Fórmula:</b> ARV - Reforma - Margem = Oferta Mínima</li>
+              <li><b>Aprovação Final:</b> Botão para gerar PDF de Proposta</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="background: var(--primary); color: #fff; padding: 30px; border-radius: 16px; text-align: center;">
+      <h3 style="margin-bottom: 10px;">Pronto para iniciar a Reestruturação?</h3>
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Esta mudança reduzirá a fadiga de decisão da equipe e garantirá 100% de integridade nos dados de oferta.</p>
+      <div style="display: flex; justify-content: center; gap: 15px;">
+        <div style="padding: 12px 24px; background: var(--accent); border-radius: 8px; font-weight: 700;">IMPLEMENTAR PASSO 3 AGORA</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
