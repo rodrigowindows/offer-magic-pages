@@ -20,114 +20,145 @@ interface FunnelMetrics {
   phone_conversion_rate: number;
 }
 
+type ConfidenceLevel = 'statistically_significant' | 'trending' | 'insufficient_data';
+
 interface WinnerData {
   variant: ABVariant;
   visitors: number;
   conversions: number;
   conversion_rate: number;
   rank: number;
-  confidence_level: 'statistically_significant' | 'trending' | 'insufficient_data';
+  confidence_level: ConfidenceLevel;
 }
+
+const KNOWN_VARIANTS: ABVariant[] = [
+  'default',
+  'ultra-simple',
+  'email-first',
+  'minimal',
+  'progressive',
+  'social-proof',
+  'urgency',
+];
+
+const toNumber = (value: unknown) => {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+};
+
+const normalizeVariant = (value: string | null): ABVariant => {
+  if (!value) {
+    return 'default';
+  }
+
+  if (KNOWN_VARIANTS.includes(value as ABVariant)) {
+    return value as ABVariant;
+  }
+
+  return 'default';
+};
+
+const normalizeConfidence = (value: string | null): ConfidenceLevel => {
+  if (!value) {
+    return 'insufficient_data';
+  }
+
+  if (value === 'statistically_significant' || value === 'trending' || value === 'insufficient_data') {
+    return value;
+  }
+
+  return 'insufficient_data';
+};
 
 export const ABTestAnalytics = () => {
   const [funnelData, setFunnelData] = useState<FunnelMetrics[]>([]);
   const [winnerData, setWinnerData] = useState<WinnerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadDashboardData = async () => {
     setIsLoading(true);
-    try {
-      // Load raw ab_tests data and compute funnel metrics
-      const { data: abTestsData, error: abTestsError } = await supabase
-        .from('ab_tests')
-        .select('*');
 
-      if (abTestsError) {
-        console.error('Error loading ab_tests data:', abTestsError);
+    try {
+      const [funnelResponse, winnerResponse] = await Promise.all([
+        supabase.from('ab_test_funnel').select('*'),
+        supabase.from('ab_test_winner').select('*'),
+      ]);
+
+      if (funnelResponse.error || winnerResponse.error) {
+        const errors = [
+          funnelResponse.error?.message,
+          winnerResponse.error?.message,
+        ].filter(Boolean);
+
+        setLoadError(errors.join(' | ') || 'Failed to load A/B testing analytics data.');
         setFunnelData([]);
         setWinnerData([]);
         setLastUpdated(new Date());
-        setIsLoading(false);
         return;
       }
 
-      // Compute funnel metrics by variant
-      const variantMetrics: Record<string, FunnelMetrics> = {};
-      
-      (abTestsData || []).forEach((test) => {
-        const variant = test.variant as ABVariant;
-        if (!variantMetrics[variant]) {
-          variantMetrics[variant] = {
-            variant,
-            page_views: 0,
-            email_submits: 0,
-            offer_reveals: 0,
-            clicked_accept: 0,
-            clicked_interested: 0,
-            form_submits: 0,
-            phone_collected: 0,
-            email_conversion_rate: 0,
-            final_conversion_rate: 0,
-            phone_conversion_rate: 0,
-          };
-        }
-        
-        variantMetrics[variant].page_views += 1;
-        if (test.submitted_form) variantMetrics[variant].form_submits += 1;
-        if (test.viewed_form) variantMetrics[variant].email_submits += 1;
-        if (test.viewed_offer) variantMetrics[variant].offer_reveals += 1;
-      });
+      const normalizedFunnel: FunnelMetrics[] = (funnelResponse.data || []).map((row) => ({
+        variant: normalizeVariant(row.variant),
+        page_views: toNumber(row.page_views),
+        email_submits: toNumber(row.email_submits),
+        offer_reveals: toNumber(row.offer_reveals),
+        clicked_accept: toNumber(row.clicked_accept),
+        clicked_interested: toNumber(row.clicked_interested),
+        form_submits: toNumber(row.form_submits),
+        phone_collected: toNumber(row.phone_collected),
+        email_conversion_rate: toNumber(row.email_conversion_rate),
+        final_conversion_rate: toNumber(row.final_conversion_rate),
+        phone_conversion_rate: toNumber(row.phone_conversion_rate),
+      }));
 
-      // Calculate rates
-      Object.values(variantMetrics).forEach((m) => {
-        m.email_conversion_rate = m.page_views > 0 ? Math.round((m.email_submits / m.page_views) * 100) : 0;
-        m.final_conversion_rate = m.page_views > 0 ? Math.round((m.form_submits / m.page_views) * 100) : 0;
-        m.phone_conversion_rate = m.page_views > 0 ? Math.round((m.phone_collected / m.page_views) * 100) : 0;
-      });
+      const normalizedWinner: WinnerData[] = (winnerResponse.data || [])
+        .map((row) => ({
+          variant: normalizeVariant(row.variant),
+          visitors: toNumber(row.visitors),
+          conversions: toNumber(row.conversions),
+          conversion_rate: toNumber(row.conversion_rate),
+          rank: toNumber(row.rank),
+          confidence_level: normalizeConfidence(row.confidence_level),
+        }))
+        .sort((a, b) => a.rank - b.rank || b.conversion_rate - a.conversion_rate);
 
-      const computedFunnelData = Object.values(variantMetrics);
-      setFunnelData(computedFunnelData);
-
-      // Compute winner data
-      if (computedFunnelData.length > 0) {
-        const computedWinner: WinnerData[] = computedFunnelData
-          .map((f) => ({
-            variant: f.variant,
-            visitors: f.page_views,
-            conversions: f.form_submits,
-            conversion_rate: f.final_conversion_rate,
-            rank: 0,
-            confidence_level: (f.page_views >= 100 ? 'statistically_significant' : f.page_views >= 50 ? 'trending' : 'insufficient_data') as WinnerData['confidence_level'],
-          }))
-          .sort((a, b) => b.conversion_rate - a.conversion_rate)
-          .map((w, i) => ({ ...w, rank: i + 1 }));
-
-        setWinnerData(computedWinner);
-      } else {
-        setWinnerData([]);
-      }
-
+      setFunnelData(normalizedFunnel);
+      setWinnerData(normalizedWinner);
+      setLoadError(null);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error loading A/B test data:', error);
+      setLoadError(error instanceof Error ? error.message : 'Unexpected error loading A/B analytics.');
+      setFunnelData([]);
+      setWinnerData([]);
+      setLastUpdated(new Date());
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDashboardData();
+    void loadDashboardData();
   }, []);
 
-  const getConfidenceBadge = (level: WinnerData['confidence_level']) => {
+  const getConfidenceBadge = (level: ConfidenceLevel) => {
     switch (level) {
       case 'statistically_significant':
-        return <Badge className="bg-green-500">✓ Statistically Significant</Badge>;
+        return <Badge className="bg-green-500">Statistically Significant</Badge>;
       case 'trending':
-        return <Badge className="bg-yellow-500">📈 Trending</Badge>;
+        return <Badge className="bg-yellow-500">Trending</Badge>;
       case 'insufficient_data':
-        return <Badge variant="secondary">⏳ Insufficient Data</Badge>;
+        return <Badge variant="secondary">Insufficient Data</Badge>;
       default:
         return null;
     }
@@ -143,6 +174,7 @@ export const ABTestAnalytics = () => {
       'social-proof': 'Social Proof',
       'urgency': 'Urgency/Scarcity',
     };
+
     return labels[variant] || variant;
   };
 
@@ -157,11 +189,10 @@ export const ABTestAnalytics = () => {
     );
   }
 
-  const currentWinner = winnerData[0]; // Sorted by conversion_rate DESC
+  const currentWinner = winnerData[0];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">A/B Test Analytics</h2>
@@ -169,13 +200,26 @@ export const ABTestAnalytics = () => {
             Last updated: {lastUpdated?.toLocaleTimeString() || 'Never'}
           </p>
         </div>
-        <Button onClick={loadDashboardData} variant="outline" className="gap-2">
+        <Button onClick={() => void loadDashboardData()} variant="outline" className="gap-2">
           <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
       </div>
 
-      {/* Current Winner Card */}
+      {loadError && (
+        <Card className="border-destructive/30">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3 text-destructive">
+              <AlertCircle className="h-5 w-5 mt-0.5" />
+              <div>
+                <p className="font-semibold">Unable to load complete analytics</p>
+                <p className="text-sm text-muted-foreground mt-1">{loadError}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {currentWinner && (
         <Card className="border-2 border-primary">
           <CardHeader>
@@ -210,15 +254,14 @@ export const ABTestAnalytics = () => {
         </Card>
       )}
 
-      {/* Variant Comparison */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {winnerData.map((winner) => (
           <Card key={winner.variant} className={winner.rank === 1 ? 'border-primary' : ''}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg">{getVariantLabel(winner.variant)}</CardTitle>
-                {winner.rank === 1 && <Badge variant="default">🏆 Winner</Badge>}
-                {winner.rank === 2 && <Badge variant="secondary">🥈 2nd</Badge>}
+                {winner.rank === 1 && <Badge variant="default">Winner</Badge>}
+                {winner.rank === 2 && <Badge variant="secondary">2nd</Badge>}
               </div>
             </CardHeader>
             <CardContent>
@@ -250,7 +293,6 @@ export const ABTestAnalytics = () => {
         ))}
       </div>
 
-      {/* Funnel Breakdown */}
       <Card>
         <CardHeader>
           <CardTitle>Detailed Funnel Metrics</CardTitle>
@@ -263,7 +305,6 @@ export const ABTestAnalytics = () => {
                   {getVariantLabel(funnel.variant)}
                 </h4>
 
-                {/* Funnel Steps */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
                     <Users className="h-5 w-5 mx-auto mb-1 text-blue-600" />
@@ -299,7 +340,6 @@ export const ABTestAnalytics = () => {
                   </div>
                 </div>
 
-                {/* Additional Metrics */}
                 <div className="grid grid-cols-3 gap-3 text-sm pt-2 border-t">
                   <div>
                     <span className="text-muted-foreground">Offers Revealed:</span>
@@ -328,8 +368,7 @@ export const ABTestAnalytics = () => {
         </CardContent>
       </Card>
 
-      {/* Insights & Recommendations */}
-      {winnerData.length >= 2 && (
+      {winnerData.length >= 2 && currentWinner && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -363,7 +402,7 @@ export const ABTestAnalytics = () => {
                     </div>
                     <div className="text-yellow-700">
                       Continue testing to reach statistical significance.
-                      Need {100 - currentWinner.visitors} more visitors for conclusive results.
+                      Need {Math.max(0, 100 - currentWinner.visitors)} more visitors for conclusive results.
                     </div>
                   </div>
                 </div>
@@ -376,7 +415,7 @@ export const ABTestAnalytics = () => {
                     <div className="font-semibold text-blue-900">More data needed</div>
                     <div className="text-blue-700">
                       Not enough traffic yet to determine a winner.
-                      Need at least {50 - currentWinner.visitors} more visitors per variant.
+                      Need at least {Math.max(0, 50 - currentWinner.visitors)} more visitors per variant.
                     </div>
                   </div>
                 </div>

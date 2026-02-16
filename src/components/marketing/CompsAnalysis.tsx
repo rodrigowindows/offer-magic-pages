@@ -575,11 +575,19 @@ export const CompsAnalysis = () => {
             }
           });
           
+          const valuationTimestamp = new Date().toISOString();
+          const updatePayload = {
+            estimated_value: calculatedValue,
+            avm_min_value: avmMinValue,
+            avm_max_value: avmMaxValue,
+            valuation_method: 'avm',
+            valuation_confidence: avmConfidence,
+            last_valuation_date: valuationTimestamp,
+          };
+
           const { data: updatedProperty, error: updateError } = await supabase
             .from('properties')
-            .update({
-              estimated_value: calculatedValue
-            })
+            .update(updatePayload)
             .eq('id', property.id)
             .select()
             .single();
@@ -590,7 +598,11 @@ export const CompsAnalysis = () => {
             logger.db('✅ Propriedade atualizada com sucesso', {
               propertyId: property.id,
               updatedValues: {
-                estimated_value: updatedProperty?.estimated_value
+                estimated_value: updatedProperty?.estimated_value,
+                avm_min_value: updatedProperty?.avm_min_value,
+                avm_max_value: updatedProperty?.avm_max_value,
+                valuation_method: updatedProperty?.valuation_method,
+                valuation_confidence: updatedProperty?.valuation_confidence,
               }
             });
           }

@@ -41,7 +41,15 @@ export interface FeatureFlags {
   showCampaignTemplates: boolean;       // Template selector
   
   // Property Page Variants
-  forcePropertyVariant: 'default' | 'ultra-simple' | 'email-first' | 'minimal' | null;  // Force specific variant (null = A/B test)
+  forcePropertyVariant:
+    | 'default'
+    | 'ultra-simple'
+    | 'email-first'
+    | 'minimal'
+    | 'progressive'
+    | 'social-proof'
+    | 'urgency'
+    | null;  // Force specific variant (null = A/B test)
 }
 
 // Preset Configurations
@@ -152,7 +160,7 @@ const DEFAULT_FLAGS: FeatureFlags = FEATURE_PRESETS.full;
 
 interface FeatureToggleContextType {
   flags: FeatureFlags;
-  updateFlag: (key: keyof FeatureFlags, value: boolean) => void;
+  updateFlag: <K extends keyof FeatureFlags>(key: K, value: FeatureFlags[K]) => void;
   resetToDefaults: () => void;
   loadPreset: (preset: 'legacy' | 'modern' | 'minimal' | 'full') => void;
   isFeatureEnabled: (key: keyof FeatureFlags) => boolean;
@@ -186,7 +194,7 @@ export const FeatureToggleProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [flags]);
 
-  const updateFlag = (key: keyof FeatureFlags, value: boolean) => {
+  const updateFlag = <K extends keyof FeatureFlags>(key: K, value: FeatureFlags[K]) => {
     setFlags(prev => ({ ...prev, [key]: value }));
   };
 

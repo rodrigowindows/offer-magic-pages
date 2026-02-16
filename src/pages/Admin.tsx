@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
-import { ABTestDashboard } from "@/components/ABTestDashboard";
+import { ABTestAnalytics } from "@/components/ABTestAnalytics";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -1851,7 +1851,7 @@ const Admin = () => {
             <div>
               <h2 className="text-2xl font-semibold text-foreground mb-4">A/B Test Results</h2>
               <div className="bg-card rounded-lg border border-border p-6">
-                <ABTestDashboard />
+                <ABTestAnalytics />
               </div>
             </div>
           </TabsContent>

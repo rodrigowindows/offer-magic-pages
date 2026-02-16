@@ -1,58 +1,71 @@
 # Guia Consolidado de Deploy
 
-## Visão Geral
+## Objetivo
+Este projeto esta configurado para deploy automatico de migrations e Edge Functions do Supabase via GitHub Actions.
 
-Este guia reúne todos os procedimentos, checklists e dicas para deploy do sistema, incluindo edge functions, APIs, CSV Importer, A/B Testing e integrações.
+## Pipeline automatico (GitHub Actions)
+Workflow: `.github/workflows/deploy-supabase-functions.yml`
 
----
+### Gatilhos
+- Push em `main` ou `develop` quando houver mudancas em:
+  - `supabase/config.toml`
+  - `supabase/migrations/**`
+  - `supabase/functions/**`
+  - `.github/workflows/deploy-supabase-functions.yml`
+- Execucao manual por `workflow_dispatch`
 
-## Deploy via Dashboard
-- Acesse o Supabase Dashboard ou Lovable Editor.
-- Faça upload dos arquivos novos e substitua os modificados conforme instruções.
-- Use a interface para deploy de edge functions ("Deploy" ou "Redeploy").
+### O que o pipeline faz
+1. Valida os secrets obrigatorios
+2. Resolve o `project_ref` (secret ou `supabase/config.toml`)
+3. Executa `supabase link`
+4. Executa `supabase db push --include-all`
+5. Faz deploy de todas as funcoes em `supabase/functions` (exceto `_shared`)
 
-## Deploy via CLI
-- Use Supabase CLI para login, configuração de secrets e deploy:
+### Secrets obrigatorios
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
+
+### Secret opcional
+- `SUPABASE_PROJECT_REF`
+  - Se nao existir, o workflow usa `project_id` de `supabase/config.toml`
+
+## Integracao com Lovable
+- Neste repositorio, a automacao de banco e Edge Functions fica no GitHub Actions.
+- Nao existe acesso direto ao pipeline interno do Lovable por codigo deste repo.
+- Se a publicacao do Lovable gerar push/sync para `main` ou `develop`, o workflow acima roda automaticamente.
+
+## Deploy local (fallback)
+Scripts disponiveis:
+- Bash: `scripts/deploy-supabase.sh`
+- PowerShell: `scripts/deploy-supabase.ps1`
+
+### Apenas Edge Functions
 ```bash
-npx supabase login
-npx supabase secrets set ATTOM_API_KEY=SEU_TOKEN --project-ref SEU_PROJECT_REF
-npx supabase functions deploy fetch-comps --project-ref SEU_PROJECT_REF
+bash scripts/deploy-supabase.sh --project-ref SEU_PROJECT_REF
 ```
-- Para deploy de outras funções:
+
+```powershell
+.\scripts\deploy-supabase.ps1 -ProjectRef SEU_PROJECT_REF
+```
+
+### Migrations + Edge Functions
 ```bash
-npx supabase functions deploy retell-webhook-handler
-npx supabase functions deploy geocode
+SUPABASE_DB_PASSWORD='SUA_SENHA_DB' bash scripts/deploy-supabase.sh --project-ref SEU_PROJECT_REF --with-migrations
 ```
 
----
-
-## Edge Functions
-
-- Deploy de funções como `fetch-comps`, `retell-webhook-handler`, `geocode` pode ser feito via CLI ou Dashboard.
-- Configure secrets (API Keys) antes do deploy.
-- Verifique logs após deploy para garantir funcionamento correto:
-```bash
-npx supabase functions logs fetch-comps --tail
-npx supabase functions logs geocode --tail
+```powershell
+.\scripts\deploy-supabase.ps1 -ProjectRef SEU_PROJECT_REF -DbPassword SUA_SENHA_DB -WithMigrations
 ```
 
----
-
-## Checklist de Deploy
-
-- [ ] Todos os arquivos criados e revisados
-- [ ] API Keys configuradas no Supabase
-- [ ] Edge functions deployadas
-- [ ] Testes executados após deploy
-- [ ] Logs verificados (sem erros críticos)
-- [ ] Documentação atualizada
-
----
+## Checklist rapido
+- [ ] Secrets do GitHub configurados
+- [ ] Migrations versionadas em `supabase/migrations`
+- [ ] Edge Functions com `index.ts` ou `index.js`
+- [ ] Workflow executado sem erro em Actions
+- [ ] Logs no Supabase sem erro critico
 
 ## Troubleshooting
-
-- Se dados retornam como DEMO, verifique se a API Key está configurada e a função foi redeployada.
-- Use logs do Supabase para identificar problemas de execução.
-- Para erros de variáveis, confira nomes e formatos esperados.
-
----
+- Erro de token: valide `SUPABASE_ACCESS_TOKEN` no GitHub Secrets
+- Erro de senha DB: valide `SUPABASE_DB_PASSWORD`
+- Erro de project ref: defina `SUPABASE_PROJECT_REF` ou `project_id` em `supabase/config.toml`
+- Funcao nao deployada: confirme pasta em `supabase/functions/<nome>/index.ts`

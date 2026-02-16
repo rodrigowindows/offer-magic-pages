@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,10 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const [formType, setFormType] = useState<'accept' | 'questions'>('accept');
   const { toast } = useToast();
 
+  useEffect(() => {
+    void trackABEvent(property.id, 'ultra-simple', 'offer_revealed');
+  }, [property.id]);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -37,20 +41,22 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   };
 
   const handleAccept = () => {
-    trackABEvent(property.id, 'ultra-simple', 'clicked_accept');
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_accept');
+    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'accept' });
     setFormType('accept');
     setShowContactForm(true);
   };
 
   const handleQuestions = () => {
-    trackABEvent(property.id, 'ultra-simple', 'clicked_questions');
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_questions');
+    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'questions' });
     setFormType('questions');
     setShowContactForm(true);
   };
 
   const handleDownloadPDF = async () => {
     setIsDownloading(true);
-    trackABEvent(property.id, 'ultra-simple', 'clicked_download_pdf');
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_download_pdf');
     try {
       const offerAmount = property.cash_offer_amount || property.estimated_value * 0.7;
       const doc = new jsPDF();
@@ -119,18 +125,42 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    trackABEvent(property.id, 'ultra-simple', 'form_submitted', formData);
+
+    const normalizedEmail = formData.email.trim().toLowerCase();
+    const normalizedName = formData.name.trim();
+    const normalizedPhone = formData.phone.trim();
+
+    void trackABEvent(property.id, 'ultra-simple', 'form_submitted', {
+      has_name: Boolean(normalizedName),
+      has_email: Boolean(normalizedEmail),
+      has_phone: Boolean(normalizedPhone),
+      flow: formType,
+    });
+
+    if (normalizedPhone) {
+      void trackABEvent(property.id, 'ultra-simple', 'phone_collected', {
+        phone_last4: normalizedPhone.replace(/\D/g, '').slice(-4),
+      });
+    }
     
     try {
-      const { error } = await supabase.from('property_leads').insert({
-        property_id: property.id,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        source: 'property_page',
-        status: formType === 'accept' ? 'interested' : 'question',
-        notes: formType === 'accept' ? 'Accepted offer from property page' : 'Has questions about offer',
-      });
+      const { error } = await supabase
+        .from('property_leads')
+        .upsert(
+          {
+            property_id: property.id,
+            full_name: normalizedName,
+            email: normalizedEmail,
+            phone: normalizedPhone,
+            interest_level: 'interested',
+            status: 'new',
+            notes: formType === 'accept' ? 'Accepted offer from ultra-simple variant' : 'Asked questions from ultra-simple variant',
+            user_agent: navigator.userAgent,
+          },
+          {
+            onConflict: 'property_id,email,interest_level',
+          },
+        );
 
       if (error) throw error;
 

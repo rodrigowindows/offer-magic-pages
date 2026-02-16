@@ -16,9 +16,16 @@ interface InterestCaptureData {
 interface InterestCaptureProps {
   onSubmit: (data: InterestCaptureData) => Promise<void>;
   email: string;
+  onInterestedClick?: () => void;
+  onJustEmailClick?: () => void;
 }
 
-export const InterestCapture = ({ onSubmit, email }: InterestCaptureProps) => {
+export const InterestCapture = ({
+  onSubmit,
+  email,
+  onInterestedClick,
+  onJustEmailClick,
+}: InterestCaptureProps) => {
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,6 +86,7 @@ export const InterestCapture = ({ onSubmit, email }: InterestCaptureProps) => {
 
   const handleJustEmail = async () => {
     try {
+      onJustEmailClick?.();
       toast({
         title: "Got it! 📧",
         description: "We've sent the full offer details to your email",
@@ -203,7 +211,10 @@ export const InterestCapture = ({ onSubmit, email }: InterestCaptureProps) => {
       <CardContent className="space-y-3">
         {/* Option 1: I'm Interested */}
         <Button
-          onClick={() => setShowForm(true)}
+          onClick={() => {
+            onInterestedClick?.();
+            setShowForm(true);
+          }}
           className="w-full text-lg py-6 h-auto flex-col gap-1"
           size="lg"
         >

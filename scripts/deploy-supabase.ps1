@@ -1,76 +1,98 @@
-# ============================================
-# 🚀 Deploy Supabase Edge Functions (PowerShell)
-# Script para fazer deploy de todas as edge functions
-# ============================================
-
-Write-Host "============================================" -ForegroundColor Blue
-Write-Host "🚀 Supabase Edge Functions Deployment" -ForegroundColor Blue
-Write-Host "============================================" -ForegroundColor Blue
-Write-Host ""
-
-# Check if supabase CLI is installed
-try {
-    $null = Get-Command supabase -ErrorAction Stop
-    Write-Host "✅ Supabase CLI found" -ForegroundColor Green
-} catch {
-    Write-Host "❌ Supabase CLI not found!" -ForegroundColor Red
-    Write-Host "Install it: npm install -g supabase" -ForegroundColor Yellow
-    exit 1
-}
-
-Write-Host ""
-
-# List of edge functions to deploy
-$functions = @(
-    "track-link-click",
-    "track-button-click",
-    "track-email-open",
-    "get-skip-trace-data"
+param(
+  [string]$ProjectRef = $env:SUPABASE_PROJECT_REF,
+  [string]$DbPassword = $env:SUPABASE_DB_PASSWORD,
+  [switch]$WithMigrations
 )
 
-# Deploy each function
-Write-Host "📦 Deploying Edge Functions..." -ForegroundColor Blue
-Write-Host ""
+$ErrorActionPreference = 'Stop'
 
-$success = $true
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$projectRoot = (Resolve-Path (Join-Path $scriptDir '..')).Path
+$supabaseDir = Join-Path $projectRoot 'supabase'
+$functionsDir = Join-Path $supabaseDir 'functions'
+$configPath = Join-Path $supabaseDir 'config.toml'
 
-foreach ($func in $functions) {
-    Write-Host "Deploying: $func" -ForegroundColor Yellow
+function Resolve-ProjectRef {
+  param(
+    [string]$CurrentProjectRef,
+    [string]$ConfigFilePath
+  )
 
-    try {
-        supabase functions deploy $func
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "✅ $func deployed successfully" -ForegroundColor Green
-        } else {
-            Write-Host "❌ Failed to deploy $func" -ForegroundColor Red
-            $success = $false
-        }
-    } catch {
-        Write-Host "❌ Error deploying $func : $_" -ForegroundColor Red
-        $success = $false
-    }
+  if ($CurrentProjectRef) {
+    return $CurrentProjectRef
+  }
 
-    Write-Host ""
+  if (-not (Test-Path $ConfigFilePath)) {
+    return ''
+  }
+
+  $projectLine = Get-Content $ConfigFilePath | Where-Object { $_ -match '^project_id\s*=' } | Select-Object -First 1
+  if (-not $projectLine) {
+    return ''
+  }
+
+  if ($projectLine -match '"([^"]+)"') {
+    return $Matches[1]
+  }
+
+  return ''
 }
 
-Write-Host ""
-Write-Host "============================================" -ForegroundColor Blue
-
-if ($success) {
-    Write-Host "✅ All Edge Functions Deployed!" -ForegroundColor Green
-} else {
-    Write-Host "⚠️  Some functions failed to deploy" -ForegroundColor Yellow
+try {
+  $null = Get-Command supabase -ErrorAction Stop
+} catch {
+  throw "Supabase CLI not found. Install with: npm install -g supabase"
 }
 
-Write-Host "============================================" -ForegroundColor Blue
-Write-Host ""
+$resolvedProjectRef = Resolve-ProjectRef -CurrentProjectRef $ProjectRef -ConfigFilePath $configPath
+if (-not $resolvedProjectRef) {
+  throw 'Project ref not found. Use -ProjectRef, SUPABASE_PROJECT_REF, or set project_id in supabase/config.toml.'
+}
 
-# Show deployed functions
-Write-Host "📋 Deployed Functions:" -ForegroundColor Blue
-supabase functions list
+if (-not (Test-Path $functionsDir)) {
+  throw "Functions directory not found at $functionsDir"
+}
 
-Write-Host ""
-Write-Host "💡 Tips:" -ForegroundColor Yellow
-Write-Host "  - View logs: supabase functions logs <function-name> --follow"
-Write-Host "  - Test function: supabase functions serve <function-name>"
-Write-Host ""
+Write-Host "Project ref: $resolvedProjectRef"
+
+if ($WithMigrations) {
+  if (-not $DbPassword) {
+    throw '-WithMigrations requires SUPABASE_DB_PASSWORD or -DbPassword.'
+  }
+
+  Write-Host 'Applying migrations (supabase db push --include-all)...'
+  & supabase db push --project-ref $resolvedProjectRef --password $DbPassword --include-all
+  if ($LASTEXITCODE -ne 0) {
+    throw 'Migration deployment failed.'
+  }
+}
+
+$functionDirs = Get-ChildItem -Path $functionsDir -Directory | Sort-Object Name
+$deployedCount = 0
+
+foreach ($dir in $functionDirs) {
+  if ($dir.Name -eq '_shared') {
+    continue
+  }
+
+  $hasIndexTs = Test-Path (Join-Path $dir.FullName 'index.ts')
+  $hasIndexJs = Test-Path (Join-Path $dir.FullName 'index.js')
+  if (-not ($hasIndexTs -or $hasIndexJs)) {
+    Write-Warning "Skipping $($dir.Name): missing index.ts/index.js"
+    continue
+  }
+
+  Write-Host "Deploying function: $($dir.Name)"
+  & supabase functions deploy $dir.Name --project-ref $resolvedProjectRef
+  if ($LASTEXITCODE -ne 0) {
+    throw "Function deployment failed: $($dir.Name)"
+  }
+
+  $deployedCount++
+}
+
+if ($deployedCount -eq 0) {
+  throw "No deployable functions found in $functionsDir"
+}
+
+Write-Host "Deployment complete. Functions deployed: $deployedCount"

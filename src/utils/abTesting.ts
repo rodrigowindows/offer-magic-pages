@@ -27,12 +27,11 @@ export interface ABTestConfig {
 export const AB_TEST_CONFIG: ABTestConfig = {
   enabled: true,
   variants: [
-    { variant: 'ultra-simple', weight: 100, active: true },
-    { variant: 'email-first', weight: 0, active: false },
-    // Add more variants here:
-    // { variant: 'progressive', weight: 33, active: false },
-    // { variant: 'social-proof', weight: 33, active: false },
-    // { variant: 'urgency', weight: 34, active: false },
+    { variant: 'ultra-simple', weight: 50, active: true },
+    { variant: 'email-first', weight: 50, active: true },
+    { variant: 'progressive', weight: 0, active: false },
+    { variant: 'social-proof', weight: 0, active: false },
+    { variant: 'urgency', weight: 0, active: false },
   ],
 };
 
@@ -76,7 +75,7 @@ export function getABVariant(propertyId: string): ABVariant {
  * Assign variant based on configured weights
  */
 function assignVariant(): ABVariant {
-  const activeVariants = AB_TEST_CONFIG.variants.filter(v => v.active);
+  const activeVariants = AB_TEST_CONFIG.variants.filter((v) => v.active && v.weight > 0);
 
   if (activeVariants.length === 0) {
     return 'ultra-simple';
@@ -101,7 +100,7 @@ function assignVariant(): ABVariant {
  * Check if variant is valid
  */
 function isValidVariant(variant: string): boolean {
-  return ['ultra-simple', 'email-first', 'progressive', 'social-proof', 'urgency'].includes(variant);
+  return ['default', 'ultra-simple', 'email-first', 'minimal', 'progressive', 'social-proof', 'urgency'].includes(variant);
 }
 
 /**
@@ -111,7 +110,7 @@ export async function trackABEvent(
   propertyId: string,
   variant: ABVariant,
   event: ABEventType,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   const eventData = {
     property_id: propertyId,
@@ -173,7 +172,7 @@ function getSessionId(): string {
   let sessionId = sessionStorage.getItem('ab-session-id');
 
   if (!sessionId) {
-    sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    sessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     sessionStorage.setItem('ab-session-id', sessionId);
   }
 

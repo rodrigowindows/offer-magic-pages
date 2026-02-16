@@ -144,7 +144,3 @@ jobs:
     steps:
     - name: Deploy to production
       run: echo "Deploy to production environment"
-
-    steps:
-    - name: Deploy to production
-      run: echo "Deploy to production environment"

@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
-import { getABVariant, trackABEvent, type ABVariant } from "@/utils/abTesting";
+import { useEffect, useMemo, useState } from "react";
+import { getABVariant, trackABEvent, type ABEventType, type ABVariant } from "@/utils/abTesting";
 import { useFeatureToggle } from "@/contexts/FeatureToggleContext";
 import { UltraSimpleVariant } from "@/components/variants/UltraSimpleVariant";
 import { EmailFirstVariant } from "@/components/variants/EmailFirstVariant";
+import { ProgressiveVariant } from "@/components/variants/ProgressiveVariant";
+import { SocialProofVariant } from "@/components/variants/SocialProofVariant";
+import { UrgencyVariant } from "@/components/variants/UrgencyVariant";
 import PropertyPageMinimal from "@/components/PropertyPageMinimal";
 import { type OfferData } from "@/utils/offerUtils";
 
@@ -23,35 +26,66 @@ export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
   const { flags } = useFeatureToggle();
   const [variant, setVariant] = useState<ABVariant | null>(null);
 
+  const minimalProperty = useMemo(() => ({
+    ...property,
+    slug: property.address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unknown',
+    status: 'active' as const,
+    owner_name: null,
+    neighborhood: null,
+    zip_code: property.zip_code || '',
+    property_image_url: property.property_image_url || null,
+    cash_offer_amount: property.cash_offer_amount || property.estimated_value * 0.7,
+  }), [property]);
+
+  const trackMinimalEvent = (event: string, activeVariant: ABVariant) => {
+    const eventMap: Record<string, ABEventType> = {
+      viewed_offer: 'offer_revealed',
+      form_started: 'form_started',
+      form_submitted: 'form_submitted',
+      clicked_accept: 'clicked_accept',
+      clicked_questions: 'clicked_questions',
+      clicked_interested: 'clicked_interested',
+      phone_collected: 'phone_collected',
+    };
+
+    const mappedEvent = eventMap[event];
+    if (mappedEvent) {
+      void trackABEvent(property.id, activeVariant, mappedEvent);
+    }
+  };
+
   useEffect(() => {
-    // If there's a forced variant, use it
+    let assignedVariant: ABVariant;
+
     if (flags.forcePropertyVariant) {
-      setVariant(flags.forcePropertyVariant as ABVariant);
-      return;
+      assignedVariant = flags.forcePropertyVariant as ABVariant;
+    } else if (!flags.enableABTesting) {
+      assignedVariant = 'default';
+    } else {
+      assignedVariant = getABVariant(property.id);
     }
 
-    // If A/B testing is disabled, use default variant
-    if (!flags.enableABTesting) {
-      setVariant('default');
-      return;
-    }
-
-    // Get assigned variant
-    const assignedVariant = getABVariant(property.id);
     setVariant(assignedVariant);
 
-    // Track page view
-    trackABEvent(property.id, assignedVariant, 'page_view');
+    void trackABEvent(property.id, assignedVariant, 'page_view');
 
-    // Track exit
-    const handleBeforeUnload = () => {
-      trackABEvent(property.id, assignedVariant, 'exit');
+    let hasTrackedExit = false;
+    const trackExit = () => {
+      if (hasTrackedExit) {
+        return;
+      }
+
+      hasTrackedExit = true;
+      void trackABEvent(property.id, assignedVariant, 'exit');
     };
+
+    const handleBeforeUnload = () => trackExit();
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      trackExit();
     };
   }, [property.id, flags.enableABTesting, flags.forcePropertyVariant]);
 
@@ -73,49 +107,38 @@ export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
       return <EmailFirstVariant property={property} />;
 
     case 'minimal':
-      return <PropertyPageMinimal
-        property={{
-          ...property,
-          slug: property.address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unknown',
-          status: 'active',
-          owner_name: null,
-          neighborhood: null,
-          zip_code: property.zip_code || '',
-          property_image_url: property.property_image_url || null,
-          cash_offer_amount: property.cash_offer_amount || property.estimated_value * 0.7,
-        }}
-        onFormSubmit={() => trackABEvent(property.id, variant, 'form_submitted' as any)}
-        trackEvent={(event: string) => trackABEvent(property.id, variant, event as any)}
-      />;
+      return (
+        <PropertyPageMinimal
+          property={minimalProperty}
+          onFormSubmit={() => {
+            void trackABEvent(property.id, variant, 'form_started');
+          }}
+          trackEvent={(event: string) => {
+            trackMinimalEvent(event, variant);
+          }}
+        />
+      );
 
     case 'progressive':
-      // TODO: Implement ProgressiveVariant
-      return <EmailFirstVariant property={property} />;
+      return <ProgressiveVariant property={property} />;
 
     case 'social-proof':
-      // TODO: Implement SocialProofVariant
-      return <UltraSimpleVariant property={property} />;
+      return <SocialProofVariant property={property} />;
 
     case 'urgency':
-      // TODO: Implement UrgencyVariant
-      return <UltraSimpleVariant property={property} />;
+      return <UrgencyVariant property={property} />;
 
     default:
       // Use PropertyPageMinimal for the default offer page layout
       return (
         <PropertyPageMinimal
-          property={{
-            ...property,
-            slug: property.address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'unknown',
-            status: 'active',
-            owner_name: null,
-            neighborhood: null,
-            zip_code: property.zip_code || '',
-            property_image_url: property.property_image_url || null,
-            cash_offer_amount: property.cash_offer_amount || property.estimated_value * 0.7,
+          property={minimalProperty}
+          onFormSubmit={() => {
+            void trackABEvent(property.id, variant, 'form_started');
           }}
-          onFormSubmit={() => trackABEvent(property.id, variant, 'form_submitted' as any)}
-          trackEvent={(event: string) => trackABEvent(property.id, variant, event as any)}
+          trackEvent={(event: string) => {
+            trackMinimalEvent(event, variant);
+          }}
         />
       );
   }
