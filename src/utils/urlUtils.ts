@@ -35,6 +35,18 @@ const normalizeSourceChannel = (sourceChannel: string): string => {
 };
 
 /**
+ * Gera URL direta da propriedade a partir do slug (sem redirect de tracking).
+ * Recomendado para SMS/email onde o link aparece visível ao destinatário.
+ */
+export const generateDirectPropertyUrlBySlug = (
+  slug: string,
+  sourceChannel: string = 'sms'
+): string => {
+  const baseUrl = 'https://offer.mylocalinvest.com';
+  return `${baseUrl}/property/${slug.trim()}?src=${normalizeSourceChannel(sourceChannel)}`;
+};
+
+/**
  * Gera URL trackável a partir de slug da propriedade.
  * Recomendado para campanhas (SMS, email, call, QR, etc.).
  */

@@ -18,7 +18,7 @@ import { useMarketing } from '@/hooks/useMarketing';
 import { useTemplates } from '@/hooks/useTemplatesDB';
 import { sendSMS, sendEmail, initiateCall } from '@/services/marketingService';
 import { supabase } from '@/integrations/supabase/client';
-import { generatePropertySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
+import { generatePropertySlug, generateDirectPropertyUrlBySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 import {
   Rocket,
   MessageSquare,
@@ -547,7 +547,7 @@ export const QuickCampaignDialog = ({
       state: property.state,
       zip_code: property.zip_code,
     });
-    const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, channel);
+    const propertyUrl = generateDirectPropertyUrlBySlug(propertySlug, channel);
     // QR Code URL has different source to track QR scans separately
     const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${channel}-qr`);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;

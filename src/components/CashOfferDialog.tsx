@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { sendEmail } from "@/services/marketingService";
-import { generateTrackedPropertyUrlBySlug } from "@/utils/urlUtils";
+import { generateDirectPropertyUrlBySlug } from "@/utils/urlUtils";
 import type { OfferConfig } from "./OfferConfiguration";
 
 interface Property {
@@ -58,7 +58,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   }
 
   const getTrackedOfferUrl = (source: string) =>
-    generateTrackedPropertyUrlBySlug(property.slug, source);
+    generateDirectPropertyUrlBySlug(property.slug, source);
   const smsOfferUrl = getTrackedOfferUrl("sms");
   const emailOfferUrl = getTrackedOfferUrl("email");
 
