@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PROCESS_STEPS } from './processSteps';
 import { StepPlaceholder } from './StepPlaceholder';
+import { PropertiesStep } from './PropertiesStep';
 
 const getCurrentStepIndex = (pathname: string): number => {
   if (pathname === '/process' || pathname === '/process/') return 0;
@@ -93,7 +94,7 @@ export const ProcessApp = () => {
       {/* Content */}
       <main className="container mx-auto py-6">
         <Routes>
-          <Route path="/" element={<StepPlaceholder step={PROCESS_STEPS[0]} />} />
+          <Route path="/" element={<PropertiesStep />} />
           <Route path="/step-2" element={<StepPlaceholder step={PROCESS_STEPS[1]} />} />
           <Route path="/step-3" element={<StepPlaceholder step={PROCESS_STEPS[2]} />} />
           <Route path="/step-4" element={<StepPlaceholder step={PROCESS_STEPS[3]} />} />
