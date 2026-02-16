@@ -1981,7 +1981,7 @@ export const CompsAnalysis = () => {
   // ========================================
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       {/* Onboarding Tour */}
       <OnboardingTour
         open={showOnboarding}
@@ -2011,37 +2011,41 @@ export const CompsAnalysis = () => {
       />
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Comps Analysis</h1>
-          <p className="text-muted-foreground">Comparative Market Analysis Tool</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Comps Analysis</h1>
+          <p className="text-sm text-muted-foreground">Comparative Market Analysis Tool</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             onClick={exportAllAnalyses}
             variant="default"
             disabled={exportingPDF || filteredProperties.length === 0}
-            className="bg-purple-600 hover:bg-purple-700 text-white"
+            className="bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm"
+            size="sm"
           >
-            {exportingPDF ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-            Export All Filtered ({filteredProperties.length})
+            {exportingPDF ? <Loader2 className="w-4 h-4 mr-1 sm:mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-1 sm:mr-2" />}
+            <span className="hidden sm:inline">Export All Filtered</span>
+            <span className="sm:hidden">Export</span> ({filteredProperties.length})
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={clearCacheAndRefresh}
             disabled={!selectedProperty || loadingComps}
             title="Clear cache and fetch fresh data from API"
           >
-            {loadingComps ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-            Clear Cache
+            {loadingComps ? <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 sm:mr-2" />}
+            <span className="hidden sm:inline">Clear Cache</span>
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setShowLogsPanel(!showLogsPanel)}
             className="relative"
           >
-            <FileText className="h-4 w-4 mr-2" />
-            Logs
+            <FileText className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Logs</span>
             {logs.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                 {logs.length > 99 ? '99+' : logs.length}
@@ -2050,19 +2054,21 @@ export const CompsAnalysis = () => {
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setShowApiDiagnostics(!showApiDiagnostics)}
             disabled={!selectedProperty}
             title="Test individual APIs and view diagnostics"
           >
-            <Activity className="h-4 w-4 mr-2" />
-            API Diagnostics
+            <Activity className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">API Diagnostics</span>
           </Button>
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setShowApiConfig(true)}
           >
-            <AlertCircle className="h-4 w-4 mr-2" />
-            Settings
+            <AlertCircle className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Settings</span>
           </Button>
         </div>
       </div>
@@ -2194,11 +2200,11 @@ export const CompsAnalysis = () => {
         <Card className="border-2 border-green-200 bg-green-50">
           <CardContent className="pt-6">
             {/* Full Address Display - Copyable */}
-            <div className="mb-4 p-3 bg-white rounded-lg border-2 border-green-300 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
+            <div className="mb-4 p-2 sm:p-3 bg-white rounded-lg border-2 border-green-300 shadow-sm">
+              <div className="flex items-start sm:items-center justify-between gap-2">
+                <div className="min-w-0">
                   <Label className="text-xs text-muted-foreground uppercase tracking-wide">Property Address</Label>
-                  <div className="text-lg font-bold text-gray-900 mt-1">
+                  <div className="text-sm sm:text-lg font-bold text-gray-900 mt-1 break-words">
                     {selectedProperty.address}
                     {selectedProperty.city && `, ${selectedProperty.city}`}
                     {selectedProperty.state && `, ${selectedProperty.state}`}
@@ -2223,14 +2229,14 @@ export const CompsAnalysis = () => {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               {/* Property Photo */}
               {selectedProperty.property_image_url && (
                 <div className="flex-shrink-0">
                   <img
                     src={selectedProperty.property_image_url}
                     alt={selectedProperty.address}
-                    className="w-[500px] h-[375px] object-cover rounded-lg border-2 border-green-300 shadow-md"
+                    className="w-full sm:w-[500px] h-[200px] sm:h-[375px] object-cover rounded-lg border-2 border-green-300 shadow-md"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -2331,7 +2337,7 @@ export const CompsAnalysis = () => {
           <CardContent className="pt-6">
             <div className="space-y-3">
               <Label className="text-sm font-semibold">💰 Quick Offer Calculator</Label>
-              <div className="grid grid-cols-6 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {[
                   { label: '60%', percent: 0.60, color: 'bg-red-700 hover:bg-red-800' },
                   { label: '70%', percent: 0.70, color: 'bg-red-600 hover:bg-red-700' },
@@ -2417,28 +2423,30 @@ export const CompsAnalysis = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
-            <div className="flex items-center justify-between gap-4 mb-4">
-              <TabsList className="grid flex-1 grid-cols-4">
-                <TabsTrigger value="auto">
-                  Auto Comps ({filteredComparables.length})
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4">
+              <TabsList className="grid flex-1 grid-cols-4 text-xs sm:text-sm">
+                <TabsTrigger value="auto" className="px-1 sm:px-3">
+                  <span className="hidden sm:inline">Auto Comps</span>
+                  <span className="sm:hidden">Auto</span> ({filteredComparables.length})
                 </TabsTrigger>
-                <TabsTrigger value="manual">
+                <TabsTrigger value="manual" className="px-1 sm:px-3">
                   Manual ({manualLinksCount})
                 </TabsTrigger>
-                <TabsTrigger value="map">
-                  <Map className="h-4 w-4 mr-2" />
+                <TabsTrigger value="map" className="px-1 sm:px-3">
+                  <Map className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Map
                 </TabsTrigger>
-                <TabsTrigger value="history">
-                  <HistoryIcon className="h-4 w-4 mr-2" />
-                  History
+                <TabsTrigger value="history" className="px-1 sm:px-3">
+                  <HistoryIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">History</span>
+                  <span className="sm:hidden">Hist.</span>
                 </TabsTrigger>
               </TabsList>
 
               {/* Quick Add Comp Button - Always visible */}
               <Button
                 onClick={() => setActiveTab('manual')}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+                className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0 w-full sm:w-auto"
                 size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />

@@ -2,8 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { ChatBot } from "@/components/ChatBot";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FeatureToggleProvider } from "@/contexts/FeatureToggleContext";
 import { UsageAnalyticsProvider } from "@/contexts/UsageAnalyticsContext";
 import Index from "./pages/Index";
@@ -19,15 +18,6 @@ import { FeaturesGuide } from "./components/FeaturesGuide";
 
 const queryClient = new QueryClient();
 
-// ChatBot wrapper that hides on property pages (which have their own OfferChatBot)
-const GlobalChatBot = () => {
-  const location = useLocation();
-  const isPropertyPage = location.pathname.startsWith('/property/');
-  
-  if (isPropertyPage) return null;
-  return <ChatBot />;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <UsageAnalyticsProvider>
@@ -36,7 +26,6 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <GlobalChatBot />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
