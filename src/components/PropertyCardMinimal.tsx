@@ -11,7 +11,8 @@ import {
   Mail,
   MapPin,
   MoreHorizontal,
-  Eye
+  Eye,
+  ExternalLink
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -134,6 +135,74 @@ export const PropertyCardMinimal = ({
           <div className="flex items-center text-sm text-gray-500">
             <MapPin className="h-3.5 w-3.5 mr-1" />
             {property.city}, {property.state} {property.zip_code}
+          </div>
+          {/* External Links - Google Maps, Zillow, Trulia, Redfin, Realtor */}
+          <div className="flex gap-1 mt-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                const fullAddr = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddr)}`, '_blank');
+              }}
+              title="Google Maps"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                const fullAddr = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+                window.open(`https://www.zillow.com/homes/${encodeURIComponent(fullAddr)}_rb/`, '_blank');
+              }}
+              title="Zillow"
+            >
+              <span className="text-xs font-bold">Z</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-1.5 text-green-600 hover:text-green-700 hover:bg-green-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                const fullAddr = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+                window.open(`https://www.trulia.com/homes/${encodeURIComponent(fullAddr)}`, '_blank');
+              }}
+              title="Trulia"
+            >
+              <span className="text-xs font-bold">T</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-1.5 text-red-500 hover:text-red-600 hover:bg-red-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                const fullAddr = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+                window.open(`https://www.redfin.com/search#query=${encodeURIComponent(fullAddr)}`, '_blank');
+              }}
+              title="Redfin"
+            >
+              <span className="text-xs font-bold">R</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-1.5 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+              onClick={(e) => {
+                e.stopPropagation();
+                const fullAddr = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
+                window.open(`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(fullAddr.replace(/\s+/g, '-'))}`, '_blank');
+              }}
+              title="Realtor.com"
+            >
+              <span className="text-xs font-bold">Re</span>
+            </Button>
           </div>
         </div>
 

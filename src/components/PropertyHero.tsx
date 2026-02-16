@@ -54,7 +54,57 @@ const PropertyHero = ({
             
             <div className="flex items-start gap-3 p-4 bg-card rounded-lg shadow-sm border border-border">
               <MapPin className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-              <p className="text-2xl md:text-3xl font-bold text-primary">{address}</p>
+              <div>
+                <p className="text-2xl md:text-3xl font-bold text-primary">{address}</p>
+                {/* External Property Links */}
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
+                  >
+                    <MapPin className="w-3.5 h-3.5" />
+                    Google Maps
+                  </a>
+                  <a
+                    href={`https://www.zillow.com/homes/${encodeURIComponent(address)}_rb/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
+                  >
+                    <span className="font-bold">Z</span>
+                    Zillow
+                  </a>
+                  <a
+                    href={`https://www.trulia.com/homes/${encodeURIComponent(address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold hover:bg-green-100 transition-colors"
+                  >
+                    <span className="font-bold">T</span>
+                    Trulia
+                  </a>
+                  <a
+                    href={`https://www.redfin.com/search#query=${encodeURIComponent(address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-semibold hover:bg-red-100 transition-colors"
+                  >
+                    <span className="font-bold">R</span>
+                    Redfin
+                  </a>
+                  <a
+                    href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(address.replace(/\s+/g, '-'))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors"
+                  >
+                    <span className="font-bold">Re</span>
+                    Realtor
+                  </a>
+                </div>
+              </div>
             </div>
             
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
