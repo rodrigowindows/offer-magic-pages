@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import ImportProperties from "./pages/ImportProperties";
 import SkipTrace from "./pages/SkipTrace";
 import { MarketingApp } from "./components/marketing/MarketingApp";
+import { ProcessApp } from "./components/process/ProcessApp";
 import { FeaturesGuide } from "./components/FeaturesGuide";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/features" element={<FeaturesGuide />} />
             {/* Marketing Communication System Routes */}
             <Route path="/marketing/*" element={<MarketingApp />} />
+            <Route path="/process/*" element={<ProcessApp />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
             </Routes>

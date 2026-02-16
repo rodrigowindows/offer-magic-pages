@@ -39,6 +39,7 @@ import {
   Search,
   Users,
   FileText,
+  ListChecks,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -103,6 +104,12 @@ const publicPages: NavigationItem[] = [
     href: '/admin/import',
     description: 'Bulk import from CSV',
     icon: Upload,
+  },
+  {
+    title: 'Processo',
+    href: '/process',
+    description: 'Fluxo de 5 passos: Base, Análise, Contatos, Comps, Oferta',
+    icon: ListChecks,
   },
   {
     title: 'MCP Tester',
