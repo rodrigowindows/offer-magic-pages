@@ -14,7 +14,8 @@ import {
   Award,
   Target,
   Keyboard,
-  TrendingUp
+  TrendingUp,
+  MapPin
 } from "lucide-react";
 import { PropertyApprovalDialog } from "./PropertyApprovalDialog";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
@@ -58,6 +59,40 @@ export const ReviewQueue = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // Keyboard shortcuts: A = approve, R = reject, arrows = navigate
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (isDialogOpen) return;
+      if (!currentProperty) return;
+
+      switch (e.key) {
+        case 'a':
+        case 'A':
+          e.preventDefault();
+          setIsDialogOpen(true);
+          break;
+        case 'r':
+        case 'R':
+          e.preventDefault();
+          setIsDialogOpen(true);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          handleNext();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          handlePrevious();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, properties.length, isDialogOpen, currentProperty]);
 
   const fetchPendingProperties = async () => {
     try {
@@ -290,6 +325,54 @@ export const ReviewQueue = () => {
               <div>
                 <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2 line-clamp-2">{currentProperty.address}</h3>
                 <p className="text-sm sm:text-base text-muted-foreground">Proprietário: {currentProperty.owner_name}</p>
+                {/* External Links */}
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentProperty.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    Maps
+                  </a>
+                  <a
+                    href={`https://www.zillow.com/homes/${encodeURIComponent(currentProperty.address)}_rb/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
+                  >
+                    <span className="font-bold">Z</span>
+                    Zillow
+                  </a>
+                  <a
+                    href={`https://www.trulia.com/homes/${encodeURIComponent(currentProperty.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold hover:bg-green-100 transition-colors"
+                  >
+                    <span className="font-bold">T</span>
+                    Trulia
+                  </a>
+                  <a
+                    href={`https://www.redfin.com/search#query=${encodeURIComponent(currentProperty.address)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold hover:bg-red-100 transition-colors"
+                  >
+                    <span className="font-bold">R</span>
+                    Redfin
+                  </a>
+                  <a
+                    href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(currentProperty.address.replace(/\s+/g, '-'))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors"
+                  >
+                    <span className="font-bold">Re</span>
+                    Realtor
+                  </a>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:gap-4">
