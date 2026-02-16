@@ -68,7 +68,15 @@ const Property = () => {
         return initialParams.get(key) || savedParams.get(key) || currentParams.get(key) || searchParams.get(key);
       };
 
-      const source = getParam('src') || getParam('source') || 'direct';
+      const rawSource = getParam('src') || getParam('source') || 'direct';
+      const sourceAliases: Record<string, string> = {
+        letters: 'letter',
+      };
+      const normalizedSource = rawSource
+        .trim()
+        .toLowerCase()
+        .replace(/\+/g, ' ');
+      const source = sourceAliases[normalizedSource] || normalizedSource || 'direct';
       const campaign = getParam('campaign') || getParam('c') || null;
       const contactPhone = getParam('phone') || getParam('p') || null;
       const contactEmail = getParam('email') || getParam('e') || null;
