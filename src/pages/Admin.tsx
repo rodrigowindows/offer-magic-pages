@@ -37,7 +37,6 @@ import { LeadStatusSelect } from "@/components/LeadStatusSelect";
 import { PropertyFilters } from "@/components/PropertyFilters";
 import { BulkActionsBar } from "@/components/BulkActionsBar";
 import { CashOfferDialog } from "@/components/CashOfferDialog";
-import { AdminChatBot } from "@/components/AdminChatBot";
 import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/EmailCampaignStats";
 import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
@@ -2420,8 +2419,6 @@ const Admin = () => {
           return prefPhones.length > 0 || prefEmails.length > 0;
         }).length}
       />
-      
-      <AdminChatBot />
       </div>
     </>
   );
