@@ -199,58 +199,58 @@ export const ReviewQueue = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-1 sm:px-0">
       {/* Stats Header */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
             <div className="text-center">
-              <Target className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-              <div className="text-2xl font-bold">{dailyStats?.reviewed_today || 0}</div>
-              <p className="text-xs text-muted-foreground">Revisadas Hoje</p>
+              <Target className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-blue-500" />
+              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.reviewed_today || 0}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Revisadas</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
             <div className="text-center">
-              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-              <div className="text-2xl font-bold">{dailyStats?.approved_today || 0}</div>
-              <p className="text-xs text-muted-foreground">Aprovadas</p>
+              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-green-500" />
+              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.approved_today || 0}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Aprovadas</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
             <div className="text-center">
-              <XCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
-              <div className="text-2xl font-bold">{dailyStats?.rejected_today || 0}</div>
-              <p className="text-xs text-muted-foreground">Rejeitadas</p>
+              <XCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-red-500" />
+              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.rejected_today || 0}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Rejeitadas</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="hidden sm:block">
+          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
             <div className="text-center">
-              <TrendingUp className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <div className="text-2xl font-bold">{dailyStats?.total_pending || 0}</div>
-              <p className="text-xs text-muted-foreground">Pendentes</p>
+              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />
+              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.total_pending || 0}</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Pendentes</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="hidden sm:block">
+          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
             <div className="text-center">
-              <Award className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
-              <div className="text-2xl font-bold">
+              <Award className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-yellow-500" />
+              <div className="text-lg sm:text-2xl font-bold">
                 #{dailyStats?.user_rank || "-"}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Ranking ({dailyStats?.total_users || 0} users)
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
+                Ranking
               </p>
             </div>
           </CardContent>
@@ -259,26 +259,26 @@ export const ReviewQueue = () => {
 
       {/* Main Review Card */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+        <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
+          <div className="flex items-center justify-between gap-2">
             <div>
-              <CardTitle>Revisar Propriedades</CardTitle>
-              <CardDescription>
-                Propriedade {currentIndex + 1} de {properties.length}
+              <CardTitle className="text-base sm:text-lg">Revisar Propriedades</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                {currentIndex + 1} de {properties.length}
               </CardDescription>
             </div>
-            <Badge variant="outline" className="text-lg px-4 py-2">
+            <Badge variant="outline" className="text-sm sm:text-lg px-2 py-1 sm:px-4 sm:py-2 shrink-0">
               {properties.length - currentIndex} restantes
             </Badge>
           </div>
-          <Progress value={progress} className="mt-4" />
+          <Progress value={progress} className="mt-3 sm:mt-4" />
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6">
           {/* Property Display */}
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Image */}
-            <div className="space-y-4">
+            <div>
               <PropertyImageDisplay
                 imageUrl={currentProperty.property_image_url}
                 address={currentProperty.address}
@@ -286,48 +286,48 @@ export const ReviewQueue = () => {
             </div>
 
             {/* Details */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <h3 className="text-2xl font-bold mb-2">{currentProperty.address}</h3>
-                <p className="text-muted-foreground">Owner: {currentProperty.owner_name}</p>
+                <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2 line-clamp-2">{currentProperty.address}</h3>
+                <p className="text-sm sm:text-base text-muted-foreground">Proprietário: {currentProperty.owner_name}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Valor Estimado</p>
-                  <p className="text-xl font-bold">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                <div className="bg-muted rounded-lg p-3 sm:p-4">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mb-1">Valor Estimado</p>
+                  <p className="text-base sm:text-xl font-bold">
                     ${currentProperty.estimated_value?.toLocaleString() || "N/A"}
                   </p>
                 </div>
-                <div className="bg-muted rounded-lg p-4">
-                  <p className="text-xs text-muted-foreground mb-1">Oferta</p>
-                  <p className="text-xl font-bold">
+                <div className="bg-muted rounded-lg p-3 sm:p-4">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground mb-1">Oferta</p>
+                  <p className="text-base sm:text-xl font-bold">
                     ${currentProperty.cash_offer_amount?.toLocaleString() || "N/A"}
                   </p>
                 </div>
               </div>
 
-              {/* Keyboard Shortcuts Help */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              {/* Keyboard Shortcuts Help - hidden on mobile */}
+              <div className="hidden sm:block bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Keyboard className="h-4 w-4 text-blue-600" />
-                  <span className="font-semibold text-blue-900">Atalhos de Teclado</span>
+                  <span className="font-semibold text-blue-900 text-sm">Atalhos de Teclado</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm text-blue-700">
                   <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded">A</kbd>
+                    <kbd className="px-2 py-1 bg-white border rounded text-xs">A</kbd>
                     <span>Aprovar</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded">R</kbd>
+                    <kbd className="px-2 py-1 bg-white border rounded text-xs">R</kbd>
                     <span>Rejeitar</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded">→</kbd>
+                    <kbd className="px-2 py-1 bg-white border rounded text-xs">→</kbd>
                     <span>Próxima</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded">←</kbd>
+                    <kbd className="px-2 py-1 bg-white border rounded text-xs">←</kbd>
                     <span>Anterior</span>
                   </div>
                 </div>
@@ -336,31 +336,37 @@ export const ReviewQueue = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex items-center justify-between pt-3 sm:pt-4 border-t gap-2">
             <Button
               variant="outline"
+              size="sm"
               onClick={handlePrevious}
               disabled={currentIndex === 0}
+              className="text-xs sm:text-sm"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Anterior
+              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Anterior</span>
+              <span className="sm:hidden">Ant.</span>
             </Button>
 
             <Button
-              size="lg"
+              size="sm"
               onClick={() => setIsDialogOpen(true)}
-              className="px-8"
+              className="px-3 sm:px-8 text-xs sm:text-sm"
             >
-              Revisar Propriedade
+              Revisar
             </Button>
 
             <Button
               variant="outline"
+              size="sm"
               onClick={handleNext}
               disabled={currentIndex === properties.length - 1}
+              className="text-xs sm:text-sm"
             >
-              Próxima
-              <ArrowRight className="h-4 w-4 ml-2" />
+              <span className="hidden sm:inline">Próxima</span>
+              <span className="sm:hidden">Próx.</span>
+              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
             </Button>
           </div>
         </CardContent>
