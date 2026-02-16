@@ -1111,11 +1111,11 @@ const Admin = () => {
       <MainNavigation />
       <div className="min-h-screen bg-gray-50">
         <header className="border-b bg-white shadow-sm">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
           {/* Top row: Title + Badge + Actions */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <h1 className="text-lg sm:text-2xl font-semibold text-gray-900 tracking-tight truncate">
                 Orlando Properties
               </h1>
               <Badge variant="secondary" className="text-xs font-medium">
@@ -1124,7 +1124,7 @@ const Admin = () => {
             </div>
 
             {/* Compact action menu */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <ApprovedPropertiesExport
                 filters={{
                   userId: filterUserId || undefined,
@@ -1148,32 +1148,38 @@ const Admin = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="mb-6 flex-wrap h-auto gap-1 p-1">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Dashboard
+          <TabsList className="mb-4 sm:mb-6 flex-wrap h-auto gap-1 p-1">
+            <TabsTrigger value="dashboard" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+              <span className="sm:hidden">Dash</span>
             </TabsTrigger>
-            <TabsTrigger value="review" className="flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Review Queue
+            <TabsTrigger value="review" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Review Queue</span>
+              <span className="sm:hidden">Review</span>
             </TabsTrigger>
-            <TabsTrigger value="properties" className="flex items-center gap-2">
-              <List className="h-4 w-4" />
-              Properties
+            <TabsTrigger value="properties" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <List className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Properties</span>
+              <span className="sm:hidden">Props</span>
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="flex items-center gap-2">
-              <Rocket className="h-4 w-4" />
-              Campaigns
+            <TabsTrigger value="campaigns" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Rocket className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Campaigns</span>
+              <span className="sm:hidden">Camp</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
+            <TabsTrigger value="analytics" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+              <span className="sm:hidden">Stats</span>
             </TabsTrigger>
-            <TabsTrigger value="features" className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              Feature Toggles
+            <TabsTrigger value="features" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Zap className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Feature Toggles</span>
+              <span className="sm:hidden">Toggles</span>
             </TabsTrigger>
           </TabsList>
 

@@ -314,33 +314,33 @@ export const FeatureTogglePanel: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6 space-y-6">
+    <div className="w-full max-w-6xl mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6">
       <Card className="border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
-        <CardHeader>
-          <div className="flex items-center justify-between">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <Settings className="h-6 w-6 text-white" />
+              <div className="p-2 bg-blue-600 rounded-lg shrink-0">
+                <Settings className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-2xl">Feature Toggle Control Panel</CardTitle>
-                <CardDescription className="mt-1">
+                <CardTitle className="text-lg sm:text-2xl">Feature Toggle Control Panel</CardTitle>
+                <CardDescription className="mt-1 text-xs sm:text-sm">
                   Ative/desative funcionalidades sem precisar fazer commits ou deploys
                 </CardDescription>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="h-4 w-4 mr-2" />
-                Export
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export</span>
               </Button>
               <Button variant="outline" size="sm" onClick={handleImport}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
+                <Upload className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Import</span>
               </Button>
               <Button variant="outline" size="sm" onClick={resetToDefaults}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Reset
+                <RefreshCw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Reset</span>
               </Button>
             </div>
           </div>
@@ -406,7 +406,7 @@ export const FeatureTogglePanel: React.FC = () => {
             </AlertDescription>
           </Alert>
 
-          <ScrollArea className="h-[600px] pr-4">
+          <ScrollArea className="h-[400px] sm:h-[600px] pr-2 sm:pr-4">
             <div className="space-y-6">
               {FEATURE_GROUPS.map((group, groupIdx) => (
                 <Card key={groupIdx}>
@@ -423,17 +423,17 @@ export const FeatureTogglePanel: React.FC = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {group.features.map((feature) => (
-                      <div key={feature.key} className="flex items-start justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <div className="flex-1 mr-4">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Label htmlFor={feature.key} className="font-medium cursor-pointer">
+                      <div key={feature.key} className="flex items-start justify-between p-2 sm:p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <div className="flex-1 mr-2 sm:mr-4 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                            <Label htmlFor={feature.key} className="font-medium cursor-pointer text-sm sm:text-base">
                               {feature.label}
                             </Label>
                             <Badge variant="outline" className={`text-xs ${getImpactColor(feature.impact)}`}>
-                              {feature.impact} impact
+                              {feature.impact}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-600">{feature.description}</p>
+                          <p className="text-xs sm:text-sm text-gray-600">{feature.description}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Switch

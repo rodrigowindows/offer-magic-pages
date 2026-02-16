@@ -40,7 +40,7 @@ export const CompactFilterPanel = ({
       />
 
       {/* Panel */}
-      <div className="fixed right-0 top-0 bottom-0 w-96 bg-card shadow-2xl z-50 overflow-y-auto">
+      <div className="fixed right-0 top-0 bottom-0 w-full sm:w-96 bg-card shadow-2xl z-50 overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-card border-b px-6 py-5 flex items-center justify-between z-10">
           <div>
