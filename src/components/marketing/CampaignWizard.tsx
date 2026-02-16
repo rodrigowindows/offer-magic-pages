@@ -48,7 +48,7 @@ import type { SavedTemplate } from '@/types/marketing.types';
 import { useFeatureToggle } from '@/contexts/FeatureToggleContext';
 import { useTrackFeature } from '@/hooks/useTrackFeature';
 import { useAdaptiveContactHelpers, useActivePreset } from '@/hooks/useFeatureToggleHelpers';
-import { generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
+import { generateDirectPropertyUrlBySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 
 interface CampaignTemplate {
   id: string;
@@ -220,7 +220,7 @@ const createPropertySlug = (address: string, city: string, zip: string): string 
 const renderTemplateContent = (content: string, property: any, channel?: string): string => {
   if (!property || typeof property !== 'object') {
     // Fallback values when no property is available
-    const fallbackPropertyUrl = generateTrackedPropertyUrlBySlug('sample', channel || 'preview');
+    const fallbackPropertyUrl = generateDirectPropertyUrlBySlug('sample', channel || 'preview');
     const fallbackQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(fallbackPropertyUrl)}`;
 
     const fallbackReplacements: Record<string, string> = {
@@ -252,7 +252,7 @@ const renderTemplateContent = (content: string, property: any, channel?: string)
     property.zip_code || '00000'
   );
   const sourceChannel = channel || 'campaign';
-  const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, sourceChannel);
+  const propertyUrl = generateDirectPropertyUrlBySlug(propertySlug, sourceChannel);
 
   // Generate QR code with different source to track QR scans separately
   const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${sourceChannel}-qr`);

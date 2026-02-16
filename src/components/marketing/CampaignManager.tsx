@@ -69,7 +69,7 @@ import { sendSMS, sendEmail, initiateCall, checkHealth } from '@/services/market
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplatesDB';
 import type { Channel } from '@/types/marketing.types';
-import { generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
+import { generateDirectPropertyUrlBySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 
 // Colunas de telefone disponíveis na tabela properties
 const PHONE_COLUMNS = [
@@ -267,7 +267,7 @@ export const CampaignManager = () => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     // Use SEO-friendly slug: "1025-s-washington-ave"
     const propertySlug = prop.slug || createPropertySlug(prop.address);
-    const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, selectedChannel);
+    const propertyUrl = generateDirectPropertyUrlBySlug(propertySlug, selectedChannel);
     // QR Code URL has different source to track QR scans separately
     const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${selectedChannel}-qr`);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
@@ -313,7 +313,7 @@ export const CampaignManager = () => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     // Use SEO-friendly slug for property URL (address only)
     const propertySlug = prop.slug || createPropertySlug(prop.address);
-    const propertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, selectedChannel);
+    const propertyUrl = generateDirectPropertyUrlBySlug(propertySlug, selectedChannel);
     // QR Code URL has different source to track QR scans separately
     const qrPropertyUrl = generateTrackedPropertyUrlBySlug(propertySlug, `${selectedChannel}-qr`);
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrPropertyUrl)}`;
