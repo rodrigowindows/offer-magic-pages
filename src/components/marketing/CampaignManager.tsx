@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
@@ -51,11 +50,9 @@ import {
   Send,
   Loader2,
   Eye,
-  EyeOff,
   CheckCircle,
   Users,
   Target,
-  TrendingUp,
   ArrowRight,
   ArrowLeft,
   Search,
@@ -63,19 +60,15 @@ import {
   DollarSign,
   Sun,
   Moon,
-  ChevronLeft,
-  ChevronRight,
   Shield,
-  Trophy,
   Activity,
   BarChart3,
-  RotateCcw,
   Code,
 } from 'lucide-react';
 import { sendSMS, sendEmail, initiateCall, checkHealth } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplatesDB';
-import type { SavedTemplate, Channel } from '@/types/marketing.types';
+import type { Channel } from '@/types/marketing.types';
 import { generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 
 // Colunas de telefone disponíveis na tabela properties
@@ -119,21 +112,11 @@ interface CampaignProperty {
 }
 
 export const CampaignManager = () => {
-  console.log('🚀 [CampaignManager] COMPONENTE RENDERIZANDO');
-
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
   const settings = useMarketingStore((state) => state.settings);
 
-  console.log('🚀 [CampaignManager] Chamando useTemplates...');
-  const hookResult = useTemplates();
-  console.log('🚀 [CampaignManager] Hook retornou:', hookResult);
-  console.log('🚀 [CampaignManager] templates do hook:', hookResult.templates);
-  console.log('🚀 [CampaignManager] typeof templates:', typeof hookResult.templates);
-
-  const { templates, getTemplatesByChannel, getDefaultTemplate } = hookResult;
-
-  console.log('🚀 [CampaignManager] Após desestruturação, templates:', templates);
+  const { templates, getTemplatesByChannel, getDefaultTemplate } = useTemplates();
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -154,6 +137,7 @@ export const CampaignManager = () => {
   const [hasSkiptraceEmailFilter, setHasSkiptraceEmailFilter] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showHtmlCode, setShowHtmlCode] = useState(false);
+  const [previewRenderLimit, setPreviewRenderLimit] = useState(20);
   const [progressStats, setProgressStats] = useState({
     completed: 0, 
     total: 0, 
@@ -260,24 +244,9 @@ export const CampaignManager = () => {
   }, [selectedChannel, getDefaultTemplate]);
 
   // Get selected template
-  console.log('🎯 [CampaignManager] selectedTemplateId:', selectedTemplateId);
-  console.log('🎯 [CampaignManager] templates:', templates);
-  console.log('🎯 [CampaignManager] templates type:', typeof templates);
-  console.log('🎯 [CampaignManager] Array.isArray(templates):', Array.isArray(templates));
-
   const selectedTemplate = selectedTemplateId
-    ? (() => {
-        console.log('🎯 [CampaignManager] Buscando template por ID:', selectedTemplateId);
-        const found = templates.find(t => t.id === selectedTemplateId);
-        console.log('🎯 [CampaignManager] Template encontrado:', found?.name || 'nenhum');
-        return found;
-      })()
-    : (() => {
-        console.log('🎯 [CampaignManager] Buscando template padrão para canal:', selectedChannel);
-        const defaultT = getDefaultTemplate(selectedChannel);
-        console.log('🎯 [CampaignManager] Template padrão:', defaultT?.name || 'nenhum');
-        return defaultT;
-      })();
+    ? templates.find(t => t.id === selectedTemplateId)
+    : getDefaultTemplate(selectedChannel);
 
   // Helper function to render template preview
   // Helper to create SEO-friendly slug from property address (address only)
@@ -305,10 +274,7 @@ export const CampaignManager = () => {
 
     // Google Maps static image for property location
     const googleMapsImage = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(fullAddress)}&zoom=15&size=600x300&markers=color:red%7C${encodeURIComponent(fullAddress)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
-    console.log('🗺️ [generateTemplateContent] googleMapsImage:', googleMapsImage);
 
-    console.log('🖼️ Preview data:', { estimated_value: (prop as any).estimated_value, property_image_url: (prop as any).property_image_url });
-    
     if (type === 'subject' && selectedTemplate.subject) {
       let subject = selectedTemplate.subject;
       subject = subject.replace(/\{address\}/g, prop.address);
@@ -339,16 +305,11 @@ export const CampaignManager = () => {
     content = content.replace(/\{qr_code_url\}/g, qrCodeUrl);
     content = content.replace(/\{source_channel\}/g, selectedChannel);
 
-    console.log('🗺️ [renderTemplatePreview] googleMapsImage usado:', googleMapsImage);
-    console.log('✅ [renderTemplatePreview] Content gerado. Length:', content.length);
     return content;
   };
 
   // Helper function to generate template content for sending
   const generateTemplateContent = (template: any, prop: CampaignProperty, trackingId?: string) => {
-    console.log('🔧 [generateTemplateContent] INICIO - prop:', prop);
-    console.log('🔧 [generateTemplateContent] estimated_value:', (prop as any).estimated_value);
-    console.log('🔧 [generateTemplateContent] property_image_url:', (prop as any).property_image_url);
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     // Use SEO-friendly slug for property URL (address only)
     const propertySlug = prop.slug || createPropertySlug(prop.address);
@@ -388,7 +349,6 @@ export const CampaignManager = () => {
     content = content.replace(/\{tracking_pixel\}/g, trackingPixel);
     content = content.replace(/\{unsubscribe_url\}/g, unsubscribeUrl);
 
-    console.log('✅ [generateTemplateContent] Todos os replacements feitos');
     const subject = template.subject?.replace(/\{address\}/g, prop.address) || `Cash Offer for ${prop.address}`;
 
     return { content, subject };
@@ -397,7 +357,61 @@ export const CampaignManager = () => {
   // Column selection state
   const [selectedPhoneColumn, setSelectedPhoneColumn] = useState('phone1');
   const [selectedEmailColumn, setSelectedEmailColumn] = useState('email1');
-  const [showContactInfo, setShowContactInfo] = useState(false);
+  const normalizeContactValue = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  };
+
+  const dedupeContacts = (contacts: string[]): string[] => {
+    const unique = new Set<string>();
+    for (const contact of contacts) {
+      const normalized = normalizeContactValue(contact);
+      if (normalized) {
+        unique.add(normalized);
+      }
+    }
+    return [...unique];
+  };
+
+  const extractTaggedContacts = (prop: CampaignProperty) => {
+    const tags = Array.isArray(prop.tags) ? prop.tags : [];
+    const preferredPhones: string[] = [];
+    const manualPhones: string[] = [];
+    const preferredEmails: string[] = [];
+    const manualEmails: string[] = [];
+
+    for (const rawTag of tags) {
+      if (typeof rawTag !== 'string') continue;
+      const tag = rawTag.trim();
+      if (tag.startsWith('pref_phone:')) {
+        const value = normalizeContactValue(tag.replace('pref_phone:', ''));
+        if (value) preferredPhones.push(value);
+        continue;
+      }
+      if (tag.startsWith('manual_phone:')) {
+        const value = normalizeContactValue(tag.replace('manual_phone:', ''));
+        if (value) manualPhones.push(value);
+        continue;
+      }
+      if (tag.startsWith('pref_email:')) {
+        const value = normalizeContactValue(tag.replace('pref_email:', '').toLowerCase());
+        if (value) preferredEmails.push(value);
+        continue;
+      }
+      if (tag.startsWith('manual_email:')) {
+        const value = normalizeContactValue(tag.replace('manual_email:', '').toLowerCase());
+        if (value) manualEmails.push(value);
+      }
+    }
+
+    return {
+      preferredPhones: dedupeContacts(preferredPhones),
+      manualPhones: dedupeContacts(manualPhones),
+      preferredEmails: dedupeContacts(preferredEmails),
+      manualEmails: dedupeContacts(manualEmails),
+    };
+  };
 
   // Build select columns based on selected phone/email columns
   const getSelectColumns = () => {
@@ -467,103 +481,39 @@ export const CampaignManager = () => {
     );
   };
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === properties.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(properties.map((p) => p.id));
-    }
-  };
-
   const getSelectedProperties = () => {
     return properties.filter((p) => selectedIds.includes(p.id));
   };
 
   // Get phone/email from property based on selected column
-  const getPhone = (prop: CampaignProperty): string | undefined => {
-    // Ensure tags is an array
-    const tags = Array.isArray(prop.tags) ? prop.tags : [];
-    // Priority 1: Get from tags (pref_phone:)
-    const prefPhones = tags
-      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
-      .map((t: string) => t.replace('pref_phone:', ''));
-    if (prefPhones.length > 0) {
-      return prefPhones[0];
-    }
-    // Priority 2: Fall back to selected column
-    return prop[selectedPhoneColumn] as string | undefined;
-  };
-
-  const getEmail = (prop: CampaignProperty): string | undefined => {
-    // Ensure tags is an array
-    const tags = Array.isArray(prop.tags) ? prop.tags : [];
-    // Priority 1: Get from tags (pref_email:)
-    const prefEmails = tags
-      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_email:'))
-      .map((t: string) => t.replace('pref_email:', ''));
-    if (prefEmails.length > 0) {
-      return prefEmails[0];
-    }
-    // Priority 2: Fall back to selected column
-    return prop[selectedEmailColumn] as string | undefined;
-  };
-
   const getAllPhones = (prop: CampaignProperty): string[] => {
-    // Ensure tags is an array
-    const tags = Array.isArray(prop.tags) ? prop.tags : [];
+    const { preferredPhones, manualPhones } = extractTaggedContacts(prop);
+    const fromTags = dedupeContacts([...preferredPhones, ...manualPhones]);
+    if (fromTags.length > 0) return fromTags;
 
-    // Priority 1: Get preferred phones from tags
-    const prefPhones = tags
-      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_phone:'))
-      .map((t: string) => t.replace('pref_phone:', ''));
-
-    // Priority 2: Get manual phones from tags
-    const manualPhones = tags
-      .filter((t: string) => typeof t === 'string' && t.startsWith('manual_phone:'))
-      .map((t: string) => t.replace('manual_phone:', ''));
-
-    // Combine both preferred and manual phones
-    const allPhones = [...prefPhones, ...manualPhones];
-
-    if (allPhones.length > 0) {
-      return allPhones;
-    }
-
-    // Priority 3: Selected column as fallback
-    const phone = prop[selectedPhoneColumn] as string | undefined;
-    return phone ? [phone] : [];
+    const fallback = normalizeContactValue(prop[selectedPhoneColumn]);
+    return fallback ? [fallback] : [];
   };
 
   const getAllEmails = (prop: CampaignProperty): string[] => {
-    // Ensure tags is an array
-    const tags = Array.isArray(prop.tags) ? prop.tags : [];
+    const { preferredEmails, manualEmails } = extractTaggedContacts(prop);
+    const fromTags = dedupeContacts([...preferredEmails, ...manualEmails]);
+    if (fromTags.length > 0) return fromTags;
 
-    // Priority 1: Get preferred emails from tags
-    const prefEmails = tags
-      .filter((t: string) => typeof t === 'string' && t.startsWith('pref_email:'))
-      .map((t: string) => t.replace('pref_email:', ''));
-
-    // Priority 2: Get manual emails from tags
-    const manualEmails = tags
-      .filter((t: string) => typeof t === 'string' && t.startsWith('manual_email:'))
-      .map((t: string) => t.replace('manual_email:', ''));
-
-    // Combine both preferred and manual emails
-    const allEmails = [...prefEmails, ...manualEmails];
-
-    if (allEmails.length > 0) {
-      return allEmails;
-    }
-
-    // Priority 3: Selected column as fallback
-    const email = prop[selectedEmailColumn] as string | undefined;
-    return email ? [email] : [];
+    const fallback = normalizeContactValue(prop[selectedEmailColumn]);
+    return fallback ? [fallback] : [];
   };
 
   // Derived states for use across component (MUST be after helper functions)
   const selectedProps = getSelectedProperties();
   const propsWithEmail = selectedProps.filter(p => getAllEmails(p).length > 0).length;
   const propsWithPhone = selectedProps.filter(p => getAllPhones(p).length > 0).length;
+
+  useEffect(() => {
+    if (currentStep === 4) {
+      setPreviewRenderLimit(20);
+    }
+  }, [currentStep, selectedIds, selectedChannel, selectedTemplateId]);
 
   // Wizard navigation functions
   const nextStep = () => {
@@ -591,10 +541,18 @@ export const CampaignManager = () => {
 
   // Campaign statistics calculations
   const getCampaignStats = () => {
-    const selectedProps = getSelectedProperties();
+    const selectedProps = getSelectedProperties(); // intentional local scope for stats
     const approvedProps = selectedProps.filter(p => p.approval_status === 'approved');
     const propsWithPhones = selectedProps.filter(p => getAllPhones(p).length > 0);
     const propsWithEmails = selectedProps.filter(p => getAllEmails(p).length > 0);
+    const taggedPhoneContacts = selectedProps.reduce((sum, p) => {
+      const { preferredPhones, manualPhones } = extractTaggedContacts(p);
+      return sum + dedupeContacts([...preferredPhones, ...manualPhones]).length;
+    }, 0);
+    const taggedEmailContacts = selectedProps.reduce((sum, p) => {
+      const { preferredEmails, manualEmails } = extractTaggedContacts(p);
+      return sum + dedupeContacts([...preferredEmails, ...manualEmails]).length;
+    }, 0);
 
     return {
       totalProperties: selectedProps.length,
@@ -603,6 +561,8 @@ export const CampaignManager = () => {
       propertiesWithEmails: propsWithEmails.length,
       totalPhoneContacts: propsWithPhones.reduce((sum, p) => sum + getAllPhones(p).length, 0),
       totalEmailContacts: propsWithEmails.reduce((sum, p) => sum + getAllEmails(p).length, 0),
+      taggedPhoneContacts,
+      taggedEmailContacts,
     };
   };
 
@@ -844,7 +804,6 @@ export const CampaignManager = () => {
           
           // Apply SMS delay between messages (not before first one)
           if (phoneIndex > 0 && smsDelay > 0) {
-            console.log(`⏱️ Aguardando ${smsDelay}ms antes de enviar para ${phone}...`);
             await new Promise(resolve => setTimeout(resolve, smsDelay));
           }
           
@@ -855,15 +814,17 @@ export const CampaignManager = () => {
             });
 
             // Log successful SMS send
-            await supabase.from('campaign_logs').insert({
-              tracking_id: trackingId,
-              campaign_type: 'manual',
-              channel: 'sms',
-              property_id: prop.id,
-              recipient_phone: phone,
-              recipient_name: prop.owner_name || 'Owner',
-              property_address: fullAddress,
-              sent_at: new Date().toISOString(),
+              await supabase.from('campaign_logs').insert({
+                tracking_id: trackingId,
+                campaign_type: 'manual',
+                channel: 'sms',
+                status: 'sent',
+                html_content: content,
+                property_id: prop.id,
+                recipient_phone: phone,
+                recipient_name: prop.owner_name || 'Owner',
+                property_address: fullAddress,
+                sent_at: new Date().toISOString(),
               metadata: {
                 template_id: selectedTemplate.id,
                 template_name: selectedTemplate.name,
@@ -882,7 +843,7 @@ export const CampaignManager = () => {
             console.error(`SMS failed for ${phone}:`, error);
           }
         }
-        console.log(`✅ Sent SMS to ${successCount}/${allPhones.length} phone numbers for property ${fullAddress}`);
+        // SMS batch complete for this property
       } else if (selectedChannel === 'email') {
         if (allEmails.length === 0) {
           return { success: false, property: prop, error: 'No email available', messagesSent: 0 };
@@ -901,15 +862,17 @@ export const CampaignManager = () => {
             });
 
             // Log successful email send
-            await supabase.from('campaign_logs').insert({
-              tracking_id: trackingId,
-              campaign_type: 'manual',
-              channel: 'email',
-              property_id: prop.id,
-              recipient_email: email,
-              recipient_name: prop.owner_name || 'Owner',
-              property_address: fullAddress,
-              sent_at: new Date().toISOString(),
+              await supabase.from('campaign_logs').insert({
+                tracking_id: trackingId,
+                campaign_type: 'manual',
+                channel: 'email',
+                status: 'sent',
+                html_content: content,
+                property_id: prop.id,
+                recipient_email: email,
+                recipient_name: prop.owner_name || 'Owner',
+                property_address: fullAddress,
+                sent_at: new Date().toISOString(),
               metadata: {
                 template_id: selectedTemplate.id,
                 template_name: selectedTemplate.name,
@@ -929,7 +892,7 @@ export const CampaignManager = () => {
             console.error(`Email failed for ${email}:`, error);
           }
         }
-        console.log(`✅ Sent email to ${successCount}/${allEmails.length} email addresses for property ${fullAddress}`);
+        // Email batch complete for this property
       } else if (selectedChannel === 'call') {
         if (allPhones.length === 0) {
           return { success: false, property: prop, error: 'No phone available', messagesSent: 0 };
@@ -951,15 +914,17 @@ export const CampaignManager = () => {
             });
 
             // Log successful call initiation
-            await supabase.from('campaign_logs').insert({
-              tracking_id: trackingId,
-              campaign_type: 'manual',
-              channel: 'call',
-              property_id: prop.id,
-              recipient_phone: phone,
-              recipient_name: prop.owner_name || 'Owner',
-              property_address: fullAddress,
-              sent_at: new Date().toISOString(),
+              await supabase.from('campaign_logs').insert({
+                tracking_id: trackingId,
+                campaign_type: 'manual',
+                channel: 'call',
+                status: 'sent',
+                html_content: content,
+                property_id: prop.id,
+                recipient_phone: phone,
+                recipient_name: prop.owner_name || 'Owner',
+                property_address: fullAddress,
+                sent_at: new Date().toISOString(),
               metadata: {
                 template_id: selectedTemplate.id,
                 template_name: selectedTemplate.name,
@@ -978,7 +943,7 @@ export const CampaignManager = () => {
             console.error(`Call failed for ${phone}:`, error);
           }
         }
-        console.log(`✅ Called ${successCount}/${allPhones.length} phone numbers for property ${fullAddress}`);
+        // Call batch complete for this property
       }
 
       return { success: sent, property: prop, error: sent ? null : lastError, messagesSent };
@@ -1183,10 +1148,6 @@ export const CampaignManager = () => {
     return simulationResults;
   };
 
-  console.log('🎯 [CampaignManager] Iniciando RETURN (render JSX)...');
-  console.log('🎯 [CampaignManager] selectedTemplate:', selectedTemplate);
-  console.log('🎯 [CampaignManager] channelTemplates length:', getTemplatesByChannel(selectedChannel)?.length);
-
   return (
     <TooltipProvider>
       <div className={`space-y-6 transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>
@@ -1378,27 +1339,30 @@ export const CampaignManager = () => {
                               </div>
                               <div className="prose prose-sm max-w-none">
                                 {selectedChannel === 'email' ? (
-                                  <div
-                                    className="text-sm"
-                                    dangerouslySetInnerHTML={{
-                                      __html: generateTemplateContent(
-                                        selectedTemplate,
-                                        {
-                                          id: 'sample',
-                                          address: '123 Main St',
-                                          city: 'Orlando',
-                                          state: 'FL',
-                                          zip_code: '32801',
-                                          matched_first_name: 'John',
-                                          matched_last_name: 'Doe',
-                                          estimated_value: 350000,
-                                          cash_offer_amount: 245000,
-                                          property_image_url: 'https://via.placeholder.com/600x300.png?text=Sample+Property+Photo',
-                                          slug: 'sample-property'
-                                        } as any,
-                                        'preview'
-                                      ).content
-                                    }}
+                                  <iframe
+                                    srcDoc={generateTemplateContent(
+                                      selectedTemplate,
+                                      {
+                                        id: 'sample',
+                                        address: '123 Main St',
+                                        city: 'Orlando',
+                                        state: 'FL',
+                                        zip_code: '32801',
+                                        matched_first_name: 'John',
+                                        matched_last_name: 'Doe',
+                                        estimated_value: 350000,
+                                        cash_offer_amount: 245000,
+                                        property_image_url: 'https://via.placeholder.com/600x300.png?text=Sample+Property+Photo',
+                                        slug: 'sample-property'
+                                      } as any,
+                                      'preview'
+                                    ).content}
+                                    className="w-full border-0 rounded"
+                                    style={{ height: '300px', minHeight: '200px' }}
+                                    title="Email Template Preview"
+                                    sandbox=""
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer"
                                   />
                                 ) : (
                                   <div className="text-sm whitespace-pre-wrap">
@@ -1702,8 +1666,8 @@ export const CampaignManager = () => {
                                           <div className="flex items-center gap-2 text-muted-foreground">
                                             <Mail className="w-3 h-3 flex-shrink-0" />
                                             <span className="truncate font-mono text-xs">
-                                              {emails.slice(0, 1).join(', ')}
-                                              {emails.length > 1 && ` +${emails.length - 1} more`}
+                                              {emails.slice(0, 2).join(', ')}
+                                              {emails.length > 2 && ` +${emails.length - 2} more`}
                                             </span>
                                           </div>
                                         )}
@@ -1752,10 +1716,31 @@ export const CampaignManager = () => {
                             No properties selected
                           </div>
                         ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                            <p className="font-medium">Nenhuma propriedade selecionada</p>
-                            <p className="text-sm">Selecione propriedades na lista ao lado para continuar</p>
+                          <div className="space-y-3">
+                            <ScrollArea className="h-[320px] pr-3">
+                              <div className="space-y-2">
+                                {selectedProps.map((property) => (
+                                  <div
+                                    key={property.id}
+                                    className="p-3 border rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <p className="font-medium truncate">{property.address}</p>
+                                        <p className="text-xs text-muted-foreground truncate">
+                                          {property.city}, {property.state} {property.zip_code}
+                                        </p>
+                                      </div>
+                                      <Badge variant="outline" className="flex-shrink-0">
+                                        {selectedChannel === 'email'
+                                          ? `${getAllEmails(property).length} email(s)`
+                                          : `${getAllPhones(property).length} phone(s)`}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </ScrollArea>
                           </div>
                         )}
                       </CardContent>
@@ -1918,7 +1903,7 @@ export const CampaignManager = () => {
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Skip Tracing Phones:</span>
-                                <span className="font-semibold">0</span>
+                                <span className="font-semibold">{stats.taggedPhoneContacts}</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Total Phone Contacts:</span>
@@ -1934,7 +1919,7 @@ export const CampaignManager = () => {
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Skip Tracing Emails:</span>
-                                <span className="font-semibold">0</span>
+                                <span className="font-semibold">{stats.taggedEmailContacts}</span>
                               </div>
                               <div className="flex justify-between items-center">
                                 <span className="text-muted-foreground">Total Email Contacts:</span>
@@ -1990,137 +1975,164 @@ export const CampaignManager = () => {
                   <CardContent>
                     {selectedProps.length > 0 && selectedTemplate ? (
                       <div className="space-y-6">
+                        {selectedProps.length > previewRenderLimit && (
+                          <Alert className="border-amber-300 bg-amber-50">
+                            <AlertCircle className="w-4 h-4 text-amber-700" />
+                            <AlertDescription className="text-amber-900">
+                              Rendering is limited to {previewRenderLimit} previews at a time for performance.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
                         {/* Render preview for EACH property */}
-                        {selectedProps.map((property, index) => {
+                        {selectedProps.slice(0, previewRenderLimit).map((property, index) => {
                           const propertyContacts = selectedChannel === 'email' ? getAllEmails(property) : getAllPhones(property);
+                          const bodyPreview = renderTemplatePreview(property);
+                          const subjectPreview = selectedChannel === 'email'
+                            ? renderTemplatePreview(property, 'subject')
+                            : '';
+
                           return (
-                          <div key={property.id || index} className="border-2 border-gray-200 rounded-lg p-4 bg-gradient-to-br from-white to-gray-50">
-                            {/* Property Header */}
-                            <div className="flex items-start justify-between mb-4 pb-3 border-b-2 border-gray-200">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-                                    {index + 1}
-                                  </div>
-                                  <h4 className="font-bold text-base text-gray-900">{property.address || 'N/A'}</h4>
-                                  {propertyContacts.length > 1 && (
-                                    <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
-                                      {propertyContacts.length} contacts
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-sm text-gray-600 ml-8">
-                                  {property.city || 'N/A'}, {property.state || 'FL'} {property.zip_code || 'N/A'}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-lg font-bold text-green-600">
-                                  ${property.cash_offer?.toLocaleString() || '0'}
-                                </div>
-                                <div className="text-xs text-gray-500">Cash Offer</div>
-                              </div>
-                            </div>
-
-                            {/* SMS Preview */}
-                            {selectedChannel === 'sms' && (
-                              <div className="border rounded-lg p-4 bg-white">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <MessageSquare className="w-4 h-4 text-blue-600" />
-                                  <span className="font-medium">SMS Message</span>
-                                </div>
-                                <div className="bg-gray-50 p-3 rounded border text-sm">
-                                  {renderTemplatePreview(property)}
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-2">
-                                  ~{renderTemplatePreview(property).length} characters
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Email Preview */}
-                            {selectedChannel === 'email' && (
-                              <div className="border rounded-lg p-4 bg-white">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center gap-2">
-                                    <Mail className="w-4 h-4 text-blue-600" />
-                                    <span className="font-medium">Email Message</span>
-                                  </div>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setShowHtmlCode(!showHtmlCode)}
-                                    className="gap-2"
-                                  >
-                                    {showHtmlCode ? (
-                                      <>
-                                        <Eye className="w-4 h-4" />
-                                        Show Preview
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Code className="w-4 h-4" />
-                                        Show HTML
-                                      </>
+                            <div key={property.id || index} className="border-2 border-gray-200 rounded-lg p-4 bg-gradient-to-br from-white to-gray-50">
+                              {/* Property Header */}
+                              <div className="flex items-start justify-between mb-4 pb-3 border-b-2 border-gray-200">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
+                                      {index + 1}
+                                    </div>
+                                    <h4 className="font-bold text-base text-gray-900">{property.address || 'N/A'}</h4>
+                                    {propertyContacts.length > 1 && (
+                                      <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                        {propertyContacts.length} contacts
+                                      </span>
                                     )}
-                                  </Button>
-                                </div>
-
-                                {/* Subject */}
-                                <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
-                                  <span className="text-xs text-blue-600 font-medium">Subject:</span>
-                                  <div className="text-sm font-medium text-gray-900 mt-1">
-                                    {renderTemplatePreview(property, 'subject')}
+                                  </div>
+                                  <div className="text-sm text-gray-600 ml-8">
+                                    {property.city || 'N/A'}, {property.state || 'FL'} {property.zip_code || 'N/A'}
                                   </div>
                                 </div>
-
-                                {/* Email Body */}
-                                <div className="bg-white border rounded">
-                                  {showHtmlCode ? (
-                                    // Show HTML Code
-                                    <pre className="p-3 text-xs overflow-auto max-h-[400px] whitespace-pre-wrap font-mono">
-                                      {renderTemplatePreview(property)}
-                                    </pre>
-                                  ) : (
-                                    // Show Rendered HTML
-                                    <iframe
-                                      srcDoc={renderTemplatePreview(property)}
-                                      className="w-full border-0 rounded"
-                                      style={{ height: '400px', minHeight: '300px' }}
-                                      title={`Email Preview - ${property.address}`}
-                                      sandbox="allow-same-origin"
-                                    />
-                                  )}
-                                </div>
-
-                                <div className="flex items-center justify-between mt-2">
-                                  <div className="text-xs text-muted-foreground">
-                                    {showHtmlCode ? 'HTML Source Code' : 'Rendered Preview'}
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-green-600">
+                                    ${property.cash_offer_amount?.toLocaleString() || '0'}
                                   </div>
-                                  <div className="text-xs text-green-600 font-medium">
-                                    ✓ HTML email with professional formatting
-                                  </div>
+                                  <div className="text-xs text-gray-500">Cash Offer</div>
                                 </div>
                               </div>
-                            )}
 
-                            {/* Call/Voicemail Preview */}
-                            {selectedChannel === 'call' && (
-                              <div className="border rounded-lg p-4 bg-white">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Phone className="w-4 h-4 text-blue-600" />
-                                  <span className="font-medium">Voicemail Message</span>
+                              {/* SMS Preview */}
+                              {selectedChannel === 'sms' && (
+                                <div className="border rounded-lg p-4 bg-white">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <MessageSquare className="w-4 h-4 text-blue-600" />
+                                    <span className="font-medium">SMS Message</span>
+                                  </div>
+                                  <div className="bg-gray-50 p-3 rounded border text-sm">
+                                    {bodyPreview}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-2">
+                                    ~{bodyPreview.length} characters
+                                  </div>
                                 </div>
-                                <div className="bg-gray-50 p-3 rounded border text-sm">
-                                  {renderTemplatePreview(property)}
+                              )}
+
+                              {/* Email Preview */}
+                              {selectedChannel === 'email' && (
+                                <div className="border rounded-lg p-4 bg-white">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                      <Mail className="w-4 h-4 text-blue-600" />
+                                      <span className="font-medium">Email Message</span>
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setShowHtmlCode(!showHtmlCode)}
+                                      className="gap-2"
+                                    >
+                                      {showHtmlCode ? (
+                                        <>
+                                          <Eye className="w-4 h-4" />
+                                          Show Preview
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Code className="w-4 h-4" />
+                                          Show HTML
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+
+                                  {/* Subject */}
+                                  <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
+                                    <span className="text-xs text-blue-600 font-medium">Subject:</span>
+                                    <div className="text-sm font-medium text-gray-900 mt-1">
+                                      {subjectPreview}
+                                    </div>
+                                  </div>
+
+                                  {/* Email Body */}
+                                  <div className="bg-white border rounded">
+                                    {showHtmlCode ? (
+                                      // Show HTML Code
+                                      <pre className="p-3 text-xs overflow-auto max-h-[400px] whitespace-pre-wrap font-mono">
+                                        {bodyPreview}
+                                      </pre>
+                                    ) : (
+                                      // Show Rendered HTML
+                                      <iframe
+                                        srcDoc={bodyPreview}
+                                        className="w-full border-0 rounded"
+                                        style={{ height: '400px', minHeight: '300px' }}
+                                        title={`Email Preview - ${property.address}`}
+                                        sandbox="allow-popups"
+                                        loading="lazy"
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center justify-between mt-2">
+                                    <div className="text-xs text-muted-foreground">
+                                      {showHtmlCode ? 'HTML Source Code' : 'Rendered Preview'}
+                                    </div>
+                                    <div className="text-xs text-green-600 font-medium">
+                                      ✓ HTML email with professional formatting
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground mt-2">
-                                  Voicemail message for unanswered calls
+                              )}
+
+                              {/* Call/Voicemail Preview */}
+                              {selectedChannel === 'call' && (
+                                <div className="border rounded-lg p-4 bg-white">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Phone className="w-4 h-4 text-blue-600" />
+                                    <span className="font-medium">Voicemail Message</span>
+                                  </div>
+                                  <div className="bg-gray-50 p-3 rounded border text-sm">
+                                    {bodyPreview}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground mt-2">
+                                    Voicemail message for unanswered calls
+                                  </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
+                              )}
+                            </div>
                           );
                         })}
+
+                        {previewRenderLimit < selectedProps.length && (
+                          <div className="flex justify-center">
+                            <Button
+                              variant="outline"
+                              onClick={() => setPreviewRenderLimit(prev => Math.min(prev + 20, selectedProps.length))}
+                            >
+                              Load 20 more previews
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
@@ -2473,9 +2485,9 @@ export const CampaignManager = () => {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-purple-600">
-                      {selectedProps.filter(p =>
-                        selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0
-                      ).length}
+                      {selectedProps.reduce((total, p) => {
+                        return total + (selectedChannel === 'email' ? getAllEmails(p).length : getAllPhones(p).length);
+                      }, 0)}
                     </div>
                     <div className="text-sm text-muted-foreground">Mensagens</div>
                   </div>
@@ -2540,9 +2552,21 @@ export const CampaignManager = () => {
                   {selectedProps[0] && (
                     <div>
                       <Label className="text-sm font-medium">Mensagem</Label>
-                      <div className="text-sm bg-muted p-3 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
-                        {renderTemplatePreview(selectedProps[0], 'body')}
-                      </div>
+                      {selectedChannel === 'email' ? (
+                        <iframe
+                          srcDoc={renderTemplatePreview(selectedProps[0], 'body')}
+                          className="w-full border-0 rounded bg-muted"
+                          style={{ height: '200px', minHeight: '128px' }}
+                          title="Send Preview"
+                          sandbox=""
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="text-sm bg-muted p-3 rounded whitespace-pre-wrap max-h-32 overflow-y-auto">
+                          {renderTemplatePreview(selectedProps[0], 'body')}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

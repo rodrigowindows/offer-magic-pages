@@ -139,3 +139,32 @@ CREATE POLICY "Users can view scheduled campaigns for their campaigns" ON schedu
 -- Allow public access to lead_activities for now (adjust as needed)
 CREATE POLICY "Allow all operations on lead_activities" ON lead_activities
   FOR ALL USING (true);
+
+-- Campaign logs follow-up columns (used by History and delivery tracking)
+ALTER TABLE IF EXISTS campaign_logs
+  ADD COLUMN IF NOT EXISTS html_content TEXT,
+  ADD COLUMN IF NOT EXISTS channel TEXT,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'sent';
+
+CREATE INDEX IF NOT EXISTS idx_campaign_logs_status ON campaign_logs(status);
+CREATE INDEX IF NOT EXISTS idx_campaign_logs_channel ON campaign_logs(channel);
+CREATE INDEX IF NOT EXISTS idx_campaign_logs_sent_at ON campaign_logs(sent_at DESC);
+
+-- Manual comps links table (supports URL-only and structured comp_data JSON)
+CREATE TABLE IF NOT EXISTS manual_comps_links (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  property_address TEXT NOT NULL,
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'other' CHECK (source IN ('trulia', 'zillow', 'redfin', 'realtor', 'other')),
+  notes TEXT,
+  comp_data JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_manual_comps_links_property_id ON manual_comps_links(property_id);
+CREATE INDEX IF NOT EXISTS idx_manual_comps_links_user_id ON manual_comps_links(user_id);
+CREATE INDEX IF NOT EXISTS idx_manual_comps_links_created_at ON manual_comps_links(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_manual_comps_links_comp_data ON manual_comps_links USING GIN (comp_data);

@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { extractDataFromUrl as extractFromListingUrl, formatExtractedAddress } from '@/utils/urlDataExtractor';
 
 export interface ManualCompsLink {
   id: string;
@@ -43,7 +44,6 @@ export async function getManualCompsForProperty(propertyId: string): Promise<Man
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      console.log('⚠️ No user logged in');
       return [];
     }
 
@@ -60,18 +60,12 @@ export async function getManualCompsForProperty(propertyId: string): Promise<Man
     }
 
     if (!data || data.length === 0) {
-      console.log('📭 No manual comps found for property:', propertyId);
       return [];
     }
-
-    console.log(`✅ Found ${data.length} manual comps links`);
 
     // Convert to ManualCompData format, extracting data from comp_data JSONB
     const manualComps: ManualCompData[] = data.map((link: any) => {
       const compData = link.comp_data || {};
-      
-      console.log('🔍 Manual Link:', link.id, 'comp_data:', compData);
-      
       const converted: ManualCompData = {
         id: `manual-${link.id}`,
         address: link.property_address,
@@ -91,7 +85,6 @@ export async function getManualCompsForProperty(propertyId: string): Promise<Man
         zipCode: compData.zipCode || compData.zip_code,
       };
       
-      console.log('✅ Converted to:', converted);
       return converted;
     });
 
@@ -130,16 +123,41 @@ export async function getManualCompsCount(propertyId: string): Promise<number> {
 }
 
 /**
- * Extract basic data from URL (future implementation with scraping)
- * For now, returns null - can be enhanced with web scraping
+ * Extract structured data from listing URL using deterministic parsing.
+ * This is fast and does not depend on scraping external sites.
  */
 export async function extractDataFromUrl(url: string): Promise<Partial<ManualCompData> | null> {
-  // TODO: Implement web scraping or use APIs
-  // Trulia, Zillow, Redfin have APIs that could be used
-  // For now, return null and rely on manual data entry
+  try {
+    const extracted = extractFromListingUrl(url);
+    const hasUsefulData =
+      !!extracted.address ||
+      !!extracted.city ||
+      !!extracted.state ||
+      !!extracted.zipCode ||
+      Number.isFinite(extracted.price) ||
+      Number.isFinite(extracted.sqft) ||
+      Number.isFinite(extracted.beds) ||
+      Number.isFinite(extracted.baths);
 
-  console.log('⚠️ URL data extraction not yet implemented for:', url);
-  return null;
+    if (!hasUsefulData) {
+      return null;
+    }
+
+    return {
+      address: formatExtractedAddress(extracted) || extracted.address,
+      source: extracted.source,
+      salePrice: extracted.price,
+      sqft: extracted.sqft,
+      beds: extracted.beds,
+      baths: extracted.baths,
+      city: extracted.city,
+      state: extracted.state,
+      zipCode: extracted.zipCode,
+    };
+  } catch (error) {
+    console.error('Error extracting URL data:', error);
+    return null;
+  }
 }
 
 /**

@@ -14,6 +14,8 @@ export interface SkipTraceProperty {
   skip_trace_summary: {
     total_phones: number;
     total_emails: number;
+    total_manual_phones?: number;
+    total_manual_emails?: number;
     has_owner_info: boolean;
     phones: Array<{
       number: string;
@@ -26,6 +28,10 @@ export interface SkipTraceProperty {
     }>;
     preferred_phones: string[];
     preferred_emails: string[];
+    manual_phones?: string[];
+    manual_emails?: string[];
+    all_available_phones?: string[];
+    all_available_emails?: string[];
     dnc_status: 'DNC' | 'Clear';
     deceased_status: 'Deceased' | 'Active';
   };
@@ -81,36 +87,35 @@ export const useSkipTraceData = (options: UseSkipTraceDataOptions = {}) => {
       if (opts.hasSkipTraceData) params.append('hasSkipTraceData', 'true');
       if (opts.search) params.append('search', opts.search);
 
-      // Call the Supabase Edge Function
-      const { data: response, error: functionError } = await supabase.functions.invoke(
-        'get-skip-trace-data',
-        {
-          body: {},
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      // Since we can't pass query params directly to invoke, we'll use fetch
       const queryString = params.toString();
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase environment variables are not configured');
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        throw new Error('User session required to access Skip Trace data');
+      }
+
       const functionUrl = `${supabaseUrl}/functions/v1/get-skip-trace-data${queryString ? `?${queryString}` : ''}`;
 
-      const response2 = await fetch(functionUrl, {
+      const response = await fetch(functionUrl, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
+          'Authorization': `Bearer ${accessToken}`,
+          'apikey': supabaseKey,
           'Content-Type': 'application/json',
         },
       });
 
-      if (!response2.ok) {
-        throw new Error(`HTTP error! status: ${response2.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result: SkipTraceResponse = await response2.json();
+      const result: SkipTraceResponse = await response.json();
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch skip trace data');
@@ -136,7 +141,14 @@ export const useSkipTraceData = (options: UseSkipTraceDataOptions = {}) => {
     if (options.autoLoad) {
       fetchSkipTraceData();
     }
-  }, [options.autoLoad]);
+  }, [
+    options.autoLoad,
+    options.propertyId,
+    options.limit,
+    options.offset,
+    options.hasSkipTraceData,
+    options.search,
+  ]);
 
   return {
     data,

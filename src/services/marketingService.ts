@@ -51,11 +51,17 @@ export interface SkipTracePropertyData {
   skip_trace_summary: {
     total_phones: number;
     total_emails: number;
+    total_manual_phones?: number;
+    total_manual_emails?: number;
     has_owner_info: boolean;
     phones: SkipTracePhone[];
     emails: SkipTraceEmail[];
     preferred_phones: string[];
     preferred_emails: string[];
+    manual_phones?: string[];
+    manual_emails?: string[];
+    all_available_phones?: string[];
+    all_available_emails?: string[];
     dnc_status: 'DNC' | 'Clear';
     deceased_status: 'Deceased' | 'Active';
   };
@@ -88,6 +94,16 @@ export const getSkipTracePhones = async (options?: {
   search?: string;
 }): Promise<SkipTraceResponse> => {
   try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      throw new Error('Supabase environment variables are not configured');
+    }
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      throw new Error('User session required to access Skip Trace data');
+    }
+
     // Build query parameters
     const params = new URLSearchParams();
 
@@ -104,7 +120,8 @@ export const getSkipTracePhones = async (options?: {
     const response = await fetch(functionUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': SUPABASE_ANON_KEY,
         'Content-Type': 'application/json',
       },
     });
@@ -232,10 +249,6 @@ export const initiateCall = async (
   const cleanFromNumber = cleanPhoneNumber(data.from_number);
   const cleanToNumber = cleanPhoneNumber(data.to_number);
 
-  console.log('🧹 [initiateCall] Cleaning phone numbers:');
-  console.log('   Original from_number:', data.from_number, '→ Cleaned:', cleanFromNumber);
-  console.log('   Original to_number:', data.to_number, '→ Cleaned:', cleanToNumber);
-
   const requestPayload = {
     name: data.name,
     from_number: cleanFromNumber,
@@ -246,16 +259,8 @@ export const initiateCall = async (
     test_mode: data.test_mode || false,
   };
 
-  console.log('📞 [initiateCall] ===== START =====');
-  console.log('📞 [initiateCall] API Base URL:', api.defaults.baseURL);
-  console.log('📞 [initiateCall] Full URL:', `${api.defaults.baseURL}/initiate_call`);
-  console.log('📞 [initiateCall] Request payload:', JSON.stringify(requestPayload, null, 2));
-
   try {
     const response = await api.post('/initiate_call', requestPayload);
-
-    console.log('✅ [initiateCall] Response status:', response.status);
-    console.log('✅ [initiateCall] Response data:', JSON.stringify(response.data, null, 2));
 
     if (response.data.call_id) {
       return {

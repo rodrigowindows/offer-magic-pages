@@ -28,7 +28,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.get-skip-trace-data]
-verify_jwt = false
+verify_jwt = true
 
 [functions.retell-webhook-handler]
 verify_jwt = false

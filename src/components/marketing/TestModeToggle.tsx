@@ -1,6 +1,6 @@
 import { useMarketingStore } from '@/store/marketingStore';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert } from '@/components/ui/alert';
 import { TestTube2, Rocket } from 'lucide-react';
 
 interface TestModeToggleProps {
@@ -22,10 +22,6 @@ export function TestModeToggle({ compact = false }: TestModeToggleProps) {
         test_mode: newMode,
       },
     });
-
-    // Force re-render confirmation
-    setTimeout(() => {
-    }, 100);
   };
 
   // Sidebar compact version - shows clickable button

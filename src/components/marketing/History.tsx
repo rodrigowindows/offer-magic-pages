@@ -20,18 +20,15 @@ import {
   Search,
   Filter,
   Download,
-  Trash2,
   CheckCircle2,
   XCircle,
   MessageSquare,
   Mail,
   Phone,
-  TestTube2,
   Calendar,
   RefreshCw,
   Eye,
   AlertCircle,
-  Clock,
   Send,
   MailOpen,
   MousePointerClick,
@@ -137,7 +134,7 @@ export const History = () => {
 
     const csv = [
       headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
     ].join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -147,12 +144,6 @@ export const History = () => {
     a.download = `campaign-history-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  };
-
-  const channelIcons = {
-    sms: MessageSquare,
-    email: Mail,
-    call: Phone,
   };
 
   return (
@@ -383,8 +374,16 @@ const HistoryItem = ({ item }: { item: CampaignLog }) => {
                     </Button>
                   </div>
                   {showPreview && (
-                    <div className="border rounded-lg p-4 bg-white max-h-96 overflow-auto">
-                      <div dangerouslySetInnerHTML={{ __html: item.html_content }} />
+                    <div className="border rounded-lg bg-white overflow-hidden">
+                      <iframe
+                        srcDoc={item.html_content}
+                        title={`Communication Preview ${item.id}`}
+                        className="w-full border-0"
+                        style={{ minHeight: '320px' }}
+                        sandbox=""
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
                   )}
                 </div>

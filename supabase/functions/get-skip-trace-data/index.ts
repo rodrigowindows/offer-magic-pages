@@ -142,18 +142,15 @@ function buildSkipTraceSummary(property: any) {
   const emails = extractEmails(property);
   const tags = Array.isArray(property.tags) ? property.tags : [];
   
-  const preferredPhones = [
-    ...extractPreferredFromTags(tags, 'pref_phone:'),
-    ...extractPreferredFromTags(tags, 'manual_phone:')
-  ];
+  const preferredPhones = extractPreferredFromTags(tags, 'pref_phone:');
+  const preferredEmails = extractPreferredFromTags(tags, 'pref_email:');
+  const manualPhones = extractPreferredFromTags(tags, 'manual_phone:');
+  const manualEmails = extractPreferredFromTags(tags, 'manual_email:');
+  const allAvailablePhones = [...new Set([...preferredPhones, ...manualPhones])];
+  const allAvailableEmails = [...new Set([...preferredEmails, ...manualEmails])];
   
-  const preferredEmails = [
-    ...extractPreferredFromTags(tags, 'pref_email:'),
-    ...extractPreferredFromTags(tags, 'manual_email:')
-  ];
-  
-  const dncStatus = property.dnc_flag || 
-    (property.dnc_litigator_scrub && property.dnc_litigator_scrub.toLowerCase().includes('dnc')) 
+  const dncStatus = (property.dnc_flag ||
+    (property.dnc_litigator_scrub && property.dnc_litigator_scrub.toLowerCase().includes('dnc')))
     ? 'DNC' : 'Clear';
   
   const deceasedStatus = property.deceased ? 'Deceased' : 'Active';
@@ -161,11 +158,17 @@ function buildSkipTraceSummary(property: any) {
   return {
     total_phones: phones.length,
     total_emails: emails.length,
+    total_manual_phones: manualPhones.length,
+    total_manual_emails: manualEmails.length,
     has_owner_info: !!(property.owner_name || property.matched_first_name || property.matched_last_name),
     phones,
     emails,
     preferred_phones: preferredPhones,
     preferred_emails: preferredEmails,
+    manual_phones: manualPhones,
+    manual_emails: manualEmails,
+    all_available_phones: allAvailablePhones,
+    all_available_emails: allAvailableEmails,
     dnc_status: dncStatus,
     deceased_status: deceasedStatus
   };
@@ -179,14 +182,53 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization');
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase environment variables are not configured');
+    }
+
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Authorization token required'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+          apikey: supabaseAnonKey,
+        },
+      },
+      auth: {
+        persistSession: false,
+      },
+    });
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // Parse query parameters
     const url = new URL(req.url);
     const propertyId = url.searchParams.get('propertyId');
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 50);
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    const parsedLimit = Number.parseInt(url.searchParams.get('limit') || '20', 10);
+    const parsedOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 50) : 20;
+    const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
     const hasSkipTraceData = url.searchParams.get('hasSkipTraceData') === 'true';
     const search = url.searchParams.get('search');
 
@@ -202,13 +244,18 @@ serve(async (req) => {
 
     // Filter by having skip trace data (at least one phone or email)
     if (hasSkipTraceData) {
-      query = query.or('phone1.not.is.null,phone2.not.is.null,phone3.not.is.null,email1.not.is.null,email2.not.is.null');
+      query = query.or(
+        'phone1.not.is.null,phone2.not.is.null,phone3.not.is.null,phone4.not.is.null,phone5.not.is.null,phone6.not.is.null,phone7.not.is.null,owner_phone.not.is.null,person2_phone1.not.is.null,person3_phone1.not.is.null,email1.not.is.null,email2.not.is.null,person2_email1.not.is.null,person3_email1.not.is.null,tags.not.is.null'
+      );
     }
 
     // Search filter
     if (search) {
-      const searchPattern = `%${search}%`;
-      query = query.or(`address.ilike.${searchPattern},city.ilike.${searchPattern},owner_name.ilike.${searchPattern},zip_code.ilike.${searchPattern}`);
+      const safeSearch = search.replace(/[%*,\\]/g, ' ').trim();
+      if (safeSearch.length > 0) {
+        const searchPattern = `%${safeSearch}%`;
+        query = query.or(`address.ilike.${searchPattern},city.ilike.${searchPattern},owner_name.ilike.${searchPattern},zip_code.ilike.${searchPattern}`);
+      }
     }
 
     // Apply pagination

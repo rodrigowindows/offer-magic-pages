@@ -1,13 +1,11 @@
--- ============================================================================
--- RUN THIS IN SUPABASE SQL EDITOR
--- Project: atwdkhlyrffbaugkaker
--- Purpose: finalize campaign_logs fields + manual_comps_links comp_data support
--- Safe to run multiple times (all operations are idempotent).
--- ============================================================================
+-- Consolidated migration for Campaign Logs + Manual Comps
+-- Safe to run multiple times.
 
 BEGIN;
 
--- 1) campaign_logs fields used by History + delivery tracking
+-- ============================================================================
+-- campaign_logs: delivery tracking + rendered content fields
+-- ============================================================================
 ALTER TABLE IF EXISTS public.campaign_logs
   ADD COLUMN IF NOT EXISTS html_content TEXT,
   ADD COLUMN IF NOT EXISTS channel TEXT,
@@ -22,7 +20,16 @@ CREATE INDEX IF NOT EXISTS idx_campaign_logs_channel
 CREATE INDEX IF NOT EXISTS idx_campaign_logs_sent_at
   ON public.campaign_logs(sent_at DESC);
 
--- 2) manual_comps_links table + comp_data (JSONB) + indexes + RLS
+COMMENT ON COLUMN public.campaign_logs.html_content IS
+  'Full HTML/text payload sent to recipient';
+COMMENT ON COLUMN public.campaign_logs.channel IS
+  'Delivery channel: email, sms, call, letter';
+COMMENT ON COLUMN public.campaign_logs.status IS
+  'Delivery status: sent, delivered, bounced, failed, opened, clicked';
+
+-- ============================================================================
+-- manual_comps_links: link storage + comp_data JSONB
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.manual_comps_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   property_address TEXT NOT NULL,
@@ -36,20 +43,26 @@ CREATE TABLE IF NOT EXISTS public.manual_comps_links (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE
 );
 
--- Ensure columns exist if table was created in an earlier migration
 ALTER TABLE public.manual_comps_links
+  ADD COLUMN IF NOT EXISTS property_address TEXT,
+  ADD COLUMN IF NOT EXISTS property_id UUID REFERENCES public.properties(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS url TEXT,
+  ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'other',
+  ADD COLUMN IF NOT EXISTS notes TEXT,
   ADD COLUMN IF NOT EXISTS comp_data JSONB,
   ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
--- Backfill NULLs for source
-UPDATE public.manual_comps_links SET source = 'other' WHERE source IS NULL;
+UPDATE public.manual_comps_links
+SET source = 'other'
+WHERE source IS NULL;
 
--- Source constraint
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint
+    SELECT 1
+    FROM pg_constraint
     WHERE conrelid = 'public.manual_comps_links'::regclass
       AND conname = 'manual_comps_links_source_check'
   ) THEN
@@ -59,7 +72,9 @@ BEGIN
   END IF;
 END $$;
 
--- Indexes
+CREATE INDEX IF NOT EXISTS idx_manual_comps_links_property_address
+  ON public.manual_comps_links(property_address);
+
 CREATE INDEX IF NOT EXISTS idx_manual_comps_links_property_id
   ON public.manual_comps_links(property_id);
 
@@ -72,18 +87,20 @@ CREATE INDEX IF NOT EXISTS idx_manual_comps_links_created_at
 CREATE INDEX IF NOT EXISTS idx_manual_comps_links_comp_data
   ON public.manual_comps_links USING GIN (comp_data);
 
--- RLS
 ALTER TABLE public.manual_comps_links ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'manual_comps_links'
+    WHERE schemaname = 'public'
+      AND tablename = 'manual_comps_links'
       AND policyname = 'manual_comps_links_select_own'
   ) THEN
     CREATE POLICY manual_comps_links_select_own
-      ON public.manual_comps_links FOR SELECT TO authenticated
+      ON public.manual_comps_links
+      FOR SELECT
+      TO authenticated
       USING (auth.uid() = user_id);
   END IF;
 END $$;
@@ -92,11 +109,14 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'manual_comps_links'
+    WHERE schemaname = 'public'
+      AND tablename = 'manual_comps_links'
       AND policyname = 'manual_comps_links_insert_own'
   ) THEN
     CREATE POLICY manual_comps_links_insert_own
-      ON public.manual_comps_links FOR INSERT TO authenticated
+      ON public.manual_comps_links
+      FOR INSERT
+      TO authenticated
       WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
@@ -105,12 +125,16 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'manual_comps_links'
+    WHERE schemaname = 'public'
+      AND tablename = 'manual_comps_links'
       AND policyname = 'manual_comps_links_update_own'
   ) THEN
     CREATE POLICY manual_comps_links_update_own
-      ON public.manual_comps_links FOR UPDATE TO authenticated
-      USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+      ON public.manual_comps_links
+      FOR UPDATE
+      TO authenticated
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
 
@@ -118,16 +142,18 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies
-    WHERE schemaname = 'public' AND tablename = 'manual_comps_links'
+    WHERE schemaname = 'public'
+      AND tablename = 'manual_comps_links'
       AND policyname = 'manual_comps_links_delete_own'
   ) THEN
     CREATE POLICY manual_comps_links_delete_own
-      ON public.manual_comps_links FOR DELETE TO authenticated
+      ON public.manual_comps_links
+      FOR DELETE
+      TO authenticated
       USING (auth.uid() = user_id);
   END IF;
 END $$;
 
--- updated_at trigger
 CREATE OR REPLACE FUNCTION public.set_manual_comps_links_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -139,7 +165,8 @@ $$ LANGUAGE plpgsql;
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_trigger
+    SELECT 1
+    FROM pg_trigger
     WHERE tgname = 'trg_manual_comps_links_updated_at'
       AND tgrelid = 'public.manual_comps_links'::regclass
   ) THEN
@@ -150,14 +177,9 @@ BEGIN
   END IF;
 END $$;
 
+COMMENT ON TABLE public.manual_comps_links IS
+  'Manual comparable links and optional parsed data per property';
 COMMENT ON COLUMN public.manual_comps_links.comp_data IS
   'Optional JSON payload: {sale_price, square_feet, bedrooms, bathrooms, sale_date, city, state, zip_code}';
 
 COMMIT;
-
--- Verification
-SELECT column_name, data_type, is_nullable
-FROM information_schema.columns
-WHERE table_schema = 'public'
-  AND table_name = 'manual_comps_links'
-  AND column_name = 'comp_data';
