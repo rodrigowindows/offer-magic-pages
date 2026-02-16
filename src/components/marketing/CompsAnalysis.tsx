@@ -66,7 +66,6 @@ import { AdjustmentCalculator } from '@/components/AdjustmentCalculator';
 import { CompsDataService } from '@/services/compsDataService';
 import { logger, setLogCallback } from '@/utils/logger';
 import { AVMService } from '@/services/avmService';
-import { validatePropertyData } from '@/utils/dataValidation';
 import { supabase } from '@/integrations/supabase/client';
 import { exportCompsToPDF, exportCompsToSimplePDF, exportConsolidatedCompsPDF } from '@/utils/pdfExport';
 
@@ -87,6 +86,16 @@ function calculateEstimatedValue(
     return 0;
   }
   return Math.round(avgPricePerSqft * propertySqft);
+}
+
+function normalizeDataSource(source?: string): 'attom' | 'zillow' | 'csv' | 'demo' {
+  if (!source) return 'csv';
+  const normalized = source.toLowerCase();
+  if (normalized.includes('attom')) return 'attom';
+  if (normalized.includes('zillow')) return 'zillow';
+  if (normalized === 'demo') return 'demo';
+  if (normalized.includes('county') || normalized.includes('csv')) return 'csv';
+  return 'csv';
 }
 
 /**
@@ -149,7 +158,7 @@ export const CompsAnalysis = () => {
   const [analysisNotes, setAnalysisNotes] = useState('');
 
   // Data Source
-  const [dataSource, setDataSource] = useState<'attom' | 'zillow' | 'csv' | 'demo'>('demo');
+  const [dataSource, setDataSource] = useState<'attom' | 'zillow' | 'csv' | 'demo'>('csv');
 
   // Manual Comps
   const [manualComps, setManualComps] = useState<any[]>([]);
@@ -498,14 +507,14 @@ export const CompsAnalysis = () => {
         let avmConfidence = null;
         try {
           // Buscar dados do banco antes de estimar dos comps
-          let propertySqft = selectedProperty?.square_feet;
-          let propertyBeds = selectedProperty?.bedrooms;
-          let propertyBaths = selectedProperty?.bathrooms;
+          let propertySqft = property.square_feet;
+          let propertyBeds = property.bedrooms;
+          let propertyBaths = property.bathrooms;
           if (!propertySqft || !propertyBeds || !propertyBaths) {
             const { data: propertyDetails } = await supabase
               .from('properties')
               .select('square_feet, bedrooms, bathrooms')
-              .eq('id', selectedProperty.id)
+              .eq('id', property.id)
               .single();
             propertySqft = propertySqft || propertyDetails?.square_feet;
             propertyBeds = propertyBeds || propertyDetails?.bedrooms;
@@ -526,8 +535,8 @@ export const CompsAnalysis = () => {
           logger.avm('📊 Calculando AVM', {
             compsCount: compsForAVM.length,
             propertyDetails: {
-              id: selectedProperty.id,
-              address: selectedProperty.address,
+              id: property.id,
+              address: property.address,
               sqft: propertySqft,
               beds: propertyBeds,
               baths: propertyBaths
@@ -554,8 +563,8 @@ export const CompsAnalysis = () => {
           });
           // Log antes de atualizar propriedade
           logger.db('💾 Atualizando propriedade com valores AVM', {
-            propertyId: selectedProperty.id,
-            propertyAddress: selectedProperty.address,
+            propertyId: property.id,
+            propertyAddress: property.address,
             valuesToUpdate: {
               estimated_value: calculatedValue,
               avm_min_value: avmMinValue,
@@ -571,27 +580,31 @@ export const CompsAnalysis = () => {
             .update({
               estimated_value: calculatedValue
             })
-            .eq('id', selectedProperty.id)
+            .eq('id', property.id)
             .select()
             .single();
           
           if (updateError) {
-            logger.db('❌ Erro ao atualizar propriedade', { error: updateError, propertyId: selectedProperty.id });
+            logger.db('❌ Erro ao atualizar propriedade', { error: updateError, propertyId: property.id });
           } else {
             logger.db('✅ Propriedade atualizada com sucesso', {
-              propertyId: selectedProperty.id,
+              propertyId: property.id,
               updatedValues: {
                 estimated_value: updatedProperty?.estimated_value
               }
             });
           }
-          setSelectedProperty(prev => prev ? {
-            ...prev,
-            estimated_value: calculatedValue
-          } : null);
+          setSelectedProperty(prev =>
+            prev && prev.id === property.id
+              ? {
+                  ...prev,
+                  estimated_value: calculatedValue
+                }
+              : prev
+          );
           toast({
             title: '✅ Property Valued',
-            description: `Estimated Value: $${calculatedValue.toLocaleString()} (${Math.round(avmConfidence)}% confidence)`
+            description: `Estimated Value: $${Number(calculatedValue || 0).toLocaleString()} (${Math.round(avmConfidence || 0)}% confidence)`
           });
         } catch (avmError) {
           logger.warn('⚠️ [CompsAnalysis] AVM falhou, usando média dos comps', { avmError });
@@ -647,12 +660,13 @@ export const CompsAnalysis = () => {
           : 0;
 
         // Calculate estimated value using Avg $/Sqft × Property Sqft (more accurate)
-        const estimatedValue = calculateEstimatedValue(avgPricePerSqft, selectedProperty?.square_feet);
+        const estimatedValue = calculateEstimatedValue(avgPricePerSqft, property.square_feet);
         // Fallback to simple average if no sqft available
         const avgPrice = estimatedValue > 0 ? estimatedValue : (formattedComps.reduce((sum, c) => sum + (c.sale_price || 0), 0) / formattedComps.length || 0);
-        // Detectar fonte dos dados
-        const detectedSource = compsData[0]?.source || 'demo';
+        // Detect source with sane fallback (never force "demo" unless API says so)
+        const detectedSource = compsData[0]?.source || 'database';
         const isDemoData = detectedSource === 'demo';
+        setDataSource(normalizeDataSource(detectedSource));
 
         const calculatedAnalysis = {
           avgSalePrice: avgPrice,
@@ -690,7 +704,7 @@ export const CompsAnalysis = () => {
               suggested_value_min: calculatedAnalysis.suggestedValueMin,
               suggested_value_max: calculatedAnalysis.suggestedValueMax,
               search_radius_miles: compsFilters.maxDistance || 3,
-              data_source: compsData[0].source || dataSource,
+              data_source: detectedSource,
               notes: 'Auto-saved on analysis generation',
             };
             
@@ -733,7 +747,7 @@ export const CompsAnalysis = () => {
         }
         toast({
           title: 'Success',
-          description: `Found ${formattedComps.length} comparable properties (source: ${compsData[0].source})`,
+          description: `Found ${formattedComps.length} comparable properties (source: ${detectedSource})`,
         });
       } else {
         setComparables([]);

@@ -2,10 +2,16 @@
  * Test ATTOM API directly to verify if the API key works
  */
 
-const ATTOM_API_KEY = 'ab8b3f3032756d9c17529dc80e07049b';
+const ATTOM_API_KEY = process.env.ATTOM_API_KEY || '';
 
 async function testAttomV2() {
   console.log('🧪 Testing ATTOM V2 API Directly\n');
+
+  if (!ATTOM_API_KEY) {
+    console.error('❌ Missing ATTOM_API_KEY environment variable.');
+    console.error('Set it before running: ATTOM_API_KEY=your_key node test-attom-direct.js');
+    process.exit(1);
+  }
   
   // Test case: 25217 Mathew St, Orlando, Orange County, FL 32833
   const address = '25217 Mathew St';

@@ -24,7 +24,14 @@ if errorlevel 1 (
 
 echo.
 echo [2/3] Configurando secret ATTOM_API_KEY...
-npx supabase secrets set ATTOM_API_KEY=ab8b3f3032756d9c17529dc80e07049b --project-ref atwdkhlyrffbaugkaker
+if "%ATTOM_API_KEY%"=="" (
+    echo ERRO: ATTOM_API_KEY nao definido no ambiente.
+    echo Exemplo: set ATTOM_API_KEY=sua_chave
+    pause
+    exit /b 1
+)
+
+npx supabase secrets set ATTOM_API_KEY=%ATTOM_API_KEY% --project-ref atwdkhlyrffbaugkaker
 if errorlevel 1 (
     echo AVISO: Falha ao configurar secret. Configure manualmente em:
     echo https://supabase.com/dashboard/project/atwdkhlyrffbaugkaker/settings/functions

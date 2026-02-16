@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { CITY_TO_COUNTY_MAP, getCountyByCity, suggestCounty } from './cityCountyMap.ts';
+import { getCountyByCity, suggestCounty } from './cityCountyMap.ts';
 
 function generateRequestId() {
   return Math.random().toString(36).substring(2, 10) + '-' + Date.now().toString(36);
@@ -11,11 +11,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// API Keys from environment (all have free tiers!)
-// ⚠️ HARDCODED FALLBACK: Usar apenas se secret não estiver configurado no Supabase
-// TODO: Remover hardcoded após configurar secret no Supabase
-const ATTOM_API_KEY = Deno.env.get('ATTOM_API_KEY') || 'ab8b3f3032756d9c17529dc80e07049b'; // 1000 free requests/month
+// API keys must come from Supabase secrets. Do not hardcode fallbacks.
+const ATTOM_API_KEY = Deno.env.get('ATTOM_API_KEY')?.trim() || '';
 const RAPIDAPI_KEY = Deno.env.get('RAPIDAPI_KEY') || ''; // 100 free requests/month
+
+type SourceMetricStatus = 'success' | 'empty' | 'skipped' | 'error';
+
+interface SourceMetric {
+  attempted: boolean;
+  status: SourceMetricStatus;
+  durationMs: number;
+  resultCount: number;
+}
 
 interface ComparableData {
   address: string;
@@ -36,6 +43,14 @@ interface ComparableData {
 }
 
 const EARTH_RADIUS_MILES = 3958.8;
+
+function safeJsonPreview(data: unknown, maxChars = 1200): string {
+  try {
+    return JSON.stringify(data, null, 2).slice(0, maxChars);
+  } catch {
+    return '[unserializable]';
+  }
+}
 
 function toRadians(value: number): number {
   return (value * Math.PI) / 180;
@@ -418,7 +433,7 @@ async function fetchFromAttomV2(
                 return altComps;
               }
             } else {
-              const altErrorText = await altResponse.text();
+              await altResponse.text();
               console.log(`⚠️ Alternative format "${altAddress}" also failed (HTTP ${altResponse.status})`);
             }
           } catch (altError) {
@@ -440,8 +455,8 @@ async function fetchFromAttomV2(
     const data = await response.json();
     const responseStructureKeys = Object.keys(data || {});
     
-    console.log(`📦 ATTOM V2 Response received, structure keys:`, responseStructureKeys);
-    console.log(`📦 Full Response (first 2000 chars):`, JSON.stringify(data, null, 2).substring(0, 2000));
+    console.log(`📦 ATTOM V2 response structure keys:`, responseStructureKeys);
+    console.log(`📦 ATTOM V2 response preview:`, safeJsonPreview(data, 1200));
 
     // Extract comparables from V2 format (RESPONSE_GROUP)
     const { comps, parsingPath } = extractAttomV2Comparables(data, { city, state, zipCode });
@@ -460,7 +475,7 @@ async function fetchFromAttomV2(
       httpStatusText: response.statusText,
       responseHeaders,
       requestHeaders,
-      responseBody: data, // Full response stored for verification
+      responseBody: { _preview: safeJsonPreview(data, 5000) }, // Truncated for storage
       parsedCompsCount: comps.length,
       parsingPathUsed: parsingPath,
       responseStructureKeys,
@@ -474,7 +489,7 @@ async function fetchFromAttomV2(
 
     if (comps.length === 0) {
       console.log('⚠️ ATTOM V2: No comparables found (API returned data but parser found 0 valid comps)');
-      console.log(`📋 Full response structure for debugging:`, JSON.stringify(data, null, 2));
+      console.log(`📋 ATTOM V2 no-comps response preview:`, safeJsonPreview(data, 1200));
       return [];
     }
 
@@ -513,131 +528,50 @@ async function fetchFromAttomV2(
 
 // V2 Parser
 function extractAttomV2Comparables(data: any, defaults: { city: string; state: string; zipCode: string }): { comps: ComparableData[]; parsingPath: string } {
-  const results: ComparableData[] = [];
-  let parsingPath = 'unknown';
+  const topLevelKeys = Object.keys(data || {});
+  console.log('📦 ATTOM V2 parser: top-level keys:', topLevelKeys);
 
-  // Log estrutura recebida para debugging
-  console.log('📦 ATTOM V2 Response Structure - Top level keys:', JSON.stringify(Object.keys(data || {})));
-  
-  // Log full structure for debugging
-  console.log('📦 ATTOM V2 Full Response Structure:', JSON.stringify(data, null, 2));
+  const candidates: Array<{ path: string; payload: unknown; parser: (entry: any, defaults: { city: string; state: string; zipCode: string }) => ComparableData | null }> = [
+    {
+      path: 'v2',
+      payload: data?.RESPONSE_GROUP?.RESPONSE?.RESPONSE_DATA?.PROPERTY_INFORMATION_RESPONSE_ext?.SUBJECT_PROPERTY_ext?.PROPERTY,
+      parser: parseAttomV2Comparable,
+    },
+    { path: 'legacy', payload: data?.property, parser: parseLegacyComparable },
+    { path: 'alternative-1', payload: data?.property?.comparables, parser: parseLegacyComparable },
+    { path: 'alternative-2', payload: data?.comparables, parser: parseLegacyComparable },
+    { path: 'alternative-3', payload: data?.RESPONSE?.property, parser: parseLegacyComparable },
+    { path: 'alternative-4', payload: data?.RESPONSE?.comparables, parser: parseLegacyComparable },
+    { path: 'alternative-5', payload: data?.data?.property, parser: parseLegacyComparable },
+    { path: 'alternative-6', payload: data?.data?.comparables, parser: parseLegacyComparable },
+  ];
 
-  // Try multiple parsing paths
-  let parsingAttempts = 0;
-  let parsingSuccess = false;
-
-  // Path 1: V2 format (RESPONSE_GROUP) - Primary path
-  parsingAttempts++;
-  console.log(`🔍 [Path ${parsingAttempts}] Attempting V2 format (RESPONSE_GROUP)...`);
-  const v2Props = data?.RESPONSE_GROUP?.RESPONSE?.RESPONSE_DATA?.PROPERTY_INFORMATION_RESPONSE_ext?.SUBJECT_PROPERTY_ext?.PROPERTY;
-  
-  if (v2Props) {
-    console.log(`📋 V2 Props found, type: ${typeof v2Props}, isArray: ${Array.isArray(v2Props)}`);
-    
-    if (Array.isArray(v2Props)) {
-      console.log(`✅ Found V2 format with ${v2Props.length} properties`);
-      const parsedV2 = v2Props
-        .map((entry: any, idx: number) => {
-          console.log(`  🔍 Parsing entry ${idx + 1}/${v2Props.length}`);
-          const comp = parseAttomV2Comparable(entry, defaults);
-          if (comp) {
-            console.log(`  ✅ Entry ${idx + 1} parsed: ${comp.address}, $${comp.salePrice}`);
-          } else {
-            console.log(`  ⚠️ Entry ${idx + 1} failed to parse`);
-          }
-          return comp;
-        })
-        .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
-      results.push(...parsedV2);
-      console.log(`✅ Path ${parsingAttempts} success: ${parsedV2.length} valid comps extracted`);
-      parsingPath = 'v2';
-      parsingSuccess = true;
-    } else {
-      console.log(`⚠️ V2 format found but not an array: ${typeof v2Props}`);
-      console.log(`📋 V2 Props value:`, JSON.stringify(v2Props, null, 2).substring(0, 500));
+  for (const candidate of candidates) {
+    if (!candidate.payload) {
+      continue;
     }
-  } else {
-    console.log(`⚠️ V2 format (RESPONSE_GROUP) not found in response`);
-    // Log intermediate paths for debugging
-    if (data?.RESPONSE_GROUP) {
-      console.log(`  📋 RESPONSE_GROUP exists, keys:`, Object.keys(data.RESPONSE_GROUP));
-      if (data.RESPONSE_GROUP?.RESPONSE) {
-        console.log(`  📋 RESPONSE exists, keys:`, Object.keys(data.RESPONSE_GROUP.RESPONSE));
-      }
+
+    if (!Array.isArray(candidate.payload)) {
+      console.log(`⚠️ ATTOM V2 parser: path "${candidate.path}" exists but is not an array (${typeof candidate.payload})`);
+      continue;
     }
+
+    console.log(`🔍 ATTOM V2 parser: trying path "${candidate.path}" with ${candidate.payload.length} items`);
+    const parsed = candidate.payload
+      .map((entry: any) => candidate.parser(entry, defaults))
+      .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
+
+    if (parsed.length > 0) {
+      console.log(`✅ ATTOM V2 parser: extracted ${parsed.length} comps using path "${candidate.path}"`);
+      return { comps: parsed, parsingPath: candidate.path };
+    }
+
+    console.log(`⚠️ ATTOM V2 parser: path "${candidate.path}" had 0 valid comps after parsing`);
   }
 
-  // Path 2: Legacy format (data.property) - Fallback
-  if (results.length === 0) {
-    parsingAttempts++;
-    console.log(`🔍 [Path ${parsingAttempts}] Attempting legacy format (data.property)...`);
-    
-    if (Array.isArray(data?.property)) {
-      console.log(`✅ Found legacy format with ${data.property.length} properties`);
-      const parsedLegacy = data.property
-        .map((prop: any, idx: number) => {
-          console.log(`  🔍 Parsing legacy property ${idx + 1}/${data.property.length}`);
-          const comp = parseLegacyComparable(prop, defaults);
-          if (comp) {
-            console.log(`  ✅ Legacy property ${idx + 1} parsed: ${comp.address}, $${comp.salePrice}`);
-          }
-          return comp;
-        })
-        .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
-      results.push(...parsedLegacy);
-      console.log(`✅ Path ${parsingAttempts} success: ${parsedLegacy.length} valid comps extracted`);
-      parsingPath = 'legacy';
-      parsingSuccess = true;
-    } else if (data?.property) {
-      console.log(`⚠️ Legacy format found but not an array: ${typeof data.property}`);
-      console.log(`📋 Property value:`, JSON.stringify(data.property, null, 2).substring(0, 500));
-    } else {
-      console.log(`⚠️ Legacy format (data.property) not found`);
-    }
-  }
-
-  // Path 3: Alternative V2 paths
-  if (results.length === 0) {
-    parsingAttempts++;
-    console.log(`🔍 [Path ${parsingAttempts}] Attempting alternative V2 paths...`);
-    
-    // Try alternative paths
-    const altPaths = [
-      data?.property?.comparables,
-      data?.comparables,
-      data?.RESPONSE?.property,
-      data?.RESPONSE?.comparables,
-      data?.data?.property,
-      data?.data?.comparables,
-    ];
-    
-    for (let i = 0; i < altPaths.length; i++) {
-      const altPath = altPaths[i];
-      if (Array.isArray(altPath) && altPath.length > 0) {
-        console.log(`  ✅ Found alternative path ${i + 1} with ${altPath.length} items`);
-        // Try to parse as legacy format
-        const parsedAlt = altPath
-          .map((prop: any) => parseLegacyComparable(prop, defaults))
-          .filter((comp: ComparableData | null) => comp !== null && comp.salePrice > 0) as ComparableData[];
-        if (parsedAlt.length > 0) {
-          results.push(...parsedAlt);
-          console.log(`✅ Alternative path ${i + 1} success: ${parsedAlt.length} valid comps extracted`);
-          parsingPath = `alternative-${i + 1}`;
-          parsingSuccess = true;
-          break;
-        }
-      }
-    }
-  }
-
-  if (results.length === 0) {
-    console.error('❌ No comparables extracted from ATTOM V2 response after trying all paths');
-    console.log('📋 Full response structure for debugging:', JSON.stringify(data, null, 2));
-  } else {
-    console.log(`✅ Total comparables extracted: ${results.length}`);
-  }
-
-  return { comps: results, parsingPath };
+  console.error('❌ ATTOM V2 parser: no comparables extracted from any known path');
+  console.log('📋 ATTOM V2 parser response preview:', safeJsonPreview(data, 1200));
+  return { comps: [], parsingPath: 'unknown' };
 }
 
 function parseAttomV2Comparable(entry: any, defaults: { city: string; state: string; zipCode: string }): ComparableData | null {
@@ -666,7 +600,7 @@ function parseAttomV2Comparable(entry: any, defaults: { city: string; state: str
       longitude: c['@LongitudeNumber'] ? Number(c['@LongitudeNumber']) : undefined,
       distance: c['@DistanceFromSubjectPropertyMilesCount'] ? Number(c['@DistanceFromSubjectPropertyMilesCount']) : 0,
       propertyType: String(c['@StandardUseDescription_ext'] || 'Single Family'),
-      source: 'attom'
+      source: 'attom-v2'
     };
   } catch (error) {
     console.warn('⚠️ Error parsing V2 comparable:', error);
@@ -699,7 +633,7 @@ function parseLegacyComparable(prop: any, defaults: { city: string; state: strin
       longitude: loc.longitude ? Number(loc.longitude) : undefined,
       distance: loc.distance ? Number(loc.distance) : 0,
       propertyType: propDetails.propertyType || 'Single Family',
-      source: 'attom'
+      source: 'attom-v1'
     };
   } catch (error) {
     console.warn('⚠️ Error parsing legacy comparable:', error);
@@ -793,12 +727,12 @@ async function fetchFromAttom(address: string, city: string, state: string, radi
           zipCode: addr.postal1 || zipCode,
           saleDate: sale.saleTransDate || new Date().toISOString().split('T')[0],
           salePrice: parseInt(sale.saleAmt) || 0,
-          beds: parseInt(building.rooms?.beds) || 3,
-          baths: parseFloat(building.rooms?.bathsTotal) || 2,
-          sqft: parseInt(building.size?.livingSize || building.size?.livingsize) || 1500,
-          yearBuilt: parseInt(building.summary?.yearBuilt || building.summary?.yearbuilt) || 2000,
+          beds: parseInt(building.rooms?.beds) || 0,
+          baths: parseFloat(building.rooms?.bathsTotal) || 0,
+          sqft: parseInt(building.size?.livingSize || building.size?.livingsize) || 0,
+          yearBuilt: parseInt(building.summary?.yearBuilt || building.summary?.yearbuilt) || 0,
           propertyType: building.summary?.propertyType || 'Single Family',
-          source: 'attom',
+          source: 'attom-v1',
           latitude: Number.isFinite(latitude) ? latitude : undefined,
           longitude: Number.isFinite(longitude) ? longitude : undefined,
           distance: 0 // Will be calculated later
@@ -875,10 +809,10 @@ async function fetchFromOrangeCountyCSV(address: string, city: string): Promise<
             zipCode: row.zip || row.zipcode || '',
             saleDate: row.sale_date || row.recording_date || new Date().toISOString().split('T')[0],
             salePrice,
-            beds: parseInt(row.bedrooms || row.beds || '3'),
-            baths: parseFloat(row.bathrooms || row.baths || '2'),
-            sqft: parseInt(row.living_area || row.sqft || row.square_feet || '1500'),
-            yearBuilt: parseInt(row.year_built || row.effective_year || '2000'),
+            beds: parseInt(row.bedrooms || row.beds || '0'),
+            baths: parseFloat(row.bathrooms || row.baths || '0'),
+            sqft: parseInt(row.living_area || row.sqft || row.square_feet || '0'),
+            yearBuilt: parseInt(row.year_built || row.effective_year || '0'),
             propertyType: row.property_type || 'Single Family',
             source: 'county-csv',
             latitude: Number.isFinite(latitude) ? latitude : undefined,
@@ -938,14 +872,15 @@ async function fetchFromZillowRapidAPI(address: string, city: string, state: str
       zipCode: comp.address?.zipcode || '',
       saleDate: comp.dateSold || new Date().toISOString().split('T')[0],
       salePrice: comp.price || 0,
-      beds: comp.bedrooms || 3,
-      baths: comp.bathrooms || 2,
-      sqft: comp.livingArea || 1500,
-      yearBuilt: comp.yearBuilt || 2000,
+      beds: comp.bedrooms || 0,
+      baths: comp.bathrooms || 0,
+      sqft: comp.livingArea || 0,
+      yearBuilt: comp.yearBuilt || 0,
       propertyType: comp.homeType || 'Single Family',
       source: 'zillow-api',
       latitude: comp.latitude || comp.lat || comp.address?.latitude,
-      longitude: comp.longitude || comp.lng || comp.address?.longitude
+      longitude: comp.longitude || comp.lng || comp.address?.longitude,
+      distance: 0
     }));
 
     const validComps = comps.filter(c => c.salePrice > 0);
@@ -1077,25 +1012,30 @@ serve(async (req) => {
     console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔑 API Keys configured: Attom=${!!ATTOM_API_KEY}, RapidAPI=${!!RAPIDAPI_KEY}`);
 
     let comps: ComparableData[] = [];
-    let source = 'demo';
+    let source: ComparableData['source'] = 'none';
     const apiErrors: Record<string, string> = {};
     const testedSources: string[] = [];
+    const sourceMetrics: Record<string, SourceMetric> = {
+      'attom-v2': { attempted: false, status: 'skipped', durationMs: 0, resultCount: 0 },
+      'attom-v1': { attempted: false, status: 'skipped', durationMs: 0, resultCount: 0 },
+      'zillow': { attempted: false, status: 'skipped', durationMs: 0, resultCount: 0 },
+      'county-csv': { attempted: false, status: 'skipped', durationMs: 0, resultCount: 0 },
+    };
 
     // ===== CASCATA DE FONTES (tentativas em ordem de qualidade) =====
     // 1️⃣ PRIORITY: Try ATTOM V2 Sales Comparables (most accurate)
     if (ATTOM_API_KEY && comps.length < 3) {
+      sourceMetrics['attom-v2'].attempted = true;
       testedSources.push('attom-v2');
-      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [1a/4] Attempting ATTOM V2...`, { address, city, state, zipCode });
-      let extractedZipCode = zipCode;
-      if (!extractedZipCode) {
-        const zipMatch = `${address} ${city} ${state}`.match(/\b\d{5}\b/);
-        extractedZipCode = zipMatch ? zipMatch[0] : '';
-      }
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [1a/4] Attempting ATTOM V2...`, { address, city, state, zipCode: extractedZipCode });
       const county = getCountyByCity(city || 'Orlando', state || 'FL') || suggestCounty(city || 'Orlando', state || 'FL');
       const v2Start = Date.now();
       if (extractedZipCode && county) {
         const attomV2Comps = await fetchFromAttomV2(address, city || 'Orlando', county, state || 'FL', extractedZipCode);
         const v2Time = Date.now() - v2Start;
+        sourceMetrics['attom-v2'].durationMs = v2Time;
+        sourceMetrics['attom-v2'].resultCount = attomV2Comps?.length || 0;
+        sourceMetrics['attom-v2'].status = attomV2Comps.length > 0 ? 'success' : 'empty';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ ATTOM V2 response:`, { status: attomV2Comps.length > 0 ? 'success' : 'empty', timeMs: v2Time, comps: attomV2Comps.length });
         if (attomV2Comps && attomV2Comps.length > 0) {
           comps = attomV2Comps;
@@ -1121,28 +1061,36 @@ serve(async (req) => {
           console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ ATTOM V2 returned ${attomV2Comps?.length || 0} comps, trying V1 fallback...`);
         }
       } else {
+        sourceMetrics['attom-v2'] = { attempted: false, status: 'skipped', durationMs: 0, resultCount: 0 };
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ Missing ZIP (${extractedZipCode}) or County (${county}), skipping ATTOM V2`);
       }
     }
 
     // 1️⃣b FALLBACK: Try ATTOM V1 Property Search if V2 failed
     if (ATTOM_API_KEY && comps.length < 3) {
+      sourceMetrics['attom-v1'].attempted = true;
       testedSources.push('attom-v1');
       const v1Start = Date.now();
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [1b/4] Attempting ATTOM V1 Property Search (fallback)...`);
       const attomComps = await fetchFromAttom(address, city || 'Orlando', state || 'FL', radius, zipCode);
       const v1Time = Date.now() - v1Start;
+      sourceMetrics['attom-v1'].durationMs = v1Time;
+      sourceMetrics['attom-v1'].resultCount = attomComps?.length || 0;
       if (attomComps && attomComps.length >= 3) {
         comps = attomComps;
         source = 'attom-v1';
+        sourceMetrics['attom-v1'].status = 'success';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from ATTOM V1 in ${v1Time}ms`);
       } else {
+        sourceMetrics['attom-v1'].status = 'empty';
         apiErrors['attom-v1'] = 'No comps found or insufficient comps';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ ATTOM V1 failed or returned insufficient comps (${attomComps?.length || 0})`);
       }
     }
 
     if (!ATTOM_API_KEY) {
+      apiErrors['attom-v2'] = 'ATTOM_API_KEY not configured';
+      apiErrors['attom-v1'] = 'ATTOM_API_KEY not configured';
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ ATTOM_API_KEY not configured.`);
     }
 
@@ -1150,19 +1098,25 @@ serve(async (req) => {
     if (!comps || comps.length < 3) {
       testedSources.push('zillow');
       if (RAPIDAPI_KEY) {
+        sourceMetrics['zillow'].attempted = true;
         const zillowStart = Date.now();
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 [2/4] Attempting Zillow via RapidAPI...`);
         const zillowApiComps = await fetchFromZillowRapidAPI(address, city || 'Orlando', state || 'FL');
         const zillowTime = Date.now() - zillowStart;
+        sourceMetrics['zillow'].durationMs = zillowTime;
+        sourceMetrics['zillow'].resultCount = zillowApiComps?.length || 0;
         if (zillowApiComps && zillowApiComps.length >= 3) {
           comps = zillowApiComps;
           source = 'zillow-api';
+          sourceMetrics['zillow'].status = 'success';
           console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${comps.length} comps from Zillow in ${zillowTime}ms`);
         } else {
+          sourceMetrics['zillow'].status = 'empty';
           apiErrors['zillow'] = 'No comps found or insufficient comps';
           console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ Zillow fallback failed or returned insufficient comps (${zillowApiComps?.length || 0})`);
         }
       } else {
+        apiErrors['zillow'] = 'RAPIDAPI_KEY not configured';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ RAPIDAPI_KEY not configured.`);
       }
     }
@@ -1170,15 +1124,20 @@ serve(async (req) => {
     // 3️⃣ Try Orange County CSV (100% FREE - Public records for Orlando/FL)
     if ((city?.toLowerCase().includes('orlando') || state === 'FL') && (!comps || comps.length < 3)) {
       testedSources.push('county-csv');
+      sourceMetrics['county-csv'].attempted = true;
       const csvStart = Date.now();
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🔄 Trying Orange County Public CSV...`);
       const countyComps = await fetchFromOrangeCountyCSV(address, city || 'Orlando');
       const csvTime = Date.now() - csvStart;
+      sourceMetrics['county-csv'].durationMs = csvTime;
+      sourceMetrics['county-csv'].resultCount = countyComps?.length || 0;
       if (countyComps && countyComps.length > 0) {
         comps = [...(comps || []), ...countyComps];
         source = comps[0]?.source || 'county-csv';
+        sourceMetrics['county-csv'].status = 'success';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Got ${countyComps.length} comps from Orange County CSV in ${csvTime}ms`);
       } else {
+        sourceMetrics['county-csv'].status = 'empty';
         apiErrors['county-csv'] = 'No comps found in Orange County CSV';
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ❌ Orange County CSV returned no comps`);
       }
@@ -1272,6 +1231,14 @@ serve(async (req) => {
       totalTimeMs: totalTime
     });
 
+    const processingMetrics = {
+      requestId,
+      totalTimeMs: totalTime,
+      sourceMetrics,
+      attemptedSources: testedSources.length,
+      apiErrorsCount: Object.keys(apiErrors).length,
+    };
+
     return new Response(JSON.stringify({
       success: sortedComps.length > 0,
       comps: sortedComps,
@@ -1286,7 +1253,8 @@ serve(async (req) => {
         rapidapi: !!RAPIDAPI_KEY
       },
       testedSources,
-      apiErrors
+      apiErrors,
+      processingMetrics
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

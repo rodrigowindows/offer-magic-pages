@@ -60,6 +60,8 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
 
   const testAPI = async (source: 'attom-v2' | 'zillow' | 'county-csv') => {
     const startTime = Date.now();
+    const resultKey: 'attom' | 'zillow' | 'county' =
+      source === 'attom-v2' ? 'attom' : source === 'county-csv' ? 'county' : 'zillow';
 
     // Logar início do teste
     logger.info(`🧪 Testing ${source} API`, {
@@ -71,7 +73,7 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
 
     setResults(prev => ({
       ...prev,
-      [source]: { status: 'testing' },
+      [resultKey]: { status: 'testing' },
     }));
 
     try {
@@ -81,7 +83,7 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
           city: property.city,
           state: property.state,
           zipCode: property.zip_code,
-          basePrice: property.estimated_value || 100000,
+          basePrice: property.estimated_value || 250000,
           radius: compsFilters.maxDistance || 3,
           latitude: property.latitude,
           longitude: property.longitude,
@@ -97,7 +99,7 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
 
         setResults(prev => ({
           ...prev,
-          [source]: {
+          [resultKey]: {
             status: 'error',
             error: error.message || 'Unknown error',
             details: error,
@@ -117,7 +119,7 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
 
         setResults(prev => ({
           ...prev,
-          [source]: {
+          [resultKey]: {
             status: 'error',
             error: data?.error || 'No comparables found',
             details: data,
@@ -145,7 +147,7 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
 
       setResults(prev => ({
         ...prev,
-        [source]: {
+        [resultKey]: {
           status: 'success',
           result: {
             count: data.comps.length,
@@ -167,7 +169,7 @@ export const ApiDiagnosticsPanel: React.FC<ApiDiagnosticsPanelProps> = ({
 
       setResults(prev => ({
         ...prev,
-        [source]: {
+        [resultKey]: {
           status: 'error',
           error: err?.message || String(err),
           details: err,

@@ -37,49 +37,54 @@ export class AVMService {
       throw new Error('No comparables available for AVM calculation');
     }
 
-    // Filtrar comps válidos
+    // Filter to comps that have enough numeric data for valuation
     const validComps = comps.filter(c =>
+      Number.isFinite(c.salePrice) &&
       c.salePrice > 0 &&
-      c.sqft > 0 &&
-      c.beds > 0
+      Number.isFinite(c.sqft) &&
+      c.sqft > 0
     );
 
     if (validComps.length === 0) {
       throw new Error('No valid comparables for calculation');
     }
 
-    // Calcular preço médio por sqft para ajustes dinâmicos
+    // Average market signals used by dynamic adjustments
     const avgPricePerSqft = validComps.reduce((sum, c) => sum + (c.salePrice / c.sqft), 0) / validComps.length;
+    const avgSalePrice = validComps.reduce((sum, c) => sum + c.salePrice, 0) / validComps.length;
 
-    // Calcular ajustes por características
+    // Apply feature adjustments to each comp
     const adjustedPrices = validComps.map(comp => {
       let price = comp.salePrice;
       let adjustments = 0;
+      const compBeds = Number.isFinite(comp.beds) && comp.beds > 0 ? comp.beds : subjectBeds;
+      const compBaths = Number.isFinite(comp.baths) && comp.baths > 0 ? comp.baths : subjectBaths;
 
-      // Ajuste por sqft dinâmico baseado na média dos comps
+      // Sqft adjustment (primary driver)
       if (comp.sqft !== subjectSqft) {
-        const sqftAdjustment = (subjectSqft - comp.sqft) * (avgPricePerSqft * 0.8); // 80% do valor médio
+        const sqftAdjustment = (subjectSqft - comp.sqft) * (avgPricePerSqft * 0.8);
         price += sqftAdjustment;
         adjustments += sqftAdjustment;
       }
 
-      // Ajuste por bedrooms (dinâmico)
-      if (comp.beds !== subjectBeds) {
-        // $5K por bed ou 2% do preço médio, o que for maior
-        const bedValuePerUnit = Math.max(5000, avgPricePerSqft * 100 * 0.02);
-        const bedAdjustment = (subjectBeds - comp.beds) * bedValuePerUnit;
+      // Bedroom adjustment scales with local price level
+      if (compBeds !== subjectBeds) {
+        const bedValuePerUnit = Math.max(5000, avgSalePrice * 0.015);
+        const bedAdjustment = (subjectBeds - compBeds) * bedValuePerUnit;
         price += bedAdjustment;
         adjustments += bedAdjustment;
       }
 
-      // Ajuste por baths (dinâmico)
-      if (comp.baths !== subjectBaths) {
-        // $3K por bath ou 1.5% do preço médio, o que for maior
-        const bathValuePerUnit = Math.max(3000, avgPricePerSqft * 100 * 0.015);
-        const bathAdjustment = (subjectBaths - comp.baths) * bathValuePerUnit;
+      // Bathroom adjustment scales with local price level
+      if (compBaths !== subjectBaths) {
+        const bathValuePerUnit = Math.max(3000, avgSalePrice * 0.01);
+        const bathAdjustment = (subjectBaths - compBaths) * bathValuePerUnit;
         price += bathAdjustment;
         adjustments += bathAdjustment;
       }
+
+      // Guardrail against extreme negative adjustments
+      price = Math.max(10000, price);
 
       return {
         originalPrice: comp.salePrice,
@@ -89,18 +94,21 @@ export class AVMService {
       };
     });
 
-    // Calcular pesos (comps mais recentes e próximos = mais peso)
+    // Weight recent and nearby sales higher
     const weights = validComps.map((comp, i) => {
-      const daysAgo = Math.floor(
-        (Date.now() - new Date(comp.saleDate).getTime()) / (1000 * 60 * 60 * 24)
-      );
-      const recencyWeight = Math.max(0.3, 1 - (daysAgo / 365)); // Decai em 12 meses
-      const distanceWeight = 1 / (1 + comp.distance / 2); // Closer = mais peso
-      return recencyWeight * distanceWeight;
+      const daysAgo = this.getDaysAgo(comp.saleDate);
+      const recencyWeight = Math.max(0.2, 1 - (daysAgo / 730)); // Decays over ~24 months
+      const distance = this.normalizeDistance(comp.distance);
+      const distanceWeight = 1 / (1 + distance / 2);
+      const weight = recencyWeight * distanceWeight;
+      return Number.isFinite(weight) && weight > 0 ? weight : 0.2;
     });
 
     const totalWeight = weights.reduce((a, b) => a + b, 0);
-    const normalizedWeights = weights.map(w => w / totalWeight);
+    const normalizedWeights =
+      totalWeight > 0
+        ? weights.map(w => w / totalWeight)
+        : weights.map(() => 1 / weights.length);
 
     // MÉTODO 1: Valor ponderado (60%)
     const weightedValue = adjustedPrices.reduce(
@@ -120,35 +128,44 @@ export class AVMService {
       (weightedValue * 0.6) + (medianValue * 0.25) + (averageValue * 0.15)
     );
 
-    // Calcular desvio padrão para intervalo de confiança
+    // Confidence interval from adjusted distribution
     const stdDev = this.calculateStdDev(
       adjustedPrices.map(p => p.adjustedPrice),
-      estimatedValue
+      averageValue
     );
 
-    const minValue = Math.round(estimatedValue - stdDev * 1.5); // -1.5σ (~87% confidence)
-    const maxValue = Math.round(estimatedValue + stdDev * 1.5); // +1.5σ
+    const minValue = Math.max(0, Math.round(estimatedValue - stdDev * 1.5));
+    const maxValue = Math.max(minValue, Math.round(estimatedValue + stdDev * 1.5));
 
-    // Métricas de qualidade para confidence score
-    const avgDistance = validComps.reduce((sum, c) => sum + (c.distance || 0), 0) / validComps.length;
+    // Quality metrics for confidence score
+    const avgDistance = validComps.reduce((sum, c) => sum + this.normalizeDistance(c.distance), 0) / validComps.length;
     const avgDaysAgo = validComps.reduce((sum, c) => {
-      const daysAgo = Math.floor((Date.now() - new Date(c.saleDate).getTime()) / (1000 * 60 * 60 * 24));
-      return sum + daysAgo;
+      return sum + this.getDaysAgo(c.saleDate);
     }, 0) / validComps.length;
-    const sourceBonus = validComps.every(c => c.source === 'attom-v2' || c.source === 'attom') ? 5 : 0;
+    const trustedSourceCount = validComps.filter(c =>
+      c.source &&
+      ['attom-v2', 'attom-v1', 'attom', 'zillow-api', 'county-csv', 'manual'].includes(c.source)
+    ).length;
+    const trustedSourceRatio = trustedSourceCount / validComps.length;
+    const sourceBonus = trustedSourceRatio >= 0.8 ? 5 : trustedSourceRatio >= 0.5 ? 2 : 0;
 
-    // Usar validação existente
+    // Existing validation influences confidence
     const validation = this.validateComps(validComps);
-    const qualityBonus = validation.quality === 'excellent' ? 10 : 
-                         validation.quality === 'good' ? 5 : 
-                         validation.quality === 'fair' ? 0 : -5;
+    const qualityBonus = validation.quality === 'excellent'
+      ? 10
+      : validation.quality === 'good'
+        ? 5
+        : validation.quality === 'fair'
+          ? 0
+          : -5;
 
     const baseConfidence = 50;
-    const compBonus = validComps.length * 5; // 5% por comp (max 25% com 5 comps)
-    const distancePenalty = avgDistance > 2 ? -10 : avgDistance > 1 ? -5 : 0;
-    const recencyBonus = avgDaysAgo < 90 ? 10 : avgDaysAgo < 180 ? 5 : 0;
+    const compBonus = Math.min(25, validComps.length * 5);
+    const distancePenalty = avgDistance > 3 ? -10 : avgDistance > 2 ? -6 : avgDistance > 1 ? -3 : 0;
+    const recencyBonus = avgDaysAgo < 90 ? 10 : avgDaysAgo < 180 ? 5 : avgDaysAgo < 365 ? 2 : 0;
 
-    const confidence = Math.min(95, baseConfidence + compBonus + qualityBonus + recencyBonus + sourceBonus + distancePenalty);
+    const rawConfidence = baseConfidence + compBonus + qualityBonus + recencyBonus + sourceBonus + distancePenalty;
+    const confidence = Math.max(35, Math.min(95, Math.round(rawConfidence)));
 
     const breakdown = {
       estimatedValue,
@@ -172,7 +189,8 @@ export class AVMService {
         avgDistance: Math.round(avgDistance * 10) / 10,
         avgDaysAgo: Math.round(avgDaysAgo),
         sources: [...new Set(validComps.map(c => c.source))],
-        validation: validation.quality
+        validation: validation.quality,
+        validationIssues: validation.issues
       }
     };
 
@@ -194,11 +212,33 @@ export class AVMService {
   }
 
   private static calculateStdDev(values: number[], mean: number): number {
+    if (values.length < 2) return 0;
     const variance = values.reduce(
       (sum, val) => sum + Math.pow(val - mean, 2),
       0
-    ) / values.length;
+    ) / (values.length - 1);
     return Math.sqrt(variance);
+  }
+
+  private static getDaysAgo(dateValue: string): number {
+    const parsedDate = Date.parse(dateValue);
+    if (!Number.isFinite(parsedDate)) {
+      return 365; // Treat invalid dates as stale data
+    }
+
+    const diffDays = Math.floor((Date.now() - parsedDate) / (1000 * 60 * 60 * 24));
+    if (!Number.isFinite(diffDays)) {
+      return 365;
+    }
+
+    return Math.max(0, diffDays);
+  }
+
+  private static normalizeDistance(distance: number | undefined): number {
+    if (!Number.isFinite(distance)) {
+      return 3;
+    }
+    return Math.max(0, Number(distance));
   }
 
   /**
@@ -253,6 +293,14 @@ export class AVMService {
   } {
     const issues: string[] = [];
 
+    if (!comps || comps.length === 0) {
+      return {
+        isValid: false,
+        quality: 'poor',
+        issues: ['No comps available']
+      };
+    }
+
     if (comps.length < 3) {
       issues.push(`Only ${comps.length} comps available (minimum 3 recommended)`);
     }
@@ -266,16 +314,21 @@ export class AVMService {
       issues.push(`${demoComps.length}/${comps.length} comps are DEMO DATA (should be < 50%)`);
     }
 
-    const avgDistance = comps.reduce((sum, c) => sum + c.distance, 0) / comps.length;
+    const avgDistance = comps.reduce((sum, c) => sum + this.normalizeDistance(c.distance), 0) / comps.length;
     if (avgDistance > 3) {
       issues.push(`Average distance ${avgDistance.toFixed(2)} miles is too far (< 1 mile preferred)`);
+    }
+
+    const avgDaysAgo = comps.reduce((sum, c) => sum + this.getDaysAgo(c.saleDate), 0) / comps.length;
+    if (avgDaysAgo > 365) {
+      issues.push(`Average sale recency ${Math.round(avgDaysAgo)} days is too old (< 180 preferred)`);
     }
 
     // Determinar qualidade
     let quality: 'excellent' | 'good' | 'fair' | 'poor' = 'excellent';
     if (issues.length > 0) quality = 'good';
-    if (demoComps.length > 0) quality = 'fair';
-    if (issues.length > 2) quality = 'poor';
+    if (demoComps.length > comps.length * 0.3) quality = 'fair';
+    if (issues.length > 2 || demoComps.length > comps.length * 0.5) quality = 'poor';
 
     return {
       isValid: issues.length === 0,
