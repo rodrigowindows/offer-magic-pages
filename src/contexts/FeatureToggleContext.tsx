@@ -156,7 +156,7 @@ export const FEATURE_PRESETS = {
   },
 } as const;
 
-const DEFAULT_FLAGS: FeatureFlags = FEATURE_PRESETS.full;
+const DEFAULT_FLAGS: FeatureFlags = FEATURE_PRESETS.modern;
 
 interface FeatureToggleContextType {
   flags: FeatureFlags;
@@ -169,14 +169,30 @@ interface FeatureToggleContextType {
 const FeatureToggleContext = createContext<FeatureToggleContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'campaign_feature_flags';
+const STORAGE_VERSION_KEY = 'campaign_feature_flags_version';
+const CURRENT_VERSION = 2; // Bump this to force reset on all clients
 
 export const FeatureToggleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [flags, setFlags] = useState<FeatureFlags>(() => {
-    // Load from localStorage on mount
     try {
+      const savedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+      const version = savedVersion ? parseInt(savedVersion, 10) : 0;
+
+      // If version mismatch, reset to modern defaults
+      if (version < CURRENT_VERSION) {
+        localStorage.setItem(STORAGE_VERSION_KEY, String(CURRENT_VERSION));
+        localStorage.removeItem(STORAGE_KEY);
+        return DEFAULT_FLAGS;
+      }
+
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        // Validate: if too few features enabled, something is wrong - reset
+        const enabledCount = Object.values(parsed).filter(Boolean).length;
+        if (enabledCount < 5) {
+          return DEFAULT_FLAGS;
+        }
         return { ...DEFAULT_FLAGS, ...parsed };
       }
     } catch (error) {
@@ -189,6 +205,7 @@ export const FeatureToggleProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(flags));
+      localStorage.setItem(STORAGE_VERSION_KEY, String(CURRENT_VERSION));
     } catch (error) {
       console.error('Failed to save feature flags:', error);
     }
