@@ -5,14 +5,20 @@ import { cn } from '@/lib/utils';
 import { PROCESS_STEPS } from './processSteps';
 import { PropertiesStep } from './PropertiesStep';
 import { ReviewQueue } from '@/components/ReviewQueue';
-import { SkipTraceDataViewer } from '@/components/SkipTraceDataViewer';
 import { CompsAnalysis } from '@/components/marketing/CompsAnalysis';
 import { OfferCreationForm } from '@/components/OfferCreationForm';
 
+const STEP_PATH_TO_INDEX: Record<string, number> = {
+  '': 0,
+  'step-2': 1,
+  'step-3': 2,
+  'step-4': 3,
+};
+
 const getCurrentStepIndex = (pathname: string): number => {
   if (pathname === '/process' || pathname === '/process/') return 0;
-  const match = pathname.match(/\/process\/step-(\d+)/);
-  if (match) return parseInt(match[1], 10) - 1;
+  const match = pathname.match(/\/process\/(step-\d+)/);
+  if (match) return STEP_PATH_TO_INDEX[match[1]] ?? 0;
   return 0;
 };
 
@@ -102,9 +108,8 @@ export const ProcessApp = () => {
         <Routes>
           <Route path="/" element={<PropertiesStep />} />
           <Route path="/step-2" element={<ReviewQueue />} />
-          <Route path="/step-3" element={<SkipTraceDataViewer />} />
-          <Route path="/step-4" element={<CompsAnalysis />} />
-          <Route path="/step-5" element={<OfferCreationForm />} />
+          <Route path="/step-3" element={<CompsAnalysis />} />
+          <Route path="/step-4" element={<OfferCreationForm />} />
           <Route path="*" element={<Navigate to="/process" replace />} />
         </Routes>
       </main>

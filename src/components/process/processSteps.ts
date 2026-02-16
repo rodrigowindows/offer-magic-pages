@@ -1,13 +1,12 @@
 import {
   Database,
   BarChart3,
-  Users,
   GitCompareArrows,
   DollarSign,
 } from 'lucide-react';
 
 export interface ProcessStep {
-  number: 1 | 2 | 3 | 4 | 5;
+  number: 1 | 2 | 3 | 4;
   title: string;
   path: string;
   fullPath: string;
@@ -37,27 +36,18 @@ export const PROCESS_STEPS: ProcessStep[] = [
   },
   {
     number: 3,
-    title: 'Contatos',
+    title: 'Comparativos',
     path: 'step-3',
     fullPath: '/process/step-3',
-    icon: Users,
-    description: 'Skip trace e dados de contato',
-    futureComponent: 'SkipTracingImporter / ApprovedPropertiesExport',
-  },
-  {
-    number: 4,
-    title: 'Comparativos',
-    path: 'step-4',
-    fullPath: '/process/step-4',
     icon: GitCompareArrows,
     description: 'Buscar e analisar comps',
     futureComponent: 'CompsAnalysis / ManualCompsManager',
   },
   {
-    number: 5,
+    number: 4,
     title: 'Oferta',
-    path: 'step-5',
-    fullPath: '/process/step-5',
+    path: 'step-4',
+    fullPath: '/process/step-4',
     icon: DollarSign,
     description: 'Gerar e enviar ofertas',
     futureComponent: 'PropertyOfferDemo / OfferCalculator',
