@@ -81,33 +81,36 @@ export const PropertiesStep = () => {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="px-3 sm:px-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <Database className="h-8 w-8 text-primary" />
-        <h1 className="text-2xl font-bold">Passo 1: Base de Imóveis</h1>
+      <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+        <Database className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
+        <h1 className="text-lg sm:text-2xl font-bold">Passo 1: Base de Imóveis</h1>
       </div>
-      <p className="text-muted-foreground mb-6">
+      <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
         {properties.length} propriedades carregadas do banco de dados
       </p>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="flex gap-1">
+      {/* Filters - Stack on mobile */}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 mb-4 sm:mb-6">
+        {/* Filter buttons - scroll horizontal on mobile */}
+        <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-1 sm:pb-0 -mx-1 px-1">
           {(['all', 'approved', 'pending', 'rejected'] as const).map((f) => (
             <Button
               key={f}
               variant={filter === f ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilter(f)}
+              className="shrink-0 text-xs sm:text-sm h-8"
             >
               {f === 'all' ? 'Todos' : f === 'approved' ? 'Aprovados' : f === 'pending' ? 'Pendentes' : 'Rejeitados'}
             </Button>
           ))}
         </div>
 
-        <div className="flex gap-2 ml-auto">
-          <div className="relative">
+        {/* Search - full width on mobile */}
+        <div className="flex gap-2 sm:ml-auto w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-initial">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
@@ -115,23 +118,23 @@ export const PropertiesStep = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-9 pr-3 py-2 text-sm border rounded-md bg-background w-56"
+              className="pl-9 pr-3 py-2 text-sm border rounded-md bg-background w-full sm:w-56"
             />
           </div>
-          <Button variant="outline" size="sm" onClick={fetchProperties} className="gap-1">
+          <Button variant="outline" size="sm" onClick={fetchProperties} className="gap-1 shrink-0 h-9">
             <RefreshCw className="h-4 w-4" />
-            Atualizar
+            <span className="hidden sm:inline">Atualizar</span>
           </Button>
         </div>
       </div>
 
       {/* Loading */}
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="overflow-hidden animate-pulse">
-              <div className="h-48 bg-muted" />
-              <div className="p-4 space-y-2">
+              <div className="h-36 sm:h-48 bg-muted" />
+              <div className="p-3 sm:p-4 space-y-2">
                 <div className="h-4 bg-muted rounded w-3/4" />
                 <div className="h-3 bg-muted rounded w-1/2" />
               </div>
@@ -140,40 +143,41 @@ export const PropertiesStep = () => {
         </div>
       )}
 
-      {/* Properties Grid */}
+      {/* Empty state */}
       {!loading && properties.length === 0 && (
-        <Card className="p-8 text-center border-dashed border-2">
+        <Card className="p-6 sm:p-8 text-center border-dashed border-2">
           <p className="text-muted-foreground">Nenhuma propriedade encontrada.</p>
         </Card>
       )}
 
+      {/* Properties Grid */}
       {!loading && properties.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {properties.map((prop) => (
             <Card key={prop.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               {/* Image */}
               <PropertyImageDisplay
                 imageUrl={prop.property_image_url}
                 address={prop.address || 'Sem endereço'}
-                className="h-48 w-full"
+                className="h-36 sm:h-48 w-full"
               />
 
               {/* Content */}
-              <div className="p-4 space-y-3">
+              <div className="p-3 sm:p-4 space-y-2.5 sm:space-y-3">
                 {/* Address */}
                 <div>
                   <div className="flex items-start gap-1.5">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                    <p className="font-semibold text-sm leading-tight">{prop.address || 'Sem endereço'}</p>
+                    <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground mt-0.5 shrink-0" />
+                    <p className="font-semibold text-xs sm:text-sm leading-tight line-clamp-2">{prop.address || 'Sem endereço'}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground ml-5.5 mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground ml-5 mt-0.5 truncate">
                     {[prop.city, prop.state, prop.zip_code].filter(Boolean).join(', ')}
                   </p>
                 </div>
 
                 {/* Owner */}
                 {prop.owner_name && (
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
                     Proprietário: {prop.owner_name}
                   </p>
                 )}
@@ -181,17 +185,17 @@ export const PropertiesStep = () => {
                 {/* Values */}
                 <div className="flex gap-3">
                   <div>
-                    <p className="text-xs text-muted-foreground">Estimado</p>
-                    <p className="text-sm font-semibold">{formatCurrency(prop.estimated_value)}</p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">Estimado</p>
+                    <p className="text-xs sm:text-sm font-semibold">{formatCurrency(prop.estimated_value)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Oferta</p>
-                    <p className="text-sm font-semibold text-primary">{formatCurrency(prop.cash_offer_amount)}</p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">Oferta</p>
+                    <p className="text-xs sm:text-sm font-semibold text-primary">{formatCurrency(prop.cash_offer_amount)}</p>
                   </div>
                 </div>
 
                 {/* Details */}
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <div className="flex flex-wrap gap-x-2.5 sm:gap-x-3 gap-y-1 text-[11px] sm:text-xs text-muted-foreground">
                   {prop.property_type && (
                     <span className="flex items-center gap-1">
                       <Home className="h-3 w-3" /> {prop.property_type}
@@ -199,17 +203,17 @@ export const PropertiesStep = () => {
                   )}
                   {prop.bedrooms && (
                     <span className="flex items-center gap-1">
-                      <BedDouble className="h-3 w-3" /> {prop.bedrooms} quartos
+                      <BedDouble className="h-3 w-3" /> {prop.bedrooms}
                     </span>
                   )}
                   {prop.bathrooms && (
                     <span className="flex items-center gap-1">
-                      <Bath className="h-3 w-3" /> {prop.bathrooms} ban
+                      <Bath className="h-3 w-3" /> {prop.bathrooms}
                     </span>
                   )}
                   {prop.square_feet && (
                     <span className="flex items-center gap-1">
-                      <Ruler className="h-3 w-3" /> {prop.square_feet} sqft
+                      <Ruler className="h-3 w-3" /> {prop.square_feet}
                     </span>
                   )}
                   {prop.year_built && (
@@ -220,7 +224,7 @@ export const PropertiesStep = () => {
                 </div>
 
                 {/* Badge */}
-                <Badge className={cn('text-xs', approvalColor(prop.approval_status))}>
+                <Badge className={cn('text-[11px] sm:text-xs', approvalColor(prop.approval_status))}>
                   {prop.approval_status === 'approved' ? 'Aprovado' : prop.approval_status === 'rejected' ? 'Rejeitado' : 'Pendente'}
                 </Badge>
               </div>
