@@ -287,48 +287,48 @@ export const OfferCreationForm = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-1 sm:px-0">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {onBack && (
-          <Button variant="ghost" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Back</span>
           </Button>
         )}
         <div>
-          <h1 className="text-3xl font-bold">Create Property Offer</h1>
-          <p className="text-muted-foreground">Fill in the details to create a cash offer for a property</p>
+          <h1 className="text-xl sm:text-3xl font-bold">Criar Oferta</h1>
+          <p className="text-xs sm:text-base text-muted-foreground">Preencha os dados para criar uma oferta</p>
         </div>
       </div>
 
       {/* Offer Calculator Preview */}
       {formData.offerAmount && (
         <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Calculator className="h-8 w-8 text-green-600" />
-              <div>
-                <h3 className="text-lg font-semibold">Offer Summary</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+          <CardContent className="pt-4 sm:pt-6 px-3 sm:px-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <Calculator className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm sm:text-lg font-semibold">Resumo da Oferta</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 mt-2">
                   <div>
-                    <p className="text-sm text-muted-foreground">Offer Amount</p>
-                    <p className="text-2xl font-bold text-green-600">
+                    <p className="text-[11px] sm:text-sm text-muted-foreground">Valor Oferta</p>
+                    <p className="text-lg sm:text-2xl font-bold text-green-600">
                       {formatCurrency(parseFloat(formData.offerAmount))}
                     </p>
                   </div>
                   {calculatedValues.offerPercentage > 0 && (
                     <div>
-                      <p className="text-sm text-muted-foreground">% of Estimated Value</p>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <p className="text-[11px] sm:text-sm text-muted-foreground">% do Estimado</p>
+                      <p className="text-lg sm:text-2xl font-bold text-blue-600">
                         {calculatedValues.offerPercentage}%
                       </p>
                     </div>
                   )}
                   {calculatedValues.estimatedProfit > 0 && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Estimated Profit</p>
-                      <p className="text-2xl font-bold text-purple-600">
+                      <p className="text-[11px] sm:text-sm text-muted-foreground">Lucro Estimado</p>
+                      <p className="text-lg sm:text-2xl font-bold text-purple-600">
                         {formatCurrency(calculatedValues.estimatedProfit)}
                       </p>
                     </div>
@@ -340,18 +340,18 @@ export const OfferCreationForm = ({
         </Card>
       )}
 
-      <form className="space-y-6">
+      <form className="space-y-4 sm:space-y-6">
         {/* Property Information */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Home className="h-5 w-5" />
-              Property Information
+          <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Home className="h-4 w-4 sm:h-5 sm:w-5" />
+              Informações do Imóvel
             </CardTitle>
-            <CardDescription>Enter the property details for this offer</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Dados do imóvel para esta oferta</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
               <div className="md:col-span-2">
                 <Label htmlFor="address">Property Address *</Label>
                 <Input
@@ -426,9 +426,9 @@ export const OfferCreationForm = ({
                 </Select>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div>
-                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Label htmlFor="bedrooms" className="text-xs sm:text-sm">Quartos</Label>
                   <Input
                     id="bedrooms"
                     type="number"
@@ -438,7 +438,7 @@ export const OfferCreationForm = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Label htmlFor="bathrooms" className="text-xs sm:text-sm">Banheiros</Label>
                   <Input
                     id="bathrooms"
                     type="number"
@@ -449,7 +449,7 @@ export const OfferCreationForm = ({
                   />
                 </div>
                 <div>
-                  <Label htmlFor="squareFeet">Sq Ft</Label>
+                  <Label htmlFor="squareFeet" className="text-xs sm:text-sm">Sq Ft</Label>
                   <Input
                     id="squareFeet"
                     type="number"
@@ -465,15 +465,15 @@ export const OfferCreationForm = ({
 
         {/* Offer Details */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Offer Details
+          <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
+              Detalhes da Oferta
             </CardTitle>
-            <CardDescription>Set the terms and amount for this cash offer</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Defina os termos e valor da oferta</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div>
                 <Label htmlFor="offerAmount">Offer Amount *</Label>
                 <div className="relative">
@@ -570,14 +570,14 @@ export const OfferCreationForm = ({
 
         {/* Recipient Information */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Recipient Information
+          <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <User className="h-4 w-4 sm:h-5 sm:w-5" />
+              Destinatário
             </CardTitle>
-            <CardDescription>Details about the property owner receiving this offer</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Dados do proprietário que receberá a oferta</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="recipientName">Full Name *</Label>
@@ -633,14 +633,14 @@ export const OfferCreationForm = ({
 
         {/* Agent Information */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              Agent Information
+          <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Building className="h-4 w-4 sm:h-5 sm:w-5" />
+              Informações do Agente
             </CardTitle>
-            <CardDescription>Your contact information for this offer</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Seus dados de contato para esta oferta</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="agentName">Agent Name *</Label>
@@ -696,11 +696,11 @@ export const OfferCreationForm = ({
 
         {/* Notes */}
         <Card>
-          <CardHeader>
-            <CardTitle>Additional Notes</CardTitle>
-            <CardDescription>Any additional information or notes about this offer</CardDescription>
+          <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
+            <CardTitle className="text-base sm:text-lg">Notas Adicionais</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Informações extras sobre esta oferta</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-3 sm:px-6">
             <Textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
