@@ -90,6 +90,7 @@ import { DashboardQuickActions } from "@/components/DashboardQuickActions";
 import { PropertyMapView } from "@/components/PropertyMapView";
 import { InteractivePropertyMap } from "@/components/InteractivePropertyMap";
 import { ApprovedPropertiesExport } from "@/components/ApprovedPropertiesExport";
+import { FullDatabaseExport } from "@/components/FullDatabaseExport";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
 import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
@@ -1125,6 +1126,7 @@ const Admin = () => {
 
             {/* Compact action menu */}
             <div className="flex items-center gap-2">
+              <FullDatabaseExport />
               <ApprovedPropertiesExport
                 filters={{
                   userId: filterUserId || undefined,
