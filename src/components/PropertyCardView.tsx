@@ -228,13 +228,26 @@ export const PropertyCardView = ({
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-green-700 hover:text-green-900 hover:bg-green-50"
-                  title="Oferta"
-                  tabIndex={-1}
-                  disabled
+                  className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`https://www.redfin.com/search#query=${encodeURIComponent(fullAddress)}`, '_blank');
+                  }}
+                  title="Ver no Redfin"
                 >
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  <span className="font-bold">{offerDisplay}</span>
+                  <span className="text-xs font-bold">R</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(fullAddress.replace(/\s+/g, '-'))}`, '_blank');
+                  }}
+                  title="Ver no Realtor.com"
+                >
+                  <span className="text-xs font-bold">Re</span>
                 </Button>
               </div>
             </div>

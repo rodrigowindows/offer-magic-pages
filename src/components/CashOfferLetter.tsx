@@ -129,10 +129,10 @@ export const CashOfferLetter = ({
   const offerType = getOfferType(property);
   const averageOffer = getOfferAverage(property);
   const savings = estimatedValue - averageOffer;
-  
+
   return (
-    <div className="print:w-full print:mx-auto cash-offer-letter">
-      <Card className="max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none print:max-w-full overflow-hidden">
+    <div className="cash-offer-letter-wrapper print:w-full print:mx-auto">
+      <Card className="cash-offer-letter-card max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden">
         {/* Professional Header */}
         <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 print:py-2 print:px-4 text-center">
         <div className="flex items-center justify-center gap-2 mb-1 print:mb-0">
@@ -257,9 +257,16 @@ export const CashOfferLetter = ({
 
       <style>{`
         @media print {
-          .cash-offer-letter {
+          .cash-offer-letter-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
             page-break-inside: avoid;
             break-inside: avoid;
+          }
+          .cash-offer-letter-card {
+            max-width: 100% !important;
+            width: 100% !important;
           }
           .bg-gradient-to-r,
           .bg-gradient-to-br,

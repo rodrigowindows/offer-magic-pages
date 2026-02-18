@@ -599,10 +599,10 @@ export const CompsAnalysis = () => {
               propertyId: property.id,
               updatedValues: {
                 estimated_value: updatedProperty?.estimated_value,
-                avm_min_value: updatedProperty?.avm_min_value,
-                avm_max_value: updatedProperty?.avm_max_value,
-                valuation_method: updatedProperty?.valuation_method,
-                valuation_confidence: updatedProperty?.valuation_confidence,
+                avm_min_value: (updatedProperty as any)?.avm_min_value,
+                avm_max_value: (updatedProperty as any)?.avm_max_value,
+                valuation_method: (updatedProperty as any)?.valuation_method,
+                valuation_confidence: (updatedProperty as any)?.valuation_confidence,
               }
             });
           }

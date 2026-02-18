@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ABTestWrapper } from "@/components/ABTestWrapper";
 import { PropertyPageFollowUp } from "@/components/PropertyPageFollowUp";
@@ -24,8 +24,10 @@ interface PropertyData {
 
 const Property = () => {
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [loading, setLoading] = useState(true);
+  const analyticsTracked = useRef(false);
 
   useEffect(() => {
     if (!slug) {
@@ -52,6 +54,26 @@ const Property = () => {
 
     void fetchProperty(slug);
   }, [slug]);
+
+  // Track page view via server-side edge function (bypasses RLS)
+  useEffect(() => {
+    if (!property || analyticsTracked.current) return;
+    analyticsTracked.current = true;
+
+    const source = searchParams.get("src") || searchParams.get("source") || "direct";
+
+    supabase.functions.invoke("track-analytics", {
+      body: {
+        propertyId: property.id,
+        eventType: "page_view",
+        source,
+        referrer: document.referrer || window.location.href,
+        userAgent: navigator.userAgent,
+      },
+    }).catch((err) => {
+      console.error("Error tracking page view:", err);
+    });
+  }, [property, searchParams]);
 
   if (loading) {
     return (
