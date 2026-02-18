@@ -70,6 +70,20 @@ const ImportProperties = () => {
   const [showMappingDialog, setShowMappingDialog] = useState(false);
   const [combinedFields, setCombinedFields] = useState<CombinedField[]>([]);
 
+  // Match detail for review screen
+  interface MatchDetail {
+    csvRow: number;
+    csvAddress: string;
+    csvOwnerName: string;
+    csvOrigem: string;
+    dbId: string;
+    dbAddress: string;
+    dbOwnerName: string;
+    dbOrigem: string;
+    matchedBy: string;
+    approved: boolean;
+  }
+
   // Import preview state
   const [importPreview, setImportPreview] = useState<{
     toInsert: number;
@@ -80,8 +94,12 @@ const ImportProperties = () => {
     progress: number;
     matchedFields: { csvColumn: string; dbField: string }[];
     dbFieldsCount: { origem: number; address: number; owner_name: number; owner_address: number };
+    matchReview?: MatchDetail[];
   } | null>(null);
-  
+
+  // Approved matches (user can toggle individual matches)
+  const [approvedMatches, setApprovedMatches] = useState<Set<string>>(new Set());
+
   // Use useRef instead of useState for timeout and lock - FIXES THE LOOP
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isCalculatingRef = useRef(false);
@@ -426,34 +444,42 @@ const ImportProperties = () => {
         // Show progress: 30% - building indexes
         setImportPreview(prev => prev ? { ...prev, progress: 30, dbFieldsCount } : prev);
 
-        // Create normalized lookup maps for fast matching
+        // Create normalized lookup maps for fast matching (store full prop info for review)
+        type PropInfo = { id: string; address: string; owner_name: string; origem: string };
         const matchMaps = {
-          byOrigem: new Map<string, string>(),
-          byAddressKey: new Map<string, string>(),
-          byOwnerName: new Map<string, string>(),
-          byOwnerAddress: new Map<string, string>(),
+          byOrigem: new Map<string, PropInfo>(),
+          byAddressKey: new Map<string, PropInfo>(),
+          byOwnerName: new Map<string, PropInfo>(),
+          byOwnerAddress: new Map<string, PropInfo>(),
         };
 
         existingProperties?.forEach(prop => {
+          const info: PropInfo = {
+            id: prop.id,
+            address: prop.address || '',
+            owner_name: prop.owner_name || '',
+            origem: prop.origem || '',
+          };
           if (prop.origem) {
-            matchMaps.byOrigem.set(normalizeForMatch(prop.origem).replace(/\s/g, ''), prop.id);
+            matchMaps.byOrigem.set(normalizeForMatch(prop.origem).replace(/\s/g, ''), info);
           }
           if (prop.address) {
             const addrKey = createAddressKey(prop.address);
             if (addrKey) {
-              matchMaps.byAddressKey.set(addrKey, prop.id);
+              matchMaps.byAddressKey.set(addrKey, info);
             }
           }
           if (prop.owner_name) {
-            matchMaps.byOwnerName.set(normalizeForMatch(prop.owner_name).replace(/\s/g, ''), prop.id);
+            matchMaps.byOwnerName.set(normalizeForMatch(prop.owner_name).replace(/\s/g, ''), info);
           }
           if (prop.owner_address) {
-            matchMaps.byOwnerAddress.set(normalizeForMatch(prop.owner_address).replace(/\s/g, ''), prop.id);
+            matchMaps.byOwnerAddress.set(normalizeForMatch(prop.owner_address).replace(/\s/g, ''), info);
           }
         });
 
         // Process each CSV row and check for matches
         const matchedIds = new Set<string>();
+        const matchReviewList: MatchDetail[] = [];
         const matchDetails: { row: number; csvAddr: string; csvKey: string; dbKey: string }[] = [];
         const noMatchDetails: { row: number; csvAddr: string; csvKey: string }[] = [];
 
@@ -469,27 +495,39 @@ const ImportProperties = () => {
           const csvOwnerAddress = normalizeForMatch(getValue(ownerAddressIdx)).replace(/\s/g, '');
 
           // Try to find a match using any of the fields
-          let matchedId: string | undefined;
+          let matchedProp: PropInfo | undefined;
           let matchedBy = '';
 
           // Priority: origem > address > owner_name > owner_address
           if (csvOrigem && matchMaps.byOrigem.has(csvOrigem)) {
-            matchedId = matchMaps.byOrigem.get(csvOrigem);
+            matchedProp = matchMaps.byOrigem.get(csvOrigem);
             matchedBy = 'origem';
           } else if (csvAddressKey && matchMaps.byAddressKey.has(csvAddressKey)) {
-            matchedId = matchMaps.byAddressKey.get(csvAddressKey);
+            matchedProp = matchMaps.byAddressKey.get(csvAddressKey);
             matchedBy = 'address';
             matchDetails.push({ row: i, csvAddr: csvAddress, csvKey: csvAddressKey, dbKey: csvAddressKey });
           } else if (csvOwnerName && matchMaps.byOwnerName.has(csvOwnerName)) {
-            matchedId = matchMaps.byOwnerName.get(csvOwnerName);
+            matchedProp = matchMaps.byOwnerName.get(csvOwnerName);
             matchedBy = 'owner_name';
           } else if (csvOwnerAddress && matchMaps.byOwnerAddress.has(csvOwnerAddress)) {
-            matchedId = matchMaps.byOwnerAddress.get(csvOwnerAddress);
+            matchedProp = matchMaps.byOwnerAddress.get(csvOwnerAddress);
             matchedBy = 'owner_address';
           }
 
-          if (matchedId) {
-            matchedIds.add(matchedId);
+          if (matchedProp) {
+            matchedIds.add(matchedProp.id);
+            matchReviewList.push({
+              csvRow: i,
+              csvAddress: csvAddress,
+              csvOwnerName: getValue(ownerNameIdx >= 0 ? ownerNameIdx : -1),
+              csvOrigem: getValue(origemIdx >= 0 ? origemIdx : -1),
+              dbId: matchedProp.id,
+              dbAddress: matchedProp.address,
+              dbOwnerName: matchedProp.owner_name,
+              dbOrigem: matchedProp.origem,
+              matchedBy,
+              approved: true,
+            });
           } else if (csvAddressKey && noMatchDetails.length < 10) {
             noMatchDetails.push({ row: i, csvAddr: csvAddress, csvKey: csvAddressKey });
           }
@@ -512,6 +550,10 @@ const ImportProperties = () => {
         const toInsert = totalRows - matchCount;
         const toSkip = updateExisting ? 0 : matchCount;
 
+        // Initialize all matches as approved
+        const allApproved = new Set(matchReviewList.map(m => m.dbId));
+        setApprovedMatches(allApproved);
+
         setImportPreview({
           toInsert,
           toUpdate,
@@ -521,6 +563,7 @@ const ImportProperties = () => {
           progress: 100,
           matchedFields,
           dbFieldsCount,
+          matchReview: matchReviewList,
         });
       } catch (err) {
         console.error('Erro no cálculo de preview:', err);
@@ -872,13 +915,15 @@ const ImportProperties = () => {
             }
           }
 
-          // Check if already exists and skip if not updating
-          if (existingPropId && !updateExisting) {
+          // Check if already exists and skip if not updating OR not approved
+          if (existingPropId && (!updateExisting || !approvedMatches.has(existingPropId))) {
             skippedRows.push({
               line: i,
               account: accountNumber,
               address: propertyAddress,
-              reason: `Already exists (matched by ${matchedBy})`
+              reason: approvedMatches.has(existingPropId)
+                ? `Already exists (matched by ${matchedBy})`
+                : `Match rejeitado pelo usuário (matched by ${matchedBy})`
             });
             skipped++;
             continue;
@@ -1492,6 +1537,114 @@ const ImportProperties = () => {
                         </p>
                       </Label>
                     </div>
+
+                    {/* MATCH REVIEW TABLE */}
+                    {updateExisting && importPreview.matchReview && importPreview.matchReview.length > 0 && (
+                      <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                            🔍 Revisão de Matches ({approvedMatches.size}/{importPreview.matchReview.length} aprovados)
+                          </h4>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setApprovedMatches(new Set(importPreview.matchReview!.map(m => m.dbId)));
+                              }}
+                            >
+                              Aprovar Todos
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setApprovedMatches(new Set());
+                              }}
+                            >
+                              Rejeitar Todos
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                          Revise os matches encontrados. Desmarque os que NÃO devem ser atualizados (serão inseridos como novos).
+                        </p>
+                        <ScrollArea className="max-h-[350px] border rounded-lg bg-white dark:bg-gray-900">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="text-xs">
+                                <TableHead className="w-10"></TableHead>
+                                <TableHead>Linha</TableHead>
+                                <TableHead>CSV</TableHead>
+                                <TableHead className="text-center">Match</TableHead>
+                                <TableHead>Banco de Dados</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {importPreview.matchReview.map((match, idx) => (
+                                <TableRow
+                                  key={idx}
+                                  className={`text-xs ${!approvedMatches.has(match.dbId) ? 'opacity-50 bg-red-50 dark:bg-red-950' : ''}`}
+                                >
+                                  <TableCell>
+                                    <Checkbox
+                                      checked={approvedMatches.has(match.dbId)}
+                                      onCheckedChange={(checked) => {
+                                        const next = new Set(approvedMatches);
+                                        if (checked) {
+                                          next.add(match.dbId);
+                                        } else {
+                                          next.delete(match.dbId);
+                                        }
+                                        setApprovedMatches(next);
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="font-mono text-muted-foreground">
+                                    #{match.csvRow}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="space-y-0.5">
+                                      {match.csvAddress && (
+                                        <p className="font-medium truncate max-w-[200px]">{match.csvAddress}</p>
+                                      )}
+                                      {match.csvOwnerName && (
+                                        <p className="text-muted-foreground truncate max-w-[200px]">{match.csvOwnerName}</p>
+                                      )}
+                                      {match.csvOrigem && (
+                                        <p className="text-muted-foreground font-mono text-[10px]">{match.csvOrigem}</p>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center">
+                                    <Badge variant="outline" className={`text-[10px] ${
+                                      match.matchedBy === 'origem' ? 'border-green-500 text-green-700' :
+                                      match.matchedBy === 'address' ? 'border-blue-500 text-blue-700' :
+                                      'border-orange-500 text-orange-700'
+                                    }`}>
+                                      {match.matchedBy}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="space-y-0.5">
+                                      {match.dbAddress && (
+                                        <p className="font-medium truncate max-w-[200px]">{match.dbAddress}</p>
+                                      )}
+                                      {match.dbOwnerName && (
+                                        <p className="text-muted-foreground truncate max-w-[200px]">{match.dbOwnerName}</p>
+                                      )}
+                                      {match.dbOrigem && (
+                                        <p className="text-muted-foreground font-mono text-[10px]">{match.dbOrigem}</p>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </ScrollArea>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
