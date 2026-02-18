@@ -2160,44 +2160,7 @@ export type Database = {
       }
     }
     Views: {
-      ab_test_funnel: {
-        Row: {
-          clicked_accept: number | null
-          clicked_interested: number | null
-          email_conversion_rate: number | null
-          email_submits: number | null
-          final_conversion_rate: number | null
-          form_submits: number | null
-          offer_reveals: number | null
-          page_views: number | null
-          phone_collected: number | null
-          phone_conversion_rate: number | null
-          variant: string | null
-        }
-        Relationships: []
-      }
-      ab_test_metrics: {
-        Row: {
-          day: string | null
-          event: string | null
-          event_count: number | null
-          unique_properties: number | null
-          unique_sessions: number | null
-          variant: string | null
-        }
-        Relationships: []
-      }
-      ab_test_winner: {
-        Row: {
-          confidence_level: string | null
-          conversion_rate: number | null
-          conversions: number | null
-          rank: number | null
-          variant: string | null
-          visitors: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       add_column_if_not_exists: {
