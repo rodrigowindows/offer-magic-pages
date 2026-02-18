@@ -50,10 +50,14 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
         <head>
           <title>Batch Offer Letters</title>
           <style>
+            @page { size: letter; margin: 0.3in; }
             * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { margin: 0 !important; padding: 0 !important; }
             body { font-family: system-ui, sans-serif; }
-            .letter-page { 
-              page-break-after: always; 
+            .letter-page {
+              page-break-after: always;
+              page-break-inside: avoid;
+              break-inside: avoid;
               padding: 20px;
               max-width: 800px;
               margin: 0 auto;

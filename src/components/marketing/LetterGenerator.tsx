@@ -539,6 +539,14 @@ export const LetterGenerator = () => {
 
       <style>{`
         @media print {
+          @page {
+            size: letter;
+            margin: 0.3in;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
           body * {
             visibility: hidden;
           }
@@ -554,6 +562,10 @@ export const LetterGenerator = () => {
           .page-break-before {
             page-break-before: always;
             break-before: page;
+          }
+          .cash-offer-letter {
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
         }
       `}</style>
