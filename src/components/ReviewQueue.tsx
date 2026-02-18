@@ -24,12 +24,65 @@ import { EmptyState } from "./EmptyState";
 interface QueueProperty {
   id: string;
   address: string;
+  city: string | null;
+  state: string | null;
   owner_name: string;
   property_image_url: string | null;
   estimated_value: number;
   cash_offer_amount: number;
   approval_status: string | null;
+  property_type: string | null;
+  year_built: number | null;
+  last_sale_date: string | null;
+  square_feet: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  lot_size: number | null;
+  batch_name: string | null;
 }
+
+// Pre-denial rules
+interface PreDenialSuggestion {
+  reason: string;
+  label: string;
+}
+
+const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestion[] => {
+  const suggestions: PreDenialSuggestion[] = [];
+  const currentYear = new Date().getFullYear();
+
+  // Casa nova (menos de 20 anos)
+  if (prop.year_built && (currentYear - prop.year_built) < 20) {
+    suggestions.push({ reason: 'new-construction', label: `Casa Nova (${prop.year_built})` });
+  }
+
+  // Recém vendida (menos de 2 anos)
+  if (prop.last_sale_date) {
+    const saleDate = new Date(prop.last_sale_date);
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    if (saleDate > twoYearsAgo) {
+      suggestions.push({ reason: 'recent-sale', label: 'Recém Vendida (<2 anos)' });
+    }
+  }
+
+  // Multi-Family
+  if (prop.property_type?.toLowerCase().includes('multi')) {
+    suggestions.push({ reason: 'multi-family', label: 'Multi-Family' });
+  }
+
+  // Land
+  if (prop.property_type?.toLowerCase() === 'land' || prop.property_type?.toLowerCase() === 'vacant land') {
+    suggestions.push({ reason: 'land', label: 'Terreno (Land)' });
+  }
+
+  // Commercial
+  if (prop.property_type?.toLowerCase().includes('commercial') || prop.property_type?.toLowerCase().includes('comercial')) {
+    suggestions.push({ reason: 'commercial', label: 'Imóvel Comercial' });
+  }
+
+  return suggestions;
+};
 
 interface DailyStats {
   reviewed_today: number;
@@ -99,7 +152,7 @@ export const ReviewQueue = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from("properties")
-        .select("id, address, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status")
+        .select("id, address, city, state, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, last_sale_date, square_feet, bedrooms, bathrooms, lot_size, batch_name")
         .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(100);
@@ -324,7 +377,50 @@ export const ReviewQueue = () => {
             <div className="space-y-3 sm:space-y-4">
               <div>
                 <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2 line-clamp-2">{currentProperty.address}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {[currentProperty.city, currentProperty.state].filter(Boolean).join(', ')}
+                </p>
                 <p className="text-sm sm:text-base text-muted-foreground">Proprietário: {currentProperty.owner_name}</p>
+
+                {/* Pre-denial warnings */}
+                {(() => {
+                  const suggestions = getPreDenialSuggestions(currentProperty);
+                  if (suggestions.length === 0) return null;
+                  return (
+                    <div className="mt-2 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-xs font-semibold text-amber-800 mb-1">PRÉ-NEGAÇÃO SUGERIDA:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {suggestions.map(s => (
+                          <Badge key={s.reason} variant="outline" className="text-[10px] sm:text-xs border-amber-400 text-amber-700 bg-amber-100">
+                            {s.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Property details */}
+                <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+                  {currentProperty.property_type && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.property_type}</Badge>
+                  )}
+                  {currentProperty.year_built && (
+                    <Badge variant="secondary" className="text-[10px]">Construído: {currentProperty.year_built}</Badge>
+                  )}
+                  {currentProperty.square_feet && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.square_feet} sqft</Badge>
+                  )}
+                  {currentProperty.bedrooms && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.bedrooms} quartos</Badge>
+                  )}
+                  {currentProperty.bathrooms && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.bathrooms} banheiros</Badge>
+                  )}
+                  {currentProperty.batch_name && (
+                    <Badge variant="outline" className="text-[10px]">{currentProperty.batch_name}</Badge>
+                  )}
+                </div>
                 {/* External Links */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   <a
