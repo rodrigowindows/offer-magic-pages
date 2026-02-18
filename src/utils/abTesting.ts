@@ -116,7 +116,7 @@ export async function trackABEvent(
     property_id: propertyId,
     variant: variant,
     event: event,
-    metadata: metadata || {},
+    metadata: (metadata || {}) as any,
     session_id: getSessionId(),
   };
 
@@ -124,7 +124,7 @@ export async function trackABEvent(
     // Send to database
     const { error } = await supabase
       .from('ab_test_events')
-      .insert(eventData);
+      .insert([eventData]);
 
     if (error) {
       console.error('Error tracking AB event:', error);
