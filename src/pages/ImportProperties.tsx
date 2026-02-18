@@ -27,6 +27,7 @@ import {
   Trash2,
   Settings2,
   RefreshCw,
+  Tag,
 } from "lucide-react";
 import {
   Table,
@@ -97,6 +98,7 @@ const ImportProperties = () => {
 
   // Options
   const [batchName, setBatchName] = useState(`Import-${new Date().toISOString().split('T')[0]}`);
+  const [importTags, setImportTags] = useState("");
   const [updateExisting, setUpdateExisting] = useState(true);
 
   // Handle image file selection
@@ -921,6 +923,14 @@ const ImportProperties = () => {
             propertyData.property_image_url = imageMap.get(accountNumber) || '';
           }
 
+          // Merge UI tags with CSV tags
+          if (importTags.trim()) {
+            const uiTags = importTags.split(',').map(t => t.trim()).filter(Boolean);
+            const existingTags = Array.isArray(propertyData.tags) ? propertyData.tags : [];
+            const mergedTags = [...new Set([...existingTags, ...uiTags])];
+            propertyData.tags = mergedTags;
+          }
+
           // Clean up empty values
           Object.keys(propertyData).forEach(key => {
             if (propertyData[key] === null || propertyData[key] === undefined || propertyData[key] === '') {
@@ -1084,7 +1094,7 @@ const ImportProperties = () => {
             <CardTitle className="text-lg">Configurações do Import</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Nome do Lote</Label>
                 <Input
@@ -1092,6 +1102,18 @@ const ImportProperties = () => {
                   onChange={(e) => setBatchName(e.target.value)}
                   placeholder="Import-2025-01-15"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-1.5">
+                  <Tag className="h-3.5 w-3.5" />
+                  Tags
+                </Label>
+                <Input
+                  value={importTags}
+                  onChange={(e) => setImportTags(e.target.value)}
+                  placeholder="tax-lien, miami-dade, lote-1"
+                />
+                <p className="text-xs text-muted-foreground">Separar por vírgula. Aplicadas a todas as propriedades.</p>
               </div>
               <div className="flex items-center space-x-2 pt-6">
                 <Checkbox
