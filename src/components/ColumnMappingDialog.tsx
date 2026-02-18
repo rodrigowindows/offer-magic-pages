@@ -62,8 +62,8 @@ interface ColumnMappingDialogProps {
 
 // Auto-detect field based on CSV header name (fallback)
 const autoDetectField = (csvHeader: string): DatabaseFieldKey | '' => {
-  const header = csvHeader.toLowerCase().replace(/[_\s-]/g, '');
-  
+  const header = csvHeader.toLowerCase().replace(/[_\s\-\.]/g, '');
+
   const mappings: Record<string, DatabaseFieldKey> = {
     // Address
     'address': 'address',
@@ -71,70 +71,157 @@ const autoDetectField = (csvHeader: string): DatabaseFieldKey | '' => {
     'situsaddress': 'address',
     'streetaddress': 'address',
     'inputpropertyaddress': 'address',
-    
+    'fulladdress': 'address',
+    'addr': 'address',
+    'street': 'address',
+    'endereco': 'address',
+    'logradouro': 'address',
+
     // City
     'city': 'city',
     'propertycity': 'city',
     'situscity': 'city',
-    
+    'cidade': 'city',
+    'town': 'city',
+    'municipality': 'city',
+
     // State
     'state': 'state',
     'propertystate': 'state',
     'situsstate': 'state',
-    
+    'estado': 'state',
+    'st': 'state',
+
     // Zip
     'zip': 'zip_code',
     'zipcode': 'zip_code',
     'postalcode': 'zip_code',
     'situszip': 'zip_code',
-    
+    'cep': 'zip_code',
+    'postal': 'zip_code',
+    'propertyzip': 'zip_code',
+
     // County
     'county': 'county',
-    
+    'condado': 'county',
+
     // Neighborhood
     'neighborhood': 'neighborhood',
     'subdivision': 'neighborhood',
-    
-    // Owner
+    'bairro': 'neighborhood',
+    'community': 'neighborhood',
+    'subdivisao': 'neighborhood',
+
+    // Owner name - many variations
     'ownername': 'owner_name',
     'owner': 'owner_name',
     'ownerfirstname': 'owner_name',
     'ownerlastname': 'owner_name',
     'name': 'owner_name',
-    
+    'firstname': 'owner_name',
+    'lastname': 'owner_name',
+    'fullname': 'owner_name',
+    'firstnamelastname': 'owner_name',
+    'lastnamefirstname': 'owner_name',
+    'fname': 'owner_name',
+    'lname': 'owner_name',
+    'first': 'owner_name',
+    'last': 'owner_name',
+    'nome': 'owner_name',
+    'nomecompleto': 'owner_name',
+    'nomeproprietario': 'owner_name',
+    'proprietario': 'owner_name',
+    'contact': 'owner_name',
+    'contactname': 'owner_name',
+    'ownersfullname': 'owner_name',
+    'owner1firstname': 'owner_name',
+    'owner1lastname': 'owner_name',
+    'owner1fullname': 'owner_name',
+    'seller': 'owner_name',
+    'sellername': 'owner_name',
+
+    // Owner phone - many variations
     'ownerphone': 'owner_phone',
     'phone': 'owner_phone',
     'phonenumber': 'owner_phone',
-    
+    'telephone': 'owner_phone',
+    'telefone': 'owner_phone',
+    'tel': 'owner_phone',
+    'cell': 'owner_phone',
+    'cellphone': 'owner_phone',
+    'mobile': 'owner_phone',
+    'mobilephone': 'owner_phone',
+    'phone1': 'owner_phone',
+    'primaryphone': 'owner_phone',
+    'bestphone': 'owner_phone',
+    'celular': 'owner_phone',
+
+    // Owner address
     'owneraddress': 'owner_address',
     'mailingaddress': 'owner_address',
-    
+    'mailaddress': 'owner_address',
+    'mailingstreet': 'owner_address',
+    'mailingfulladdress': 'owner_address',
+    'enderecoenvio': 'owner_address',
+    'enderecocorrespondencia': 'owner_address',
+
     // Property details
     'beds': 'bedrooms',
     'bedrooms': 'bedrooms',
     'bedroom': 'bedrooms',
-    
+    'bed': 'bedrooms',
+    'numberofbedrooms': 'bedrooms',
+    'numbeds': 'bedrooms',
+    'quartos': 'bedrooms',
+    'br': 'bedrooms',
+
     'baths': 'bathrooms',
     'bathrooms': 'bathrooms',
     'bathroom': 'bathrooms',
-    
+    'bath': 'bathrooms',
+    'numberofbathrooms': 'bathrooms',
+    'numbaths': 'bathrooms',
+    'banheiros': 'bathrooms',
+    'ba': 'bathrooms',
+
     'sqft': 'square_feet',
     'squarefeet': 'square_feet',
     'livingarea': 'square_feet',
     'area': 'square_feet',
-    
+    'squarefootage': 'square_feet',
+    'livingsqft': 'square_feet',
+    'buildingsqft': 'square_feet',
+    'totalsqft': 'square_feet',
+    'totalarea': 'square_feet',
+    'areatotal': 'square_feet',
+    'areaconstruida': 'square_feet',
+    'metros': 'square_feet',
+
     'lotsize': 'lot_size',
     'lot': 'lot_size',
     'landarea': 'lot_size',
-    
+    'lotsqft': 'lot_size',
+    'lotacres': 'lot_size',
+    'lotacreage': 'lot_size',
+    'terreno': 'lot_size',
+    'areaterreno': 'lot_size',
+
     'yearbuilt': 'year_built',
     'year': 'year_built',
     'built': 'year_built',
-    
+    'yrblt': 'year_built',
+    'anoconstrucao': 'year_built',
+    'constructionyear': 'year_built',
+
     'propertytype': 'property_type',
     'type': 'property_type',
     'usecode': 'property_type',
-    
+    'landuse': 'property_type',
+    'usetype': 'property_type',
+    'proptype': 'property_type',
+    'tipoimovel': 'property_type',
+    'tipo': 'property_type',
+
     // Financial
     'justvalue': 'estimated_value',
     'estimatedvalue': 'estimated_value',
@@ -142,17 +229,29 @@ const autoDetectField = (csvHeader: string): DatabaseFieldKey | '' => {
     'value': 'estimated_value',
     'price': 'estimated_value',
     'assessedvalue': 'estimated_value',
-    
+    'totalvalue': 'estimated_value',
+    'taxablevalue': 'estimated_value',
+    'fairmarketvalue': 'estimated_value',
+    'appraisedvalue': 'estimated_value',
+    'valor': 'estimated_value',
+    'valorestimado': 'estimated_value',
+    'valormercado': 'estimated_value',
+
     'cashoffer': 'cash_offer_amount',
     'cashofferamount': 'cash_offer_amount',
     'offer': 'cash_offer_amount',
-    
+    'offeramount': 'cash_offer_amount',
+    'oferta': 'cash_offer_amount',
+    'ofertacash': 'cash_offer_amount',
+
     'leadscore': 'lead_score',
     'score': 'lead_score',
-    
+    'pontuacao': 'lead_score',
+
     'comparativeprice': 'comparative_price',
     'compprice': 'comparative_price',
-    
+    'compvalue': 'comparative_price',
+
     // System
     'accountnumber': 'origem',
     'account': 'origem',
@@ -160,28 +259,49 @@ const autoDetectField = (csvHeader: string): DatabaseFieldKey | '' => {
     'parcelid': 'origem',
     'folio': 'origem',
     'origem': 'origem',
-    
+    'parcelnumber': 'origem',
+    'apn': 'origem',
+    'taxid': 'origem',
+    'id': 'origem',
+    'propertyid': 'origem',
+    'refnumber': 'origem',
+    'reference': 'origem',
+    'folionumber': 'origem',
+
     'imageurl': 'property_image_url',
     'photourl': 'property_image_url',
     'photo': 'property_image_url',
     'image': 'property_image_url',
-    
+    'imagem': 'property_image_url',
+    'foto': 'property_image_url',
+    'fotourl': 'property_image_url',
+    'imagemurl': 'property_image_url',
+    'propertyimageurl': 'property_image_url',
+    'propertyimage': 'property_image_url',
+    'pictureurl': 'property_image_url',
+
     'zillowurl': 'zillow_url',
     'zillow': 'zillow_url',
-    
+    'zillowlink': 'zillow_url',
+
     'evaluation': 'evaluation',
     'eval': 'evaluation',
-    
+    'avaliacao': 'evaluation',
+
     'focar': 'focar',
     'focus': 'focar',
-    
+
     'carta': 'carta',
     'letter': 'carta',
-    
+
     'tags': 'tags',
     'tag': 'tags',
+    'labels': 'tags',
+    'etiquetas': 'tags',
+    'categorias': 'tags',
+    'category': 'tags',
   };
-  
+
   return mappings[header] || '';
 };
 
