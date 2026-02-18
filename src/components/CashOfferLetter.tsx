@@ -134,112 +134,112 @@ export const CashOfferLetter = ({
     <div className="cash-offer-letter-wrapper print:w-full print:mx-auto">
       <Card className="cash-offer-letter-card max-w-2xl mx-auto bg-background border-2 border-primary/20 print:border-0 print:shadow-none overflow-hidden">
         {/* Professional Header */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 print:p-6 text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <Home className="h-6 w-6 print:h-10 print:w-10" />
-          <span className="text-xl print:text-3xl font-bold tracking-wide">MyLocalInvest</span>
+        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-6 print:p-3 text-center">
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Home className="h-6 w-6 print:h-7 print:w-7" />
+          <span className="text-xl print:text-2xl font-bold tracking-wide">MyLocalInvest</span>
         </div>
-        <p className="text-sm print:text-lg opacity-90">{t.since}</p>
+        <p className="text-sm print:text-sm opacity-90">{t.since}</p>
       </div>
 
-      <div className="p-6 space-y-5 print:p-8 print:space-y-6">
+      <div className="p-6 space-y-5 print:p-5 print:space-y-3">
         {/* Personalized Greeting & Property */}
         <div className="text-center space-y-1">
           {ownerName && (
-            <p className="text-lg print:text-2xl text-muted-foreground">{t.dear} {ownerName},</p>
+            <p className="text-lg print:text-xl text-muted-foreground">{t.dear} {ownerName},</p>
           )}
-          <h1 className="text-2xl print:text-4xl font-bold text-foreground">{t.headline}</h1>
-          <p className="text-base print:text-xl text-muted-foreground">{t.subheadline}</p>
-          <p className="text-sm print:text-lg font-medium text-primary mt-2">{fullAddress}</p>
+          <h1 className="text-2xl print:text-3xl font-bold text-foreground">{t.headline}</h1>
+          <p className="text-base print:text-lg text-muted-foreground">{t.subheadline}</p>
+          <p className="text-sm print:text-base font-medium text-primary mt-1">{fullAddress}</p>
         </div>
 
         {/* Main Offer Box with Urgency - NO PRICE SHOWN */}
-        <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary rounded-xl p-5 print:p-8 text-center">
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs print:text-base font-bold px-3 py-1 rounded-full flex items-center gap-1">
-            <Clock className="h-3 w-3 print:h-5 print:w-5" />
+        <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 border-2 border-primary rounded-xl p-5 print:p-5 text-center">
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-xs print:text-sm font-bold px-3 py-1 rounded-full flex items-center gap-1">
+            <Clock className="h-3 w-3 print:h-4 print:w-4" />
             {t.urgency}
           </div>
 
-          <p className="text-lg print:text-2xl text-muted-foreground mb-1 mt-4">{t.cashOffer}</p>
-          <p className="text-3xl print:text-5xl font-black text-primary mt-3 mb-4">
+          <p className="text-lg print:text-xl text-muted-foreground mb-1 mt-3">{t.cashOffer}</p>
+          <p className="text-3xl print:text-3xl font-black text-primary mt-2 mb-3">
             {language === 'es' ? 'Llame o Escanee para Ver Su Oferta' : 'Call or Scan to See Your Offer'}
           </p>
         </div>
 
         {/* Trust Badges Row */}
-        <div className="grid grid-cols-3 gap-2 print:gap-6 text-center">
-          <div className="bg-muted/50 rounded-lg p-2 print:p-4">
-            <Clock className="h-4 w-4 print:h-8 print:w-8 mx-auto text-primary mb-1" />
-            <p className="text-xs print:text-base font-medium text-foreground">{t.fastClose}</p>
+        <div className="grid grid-cols-3 gap-2 print:gap-3 text-center">
+          <div className="bg-muted/50 rounded-lg p-2 print:p-2">
+            <Clock className="h-4 w-4 print:h-5 print:w-5 mx-auto text-primary mb-1" />
+            <p className="text-xs print:text-sm font-medium text-foreground">{t.fastClose}</p>
           </div>
-          <div className="bg-muted/50 rounded-lg p-2 print:p-4">
-            <Shield className="h-4 w-4 print:h-8 print:w-8 mx-auto text-primary mb-1" />
-            <p className="text-xs print:text-base font-medium text-foreground">{t.guarantee}</p>
+          <div className="bg-muted/50 rounded-lg p-2 print:p-2">
+            <Shield className="h-4 w-4 print:h-5 print:w-5 mx-auto text-primary mb-1" />
+            <p className="text-xs print:text-sm font-medium text-foreground">{t.guarantee}</p>
           </div>
-          <div className="bg-muted/50 rounded-lg p-2 print:p-4">
-            <CheckCircle2 className="h-4 w-4 print:h-8 print:w-8 mx-auto text-primary mb-1" />
-            <p className="text-xs print:text-base font-medium text-foreground">{t.noCost}</p>
+          <div className="bg-muted/50 rounded-lg p-2 print:p-2">
+            <CheckCircle2 className="h-4 w-4 print:h-5 print:w-5 mx-auto text-primary mb-1" />
+            <p className="text-xs print:text-sm font-medium text-foreground">{t.noCost}</p>
           </div>
         </div>
 
         {/* Benefits Grid */}
-        <div className="space-y-1 print:space-y-3">
-          <h2 className="text-sm print:text-xl font-bold text-foreground text-center">{t.weHelpYou}</h2>
-          <div className="grid grid-cols-2 gap-1 print:gap-3 text-xs print:text-lg">
-            <div className="flex items-center gap-1 print:gap-3">
-              <CheckCircle2 className="h-3 w-3 print:h-5 print:w-5 text-primary shrink-0" />
+        <div className="space-y-1 print:space-y-1">
+          <h2 className="text-sm print:text-base font-bold text-foreground text-center">{t.weHelpYou}</h2>
+          <div className="grid grid-cols-2 gap-1 print:gap-2 text-xs print:text-base">
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 print:h-4 print:w-4 text-primary shrink-0" />
               <span>{t.benefit1}</span>
             </div>
-            <div className="flex items-center gap-1 print:gap-3">
-              <CheckCircle2 className="h-3 w-3 print:h-5 print:w-5 text-primary shrink-0" />
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 print:h-4 print:w-4 text-primary shrink-0" />
               <span>{t.benefit2}</span>
             </div>
-            <div className="flex items-center gap-1 print:gap-3">
-              <CheckCircle2 className="h-3 w-3 print:h-5 print:w-5 text-primary shrink-0" />
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 print:h-4 print:w-4 text-primary shrink-0" />
               <span>{t.benefit3}</span>
             </div>
-            <div className="flex items-center gap-1 print:gap-3">
-              <CheckCircle2 className="h-3 w-3 print:h-5 print:w-5 text-primary shrink-0" />
+            <div className="flex items-center gap-1 print:gap-2">
+              <CheckCircle2 className="h-3 w-3 print:h-4 print:w-4 text-primary shrink-0" />
               <span>{t.benefit4}</span>
             </div>
           </div>
         </div>
 
         {/* Testimonial */}
-        <div className="bg-muted/30 border border-border rounded-lg p-3 print:p-5 text-center">
+        <div className="bg-muted/30 border border-border rounded-lg p-3 print:p-3 text-center">
           <div className="flex justify-center gap-0.5 mb-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-3 w-3 print:h-5 print:w-5 fill-amber-400 text-amber-400" />
+              <Star key={i} className="h-3 w-3 print:h-4 print:w-4 fill-amber-400 text-amber-400" />
             ))}
           </div>
-          <p className="text-xs print:text-base italic text-muted-foreground">{t.testimonial}</p>
-          <p className="text-xs print:text-base font-medium text-foreground mt-1">{t.testimonialAuthor}</p>
+          <p className="text-xs print:text-sm italic text-muted-foreground">{t.testimonial}</p>
+          <p className="text-xs print:text-sm font-medium text-foreground mt-1">{t.testimonialAuthor}</p>
         </div>
 
         {/* CTA Section */}
-        <div className="bg-primary text-primary-foreground rounded-xl p-4 print:p-6 text-center space-y-2 print:space-y-4">
-          <h2 className="text-xl print:text-3xl font-bold">{t.cta}</h2>
+        <div className="bg-primary text-primary-foreground rounded-xl p-4 print:p-4 text-center space-y-2 print:space-y-2">
+          <h2 className="text-xl print:text-2xl font-bold">{t.cta}</h2>
 
           {/* Phone Number - HIGHLIGHTED */}
-          <div className="bg-white/10 rounded-lg py-3 px-4 print:py-5 print:px-8">
-            <div className="flex items-center justify-center gap-3 text-3xl print:text-5xl font-extrabold tracking-wide">
-              <Phone className="h-8 w-8 print:h-12 print:w-12" />
+          <div className="bg-white/10 rounded-lg py-3 px-4 print:py-3 print:px-6">
+            <div className="flex items-center justify-center gap-3 text-3xl print:text-4xl font-extrabold tracking-wide">
+              <Phone className="h-8 w-8 print:h-9 print:w-9" />
               <span>{formattedPhone}</span>
             </div>
           </div>
 
-          <p className="text-sm print:text-lg opacity-90 font-medium">{t.ctaDescription}</p>
+          <p className="text-sm print:text-base opacity-90 font-medium">{t.ctaDescription}</p>
 
           {/* QR Code */}
-          <div className="pt-3 border-t border-primary-foreground/20 mt-3">
-            <p className="text-sm print:text-base opacity-90 mb-3 font-medium">{t.orText}</p>
-            <div className="flex flex-col items-center gap-2">
-              <div className="bg-white p-3 print:p-4 rounded-lg shadow-lg">
-                <QRCodeSVG value={offerUrl} size={170} level="H" className="print:w-[200px] print:h-[200px]" />
+          <div className="pt-2 border-t border-primary-foreground/20 mt-2">
+            <p className="text-sm print:text-sm opacity-90 mb-2 font-medium">{t.orText}</p>
+            <div className="flex flex-col items-center gap-1">
+              <div className="bg-white p-3 print:p-3 rounded-lg shadow-lg">
+                <QRCodeSVG value={offerUrl} size={170} level="H" className="print:w-[150px] print:h-[150px]" />
               </div>
-              <div className="mt-2 text-center">
-                <p className="text-sm print:text-base font-bold text-primary-foreground">{t.qrCallout}</p>
-                <p className="text-xs print:text-sm opacity-75 mt-1">{t.qrSubtext}</p>
+              <div className="mt-1 text-center">
+                <p className="text-sm print:text-sm font-bold text-primary-foreground">{t.qrCallout}</p>
+                <p className="text-xs print:text-xs opacity-75 mt-0.5">{t.qrSubtext}</p>
               </div>
             </div>
           </div>
@@ -247,11 +247,11 @@ export const CashOfferLetter = ({
 
         {/* Footer */}
         <div
-          className="text-center pt-3 border-t border-border"
+          className="text-center pt-2 border-t border-border"
           style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
         >
-          <p className="text-xs print:text-sm text-muted-foreground">{email}</p>
-          <p className="text-xs print:text-sm italic text-muted-foreground mt-1">{t.footer}</p>
+          <p className="text-xs print:text-xs text-muted-foreground">{email}</p>
+          <p className="text-xs print:text-xs italic text-muted-foreground mt-0.5">{t.footer}</p>
         </div>
       </div>
 
