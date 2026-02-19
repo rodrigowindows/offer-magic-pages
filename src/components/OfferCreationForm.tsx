@@ -41,13 +41,15 @@ interface OfferCreationFormProps {
   onSave?: (offer: PropertyOfferData) => void;
   onSend?: (offerId: string) => void;
   initialData?: Partial<PropertyOfferData>;
+  selectedBatch?: string;
 }
 
 export const OfferCreationForm = ({
   onBack,
   onSave,
   onSend,
-  initialData
+  initialData,
+  selectedBatch
 }: OfferCreationFormProps) => {
   const [formData, setFormData] = useState({
     // Property Information
