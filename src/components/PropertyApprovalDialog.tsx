@@ -37,17 +37,17 @@ interface PropertyApprovalDialogProps {
 
 // Razões predefinidas para rejeição
 const REJECTION_REASONS = [
-  { value: "too-good-condition", label: "Casa muito boa - não está distressed" },
-  { value: "llc-owned", label: "Propriedade de LLC" },
-  { value: "commercial", label: "Propriedade comercial" },
+  { value: "new-construction", label: "Casa Nova (menos de 20 anos)" },
+  { value: "recent-sale", label: "Recém Vendida (menos de 2 anos)" },
+  { value: "too-good-condition", label: "Casa em Bom Estado" },
+  { value: "multi-family", label: "Multi-Family" },
+  { value: "hoa-restrictions", label: "Propriedade com HOA" },
+  { value: "land", label: "Terreno (Land)" },
+  { value: "no-equity", label: "Low-Equity" },
+  { value: "agent-listed", label: "Anunciada por Corretor" },
+  { value: "commercial", label: "Imóvel Comercial" },
   { value: "duplicate", label: "Duplicado" },
   { value: "wrong-location", label: "Localização errada" },
-  { value: "no-equity", label: "Sem equity suficiente" },
-  { value: "already-contacted", label: "Já foi contatado anteriormente" },
-  { value: "occupied-rented", label: "Ocupado/Alugado - não distressed" },
-  { value: "recent-sale", label: "Venda recente" },
-  { value: "hoa-restrictions", label: "Restrições de HOA" },
-  { value: "title-issues", label: "Problemas no título" },
   { value: "other", label: "Outro motivo" },
 ];
 
