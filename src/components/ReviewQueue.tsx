@@ -29,6 +29,25 @@ import {
   ThumbsUp,
   ThumbsDown,
   Undo2,
+  Phone,
+  Mail,
+  Calendar,
+  Home,
+  Ruler,
+  User,
+  AlertTriangle,
+  Star,
+  ExternalLink,
+  BedDouble,
+  Bath,
+  LandPlot,
+  Building2,
+  PhoneOff,
+  ChevronDown,
+  ChevronUp,
+  Settings2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
 import { EmptyState } from "./EmptyState";
@@ -49,15 +68,81 @@ const REJECTION_REASONS = [
   { value: "other", label: "Outro motivo" },
 ];
 
+// Configurable detail fields
+interface DetailField {
+  key: string;
+  label: string;
+  category: 'property' | 'owner' | 'financial' | 'status';
+  format?: (value: any, prop: QueueProperty) => string;
+  defaultVisible?: boolean;
+}
+
+const DETAIL_FIELDS: DetailField[] = [
+  // Property
+  { key: 'property_type', label: 'Tipo', category: 'property', defaultVisible: true },
+  { key: 'year_built', label: 'Ano Construção', category: 'property', defaultVisible: true },
+  { key: 'bedrooms', label: 'Quartos', category: 'property', defaultVisible: true },
+  { key: 'bathrooms', label: 'Banheiros', category: 'property', defaultVisible: true },
+  { key: 'square_feet', label: 'Área (sqft)', category: 'property', defaultVisible: true, format: (v) => v ? v.toLocaleString() : '—' },
+  { key: 'lot_size', label: 'Lote (sqft)', category: 'property', defaultVisible: true, format: (v) => v ? v.toLocaleString() : '—' },
+  { key: 'neighborhood', label: 'Bairro', category: 'property', defaultVisible: false },
+  { key: 'county', label: 'Condado', category: 'property', defaultVisible: false },
+  { key: 'zip_code', label: 'CEP', category: 'property', defaultVisible: false },
+  { key: 'last_sale_date', label: 'Últ. Venda', category: 'property', defaultVisible: true, format: (v) => v ? new Date(v).toLocaleDateString('pt-BR') : '—' },
+  // Owner
+  { key: 'owner_name', label: 'Proprietário', category: 'owner', defaultVisible: true },
+  { key: 'age', label: 'Idade', category: 'owner', defaultVisible: true, format: (v) => v ? `${v} anos` : '—' },
+  { key: 'phone1', label: 'Telefone', category: 'owner', defaultVisible: true, format: (v, p) => v || p.owner_phone || '—' },
+  { key: 'phone1_type', label: 'Tipo Tel.', category: 'owner', defaultVisible: false },
+  { key: 'email1', label: 'Email', category: 'owner', defaultVisible: true },
+  { key: 'deceased', label: 'Falecido', category: 'owner', defaultVisible: true, format: (v) => v ? 'SIM' : 'Não' },
+  { key: 'dnc_flag', label: 'DNC', category: 'owner', defaultVisible: true, format: (v) => v ? 'SIM' : 'Não' },
+  // Financial
+  { key: 'estimated_value', label: 'Valor Estimado', category: 'financial', defaultVisible: true, format: (v) => v ? `$${v.toLocaleString()}` : '—' },
+  { key: 'cash_offer_amount', label: 'Oferta', category: 'financial', defaultVisible: true, format: (v) => v ? `$${v.toLocaleString()}` : '—' },
+  { key: 'comparative_price', label: 'Preço Comp.', category: 'financial', defaultVisible: true, format: (v) => v ? `$${v.toLocaleString()}` : '—' },
+  // Status
+  { key: 'lead_score', label: 'Score', category: 'status', defaultVisible: false },
+  { key: 'tags', label: 'Tags', category: 'status', defaultVisible: false },
+  { key: 'airbnb_eligible', label: 'Airbnb', category: 'status', defaultVisible: false, format: (v) => v ? 'Sim' : 'Não' },
+  { key: 'focar', label: 'Focar', category: 'status', defaultVisible: false },
+  { key: 'batch_name', label: 'Batch', category: 'status', defaultVisible: false },
+];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  property: 'Imóvel',
+  owner: 'Proprietário',
+  financial: 'Financeiro',
+  status: 'Status',
+};
+
+const STORAGE_KEY = 'review-queue-visible-fields';
+
+const loadVisibleFields = (): Set<string> => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return new Set(JSON.parse(saved));
+  } catch {}
+  return new Set(DETAIL_FIELDS.filter(f => f.defaultVisible).map(f => f.key));
+};
+
+const saveVisibleFields = (fields: Set<string>) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...fields]));
+};
+
 interface QueueProperty {
   id: string;
   address: string;
   city: string | null;
   state: string | null;
+  zip_code: string | null;
+  county: string | null;
+  neighborhood: string | null;
   owner_name: string;
   property_image_url: string | null;
   estimated_value: number;
   cash_offer_amount: number;
+  comparative_price: number | null;
   approval_status: string | null;
   property_type: string | null;
   year_built: number | null;
@@ -67,6 +152,20 @@ interface QueueProperty {
   bathrooms: number | null;
   lot_size: number | null;
   batch_name: string | null;
+  // Owner / contact
+  age: number | null;
+  deceased: boolean | null;
+  owner_phone: string | null;
+  phone1: string | null;
+  phone1_type: string | null;
+  email1: string | null;
+  dnc_flag: boolean | null;
+  // Extra
+  lead_score: number | null;
+  tags: string | null;
+  zillow_url: string | null;
+  airbnb_eligible: boolean | null;
+  focar: string | null;
 }
 
 // Pre-denial rules
@@ -121,12 +220,20 @@ interface DailyStats {
   total_users: number;
 }
 
-export const ReviewQueue = () => {
+interface ReviewQueueProps {
+  selectedBatch?: string;
+}
+
+export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [properties, setProperties] = useState<QueueProperty[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  // Detail fields visibility
+  const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
+  const [showFieldSettings, setShowFieldSettings] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(true);
   // Inline rejection state
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
@@ -140,13 +247,30 @@ export const ReviewQueue = () => {
   const currentProperty = properties[currentIndex];
   const progress = properties.length > 0 ? ((currentIndex + 1) / properties.length) * 100 : 0;
 
+  const toggleField = (key: string) => {
+    setVisibleFields(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      saveVisibleFields(next);
+      return next;
+    });
+  };
+
+  const getFieldValue = (field: DetailField, prop: QueueProperty): string => {
+    const raw = (prop as any)[field.key];
+    if (field.format) return field.format(raw, prop);
+    if (raw == null || raw === '') return '—';
+    return String(raw);
+  };
+
   useEffect(() => {
     fetchPendingProperties();
     if (user) {
       fetchDailyStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, selectedBatch]);
 
   // Reset forms when changing property
   useEffect(() => {
@@ -235,15 +359,21 @@ export const ReviewQueue = () => {
   const fetchPendingProperties = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from("properties")
-        .select("id, address, city, state, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, last_sale_date, square_feet, bedrooms, bathrooms, lot_size, batch_name")
+        .select("id, address, city, state, zip_code, county, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, comparative_price, approval_status, property_type, year_built, last_sale_date, square_feet, bedrooms, bathrooms, lot_size, batch_name, age, deceased, owner_phone, phone1, phone1_type, email1, dnc_flag, lead_score, tags, zillow_url, airbnb_eligible, focar")
         .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(100);
 
+      if (selectedBatch && selectedBatch !== 'all') {
+        query = query.eq('import_batch', selectedBatch);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
-      setProperties(data || []);
+      setProperties((data as unknown as QueueProperty[]) || []);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar fila",
@@ -275,11 +405,17 @@ export const ReviewQueue = () => {
       const approved_today = userReviews?.filter(p => p.approval_status === "approved").length || 0;
       const rejected_today = userReviews?.filter(p => p.approval_status === "rejected").length || 0;
 
-      // Get total pending
-      const { count: totalPending, error: countError } = await supabase
+      // Get total pending (filtered by batch if selected)
+      let pendingQuery = supabase
         .from("properties")
         .select("*", { count: "exact", head: true })
         .or("approval_status.is.null,approval_status.eq.pending");
+
+      if (selectedBatch && selectedBatch !== 'all') {
+        pendingQuery = pendingQuery.eq('import_batch', selectedBatch);
+      }
+
+      const { count: totalPending, error: countError } = await pendingQuery;
 
       if (countError) throw countError;
 
@@ -554,143 +690,147 @@ export const ReviewQueue = () => {
 
             {/* Details */}
             <div className="space-y-3 sm:space-y-4">
+              {/* Address + Location */}
               <div>
-                <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2 line-clamp-2">{currentProperty.address}</h3>
+                <h3 className="text-lg sm:text-2xl font-bold mb-1 line-clamp-2">{currentProperty.address}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {[currentProperty.city, currentProperty.state].filter(Boolean).join(', ')}
+                  {[currentProperty.city, currentProperty.state, currentProperty.zip_code].filter(Boolean).join(', ')}
+                  {currentProperty.county && <span className="ml-1 text-muted-foreground/70">({currentProperty.county})</span>}
                 </p>
-                <p className="text-sm sm:text-base text-muted-foreground">Proprietário: {currentProperty.owner_name}</p>
+              </div>
 
-                {/* Pre-denial warnings */}
-                {(() => {
-                  const suggestions = getPreDenialSuggestions(currentProperty);
-                  if (suggestions.length === 0) return null;
+              {/* Pre-denial warnings */}
+              {(() => {
+                const suggestions = getPreDenialSuggestions(currentProperty);
+                if (suggestions.length === 0) return null;
+                return (
+                  <div className="p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs font-semibold text-amber-800 mb-1">PRE-NEGACAO SUGERIDA:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {suggestions.map(s => (
+                        <Badge key={s.reason} variant="outline" className="text-[10px] sm:text-xs border-amber-400 text-amber-700 bg-amber-100">
+                          {s.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Alert flags */}
+              {(currentProperty.deceased || currentProperty.dnc_flag) && (
+                <div className="flex flex-wrap gap-1.5">
+                  {currentProperty.deceased && (
+                    <Badge variant="destructive" className="text-[10px] gap-1"><AlertTriangle className="h-3 w-3" />Falecido</Badge>
+                  )}
+                  {currentProperty.dnc_flag && (
+                    <Badge variant="destructive" className="text-[10px] gap-1"><PhoneOff className="h-3 w-3" />DNC</Badge>
+                  )}
+                </div>
+              )}
+
+              {/* External Links */}
+              <div className="flex flex-wrap gap-1.5">
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentProperty.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"><MapPin className="w-3 h-3" />Maps</a>
+                <a href={currentProperty.zillow_url || `https://www.zillow.com/homes/${encodeURIComponent(currentProperty.address)}_rb/`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"><span className="font-bold">Z</span>Zillow{currentProperty.zillow_url && <ExternalLink className="w-2.5 h-2.5" />}</a>
+                <a href={`https://www.trulia.com/homes/${encodeURIComponent(currentProperty.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold hover:bg-green-100 transition-colors"><span className="font-bold">T</span>Trulia</a>
+                <a href={`https://www.redfin.com/search#query=${encodeURIComponent(currentProperty.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold hover:bg-red-100 transition-colors"><span className="font-bold">R</span>Redfin</a>
+                <a href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(currentProperty.address.replace(/\s+/g, '-'))}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors"><span className="font-bold">Re</span>Realtor</a>
+              </div>
+
+              {/* Keyboard Shortcuts - condensed */}
+              <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted-foreground">
+                <Keyboard className="h-3.5 w-3.5" />
+                <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">A</kbd> Aprovar</span>
+                <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">R</kbd> Rejeitar</span>
+                <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">→</kbd> Próx.</span>
+                <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">←</kbd> Ant.</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Configurable Details Table */}
+          <div className="border rounded-lg overflow-hidden">
+            {/* Table Header with toggle + settings */}
+            <div className="flex items-center justify-between bg-muted/50 px-3 py-2 border-b">
+              <button
+                onClick={() => setDetailsExpanded(!detailsExpanded)}
+                className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+              >
+                {detailsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                Detalhes da Propriedade
+                <Badge variant="secondary" className="text-[10px]">{visibleFields.size} campos</Badge>
+              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-muted-foreground"
+                onClick={() => setShowFieldSettings(!showFieldSettings)}
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                Colunas
+              </Button>
+            </div>
+
+            {/* Field Settings Panel */}
+            {showFieldSettings && (
+              <div className="bg-muted/30 border-b px-3 py-2.5 space-y-2">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Selecione os campos visíveis:</p>
+                {(['property', 'owner', 'financial', 'status'] as const).map(category => (
+                  <div key={category}>
+                    <p className="text-[10px] font-semibold text-muted-foreground mb-1">{CATEGORY_LABELS[category]}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {DETAIL_FIELDS.filter(f => f.category === category).map(field => (
+                        <button
+                          key={field.key}
+                          onClick={() => toggleField(field.key)}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-colors ${
+                            visibleFields.has(field.key)
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-background text-muted-foreground border-border hover:bg-accent'
+                          }`}
+                        >
+                          {visibleFields.has(field.key) ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                          {field.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Detail Table */}
+            {detailsExpanded && (
+              <div className="divide-y">
+                {(['property', 'owner', 'financial', 'status'] as const).map(category => {
+                  const fields = DETAIL_FIELDS.filter(f => f.category === category && visibleFields.has(f.key));
+                  if (fields.length === 0) return null;
                   return (
-                    <div className="mt-2 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-xs font-semibold text-amber-800 mb-1">PRÉ-NEGAÇÃO SUGERIDA:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {suggestions.map(s => (
-                          <Badge key={s.reason} variant="outline" className="text-[10px] sm:text-xs border-amber-400 text-amber-700 bg-amber-100">
-                            {s.label}
-                          </Badge>
-                        ))}
+                    <div key={category}>
+                      <div className="bg-muted/30 px-3 py-1.5">
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{CATEGORY_LABELS[category]}</p>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+                        {fields.map(field => {
+                          const value = getFieldValue(field, currentProperty);
+                          const isAlert = (field.key === 'deceased' && currentProperty.deceased) ||
+                                          (field.key === 'dnc_flag' && currentProperty.dnc_flag);
+                          return (
+                            <div key={field.key} className={`px-3 py-2 border-r border-b last:border-r-0 ${isAlert ? 'bg-red-50' : ''}`}>
+                              <p className="text-[10px] text-muted-foreground truncate">{field.label}</p>
+                              <p className={`text-xs font-medium truncate ${isAlert ? 'text-red-600 font-bold' : ''}`}>
+                                {value}
+                              </p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   );
-                })()}
-
-                {/* Property details */}
-                <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
-                  {currentProperty.property_type && (
-                    <Badge variant="secondary" className="text-[10px]">{currentProperty.property_type}</Badge>
-                  )}
-                  {currentProperty.year_built && (
-                    <Badge variant="secondary" className="text-[10px]">Construído: {currentProperty.year_built}</Badge>
-                  )}
-                  {currentProperty.square_feet && (
-                    <Badge variant="secondary" className="text-[10px]">{currentProperty.square_feet} sqft</Badge>
-                  )}
-                  {currentProperty.bedrooms && (
-                    <Badge variant="secondary" className="text-[10px]">{currentProperty.bedrooms} quartos</Badge>
-                  )}
-                  {currentProperty.bathrooms && (
-                    <Badge variant="secondary" className="text-[10px]">{currentProperty.bathrooms} banheiros</Badge>
-                  )}
-                  {currentProperty.batch_name && (
-                    <Badge variant="outline" className="text-[10px]">{currentProperty.batch_name}</Badge>
-                  )}
-                </div>
-                {/* External Links */}
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentProperty.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
-                  >
-                    <MapPin className="w-3 h-3" />
-                    Maps
-                  </a>
-                  <a
-                    href={`https://www.zillow.com/homes/${encodeURIComponent(currentProperty.address)}_rb/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
-                  >
-                    <span className="font-bold">Z</span>
-                    Zillow
-                  </a>
-                  <a
-                    href={`https://www.trulia.com/homes/${encodeURIComponent(currentProperty.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold hover:bg-green-100 transition-colors"
-                  >
-                    <span className="font-bold">T</span>
-                    Trulia
-                  </a>
-                  <a
-                    href={`https://www.redfin.com/search#query=${encodeURIComponent(currentProperty.address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold hover:bg-red-100 transition-colors"
-                  >
-                    <span className="font-bold">R</span>
-                    Redfin
-                  </a>
-                  <a
-                    href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(currentProperty.address.replace(/\s+/g, '-'))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors"
-                  >
-                    <span className="font-bold">Re</span>
-                    Realtor
-                  </a>
-                </div>
+                })}
               </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                <div className="bg-muted rounded-lg p-3 sm:p-4">
-                  <p className="text-[11px] sm:text-xs text-muted-foreground mb-1">Valor Estimado</p>
-                  <p className="text-base sm:text-xl font-bold">
-                    ${currentProperty.estimated_value?.toLocaleString() || "N/A"}
-                  </p>
-                </div>
-                <div className="bg-muted rounded-lg p-3 sm:p-4">
-                  <p className="text-[11px] sm:text-xs text-muted-foreground mb-1">Oferta</p>
-                  <p className="text-base sm:text-xl font-bold">
-                    ${currentProperty.cash_offer_amount?.toLocaleString() || "N/A"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Keyboard Shortcuts Help - hidden on mobile */}
-              <div className="hidden sm:block bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Keyboard className="h-4 w-4 text-blue-600" />
-                  <span className="font-semibold text-blue-900 text-sm">Atalhos de Teclado</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm text-blue-700">
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded text-xs">A</kbd>
-                    <span>Aprovar</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded text-xs">R</kbd>
-                    <span>Rejeitar</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded text-xs">→</kbd>
-                    <span>Próxima</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <kbd className="px-2 py-1 bg-white border rounded text-xs">←</kbd>
-                    <span>Anterior</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Inline Approve / Reject Buttons */}

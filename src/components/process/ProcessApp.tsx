@@ -1,18 +1,19 @@
+import { useState } from 'react';
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PROCESS_STEPS } from './processSteps';
-import { PropertiesStep } from './PropertiesStep';
 import { ReviewQueue } from '@/components/ReviewQueue';
 import { CompsStep } from './CompsStep';
 import { MAOCalculator } from './MAOCalculator';
+import { BatchSelector } from './BatchSelector';
+
 
 const STEP_PATH_TO_INDEX: Record<string, number> = {
   '': 0,
   'step-2': 1,
   'step-3': 2,
-  'step-4': 3,
 };
 
 const getCurrentStepIndex = (pathname: string): number => {
@@ -26,6 +27,7 @@ export const ProcessApp = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentIndex = getCurrentStepIndex(location.pathname);
+  const [selectedBatch, setSelectedBatch] = useState<string>('all');
 
   const goToPrevious = () => {
     if (currentIndex > 0) {
@@ -54,6 +56,9 @@ export const ProcessApp = () => {
             <span className="hidden sm:inline">Menu</span>
           </Button>
           <h1 className="text-base sm:text-lg font-semibold truncate">Processo de Investimento</h1>
+          <div className="ml-auto shrink-0">
+            <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
+          </div>
         </div>
       </header>
 
@@ -106,10 +111,9 @@ export const ProcessApp = () => {
       {/* Content - grows to fill, with padding for bottom nav */}
       <main className="flex-1 container mx-auto py-3 sm:py-6 pb-20 sm:pb-24">
         <Routes>
-          <Route path="/" element={<PropertiesStep />} />
-          <Route path="/step-2" element={<ReviewQueue />} />
-          <Route path="/step-3" element={<CompsStep />} />
-          <Route path="/step-4" element={<MAOCalculator />} />
+          <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
+          <Route path="/step-2" element={<CompsStep />} />
+          <Route path="/step-3" element={<MAOCalculator />} />
           <Route path="*" element={<Navigate to="/process" replace />} />
         </Routes>
       </main>

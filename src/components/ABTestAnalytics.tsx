@@ -90,8 +90,8 @@ export const ABTestAnalytics = () => {
 
     try {
       const [funnelResponse, winnerResponse] = await Promise.all([
-        supabase.from('ab_test_funnel').select('*'),
-        supabase.from('ab_test_winner').select('*'),
+        supabase.from('ab_test_funnel' as any).select('*'),
+        supabase.from('ab_test_winner' as any).select('*'),
       ]);
 
       if (funnelResponse.error || winnerResponse.error) {
@@ -107,7 +107,7 @@ export const ABTestAnalytics = () => {
         return;
       }
 
-      const normalizedFunnel: FunnelMetrics[] = (funnelResponse.data || []).map((row) => ({
+      const normalizedFunnel: FunnelMetrics[] = ((funnelResponse.data || []) as any[]).map((row: any) => ({
         variant: normalizeVariant(row.variant),
         page_views: toNumber(row.page_views),
         email_submits: toNumber(row.email_submits),
@@ -121,8 +121,8 @@ export const ABTestAnalytics = () => {
         phone_conversion_rate: toNumber(row.phone_conversion_rate),
       }));
 
-      const normalizedWinner: WinnerData[] = (winnerResponse.data || [])
-        .map((row) => ({
+      const normalizedWinner: WinnerData[] = ((winnerResponse.data || []) as any[])
+        .map((row: any) => ({
           variant: normalizeVariant(row.variant),
           visitors: toNumber(row.visitors),
           conversions: toNumber(row.conversions),

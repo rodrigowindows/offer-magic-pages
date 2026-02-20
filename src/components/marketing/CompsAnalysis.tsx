@@ -101,7 +101,11 @@ function normalizeDataSource(source?: string): 'attom' | 'zillow' | 'csv' | 'dem
 /**
  * Main CompsAnalysis Component
  */
-export const CompsAnalysis = () => {
+interface CompsAnalysisProps {
+  selectedBatch?: string;
+}
+
+export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
   const { toast } = useToast();
 
   // ========================================
@@ -436,10 +440,16 @@ export const CompsAnalysis = () => {
   const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (selectedBatch && selectedBatch !== 'all') {
+        query = query.eq('import_batch', selectedBatch);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProperties(data || []);
@@ -453,7 +463,7 @@ export const CompsAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, selectedBatch]);
 
   /**
    * Generate comparables for selected property
@@ -599,10 +609,10 @@ export const CompsAnalysis = () => {
               propertyId: property.id,
               updatedValues: {
                 estimated_value: updatedProperty?.estimated_value,
-                avm_min_value: updatedProperty?.avm_min_value,
-                avm_max_value: updatedProperty?.avm_max_value,
-                valuation_method: updatedProperty?.valuation_method,
-                valuation_confidence: updatedProperty?.valuation_confidence,
+                avm_min_value: (updatedProperty as any)?.avm_min_value,
+                avm_max_value: (updatedProperty as any)?.avm_max_value,
+                valuation_method: (updatedProperty as any)?.valuation_method,
+                valuation_confidence: (updatedProperty as any)?.valuation_confidence,
               }
             });
           }
