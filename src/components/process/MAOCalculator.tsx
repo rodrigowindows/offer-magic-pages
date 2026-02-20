@@ -127,7 +127,7 @@ export const MAOCalculator = () => {
       console.error('Error fetching properties:', error);
       toast({ title: 'Erro', description: error.message, variant: 'destructive' });
     } else {
-      setProperties((data as ApprovedProperty[]) || []);
+      setProperties((data as unknown as ApprovedProperty[]) || []);
     }
     setLoading(false);
   };

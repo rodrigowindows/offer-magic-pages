@@ -234,7 +234,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setProperties(data || []);
+      setProperties((data as unknown as QueueProperty[]) || []);
     } catch (error: any) {
       toast({
         title: "Erro ao carregar fila",
