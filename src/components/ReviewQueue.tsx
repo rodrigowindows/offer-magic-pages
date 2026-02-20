@@ -3,6 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useToast } from "@/hooks/use-toast";
@@ -15,21 +24,92 @@ import {
   Target,
   Keyboard,
   TrendingUp,
-  MapPin
+  MapPin,
+  ThumbsUp,
+  ThumbsDown,
+  Undo2,
 } from "lucide-react";
-import { PropertyApprovalDialog } from "./PropertyApprovalDialog";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
 import { EmptyState } from "./EmptyState";
+
+// Razões predefinidas para rejeição
+const REJECTION_REASONS = [
+  { value: "new-construction", label: "Casa Nova (menos de 20 anos)" },
+  { value: "recent-sale", label: "Recém Vendida (menos de 2 anos)" },
+  { value: "too-good-condition", label: "Casa em Bom Estado" },
+  { value: "multi-family", label: "Multi-Family" },
+  { value: "hoa-restrictions", label: "Propriedade com HOA" },
+  { value: "land", label: "Terreno (Land)" },
+  { value: "no-equity", label: "Low-Equity" },
+  { value: "agent-listed", label: "Anunciada por Corretor" },
+  { value: "commercial", label: "Imóvel Comercial" },
+  { value: "duplicate", label: "Duplicado" },
+  { value: "wrong-location", label: "Localização errada" },
+  { value: "other", label: "Outro motivo" },
+];
 
 interface QueueProperty {
   id: string;
   address: string;
+  city: string | null;
+  state: string | null;
   owner_name: string;
   property_image_url: string | null;
   estimated_value: number;
   cash_offer_amount: number;
   approval_status: string | null;
+  property_type: string | null;
+  year_built: number | null;
+  last_sale_date: string | null;
+  square_feet: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  lot_size: number | null;
+  batch_name: string | null;
 }
+
+// Pre-denial rules
+interface PreDenialSuggestion {
+  reason: string;
+  label: string;
+}
+
+const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestion[] => {
+  const suggestions: PreDenialSuggestion[] = [];
+  const currentYear = new Date().getFullYear();
+
+  // Casa nova (menos de 20 anos)
+  if (prop.year_built && (currentYear - prop.year_built) < 20) {
+    suggestions.push({ reason: 'new-construction', label: `Casa Nova (${prop.year_built})` });
+  }
+
+  // Recém vendida (menos de 2 anos)
+  if (prop.last_sale_date) {
+    const saleDate = new Date(prop.last_sale_date);
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+    if (saleDate > twoYearsAgo) {
+      suggestions.push({ reason: 'recent-sale', label: 'Recém Vendida (<2 anos)' });
+    }
+  }
+
+  // Multi-Family
+  if (prop.property_type?.toLowerCase().includes('multi')) {
+    suggestions.push({ reason: 'multi-family', label: 'Multi-Family' });
+  }
+
+  // Land
+  if (prop.property_type?.toLowerCase() === 'land' || prop.property_type?.toLowerCase() === 'vacant land') {
+    suggestions.push({ reason: 'land', label: 'Terreno (Land)' });
+  }
+
+  // Commercial
+  if (prop.property_type?.toLowerCase().includes('commercial') || prop.property_type?.toLowerCase().includes('comercial')) {
+    suggestions.push({ reason: 'commercial', label: 'Imóvel Comercial' });
+  }
+
+  return suggestions;
+};
 
 interface DailyStats {
   reviewed_today: number;
@@ -49,8 +129,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { user } = useCurrentUser();
+  const [isProcessing, setIsProcessing] = useState(false);
+  // Inline rejection state
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [rejectionNotes, setRejectionNotes] = useState("");
+  const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
 
   const currentProperty = properties[currentIndex];
@@ -64,46 +148,81 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, selectedBatch]);
 
-  // Keyboard shortcuts: A = approve, R = reject, arrows = navigate
+  // Reset reject form when changing property
+  useEffect(() => {
+    setShowRejectForm(false);
+    setSelectedReason("");
+    setRejectionNotes("");
+  }, [currentIndex]);
+
+  // Keyboard shortcuts: A = approve, R = reject, arrows = navigate, 1-9 = reasons, Enter = confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (isDialogOpen) return;
-      if (!currentProperty) return;
+      if (!currentProperty || isProcessing) return;
 
       switch (e.key) {
         case 'a':
         case 'A':
-          e.preventDefault();
-          setIsDialogOpen(true);
+          if (!showRejectForm) {
+            e.preventDefault();
+            handleApprove();
+          }
           break;
         case 'r':
         case 'R':
           e.preventDefault();
-          setIsDialogOpen(true);
+          setShowRejectForm(true);
           break;
         case 'ArrowRight':
-          e.preventDefault();
-          handleNext();
+          if (!showRejectForm) {
+            e.preventDefault();
+            handleNext();
+          }
           break;
         case 'ArrowLeft':
-          e.preventDefault();
-          handlePrevious();
+          if (!showRejectForm) {
+            e.preventDefault();
+            handlePrevious();
+          }
+          break;
+        case 'Escape':
+          if (showRejectForm) {
+            e.preventDefault();
+            setShowRejectForm(false);
+            setSelectedReason("");
+            setRejectionNotes("");
+          }
+          break;
+        case 'Enter':
+          if (showRejectForm && selectedReason) {
+            e.preventDefault();
+            handleReject();
+          }
+          break;
+        default:
+          // Number keys 1-9 for quick rejection reason selection
+          if (showRejectForm && e.key >= '1' && e.key <= '9') {
+            const index = parseInt(e.key) - 1;
+            if (index < REJECTION_REASONS.length) {
+              e.preventDefault();
+              setSelectedReason(REJECTION_REASONS[index].value);
+            }
+          }
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, properties.length, isDialogOpen, currentProperty]);
+  }, [currentIndex, properties.length, currentProperty, showRejectForm, selectedReason, isProcessing]);
 
   const fetchPendingProperties = async () => {
     try {
       setIsLoading(true);
       let query = supabase
         .from("properties")
-        .select("id, address, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status")
+        .select("id, address, city, state, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, last_sale_date, square_feet, bedrooms, bathrooms, lot_size, batch_name")
         .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(100);
@@ -206,16 +325,76 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     }
   };
 
-  const handleStatusChange = async () => {
+  const advanceAfterAction = async () => {
+    const prevLength = properties.length;
     await fetchPendingProperties();
     await fetchDailyStats();
+    // After refetch, the list shrinks by 1 (the approved/rejected item is gone)
+    // Keep index the same so we land on the next item naturally
+    setShowRejectForm(false);
+    setSelectedReason("");
+    setRejectionNotes("");
+  };
 
-    // Move to next property after approval/rejection
-    if (currentIndex < properties.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+  const handleApprove = async () => {
+    if (!userId || !userName || !currentProperty) return;
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .update({
+          approval_status: "approved",
+          approved_by: userId,
+          approved_by_name: userName,
+          approved_at: new Date().toISOString(),
+          rejection_reason: null,
+          rejection_notes: null,
+          updated_by: userId,
+          updated_by_name: userName,
+        } as any)
+        .eq("id", currentProperty.id);
+      if (error) throw error;
+      toast({
+        title: "Aprovado!",
+        description: currentProperty.address,
+      });
+      await advanceAfterAction();
+    } catch (error: any) {
+      toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
     }
+  };
 
-    setIsDialogOpen(false);
+  const handleReject = async () => {
+    if (!userId || !userName || !currentProperty || !selectedReason) return;
+    setIsProcessing(true);
+    try {
+      const { error } = await supabase
+        .from("properties")
+        .update({
+          approval_status: "rejected",
+          approved_by: userId,
+          approved_by_name: userName,
+          approved_at: new Date().toISOString(),
+          rejection_reason: selectedReason,
+          rejection_notes: rejectionNotes.trim() || null,
+          updated_by: userId,
+          updated_by_name: userName,
+        } as any)
+        .eq("id", currentProperty.id);
+      if (error) throw error;
+      const reasonLabel = REJECTION_REASONS.find(r => r.value === selectedReason)?.label;
+      toast({
+        title: "Rejeitado",
+        description: `${currentProperty.address} - ${reasonLabel}`,
+      });
+      await advanceAfterAction();
+    } catch (error: any) {
+      toast({ title: "Erro ao rejeitar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (isLoading) {
@@ -334,7 +513,50 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             <div className="space-y-3 sm:space-y-4">
               <div>
                 <h3 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2 line-clamp-2">{currentProperty.address}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {[currentProperty.city, currentProperty.state].filter(Boolean).join(', ')}
+                </p>
                 <p className="text-sm sm:text-base text-muted-foreground">Proprietário: {currentProperty.owner_name}</p>
+
+                {/* Pre-denial warnings */}
+                {(() => {
+                  const suggestions = getPreDenialSuggestions(currentProperty);
+                  if (suggestions.length === 0) return null;
+                  return (
+                    <div className="mt-2 p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-xs font-semibold text-amber-800 mb-1">PRÉ-NEGAÇÃO SUGERIDA:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {suggestions.map(s => (
+                          <Badge key={s.reason} variant="outline" className="text-[10px] sm:text-xs border-amber-400 text-amber-700 bg-amber-100">
+                            {s.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Property details */}
+                <div className="flex flex-wrap gap-2 mt-2 text-xs text-muted-foreground">
+                  {currentProperty.property_type && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.property_type}</Badge>
+                  )}
+                  {currentProperty.year_built && (
+                    <Badge variant="secondary" className="text-[10px]">Construído: {currentProperty.year_built}</Badge>
+                  )}
+                  {currentProperty.square_feet && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.square_feet} sqft</Badge>
+                  )}
+                  {currentProperty.bedrooms && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.bedrooms} quartos</Badge>
+                  )}
+                  {currentProperty.bathrooms && (
+                    <Badge variant="secondary" className="text-[10px]">{currentProperty.bathrooms} banheiros</Badge>
+                  )}
+                  {currentProperty.batch_name && (
+                    <Badge variant="outline" className="text-[10px]">{currentProperty.batch_name}</Badge>
+                  )}
+                </div>
                 {/* External Links */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   <a
@@ -428,54 +650,125 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-3 sm:pt-4 border-t gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrevious}
-              disabled={currentIndex === 0}
-              className="text-xs sm:text-sm"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Anterior</span>
-              <span className="sm:hidden">Ant.</span>
-            </Button>
+          {/* Inline Approve / Reject Buttons */}
+          <div className="pt-3 sm:pt-4 border-t space-y-3">
+            {!showRejectForm ? (
+              <>
+                {/* Main action row */}
+                <div className="flex gap-2 sm:gap-3">
+                  <Button
+                    onClick={handleApprove}
+                    disabled={isProcessing}
+                    className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-lg font-bold gap-2"
+                  >
+                    <ThumbsUp className="h-5 w-5 sm:h-6 sm:w-6" />
+                    {isProcessing ? "..." : "APROVAR"}
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">A</kbd>
+                  </Button>
+                  <Button
+                    onClick={() => setShowRejectForm(true)}
+                    disabled={isProcessing}
+                    variant="outline"
+                    className="flex-1 h-12 sm:h-14 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-sm sm:text-lg font-bold gap-2"
+                  >
+                    <ThumbsDown className="h-5 w-5 sm:h-6 sm:w-6" />
+                    REJEITAR
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-red-100 border-red-200 border rounded">R</kbd>
+                  </Button>
+                </div>
 
-            <Button
-              size="sm"
-              onClick={() => setIsDialogOpen(true)}
-              className="px-3 sm:px-8 text-xs sm:text-sm"
-            >
-              Revisar
-            </Button>
+                {/* Navigation */}
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePrevious}
+                    disabled={currentIndex === 0}
+                    className="text-xs text-muted-foreground"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleNext}
+                    disabled={currentIndex === properties.length - 1}
+                    className="text-xs text-muted-foreground"
+                  >
+                    Pular
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              /* Inline Rejection Form */
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-red-800">Motivo da Rejeição</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setShowRejectForm(false); setSelectedReason(""); setRejectionNotes(""); }}
+                    className="text-xs text-muted-foreground gap-1 h-7"
+                  >
+                    <Undo2 className="h-3 w-3" />
+                    Voltar
+                    <kbd className="px-1 py-0.5 text-[10px] bg-white border rounded ml-1">Esc</kbd>
+                  </Button>
+                </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNext}
-              disabled={currentIndex === properties.length - 1}
-              className="text-xs sm:text-sm"
-            >
-              <span className="hidden sm:inline">Próxima</span>
-              <span className="sm:hidden">Próx.</span>
-              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1 sm:ml-2" />
-            </Button>
+                {/* Quick reason buttons */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  {REJECTION_REASONS.map((reason, index) => (
+                    <button
+                      key={reason.value}
+                      onClick={() => setSelectedReason(reason.value)}
+                      className={`text-left px-2.5 py-2 rounded-md text-xs sm:text-sm border transition-colors ${
+                        selectedReason === reason.value
+                          ? 'bg-red-600 text-white border-red-600 font-semibold'
+                          : 'bg-white text-red-800 border-red-200 hover:bg-red-100'
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <kbd className={`px-1 py-0.5 text-[10px] rounded ${
+                          selectedReason === reason.value ? 'bg-red-800/40' : 'bg-red-100 border border-red-200'
+                        }`}>
+                          {index + 1 <= 9 ? index + 1 : ''}
+                        </kbd>
+                        {reason.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <Label className="text-xs text-red-800">Notas (opcional)</Label>
+                  <Textarea
+                    value={rejectionNotes}
+                    onChange={(e) => setRejectionNotes(e.target.value)}
+                    placeholder="Detalhes adicionais..."
+                    rows={2}
+                    className="mt-1 text-sm bg-white"
+                  />
+                </div>
+
+                {/* Confirm reject button */}
+                <Button
+                  onClick={handleReject}
+                  disabled={isProcessing || !selectedReason}
+                  className="w-full h-11 bg-red-600 hover:bg-red-700 text-white font-bold gap-2"
+                >
+                  <XCircle className="h-5 w-5" />
+                  {isProcessing ? "Rejeitando..." : "CONFIRMAR REJEIÇÃO"}
+                  <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-red-800/40 rounded">Enter</kbd>
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
-
-      {/* Approval Dialog */}
-      {currentProperty && (
-        <PropertyApprovalDialog
-          propertyId={currentProperty.id}
-          propertyAddress={currentProperty.address}
-          currentStatus={currentProperty.approval_status || undefined}
-          onStatusChange={handleStatusChange}
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-        />
-      )}
     </div>
   );
 };

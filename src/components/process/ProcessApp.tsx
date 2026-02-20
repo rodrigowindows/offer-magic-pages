@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 import { PROCESS_STEPS } from './processSteps';
 import { PropertiesStep } from './PropertiesStep';
 import { ReviewQueue } from '@/components/ReviewQueue';
-import { CompsAnalysis } from '@/components/marketing/CompsAnalysis';
-import { OfferCreationForm } from '@/components/OfferCreationForm';
+import { ManualCompsManager } from '@/components/ManualCompsManager';
+import { MAOCalculator } from './MAOCalculator';
 import { BatchSelector } from './BatchSelector';
 
 const STEP_PATH_TO_INDEX: Record<string, number> = {
@@ -114,8 +114,8 @@ export const ProcessApp = () => {
         <Routes>
           <Route path="/" element={<PropertiesStep selectedBatch={selectedBatch} />} />
           <Route path="/step-2" element={<ReviewQueue selectedBatch={selectedBatch} />} />
-          <Route path="/step-3" element={<CompsAnalysis selectedBatch={selectedBatch} />} />
-          <Route path="/step-4" element={<OfferCreationForm selectedBatch={selectedBatch} />} />
+          <Route path="/step-3" element={<ManualCompsManager />} />
+          <Route path="/step-4" element={<MAOCalculator />} />
           <Route path="*" element={<Navigate to="/process" replace />} />
         </Routes>
       </main>
