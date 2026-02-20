@@ -28,25 +28,9 @@ import {
   ThumbsUp,
   ThumbsDown,
   Undo2,
-  Phone,
-  Mail,
-  Calendar,
-  Home,
-  Ruler,
-  User,
-  AlertTriangle,
-  Star,
   ExternalLink,
-  BedDouble,
-  Bath,
-  LandPlot,
-  Building2,
-  PhoneOff,
   ChevronDown,
   ChevronUp,
-  Settings2,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
 import { EmptyState } from "./EmptyState";
@@ -67,66 +51,37 @@ const REJECTION_REASONS = [
   { value: "other", label: "Outro motivo" },
 ];
 
-// Configurable detail fields
-interface DetailField {
-  key: string;
+// Helper to build property detail rows - only shows fields with actual data
+interface DetailRow {
   label: string;
-  category: 'property' | 'owner' | 'financial' | 'status';
-  format?: (value: any, prop: QueueProperty) => string;
-  defaultVisible?: boolean;
+  value: string;
+  highlight?: boolean;
 }
 
-const DETAIL_FIELDS: DetailField[] = [
-  // Property
-  { key: 'property_type', label: 'Tipo', category: 'property', defaultVisible: true },
-  { key: 'year_built', label: 'Ano Construção', category: 'property', defaultVisible: true },
-  { key: 'bedrooms', label: 'Quartos', category: 'property', defaultVisible: true },
-  { key: 'bathrooms', label: 'Banheiros', category: 'property', defaultVisible: true },
-  { key: 'square_feet', label: 'Área (sqft)', category: 'property', defaultVisible: true, format: (v) => v ? v.toLocaleString() : '—' },
-  { key: 'lot_size', label: 'Lote (sqft)', category: 'property', defaultVisible: true, format: (v) => v ? v.toLocaleString() : '—' },
-  { key: 'neighborhood', label: 'Bairro', category: 'property', defaultVisible: false },
-  { key: 'county', label: 'Condado', category: 'property', defaultVisible: false },
-  { key: 'zip_code', label: 'CEP', category: 'property', defaultVisible: false },
-  { key: 'last_sale_date', label: 'Últ. Venda', category: 'property', defaultVisible: true, format: (v) => v ? new Date(v).toLocaleDateString('pt-BR') : '—' },
-  // Owner
-  { key: 'owner_name', label: 'Proprietário', category: 'owner', defaultVisible: true },
-  { key: 'age', label: 'Idade', category: 'owner', defaultVisible: true, format: (v) => v ? `${v} anos` : '—' },
-  { key: 'phone1', label: 'Telefone', category: 'owner', defaultVisible: true, format: (v, p) => v || p.owner_phone || '—' },
-  { key: 'phone1_type', label: 'Tipo Tel.', category: 'owner', defaultVisible: false },
-  { key: 'email1', label: 'Email', category: 'owner', defaultVisible: true },
-  { key: 'deceased', label: 'Falecido', category: 'owner', defaultVisible: true, format: (v) => v ? 'SIM' : 'Não' },
-  { key: 'dnc_flag', label: 'DNC', category: 'owner', defaultVisible: true, format: (v) => v ? 'SIM' : 'Não' },
+const buildPropertyDetails = (prop: QueueProperty): DetailRow[] => {
+  const rows: DetailRow[] = [];
+
+  // Property info
+  if (prop.property_type) rows.push({ label: 'Tipo', value: prop.property_type });
+  if (prop.year_built) rows.push({ label: 'Ano Construção', value: String(prop.year_built) });
+  if (prop.bedrooms) rows.push({ label: 'Quartos', value: String(prop.bedrooms) });
+  if (prop.bathrooms) rows.push({ label: 'Banheiros', value: String(prop.bathrooms) });
+  if (prop.square_feet) rows.push({ label: 'Área (sqft)', value: prop.square_feet.toLocaleString() });
+  if (prop.lot_size) rows.push({ label: 'Lote (sqft)', value: prop.lot_size.toLocaleString() });
+  if (prop.neighborhood) rows.push({ label: 'Bairro', value: prop.neighborhood });
+  if (prop.zip_code) rows.push({ label: 'CEP', value: prop.zip_code });
+
   // Financial
-  { key: 'estimated_value', label: 'Valor Estimado', category: 'financial', defaultVisible: true, format: (v) => v ? `$${v.toLocaleString()}` : '—' },
-  { key: 'cash_offer_amount', label: 'Oferta', category: 'financial', defaultVisible: true, format: (v) => v ? `$${v.toLocaleString()}` : '—' },
-  { key: 'comparative_price', label: 'Preço Comp.', category: 'financial', defaultVisible: true, format: (v) => v ? `$${v.toLocaleString()}` : '—' },
-  // Status
-  { key: 'lead_score', label: 'Score', category: 'status', defaultVisible: false },
-  { key: 'tags', label: 'Tags', category: 'status', defaultVisible: false },
-  { key: 'airbnb_eligible', label: 'Airbnb', category: 'status', defaultVisible: false, format: (v) => v ? 'Sim' : 'Não' },
-  { key: 'focar', label: 'Focar', category: 'status', defaultVisible: false },
-  { key: 'batch_name', label: 'Batch', category: 'status', defaultVisible: false },
-];
+  if (prop.estimated_value) rows.push({ label: 'Valor Estimado', value: `$${prop.estimated_value.toLocaleString()}` });
+  if (prop.cash_offer_amount) rows.push({ label: 'Oferta', value: `$${prop.cash_offer_amount.toLocaleString()}` });
 
-const CATEGORY_LABELS: Record<string, string> = {
-  property: 'Imóvel',
-  owner: 'Proprietário',
-  financial: 'Financeiro',
-  status: 'Status',
-};
+  // Owner / contact
+  if (prop.owner_name) rows.push({ label: 'Proprietário', value: prop.owner_name });
+  if (prop.owner_phone) rows.push({ label: 'Telefone', value: prop.owner_phone });
+  if (prop.lead_score) rows.push({ label: 'Lead Score', value: String(prop.lead_score), highlight: true });
+  if (prop.focar) rows.push({ label: 'Focar', value: prop.focar, highlight: prop.focar === 'SIM' });
 
-const STORAGE_KEY = 'review-queue-visible-fields';
-
-const loadVisibleFields = (): Set<string> => {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return new Set(JSON.parse(saved));
-  } catch {}
-  return new Set(DETAIL_FIELDS.filter(f => f.defaultVisible).map(f => f.key));
-};
-
-const saveVisibleFields = (fields: Set<string>) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...fields]));
+  return rows;
 };
 
 interface QueueProperty {
@@ -135,35 +90,23 @@ interface QueueProperty {
   city: string | null;
   state: string | null;
   zip_code: string | null;
-  county: string | null;
   neighborhood: string | null;
   owner_name: string;
   property_image_url: string | null;
   estimated_value: number;
   cash_offer_amount: number;
-  comparative_price: number | null;
   approval_status: string | null;
   property_type: string | null;
   year_built: number | null;
-  last_sale_date: string | null;
   square_feet: number | null;
   bedrooms: number | null;
   bathrooms: number | null;
   lot_size: number | null;
-  batch_name: string | null;
   // Owner / contact
-  age: number | null;
-  deceased: boolean | null;
   owner_phone: string | null;
-  phone1: string | null;
-  phone1_type: string | null;
-  email1: string | null;
-  dnc_flag: boolean | null;
   // Extra
   lead_score: number | null;
-  tags: string | null;
   zillow_url: string | null;
-  airbnb_eligible: boolean | null;
   focar: string | null;
 }
 
@@ -180,16 +123,6 @@ const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestion[] => 
   // Casa nova (menos de 20 anos)
   if (prop.year_built && (currentYear - prop.year_built) < 20) {
     suggestions.push({ reason: 'new-construction', label: `Casa Nova (${prop.year_built})` });
-  }
-
-  // Recém vendida (menos de 2 anos)
-  if (prop.last_sale_date) {
-    const saleDate = new Date(prop.last_sale_date);
-    const twoYearsAgo = new Date();
-    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    if (saleDate > twoYearsAgo) {
-      suggestions.push({ reason: 'recent-sale', label: 'Recém Vendida (<2 anos)' });
-    }
   }
 
   // Multi-Family
@@ -229,9 +162,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  // Detail fields visibility
-  const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
-  const [showFieldSettings, setShowFieldSettings] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   // Inline rejection state
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -242,23 +172,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   const currentProperty = properties[currentIndex];
   const progress = properties.length > 0 ? ((currentIndex + 1) / properties.length) * 100 : 0;
-
-  const toggleField = (key: string) => {
-    setVisibleFields(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      saveVisibleFields(next);
-      return next;
-    });
-  };
-
-  const getFieldValue = (field: DetailField, prop: QueueProperty): string => {
-    const raw = (prop as any)[field.key];
-    if (field.format) return field.format(raw, prop);
-    if (raw == null || raw === '') return '—';
-    return String(raw);
-  };
 
   useEffect(() => {
     fetchPendingProperties();
@@ -342,7 +255,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       setIsLoading(true);
       let query = supabase
         .from("properties")
-        .select("id, address, city, state, zip_code, county, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, comparative_price, approval_status, property_type, year_built, last_sale_date, square_feet, bedrooms, bathrooms, lot_size, batch_name, age, deceased, owner_phone, phone1, phone1_type, email1, dnc_flag, lead_score, tags, zillow_url, airbnb_eligible, focar")
+        .select("id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar")
         .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(100);
@@ -636,7 +549,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 <h3 className="text-lg sm:text-2xl font-bold mb-1 line-clamp-2">{currentProperty.address}</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   {[currentProperty.city, currentProperty.state, currentProperty.zip_code].filter(Boolean).join(', ')}
-                  {currentProperty.county && <span className="ml-1 text-muted-foreground/70">({currentProperty.county})</span>}
                 </p>
               </div>
 
@@ -658,18 +570,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 );
               })()}
 
-              {/* Alert flags */}
-              {(currentProperty.deceased || currentProperty.dnc_flag) && (
-                <div className="flex flex-wrap gap-1.5">
-                  {currentProperty.deceased && (
-                    <Badge variant="destructive" className="text-[10px] gap-1"><AlertTriangle className="h-3 w-3" />Falecido</Badge>
-                  )}
-                  {currentProperty.dnc_flag && (
-                    <Badge variant="destructive" className="text-[10px] gap-1"><PhoneOff className="h-3 w-3" />DNC</Badge>
-                  )}
-                </div>
-              )}
-
               {/* External Links */}
               <div className="flex flex-wrap gap-1.5">
                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentProperty.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"><MapPin className="w-3 h-3" />Maps</a>
@@ -690,89 +590,37 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             </div>
           </div>
 
-          {/* Configurable Details Table */}
-          <div className="border rounded-lg overflow-hidden">
-            {/* Table Header with toggle + settings */}
-            <div className="flex items-center justify-between bg-muted/50 px-3 py-2 border-b">
-              <button
-                onClick={() => setDetailsExpanded(!detailsExpanded)}
-                className="flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
-              >
-                {detailsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                Detalhes da Propriedade
-                <Badge variant="secondary" className="text-[10px]">{visibleFields.size} campos</Badge>
-              </button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 gap-1.5 text-xs text-muted-foreground"
-                onClick={() => setShowFieldSettings(!showFieldSettings)}
-              >
-                <Settings2 className="h-3.5 w-3.5" />
-                Colunas
-              </Button>
-            </div>
-
-            {/* Field Settings Panel */}
-            {showFieldSettings && (
-              <div className="bg-muted/30 border-b px-3 py-2.5 space-y-2">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Selecione os campos visíveis:</p>
-                {(['property', 'owner', 'financial', 'status'] as const).map(category => (
-                  <div key={category}>
-                    <p className="text-[10px] font-semibold text-muted-foreground mb-1">{CATEGORY_LABELS[category]}</p>
-                    <div className="flex flex-wrap gap-1">
-                      {DETAIL_FIELDS.filter(f => f.category === category).map(field => (
-                        <button
-                          key={field.key}
-                          onClick={() => toggleField(field.key)}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-colors ${
-                            visibleFields.has(field.key)
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-background text-muted-foreground border-border hover:bg-accent'
-                          }`}
-                        >
-                          {visibleFields.has(field.key) ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                          {field.label}
-                        </button>
-                      ))}
-                    </div>
+          {/* Property Details - only fields with actual data */}
+          {(() => {
+            const details = buildPropertyDetails(currentProperty);
+            if (details.length === 0) return null;
+            return (
+              <div className="border rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setDetailsExpanded(!detailsExpanded)}
+                  className="w-full flex items-center justify-between bg-muted/50 px-3 py-2 hover:bg-muted/70 transition-colors"
+                >
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    {detailsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    Detalhes da Propriedade
+                    <Badge variant="secondary" className="text-[10px]">{details.length} campos</Badge>
+                  </span>
+                </button>
+                {detailsExpanded && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+                    {details.map((row) => (
+                      <div key={row.label} className={`px-3 py-2 border-t border-r ${row.highlight ? 'bg-emerald-50' : ''}`}>
+                        <p className="text-[10px] text-muted-foreground">{row.label}</p>
+                        <p className={`text-xs font-semibold truncate ${row.highlight ? 'text-emerald-700' : ''}`}>
+                          {row.value}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-
-            {/* Detail Table */}
-            {detailsExpanded && (
-              <div className="divide-y">
-                {(['property', 'owner', 'financial', 'status'] as const).map(category => {
-                  const fields = DETAIL_FIELDS.filter(f => f.category === category && visibleFields.has(f.key));
-                  if (fields.length === 0) return null;
-                  return (
-                    <div key={category}>
-                      <div className="bg-muted/30 px-3 py-1.5">
-                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{CATEGORY_LABELS[category]}</p>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-                        {fields.map(field => {
-                          const value = getFieldValue(field, currentProperty);
-                          const isAlert = (field.key === 'deceased' && currentProperty.deceased) ||
-                                          (field.key === 'dnc_flag' && currentProperty.dnc_flag);
-                          return (
-                            <div key={field.key} className={`px-3 py-2 border-r border-b last:border-r-0 ${isAlert ? 'bg-red-50' : ''}`}>
-                              <p className="text-[10px] text-muted-foreground truncate">{field.label}</p>
-                              <p className={`text-xs font-medium truncate ${isAlert ? 'text-red-600 font-bold' : ''}`}>
-                                {value}
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Inline Approve / Reject Buttons */}
           <div className="pt-3 sm:pt-4 border-t space-y-3">
