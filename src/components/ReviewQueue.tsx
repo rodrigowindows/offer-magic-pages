@@ -266,11 +266,17 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       const approved_today = userReviews?.filter(p => p.approval_status === "approved").length || 0;
       const rejected_today = userReviews?.filter(p => p.approval_status === "rejected").length || 0;
 
-      // Get total pending
-      const { count: totalPending, error: countError } = await supabase
+      // Get total pending (filtered by batch if selected)
+      let pendingQuery = supabase
         .from("properties")
         .select("*", { count: "exact", head: true })
         .or("approval_status.is.null,approval_status.eq.pending");
+
+      if (selectedBatch && selectedBatch !== 'all') {
+        pendingQuery = pendingQuery.eq('import_batch', selectedBatch);
+      }
+
+      const { count: totalPending, error: countError } = await pendingQuery;
 
       if (countError) throw countError;
 
