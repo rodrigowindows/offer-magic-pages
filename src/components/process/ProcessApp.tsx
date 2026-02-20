@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { PROCESS_STEPS } from './processSteps';
 import { PropertiesStep } from './PropertiesStep';
 import { ReviewQueue } from '@/components/ReviewQueue';
-import { ManualCompsManager } from '@/components/ManualCompsManager';
+import { CompsStep } from './CompsStep';
 import { MAOCalculator } from './MAOCalculator';
 
 const STEP_PATH_TO_INDEX: Record<string, number> = {
@@ -108,7 +108,7 @@ export const ProcessApp = () => {
         <Routes>
           <Route path="/" element={<PropertiesStep />} />
           <Route path="/step-2" element={<ReviewQueue />} />
-          <Route path="/step-3" element={<ManualCompsManager />} />
+          <Route path="/step-3" element={<CompsStep />} />
           <Route path="/step-4" element={<MAOCalculator />} />
           <Route path="*" element={<Navigate to="/process" replace />} />
         </Routes>

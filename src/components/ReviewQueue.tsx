@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -130,6 +131,9 @@ export const ReviewQueue = () => {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [rejectionNotes, setRejectionNotes] = useState("");
+  // Quick offer on approve
+  const [showOfferInput, setShowOfferInput] = useState(false);
+  const [quickOfferAmount, setQuickOfferAmount] = useState("");
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
 
@@ -144,11 +148,13 @@ export const ReviewQueue = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Reset reject form when changing property
+  // Reset forms when changing property
   useEffect(() => {
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
+    setShowOfferInput(false);
+    setQuickOfferAmount("");
   }, [currentIndex]);
 
   // Keyboard shortcuts: A = approve, R = reject, arrows = navigate, 1-9 = reasons, Enter = confirm
@@ -160,9 +166,13 @@ export const ReviewQueue = () => {
       switch (e.key) {
         case 'a':
         case 'A':
-          if (!showRejectForm) {
+          if (!showRejectForm && !showOfferInput) {
             e.preventDefault();
-            handleApprove();
+            setShowOfferInput(true);
+            // Pre-fill with cash_offer_amount if available
+            if (currentProperty.cash_offer_amount) {
+              setQuickOfferAmount(currentProperty.cash_offer_amount.toString());
+            }
           }
           break;
         case 'r':
@@ -171,13 +181,13 @@ export const ReviewQueue = () => {
           setShowRejectForm(true);
           break;
         case 'ArrowRight':
-          if (!showRejectForm) {
+          if (!showRejectForm && !showOfferInput) {
             e.preventDefault();
             handleNext();
           }
           break;
         case 'ArrowLeft':
-          if (!showRejectForm) {
+          if (!showRejectForm && !showOfferInput) {
             e.preventDefault();
             handlePrevious();
           }
@@ -189,11 +199,20 @@ export const ReviewQueue = () => {
             setSelectedReason("");
             setRejectionNotes("");
           }
+          if (showOfferInput) {
+            e.preventDefault();
+            setShowOfferInput(false);
+            setQuickOfferAmount("");
+          }
           break;
         case 'Enter':
           if (showRejectForm && selectedReason) {
             e.preventDefault();
             handleReject();
+          }
+          if (showOfferInput) {
+            e.preventDefault();
+            handleApproveWithOffer();
           }
           break;
         default:
@@ -211,7 +230,7 @@ export const ReviewQueue = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, properties.length, currentProperty, showRejectForm, selectedReason, isProcessing]);
+  }, [currentIndex, properties.length, currentProperty, showRejectForm, showOfferInput, selectedReason, isProcessing]);
 
   const fetchPendingProperties = async () => {
     try {
@@ -316,14 +335,13 @@ export const ReviewQueue = () => {
   };
 
   const advanceAfterAction = async () => {
-    const prevLength = properties.length;
     await fetchPendingProperties();
     await fetchDailyStats();
-    // After refetch, the list shrinks by 1 (the approved/rejected item is gone)
-    // Keep index the same so we land on the next item naturally
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
+    setShowOfferInput(false);
+    setQuickOfferAmount("");
   };
 
   const handleApprove = async () => {
@@ -347,6 +365,41 @@ export const ReviewQueue = () => {
       toast({
         title: "Aprovado!",
         description: currentProperty.address,
+      });
+      await advanceAfterAction();
+    } catch (error: any) {
+      toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleApproveWithOffer = async () => {
+    if (!userId || !userName || !currentProperty) return;
+    setIsProcessing(true);
+    try {
+      const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
+      const updateData: any = {
+        approval_status: "approved",
+        approved_by: userId,
+        approved_by_name: userName,
+        approved_at: new Date().toISOString(),
+        rejection_reason: null,
+        rejection_notes: null,
+        updated_by: userId,
+        updated_by_name: userName,
+      };
+      if (offerValue && offerValue > 0) {
+        updateData.cash_offer_amount = offerValue;
+      }
+      const { error } = await supabase
+        .from("properties")
+        .update(updateData)
+        .eq("id", currentProperty.id);
+      if (error) throw error;
+      toast({
+        title: "Aprovado!",
+        description: `${currentProperty.address}${offerValue ? ` - Oferta: $${offerValue.toLocaleString()}` : ''}`,
       });
       await advanceAfterAction();
     } catch (error: any) {
@@ -642,12 +695,82 @@ export const ReviewQueue = () => {
 
           {/* Inline Approve / Reject Buttons */}
           <div className="pt-3 sm:pt-4 border-t space-y-3">
-            {!showRejectForm ? (
+            {showOfferInput ? (
+              /* Offer Input before Approve */
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-green-800">Definir Valor da Oferta (opcional)</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setShowOfferInput(false); setQuickOfferAmount(""); }}
+                    className="text-xs text-muted-foreground gap-1 h-7"
+                  >
+                    <Undo2 className="h-3 w-3" />
+                    Voltar
+                    <kbd className="px-1 py-0.5 text-[10px] bg-white border rounded ml-1">Esc</kbd>
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-2.5 text-lg font-bold text-green-700">$</span>
+                    <Input
+                      type="number"
+                      placeholder={currentProperty.estimated_value ? `Sugestao: ${Math.round(currentProperty.estimated_value * 0.7).toLocaleString()}` : "Ex: 150000"}
+                      value={quickOfferAmount}
+                      onChange={(e) => setQuickOfferAmount(e.target.value)}
+                      className="pl-8 h-12 text-lg font-bold border-green-300 focus:border-green-500"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Quick percentage buttons */}
+                {currentProperty.estimated_value && currentProperty.estimated_value > 0 && (
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[60, 65, 70, 75, 80].map(pct => {
+                      const val = Math.round(currentProperty.estimated_value * (pct / 100));
+                      return (
+                        <button
+                          key={pct}
+                          onClick={() => setQuickOfferAmount(val.toString())}
+                          className={`px-2.5 py-1.5 rounded-md text-xs border transition-colors ${
+                            quickOfferAmount === val.toString()
+                              ? 'bg-green-600 text-white border-green-600 font-bold'
+                              : 'bg-white text-green-800 border-green-200 hover:bg-green-100'
+                          }`}
+                        >
+                          {pct}% = ${val.toLocaleString()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleApproveWithOffer}
+                    disabled={isProcessing}
+                    className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold gap-2"
+                  >
+                    <ThumbsUp className="h-5 w-5" />
+                    {isProcessing ? "..." : quickOfferAmount ? `APROVAR ($${Number(quickOfferAmount).toLocaleString()})` : "APROVAR SEM OFERTA"}
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">Enter</kbd>
+                  </Button>
+                </div>
+              </div>
+            ) : !showRejectForm ? (
               <>
                 {/* Main action row */}
                 <div className="flex gap-2 sm:gap-3">
                   <Button
-                    onClick={handleApprove}
+                    onClick={() => {
+                      setShowOfferInput(true);
+                      if (currentProperty.cash_offer_amount) {
+                        setQuickOfferAmount(currentProperty.cash_offer_amount.toString());
+                      }
+                    }}
                     disabled={isProcessing}
                     className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-lg font-bold gap-2"
                   >
