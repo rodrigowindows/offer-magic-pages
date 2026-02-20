@@ -120,7 +120,11 @@ interface DailyStats {
   total_users: number;
 }
 
-export const ReviewQueue = () => {
+interface ReviewQueueProps {
+  selectedBatch?: string;
+}
+
+export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [properties, setProperties] = useState<QueueProperty[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -142,7 +146,7 @@ export const ReviewQueue = () => {
       fetchDailyStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, selectedBatch]);
 
   // Reset reject form when changing property
   useEffect(() => {
@@ -216,12 +220,18 @@ export const ReviewQueue = () => {
   const fetchPendingProperties = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from("properties")
         .select("id, address, city, state, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, last_sale_date, square_feet, bedrooms, bathrooms, lot_size, batch_name")
         .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(100);
+
+      if (selectedBatch && selectedBatch !== 'all') {
+        query = query.eq('import_batch', selectedBatch);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProperties(data || []);

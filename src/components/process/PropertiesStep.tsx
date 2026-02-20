@@ -59,7 +59,11 @@ const approvalColor = (status: string | null) => {
   }
 };
 
-export const PropertiesStep = () => {
+interface PropertiesStepProps {
+  selectedBatch?: string;
+}
+
+export const PropertiesStep = ({ selectedBatch }: PropertiesStepProps) => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
@@ -128,6 +132,10 @@ export const PropertiesStep = () => {
       }
     }
 
+    if (selectedBatch && selectedBatch !== 'all') {
+      query = query.eq('import_batch', selectedBatch);
+    }
+
     if (searchTerm.trim()) {
       query = query.ilike('address', `%${searchTerm.trim()}%`);
     }
@@ -160,7 +168,7 @@ export const PropertiesStep = () => {
 
   useEffect(() => {
     fetchProperties();
-  }, [filter, filterCity, filterState, filterBatch]);
+  }, [filter, selectedBatch, filterCity, filterState, filterBatch]);
 
   const handleSearch = () => {
     fetchProperties();

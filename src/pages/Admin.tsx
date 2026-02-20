@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ABTestAnalytics } from "@/components/ABTestAnalytics";
 import { useNavigate } from "react-router-dom";
@@ -1099,6 +1099,19 @@ const Admin = () => {
     setAdvancedFilters({});
   };
 
+  // Compute header title from batch names
+  const headerTitle = useMemo(() => {
+    if (advancedFilters.importBatch?.length) {
+      return advancedFilters.importBatch.length === 1
+        ? advancedFilters.importBatch[0]
+        : `${advancedFilters.importBatch.length} Batches`;
+    }
+    const batches = [...new Set(properties.map(p => p.import_batch).filter(Boolean))];
+    if (batches.length === 1) return batches[0]!;
+    if (batches.length > 1) return `${batches.length} Batches`;
+    return "Properties";
+  }, [properties, advancedFilters.importBatch]);
+
   // Generate search suggestions from properties
   const searchSuggestions = Array.from(new Set([
     ...properties.map(p => ({ type: 'address' as const, value: p.address })),
@@ -1117,7 +1130,7 @@ const Admin = () => {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <h1 className="text-lg sm:text-2xl font-semibold text-gray-900 tracking-tight truncate">
-                Orlando Properties
+                {headerTitle}
               </h1>
               <Badge variant="secondary" className="text-xs font-medium">
                 {properties.length} total
