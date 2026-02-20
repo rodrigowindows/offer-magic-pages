@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ImageIcon, ZoomIn } from "lucide-react";
+import { ImageIcon, ZoomIn, Loader2 } from "lucide-react";
 
 interface PropertyImageDisplayProps {
   imageUrl?: string | null;
@@ -18,6 +18,13 @@ export const PropertyImageDisplay = ({
 }: PropertyImageDisplayProps) => {
   const [isZoomed, setIsZoomed] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+
+  // Reset loading/error state when imageUrl changes
+  useEffect(() => {
+    setHasError(false);
+    setIsImageLoading(true);
+  }, [imageUrl]);
 
   if (!imageUrl || hasError) {
     return (
@@ -33,13 +40,20 @@ export const PropertyImageDisplay = ({
   return (
     <>
       <div className={`relative overflow-hidden group ${className}`}>
+        {/* Loading spinner */}
+        {isImageLoading && (
+          <div className="absolute inset-0 bg-muted rounded-lg flex items-center justify-center z-10">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
         {/* Image with scale animation on hover */}
         <img
+          key={imageUrl}
           src={imageUrl}
           alt={address}
-          loading="lazy"
-          className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
-          onError={() => setHasError(true)}
+          className={`w-full h-full object-cover rounded-lg transition-all duration-300 group-hover:scale-105 ${isImageLoading ? "opacity-0" : "opacity-100"}`}
+          onLoad={() => setIsImageLoading(false)}
+          onError={() => { setHasError(true); setIsImageLoading(false); }}
         />
 
         {/* Subtle gradient overlay */}
