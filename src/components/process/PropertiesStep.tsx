@@ -149,10 +149,10 @@ export const PropertiesStep = ({ selectedBatch }: PropertiesStepProps) => {
     }
 
     if (filterBatch !== 'all') {
-      query = query.eq('batch_name', filterBatch);
+      query = query.eq('import_batch', filterBatch);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await (query as any);
 
     if (error) {
       console.error('Error fetching properties:', error);
@@ -464,10 +464,7 @@ export const PropertiesStep = ({ selectedBatch }: PropertiesStepProps) => {
             </div>
 
             {/* CSV Importer */}
-            <CSVImporter
-              batchName={batchName}
-              onImportComplete={handleImportComplete}
-            />
+            <CSVImporter />
           </div>
         </DialogContent>
       </Dialog>

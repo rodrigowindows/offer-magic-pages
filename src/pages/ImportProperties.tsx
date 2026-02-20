@@ -38,7 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
+import { Badge } from "@/components/ui/badge";
 interface CSVPreviewRow {
   [key: string]: string;
 }

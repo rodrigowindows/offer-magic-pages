@@ -22,7 +22,7 @@ export const StepPlaceholder = ({ step }: StepPlaceholderProps) => {
           Conteúdo será migrado aqui.
         </p>
         <p className="text-xs text-muted-foreground mt-2">
-          Componente futuro: {step.futureComponent}
+          Componente futuro: Passo {step.number}
         </p>
       </Card>
     </div>

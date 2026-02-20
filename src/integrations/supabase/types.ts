@@ -796,6 +796,9 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           approved_by_name: string | null
+          arv: number | null
+          avg_price_per_sqft: number | null
+          batch_name: string | null
           bathrooms: number | null
           bedrooms: number | null
           card_sent: boolean
@@ -810,6 +813,7 @@ export type Database = {
           county: string | null
           created_at: string
           deceased: boolean | null
+          decision_date: string | null
           dnc_flag: boolean | null
           dnc_litigator_scrub: string | null
           email_sent: boolean
@@ -835,6 +839,8 @@ export type Database = {
           input_property_state: string | null
           input_property_zip: string | null
           last_contact_date: string | null
+          last_sale_date: string | null
+          last_sale_price: number | null
           latitude: number | null
           lead_captured: boolean | null
           lead_captured_at: string | null
@@ -843,6 +849,7 @@ export type Database = {
           letter_sent: boolean
           longitude: number | null
           lot_size: number | null
+          mao: number | null
           matched_first_name: string | null
           matched_last_name: string | null
           meeting_scheduled: boolean
@@ -1041,6 +1048,7 @@ export type Database = {
           phone6_type: string | null
           phone7: string | null
           phone7_type: string | null
+          pool: boolean | null
           property_image_url: string | null
           property_type: string | null
           rejection_notes: string | null
@@ -1105,7 +1113,11 @@ export type Database = {
           relative5_phone4_type: string | null
           relative5_phone5: string | null
           relative5_phone5_type: string | null
+          renovation_pct: number | null
+          renovation_type: string | null
+          renovation_value: number | null
           resultcode: string | null
+          reviewed_by: string | null
           slug: string
           sms_sent: boolean
           square_feet: number | null
@@ -1115,6 +1127,8 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           updated_by_name: string | null
+          wholesale_pct: number | null
+          wholesale_value: number | null
           year_built: number | null
           zillow_url: string | null
           zip_code: string
@@ -1131,6 +1145,9 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           approved_by_name?: string | null
+          arv?: number | null
+          avg_price_per_sqft?: number | null
+          batch_name?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           card_sent?: boolean
@@ -1145,6 +1162,7 @@ export type Database = {
           county?: string | null
           created_at?: string
           deceased?: boolean | null
+          decision_date?: string | null
           dnc_flag?: boolean | null
           dnc_litigator_scrub?: string | null
           email_sent?: boolean
@@ -1170,6 +1188,8 @@ export type Database = {
           input_property_state?: string | null
           input_property_zip?: string | null
           last_contact_date?: string | null
+          last_sale_date?: string | null
+          last_sale_price?: number | null
           latitude?: number | null
           lead_captured?: boolean | null
           lead_captured_at?: string | null
@@ -1178,6 +1198,7 @@ export type Database = {
           letter_sent?: boolean
           longitude?: number | null
           lot_size?: number | null
+          mao?: number | null
           matched_first_name?: string | null
           matched_last_name?: string | null
           meeting_scheduled?: boolean
@@ -1376,6 +1397,7 @@ export type Database = {
           phone6_type?: string | null
           phone7?: string | null
           phone7_type?: string | null
+          pool?: boolean | null
           property_image_url?: string | null
           property_type?: string | null
           rejection_notes?: string | null
@@ -1440,7 +1462,11 @@ export type Database = {
           relative5_phone4_type?: string | null
           relative5_phone5?: string | null
           relative5_phone5_type?: string | null
+          renovation_pct?: number | null
+          renovation_type?: string | null
+          renovation_value?: number | null
           resultcode?: string | null
+          reviewed_by?: string | null
           slug: string
           sms_sent?: boolean
           square_feet?: number | null
@@ -1450,6 +1476,8 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string | null
+          wholesale_pct?: number | null
+          wholesale_value?: number | null
           year_built?: number | null
           zillow_url?: string | null
           zip_code: string
@@ -1466,6 +1494,9 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           approved_by_name?: string | null
+          arv?: number | null
+          avg_price_per_sqft?: number | null
+          batch_name?: string | null
           bathrooms?: number | null
           bedrooms?: number | null
           card_sent?: boolean
@@ -1480,6 +1511,7 @@ export type Database = {
           county?: string | null
           created_at?: string
           deceased?: boolean | null
+          decision_date?: string | null
           dnc_flag?: boolean | null
           dnc_litigator_scrub?: string | null
           email_sent?: boolean
@@ -1505,6 +1537,8 @@ export type Database = {
           input_property_state?: string | null
           input_property_zip?: string | null
           last_contact_date?: string | null
+          last_sale_date?: string | null
+          last_sale_price?: number | null
           latitude?: number | null
           lead_captured?: boolean | null
           lead_captured_at?: string | null
@@ -1513,6 +1547,7 @@ export type Database = {
           letter_sent?: boolean
           longitude?: number | null
           lot_size?: number | null
+          mao?: number | null
           matched_first_name?: string | null
           matched_last_name?: string | null
           meeting_scheduled?: boolean
@@ -1711,6 +1746,7 @@ export type Database = {
           phone6_type?: string | null
           phone7?: string | null
           phone7_type?: string | null
+          pool?: boolean | null
           property_image_url?: string | null
           property_type?: string | null
           rejection_notes?: string | null
@@ -1775,7 +1811,11 @@ export type Database = {
           relative5_phone4_type?: string | null
           relative5_phone5?: string | null
           relative5_phone5_type?: string | null
+          renovation_pct?: number | null
+          renovation_type?: string | null
+          renovation_value?: number | null
           resultcode?: string | null
+          reviewed_by?: string | null
           slug?: string
           sms_sent?: boolean
           square_feet?: number | null
@@ -1785,6 +1825,8 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string | null
+          wholesale_pct?: number | null
+          wholesale_value?: number | null
           year_built?: number | null
           zillow_url?: string | null
           zip_code?: string
