@@ -1,12 +1,11 @@
 import {
-  Database,
   BarChart3,
   GitCompareArrows,
   DollarSign,
 } from 'lucide-react';
 
 export interface ProcessStep {
-  number: 1 | 2 | 3 | 4;
+  number: 1 | 2 | 3;
   title: string;
   path: string;
   fullPath: string;
@@ -17,33 +16,25 @@ export interface ProcessStep {
 export const PROCESS_STEPS: ProcessStep[] = [
   {
     number: 1,
-    title: 'Base de Imóveis',
+    title: 'Análise',
     path: '',
     fullPath: '/process',
-    icon: Database,
-    description: 'Importar e gerenciar propriedades por base',
-  },
-  {
-    number: 2,
-    title: 'Análise',
-    path: 'step-2',
-    fullPath: '/process/step-2',
     icon: BarChart3,
     description: 'Revisar, aprovar ou negar propriedades',
   },
   {
-    number: 3,
+    number: 2,
     title: 'Comparativos',
-    path: 'step-3',
-    fullPath: '/process/step-3',
+    path: 'step-2',
+    fullPath: '/process/step-2',
     icon: GitCompareArrows,
     description: 'Inserir comps e calcular preço médio/sqft',
   },
   {
-    number: 4,
+    number: 3,
     title: 'Oferta MAO',
-    path: 'step-4',
-    fullPath: '/process/step-4',
+    path: 'step-3',
+    fullPath: '/process/step-3',
     icon: DollarSign,
     description: 'Calcular oferta máxima (ARV - Reforma - Comissão)',
   },
