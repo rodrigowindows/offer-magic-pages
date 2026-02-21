@@ -315,7 +315,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
-    setShowOfferInput(false);
     setQuickOfferAmount("");
   }, [currentIndex]);
 
