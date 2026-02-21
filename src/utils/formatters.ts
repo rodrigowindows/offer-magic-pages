@@ -50,13 +50,6 @@ export const truncateText = (text: string, maxLength: number): string => {
 };
 
 /**
- * Formata número com separador de milhares
- */
-export const formatNumber = (num: number): string => {
-  return num.toLocaleString('en-US');
-};
-
-/**
  * Formata porcentagem
  */
 export const formatPercentage = (value: number, total: number, decimals: number = 1): string => {
@@ -209,7 +202,6 @@ export default {
   formatRelativeTime,
   formatPhone,
   truncateText,
-  formatNumber,
   formatPercentage,
   formatStatusCode,
   capitalizeWords,

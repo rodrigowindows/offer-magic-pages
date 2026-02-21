@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { defaultOffer } from "@/lib/utils";
+import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { Check, Phone, Mail, Download, Loader2 } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
@@ -32,14 +32,6 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   useEffect(() => {
     void trackABEvent(property.id, 'ultra-simple', 'offer_revealed');
   }, [property.id]);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const handleAccept = () => {
     void trackABEvent(property.id, 'ultra-simple', 'clicked_accept');

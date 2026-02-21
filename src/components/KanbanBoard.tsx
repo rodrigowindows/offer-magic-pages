@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LeadStatus } from "./LeadStatusBadge";
 import { Phone, MapPin, DollarSign, User } from "lucide-react";
 import { useRef, useEffect } from "react";
+import { formatCurrency } from "@/lib/utils";
 
 interface Property {
   id: string;
@@ -56,15 +57,6 @@ export const KanbanBoard = ({
 
   const getPropertiesByStatus = (status: LeadStatus) => {
     return properties.filter((p) => p.lead_status === status);
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
   };
 
   const topScrollRef = useRef<HTMLDivElement>(null);
