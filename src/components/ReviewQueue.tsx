@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,6 +35,7 @@ import {
 } from "lucide-react";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
 import { EmptyState } from "./EmptyState";
+import { CompsModal } from "./process/CompsModal";
 
 // Razões predefinidas para rejeição
 const REJECTION_REASONS = [
@@ -165,6 +167,11 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [rejectionNotes, setRejectionNotes] = useState("");
+  // Quick offer on approve
+  const [showOfferInput, setShowOfferInput] = useState(false);
+  const [quickOfferAmount, setQuickOfferAmount] = useState("");
+  // Comps modal after approve
+  const [compsModalProperty, setCompsModalProperty] = useState<QueueProperty | null>(null);
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
 
@@ -179,11 +186,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, selectedBatch]);
 
-  // Reset reject form when changing property
+  // Reset forms when changing property
   useEffect(() => {
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
+    setShowOfferInput(false);
+    setQuickOfferAmount("");
   }, [currentIndex]);
 
   // Keyboard shortcuts: A = approve, R = reject, arrows = navigate, 1-9 = reasons, Enter = confirm
@@ -195,9 +204,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       switch (e.key) {
         case 'a':
         case 'A':
-          if (!showRejectForm) {
+          if (!showRejectForm && !showOfferInput) {
             e.preventDefault();
-            handleApprove();
+            setShowOfferInput(true);
+            // Pre-fill with cash_offer_amount if available
+            if (currentProperty.cash_offer_amount) {
+              setQuickOfferAmount(currentProperty.cash_offer_amount.toString());
+            }
           }
           break;
         case 'r':
@@ -206,13 +219,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           setShowRejectForm(true);
           break;
         case 'ArrowRight':
-          if (!showRejectForm) {
+          if (!showRejectForm && !showOfferInput) {
             e.preventDefault();
             handleNext();
           }
           break;
         case 'ArrowLeft':
-          if (!showRejectForm) {
+          if (!showRejectForm && !showOfferInput) {
             e.preventDefault();
             handlePrevious();
           }
@@ -224,11 +237,20 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             setSelectedReason("");
             setRejectionNotes("");
           }
+          if (showOfferInput) {
+            e.preventDefault();
+            setShowOfferInput(false);
+            setQuickOfferAmount("");
+          }
           break;
         case 'Enter':
           if (showRejectForm && selectedReason) {
             e.preventDefault();
             handleReject();
+          }
+          if (showOfferInput) {
+            e.preventDefault();
+            handleApproveWithOffer();
           }
           break;
         default:
@@ -246,7 +268,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, properties.length, currentProperty, showRejectForm, selectedReason, isProcessing]);
+  }, [currentIndex, properties.length, currentProperty, showRejectForm, showOfferInput, selectedReason, isProcessing]);
 
   const fetchPendingProperties = async () => {
     try {
@@ -363,14 +385,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   };
 
   const advanceAfterAction = async () => {
-    const prevLength = properties.length;
     await fetchPendingProperties();
     await fetchDailyStats();
-    // After refetch, the list shrinks by 1 (the approved/rejected item is gone)
-    // Keep index the same so we land on the next item naturally
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
+    setShowOfferInput(false);
+    setQuickOfferAmount("");
   };
 
   const handleApprove = async () => {
@@ -401,6 +422,51 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleApproveWithOffer = async () => {
+    if (!userId || !userName || !currentProperty) return;
+    setIsProcessing(true);
+    try {
+      const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
+      const updateData: any = {
+        approval_status: "approved",
+        approved_by: userId,
+        approved_by_name: userName,
+        approved_at: new Date().toISOString(),
+        rejection_reason: null,
+        rejection_notes: null,
+        updated_by: userId,
+        updated_by_name: userName,
+      };
+      if (offerValue && offerValue > 0) {
+        updateData.cash_offer_amount = offerValue;
+      }
+      const { error } = await supabase
+        .from("properties")
+        .update(updateData)
+        .eq("id", currentProperty.id);
+      if (error) throw error;
+      toast({
+        title: "Aprovado!",
+        description: `${currentProperty.address}${offerValue ? ` - Oferta: $${offerValue.toLocaleString()}` : ''}`,
+      });
+      // Open comps modal for this property before advancing
+      const approvedProp = { ...currentProperty, cash_offer_amount: offerValue ?? currentProperty.cash_offer_amount };
+      setCompsModalProperty(approvedProp);
+      // Reset offer input but don't advance yet (modal will trigger advance on close)
+      setShowOfferInput(false);
+      setQuickOfferAmount("");
+    } catch (error: any) {
+      toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCompsModalClose = async () => {
+    setCompsModalProperty(null);
+    await advanceAfterAction();
   };
 
   const handleReject = async () => {
@@ -461,56 +527,84 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   return (
     <div className="space-y-4 sm:space-y-6 px-1 sm:px-0">
-      {/* Stats Header */}
-      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
+      {/* Stats Header - compact bar on mobile, cards on desktop */}
+      {/* Mobile: single compact bar */}
+      <div className="sm:hidden flex items-center justify-between gap-1 p-2 bg-card border rounded-lg">
+        <div className="flex items-center gap-1.5">
+          <Target className="h-3.5 w-3.5 text-blue-500" />
+          <span className="text-sm font-bold">{dailyStats?.reviewed_today || 0}</span>
+          <span className="text-[10px] text-muted-foreground">rev</span>
+        </div>
+        <div className="w-px h-4 bg-border" />
+        <div className="flex items-center gap-1.5">
+          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+          <span className="text-sm font-bold text-green-700">{dailyStats?.approved_today || 0}</span>
+          <span className="text-[10px] text-muted-foreground">ok</span>
+        </div>
+        <div className="w-px h-4 bg-border" />
+        <div className="flex items-center gap-1.5">
+          <XCircle className="h-3.5 w-3.5 text-red-500" />
+          <span className="text-sm font-bold text-red-700">{dailyStats?.rejected_today || 0}</span>
+          <span className="text-[10px] text-muted-foreground">rej</span>
+        </div>
+        <div className="w-px h-4 bg-border" />
+        <div className="flex items-center gap-1.5">
+          <TrendingUp className="h-3.5 w-3.5 text-orange-500" />
+          <span className="text-sm font-bold">{dailyStats?.total_pending || 0}</span>
+          <span className="text-[10px] text-muted-foreground">fila</span>
+        </div>
+      </div>
+
+      {/* Desktop: full cards */}
+      <div className="hidden sm:grid sm:grid-cols-5 gap-4">
         <Card>
-          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
+          <CardContent className="pt-6 px-6">
             <div className="text-center">
-              <Target className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-blue-500" />
-              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.reviewed_today || 0}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Revisadas</p>
+              <Target className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+              <div className="text-2xl font-bold">{dailyStats?.reviewed_today || 0}</div>
+              <p className="text-xs text-muted-foreground">Revisadas</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
+          <CardContent className="pt-6 px-6">
             <div className="text-center">
-              <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-green-500" />
-              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.approved_today || 0}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Aprovadas</p>
+              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+              <div className="text-2xl font-bold">{dailyStats?.approved_today || 0}</div>
+              <p className="text-xs text-muted-foreground">Aprovadas</p>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
+          <CardContent className="pt-6 px-6">
             <div className="text-center">
-              <XCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-red-500" />
-              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.rejected_today || 0}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Rejeitadas</p>
+              <XCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
+              <div className="text-2xl font-bold">{dailyStats?.rejected_today || 0}</div>
+              <p className="text-xs text-muted-foreground">Rejeitadas</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hidden sm:block">
-          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
+        <Card>
+          <CardContent className="pt-6 px-6">
             <div className="text-center">
-              <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-orange-500" />
-              <div className="text-lg sm:text-2xl font-bold">{dailyStats?.total_pending || 0}</div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">Pendentes</p>
+              <TrendingUp className="h-8 w-8 mx-auto mb-2 text-orange-500" />
+              <div className="text-2xl font-bold">{dailyStats?.total_pending || 0}</div>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="hidden sm:block">
-          <CardContent className="pt-4 sm:pt-6 px-2 sm:px-6">
+        <Card>
+          <CardContent className="pt-6 px-6">
             <div className="text-center">
-              <Award className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-1 sm:mb-2 text-yellow-500" />
-              <div className="text-lg sm:text-2xl font-bold">
+              <Award className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
+              <div className="text-2xl font-bold">
                 #{dailyStats?.user_rank || "-"}
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Ranking
               </p>
             </div>
@@ -628,12 +722,82 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
           {/* Inline Approve / Reject Buttons */}
           <div className="pt-3 sm:pt-4 border-t space-y-3">
-            {!showRejectForm ? (
+            {showOfferInput ? (
+              /* Offer Input before Approve */
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-green-800">Definir Valor da Oferta (opcional)</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setShowOfferInput(false); setQuickOfferAmount(""); }}
+                    className="text-xs text-muted-foreground gap-1 h-7"
+                  >
+                    <Undo2 className="h-3 w-3" />
+                    Voltar
+                    <kbd className="px-1 py-0.5 text-[10px] bg-white border rounded ml-1">Esc</kbd>
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-2.5 text-lg font-bold text-green-700">$</span>
+                    <Input
+                      type="number"
+                      placeholder={currentProperty.estimated_value ? `Sugestao: ${Math.round(currentProperty.estimated_value * 0.7).toLocaleString()}` : "Ex: 150000"}
+                      value={quickOfferAmount}
+                      onChange={(e) => setQuickOfferAmount(e.target.value)}
+                      className="pl-8 h-12 text-lg font-bold border-green-300 focus:border-green-500"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Quick percentage buttons */}
+                {currentProperty.estimated_value && currentProperty.estimated_value > 0 && (
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[60, 65, 70, 75, 80].map(pct => {
+                      const val = Math.round(currentProperty.estimated_value * (pct / 100));
+                      return (
+                        <button
+                          key={pct}
+                          onClick={() => setQuickOfferAmount(val.toString())}
+                          className={`px-2.5 py-1.5 rounded-md text-xs border transition-colors ${
+                            quickOfferAmount === val.toString()
+                              ? 'bg-green-600 text-white border-green-600 font-bold'
+                              : 'bg-white text-green-800 border-green-200 hover:bg-green-100'
+                          }`}
+                        >
+                          {pct}% = ${val.toLocaleString()}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleApproveWithOffer}
+                    disabled={isProcessing}
+                    className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold gap-2"
+                  >
+                    <ThumbsUp className="h-5 w-5" />
+                    {isProcessing ? "..." : quickOfferAmount ? `APROVAR ($${Number(quickOfferAmount).toLocaleString()})` : "APROVAR SEM OFERTA"}
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">Enter</kbd>
+                  </Button>
+                </div>
+              </div>
+            ) : !showRejectForm ? (
               <>
                 {/* Main action row */}
                 <div className="flex gap-2 sm:gap-3">
                   <Button
-                    onClick={handleApprove}
+                    onClick={() => {
+                      setShowOfferInput(true);
+                      if (currentProperty.cash_offer_amount) {
+                        setQuickOfferAmount(currentProperty.cash_offer_amount.toString());
+                      }
+                    }}
                     disabled={isProcessing}
                     className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-lg font-bold gap-2"
                   >
@@ -745,6 +909,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Comps Modal - opens after approving */}
+      <CompsModal
+        open={!!compsModalProperty}
+        onClose={handleCompsModalClose}
+        property={compsModalProperty}
+      />
     </div>
   );
 };

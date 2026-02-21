@@ -5,14 +5,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PROCESS_STEPS } from './processSteps';
 import { ReviewQueue } from '@/components/ReviewQueue';
-import { ManualCompsManager } from '@/components/ManualCompsManager';
 import { MAOCalculator } from './MAOCalculator';
 import { BatchSelector } from './BatchSelector';
 
 const STEP_PATH_TO_INDEX: Record<string, number> = {
   '': 0,
   'step-2': 1,
-  'step-3': 2,
 };
 
 const getCurrentStepIndex = (pathname: string): number => {
@@ -111,8 +109,7 @@ export const ProcessApp = () => {
       <main className="flex-1 container mx-auto py-3 sm:py-6 pb-20 sm:pb-24">
         <Routes>
           <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
-          <Route path="/step-2" element={<ManualCompsManager />} />
-          <Route path="/step-3" element={<MAOCalculator />} />
+          <Route path="/step-2" element={<MAOCalculator />} />
           <Route path="*" element={<Navigate to="/process" replace />} />
         </Routes>
       </main>
