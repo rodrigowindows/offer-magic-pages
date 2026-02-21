@@ -17,6 +17,19 @@ export function formatCurrency(value: number) {
 }
 
 /**
+ * Default offer ratio: 70% of estimated value.
+ * Used across the app when no explicit cash_offer_amount is set.
+ */
+export const DEFAULT_OFFER_RATIO = 0.7;
+
+/**
+ * Calculate default cash offer from estimated value.
+ */
+export function defaultOffer(estimatedValue: number): number {
+  return Math.round(estimatedValue * DEFAULT_OFFER_RATIO);
+}
+
+/**
  * Safe includes check for arrays or strings. Returns false for null/undefined.
  */
 export function safeIncludes<T = any>(value: T[] | string | undefined | null, needle: any) {

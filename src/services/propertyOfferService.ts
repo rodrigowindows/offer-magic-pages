@@ -82,8 +82,6 @@ export class PropertyOfferService {
       createdAt: new Date(),
     };
 
-    // In a real implementation, you would save this to the database
-    console.log('Created offer:', offer);
     return { success: true, data: offer };
   }
 
@@ -174,12 +172,6 @@ export class PropertyOfferService {
           qrCodeUrl: qrCodeUrl
         });
 
-        // Here you would integrate with your email service (SendGrid, Mailgun, etc.)
-        console.log('Sending email to:', recipientEmail);
-        console.log('Property URL:', propertyUrl);
-        console.log('Email content length:', emailHtml.length);
-
-        // For now, we'll simulate sending
         await this.logCampaignActivity(offer.id, 'email_sent', {
           recipient: recipientEmail,
           subject: `Cash Offer: $${offerAmount.toLocaleString()} for ${property.address}`,
@@ -190,9 +182,6 @@ export class PropertyOfferService {
       // Send SMS if requested
       if (sendSMS && recipientPhone) {
         const smsMessage = `Cash offer: $${offerAmount.toLocaleString()} for ${property.address}. Reply YES to accept or call ${agentPhone} with questions.`;
-
-        console.log('Sending SMS to:', recipientPhone);
-        console.log('SMS content:', smsMessage);
 
         await this.logCampaignActivity(offer.id, 'sms_sent', {
           recipient: recipientPhone,
@@ -321,8 +310,7 @@ export class PropertyOfferService {
    * Update offer status
    */
   private static async updateOfferStatus(offerId: string, status: PropertyOfferData['status']): Promise<void> {
-    // In a real implementation, update database
-    console.log(`Updated offer ${offerId} status to ${status}`);
+    // TODO: persist status to database when offer table is implemented
   }
 
   /**
@@ -355,13 +343,11 @@ export class PropertyOfferService {
     const followUpDate = new Date();
     followUpDate.setDate(followUpDate.getDate() + days);
 
-    try {
-      // Use follow_up_reminders table instead of scheduled_campaigns
-      // Since we don't have property_id here, just log the follow-up for now
-      console.log(`Scheduled follow-up for offer ${offerId} in ${days} days (${followUpDate.toISOString()})`);
-    } catch (error) {
-      console.error('Error scheduling follow-up:', error);
-    }
+    // TODO: persist to follow_up_reminders table when implemented
+    await this.logCampaignActivity(offerId, 'follow_up_scheduled', {
+      days,
+      followUpDate: followUpDate.toISOString(),
+    });
   }
 
   /**

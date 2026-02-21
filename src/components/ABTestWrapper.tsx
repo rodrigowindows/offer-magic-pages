@@ -3,6 +3,7 @@ import { getABVariant, trackABEvent, type ABEventType, type ABVariant } from "@/
 import { useFeatureToggle } from "@/contexts/FeatureToggleContext";
 import { UltraSimpleVariant } from "@/components/variants/UltraSimpleVariant";
 import { EmailFirstVariant } from "@/components/variants/EmailFirstVariant";
+import { defaultOffer } from "@/lib/utils";
 import { ProgressiveVariant } from "@/components/variants/ProgressiveVariant";
 import { SocialProofVariant } from "@/components/variants/SocialProofVariant";
 import { UrgencyVariant } from "@/components/variants/UrgencyVariant";
@@ -34,7 +35,7 @@ export const ABTestWrapper = ({ property }: ABTestWrapperProps) => {
     neighborhood: null,
     zip_code: property.zip_code || '',
     property_image_url: property.property_image_url || null,
-    cash_offer_amount: property.cash_offer_amount || property.estimated_value * 0.7,
+    cash_offer_amount: property.cash_offer_amount || defaultOffer(property.estimated_value),
   }), [property]);
 
   const trackMinimalEvent = (event: string, activeVariant: ABVariant) => {

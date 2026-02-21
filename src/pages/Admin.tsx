@@ -40,11 +40,8 @@ import { CashOfferDialog } from "@/components/CashOfferDialog";
 import { EmailCampaignDialog } from "@/components/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/EmailCampaignStats";
 import { LeadSuggestionsDialog } from "@/components/LeadSuggestionsDialog";
-// import { MarketingSettingsDialog } from "@/components/MarketingSettingsDialog";
-// import { StartCampaignDialog } from "@/components/StartCampaignDialog";
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { CampaignAnalytics } from "@/components/CampaignAnalytics";
-// import { CampaignMetricsDashboard } from "@/components/CampaignMetricsDashboard";
 import { CampaignExport } from "@/components/CampaignExport";
 import { FollowUpAlerts } from "@/components/FollowUpAlerts";
 import { FeatureTogglePanel } from "@/components/FeatureTogglePanel";
@@ -58,7 +55,6 @@ import { ChannelAnalytics } from "@/components/ChannelAnalytics";
 import { SequenceManager } from "@/components/SequenceManager";
 import { FollowUpManager } from "@/components/FollowUpManager";
 import { StartSequenceDialog } from "@/components/StartSequenceDialog";
-// NEW COMPONENTS - Orlando Integration
 import { PropertyImageUpload } from "@/components/PropertyImageUpload";
 import { PropertyTagsManager } from "@/components/PropertyTagsManager";
 import { PropertyTagsFilter } from "@/components/PropertyTagsFilter";
@@ -71,7 +67,6 @@ import { AirbnbEligibilityChecker } from "@/components/AirbnbEligibilityChecker"
 import { PropertyComparison } from "@/components/PropertyComparison";
 import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { GeminiAPIKeyDialog } from "@/components/GeminiAPIKeyDialog";
-import { PropertyCardView } from "@/components/PropertyCardView";
 import { PropertyCardSkeleton } from "@/components/PropertyCardSkeleton";
 import { AdaptivePropertyCard } from "@/components/AdaptivePropertyCard";
 import { DesignModeToggle } from "@/components/DesignModeToggle";
@@ -92,8 +87,6 @@ import { InteractivePropertyMap } from "@/components/InteractivePropertyMap";
 import { ApprovedPropertiesExport } from "@/components/ApprovedPropertiesExport";
 import { FullDatabaseExport } from "@/components/FullDatabaseExport";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { batchAnalyzeProperties } from "@/utils/aiPropertyAnalyzer";
-import { checkAndSaveAirbnbEligibility } from "@/utils/airbnbChecker";
 import { ContactFilters } from "@/components/ContactAvailabilityFilter";
 
 const propertySchema = z.object({

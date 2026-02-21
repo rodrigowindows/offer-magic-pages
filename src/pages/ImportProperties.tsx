@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { defaultOffer } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -956,7 +957,7 @@ const ImportProperties = () => {
           // Handle cash_offer_amount - REQUIRED field
           if (!propertyData.cash_offer_amount || propertyData.cash_offer_amount === 0) {
             if (propertyData.estimated_value && propertyData.estimated_value > 0) {
-              propertyData.cash_offer_amount = Math.round(propertyData.estimated_value * 0.7);
+              propertyData.cash_offer_amount = defaultOffer(propertyData.estimated_value);
             } else {
               propertyData.cash_offer_amount = 70000; // Default reasonable cash offer
             }

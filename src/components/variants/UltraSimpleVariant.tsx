@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { defaultOffer } from "@/lib/utils";
 import { Check, Phone, Mail, Download, Loader2 } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
@@ -58,7 +59,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     setIsDownloading(true);
     void trackABEvent(property.id, 'ultra-simple', 'clicked_download_pdf');
     try {
-      const offerAmount = property.cash_offer_amount || property.estimated_value * 0.7;
+      const offerAmount = property.cash_offer_amount || defaultOffer(property.estimated_value);
       const doc = new jsPDF();
       
       doc.setFillColor(34, 197, 94);
@@ -200,7 +201,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                 {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
               </p>
               <h1 className="text-5xl md:text-6xl font-bold text-primary">
-                {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || property.estimated_value * 0.7)}
+                {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || defaultOffer(property.estimated_value))}
               </h1>
               <p className="text-sm text-muted-foreground mt-2">
                 For {property.address}, {property.city}, {property.state}

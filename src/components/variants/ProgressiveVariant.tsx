@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SimpleLeadCapture } from "@/components/SimpleLeadCapture";
 import { OfferRevealCard } from "@/components/OfferRevealCard";
+import { defaultOffer } from "@/lib/utils";
 import { InterestCapture } from "@/components/InterestCapture";
 import { ArrowRight, MessageSquare, Sparkles } from "lucide-react";
 import { formatOffer, getOfferAverage, getOfferType, type OfferData } from "@/utils/offerUtils";
@@ -32,7 +33,7 @@ const getOfferAmount = (property: ProgressiveVariantProps["property"]) => {
     return Math.round(property.cash_offer_amount);
   }
 
-  return Math.round(property.estimated_value * 0.7);
+  return defaultOffer(property.estimated_value);
 };
 
 export const ProgressiveVariant = ({ property }: ProgressiveVariantProps) => {
