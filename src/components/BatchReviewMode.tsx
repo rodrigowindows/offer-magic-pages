@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatCurrency } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -241,7 +242,7 @@ export const BatchReviewMode = ({
                 <div>
                   <p className="text-xs text-muted-foreground">Estimated Value</p>
                   <p className="font-bold text-lg">
-                    ${currentProperty.estimated_value.toLocaleString()}
+                    {formatCurrency(currentProperty.estimated_value)}
                   </p>
                 </div>
               </div>
@@ -252,7 +253,7 @@ export const BatchReviewMode = ({
                 <div>
                   <p className="text-xs text-muted-foreground">Cash Offer</p>
                   <p className="font-bold text-lg text-green-600">
-                    ${currentProperty.cash_offer_amount.toLocaleString()}
+                    {formatCurrency(currentProperty.cash_offer_amount)}
                     <span className="text-sm font-normal ml-2">({offerPercentage}%)</span>
                   </p>
                 </div>
@@ -309,7 +310,7 @@ export const BatchReviewMode = ({
             ))}
             {currentProperty.comparative_price && (
               <Badge variant="outline">
-                🤖 AI Value: ${currentProperty.comparative_price.toLocaleString()}
+                🤖 AI Value: {formatCurrency(currentProperty.comparative_price)}
               </Badge>
             )}
             {currentProperty.airbnb_eligible && (

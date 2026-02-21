@@ -5,7 +5,7 @@
  * NOW USING MODULAR COMPONENTS:
  * - Phase 1: OnboardingTour, CommandPalette, SmartInsights, ExecutiveSummary
  * - Phase 2: PropertySelector, CompsFilters, CompsTable, AnalysisHistory, CompareDialog
- * - Hooks: useCompsAnalysis, useAnalysisHistory, useFavorites
+ * - Hooks: useAnalysisHistory, useFavorites
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';

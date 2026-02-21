@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import { Shield, Clock, CheckCircle2, Home, Phone, Star } from "lucide-react";
 import { formatOffer, getOfferType, getOfferAverage } from "@/utils/offerUtils";
+import { formatPhone } from "@/utils/formatters";
 import type { OfferConfig } from "./OfferConfiguration";
 
 interface CashOfferLetterProps {
@@ -100,16 +101,7 @@ export const CashOfferLetter = ({
   const offerUrl = `${window.location.origin}/property/${propertySlug}?src=${source}`;
   const t = content[language];
 
-  // Format phone number for better readability
-  const formatPhone = (phoneNumber: string | null | undefined): string => {
-    if (!phoneNumber) return "786 882 8251"; // Default phone
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    }
-    return phoneNumber;
-  };
-  const formattedPhone = formatPhone(phone);
+  const formattedPhone = formatPhone(phone) || "786 882 8251";
 
   // Use new offer config or fallback to legacy props
   const currentOfferConfig = offerConfig || {

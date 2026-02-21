@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { formatPhone } from '@/utils/formatters';
 import { useSkipTraceData, SkipTraceProperty } from '@/hooks/useSkipTraceData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,16 +61,6 @@ export const SkipTraceDataViewer: React.FC<SkipTraceDataViewerProps> = ({
     if (currentOffset > 0) {
       setCurrentOffset(prev => Math.max(0, prev - initialLimit));
     }
-  };
-
-  const formatPhone = (phone: string) => {
-    // Remove all non-digits
-    const cleaned = phone.replace(/\D/g, '');
-    // Format as (XXX) XXX-XXXX if 10 digits
-    if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    }
-    return phone;
   };
 
   if (error) {

@@ -1,6 +1,7 @@
 import PropertyHero from "@/components/PropertyHero";
 import CashOfferSectionB from "@/components/CashOfferSectionB";
 import TrustCredentials from "@/components/TrustCredentials";
+import { formatCurrency } from "@/lib/utils";
 
 interface PropertyData {
   id: string;
@@ -56,7 +57,7 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
       />
 
       <CashOfferSectionB
-        offerAmount={`$${property.cash_offer_amount.toLocaleString()}`}
+        offerAmount={formatCurrency(property.cash_offer_amount)}
         onViewOffer={() => {
           trackEvent('viewed_offer');
           onFormSubmit();

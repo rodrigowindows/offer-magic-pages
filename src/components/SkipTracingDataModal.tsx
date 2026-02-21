@@ -29,6 +29,7 @@ import {
   Save
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatPhone } from "@/utils/formatters";
 
 interface SkipTracingDataModalProps {
   open: boolean;
@@ -224,26 +225,6 @@ export const SkipTracingDataModal = ({
   const removeManualEmail = (email: string) => {
     setManualEmails(prev => prev.filter(e => e !== email));
     setSelectedEmails(prev => prev.filter(e => e !== email));
-  };
-
-  const formatPhone = (phone?: string) => {
-    if (!phone) return null;
-    // Handle scientific notation (4.08E+09)
-    if (String(phone).includes('E') || String(phone).includes('e')) {
-      const num = parseFloat(String(phone));
-      if (!isNaN(num)) {
-        phone = Math.round(num).toString();
-      }
-    }
-    // Format as phone number
-    const cleaned = String(phone).replace(/\D/g, '');
-    if (cleaned.length === 10) {
-      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-    }
-    if (cleaned.length === 11 && cleaned.startsWith('1')) {
-      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
-    }
-    return phone;
   };
 
   const getPhones = () => {

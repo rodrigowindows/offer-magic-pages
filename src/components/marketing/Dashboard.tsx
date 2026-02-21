@@ -165,7 +165,7 @@ export const Dashboard = () => {
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => navigate('/history')}
+                  onClick={() => navigate('/marketing/history')}
                 >
                   View All History
                 </Button>

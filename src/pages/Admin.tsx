@@ -81,6 +81,7 @@ import { TeamActivityDashboard } from "@/components/TeamActivityDashboard";
 import { TeamReportExporter } from "@/components/TeamReportExporter";
 import { ReviewQueue } from "@/components/ReviewQueue";
 import { UnifiedPropertyFilters } from "@/components/UnifiedPropertyFilters";
+import { formatCurrency } from "@/lib/utils";
 import { DashboardQuickActions } from "@/components/DashboardQuickActions";
 import { PropertyMapView } from "@/components/PropertyMapView";
 import { InteractivePropertyMap } from "@/components/InteractivePropertyMap";
@@ -726,7 +727,7 @@ const Admin = () => {
                   <img src="${qrCodeUrls[index]}" alt="QR Code for ${property.address}" />
                   <h3>${property.address}</h3>
                   <p>${property.city}, ${property.state} ${property.zip_code}</p>
-                  <p><strong>Cash Offer:</strong> $${property.cash_offer_amount.toLocaleString()}</p>
+                  <p><strong>Cash Offer:</strong> ${formatCurrency(property.cash_offer_amount)}</p>
                 </div>
               `).join('')}
             </div>
@@ -1633,8 +1634,8 @@ const Admin = () => {
                     </TableCell>
                     <TableCell>{property.owner_name || '-'}</TableCell>
                     <TableCell>{property.owner_phone || '-'}</TableCell>
-                    <TableCell>${property.cash_offer_amount.toLocaleString()}</TableCell>
-                    <TableCell>${property.estimated_value.toLocaleString()}</TableCell>
+                    <TableCell>{formatCurrency(property.cash_offer_amount)}</TableCell>
+                    <TableCell>{formatCurrency(property.estimated_value)}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-2">
                         <LeadStatusBadge status={property.lead_status} />

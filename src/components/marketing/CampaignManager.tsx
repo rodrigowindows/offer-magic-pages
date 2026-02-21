@@ -70,6 +70,7 @@ import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplatesDB';
 import type { Channel } from '@/types/marketing.types';
 import { generateDirectPropertyUrlBySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
+import { formatCurrency } from '@/lib/utils';
 
 // Colunas de telefone disponíveis na tabela properties
 const PHONE_COLUMNS = [
@@ -292,8 +293,8 @@ export const CampaignManager = () => {
     content = content.replace(/\{city\}/g, prop.city);
     content = content.replace(/\{state\}/g, prop.state);
     content = content.replace(/\{zip_code\}/g, prop.zip_code);
-    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
-    content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? formatCurrency(prop.cash_offer_amount) : '$XXX,XXX');
+    content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? formatCurrency((prop as any).estimated_value) : '$XXX,XXX');
     content = content.replace(/\{property_image\}/g, (prop as any).property_image_url || googleMapsImage);
     content = content.replace(/\{property_photo\}/g, (prop as any).property_image_url || googleMapsImage);
     content = content.replace(/\{property_map\}/g, googleMapsImage);
@@ -334,8 +335,8 @@ export const CampaignManager = () => {
     content = content.replace(/\{city\}/g, prop.city);
     content = content.replace(/\{state\}/g, prop.state);
     content = content.replace(/\{zip_code\}/g, prop.zip_code);
-    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? `$${prop.cash_offer_amount.toLocaleString()}` : '$XXX,XXX');
-    content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? `$${(prop as any).estimated_value.toLocaleString()}` : '$XXX,XXX');
+    content = content.replace(/\{cash_offer\}/g, prop.cash_offer_amount ? formatCurrency(prop.cash_offer_amount) : '$XXX,XXX');
+    content = content.replace(/\{estimated_value\}/g, (prop as any).estimated_value ? formatCurrency((prop as any).estimated_value) : '$XXX,XXX');
     content = content.replace(/\{property_image\}/g, (prop as any).property_image_url || googleMapsImage);
     content = content.replace(/\{property_photo\}/g, (prop as any).property_image_url || googleMapsImage);
     content = content.replace(/\{property_map\}/g, googleMapsImage);

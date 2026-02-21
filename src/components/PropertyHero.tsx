@@ -1,6 +1,7 @@
 import { MapPin, Home } from "lucide-react";
 import { useEffect, useState } from "react";
 import { generateTrackedPropertyUrlBySlug } from "@/utils/urlUtils";
+import { formatCurrency } from "@/lib/utils";
 
 interface PropertyHeroProps {
   address?: string;
@@ -152,7 +153,7 @@ const PropertyHero = ({
             <div className="mt-6 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
               <div className="text-center">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Your Fair Cash Offer</h2>
-                <div className="text-5xl md:text-6xl font-bold text-green-600 mb-4">{typeof offerValue === 'number' ? `$${offerValue.toLocaleString()}` : offerValue}</div>
+                <div className="text-5xl md:text-6xl font-bold text-green-600 mb-4">{typeof offerValue === 'number' ? formatCurrency(offerValue) : offerValue}</div>
                 <p className="text-lg text-gray-600 mb-6">For {address}</p>
                 
                 {/* Details List */}

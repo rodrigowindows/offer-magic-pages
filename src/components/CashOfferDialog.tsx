@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { sendEmail } from "@/services/marketingService";
 import { generateDirectPropertyUrlBySlug } from "@/utils/urlUtils";
+import { formatCurrency } from "@/lib/utils";
 import type { OfferConfig } from "./OfferConfiguration";
 
 interface Property {
@@ -65,9 +66,9 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   // Gerar texto baseado na configuração da oferta
   const getOfferText = () => {
     if (offerConfig.type === 'range' && offerConfig.rangeMin && offerConfig.rangeMax) {
-      return `$${offerConfig.rangeMin.toLocaleString()} - $${offerConfig.rangeMax.toLocaleString()}`;
+      return `${formatCurrency(offerConfig.rangeMin)} - ${formatCurrency(offerConfig.rangeMax)}`;
     }
-    return offerConfig.fixedAmount ? `$${offerConfig.fixedAmount.toLocaleString()}` : `$${property.cash_offer_amount.toLocaleString()}`;
+    return offerConfig.fixedAmount ? formatCurrency(offerConfig.fixedAmount) : formatCurrency(property.cash_offer_amount);
   };
 
   const offerText = getOfferText();
@@ -154,7 +155,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
               <p><strong>${property.address}</strong></p>
               <p>${property.city}, ${property.state} ${property.zip_code}</p>
             </div>
-            <p class="offer-amount">Our cash offer: $${property.cash_offer_amount.toLocaleString()}</p>
+            <p class="offer-amount">Our cash offer: ${formatCurrency(property.cash_offer_amount)}</p>
             <ul>
               <li>No repairs needed - we buy as-is</li>
               <li>Cash payment - no financing contingencies</li>
