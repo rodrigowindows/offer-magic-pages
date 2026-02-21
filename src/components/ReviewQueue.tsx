@@ -34,6 +34,9 @@ import {
   ChevronUp,
   BarChart3,
   SkipForward,
+  Settings2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
 import { EmptyState } from "./EmptyState";
@@ -55,63 +58,125 @@ const REJECTION_REASONS = [
   { value: "other", label: "Outro motivo" },
 ];
 
-// Build detail rows - only shows fields with actual data (no empty dashes)
-interface DetailRow {
+// Configurable detail fields with fill-rate awareness
+interface DetailField {
+  key: string;
   label: string;
-  value: string;
-  highlight?: boolean;
+  category: 'decisao' | 'imovel' | 'dono' | 'financeiro';
+  format: (prop: QueueProperty) => string | null; // returns null if no data
+  highlight?: (prop: QueueProperty) => boolean;
+  defaultVisible?: boolean;
 }
 
-const buildPropertyDetails = (prop: QueueProperty): DetailRow[] => {
-  const rows: DetailRow[] = [];
+const DETAIL_FIELDS: DetailField[] = [
+  // Decisão
+  { key: 'tier', label: 'Tier', category: 'decisao', defaultVisible: true,
+    format: (p) => {
+      if (!p.evaluation) return null;
+      const tier = p.evaluation.match(/Tier:(\S+)/)?.[1] || '';
+      const visual = p.evaluation.match(/Visual:(\S+)/)?.[1] || '';
+      const cond = p.evaluation.match(/Cond:(\d+)/)?.[1] || '';
+      return `${tier.replace(/^\d+-/, '').replace(/_/g, ' ')}${visual ? ` (${visual})` : ''}${cond ? ` Cond:${cond}` : ''}`;
+    },
+    highlight: (p) => !!p.evaluation?.includes('1-CALL_NOW') || !!p.evaluation?.includes('Visual:HOT'),
+  },
+  { key: 'lead_score', label: 'Lead Score', category: 'decisao', defaultVisible: true,
+    format: (p) => p.lead_score ? String(p.lead_score) : null,
+    highlight: (p) => (p.lead_score ?? 0) >= 230,
+  },
+  { key: 'tags', label: 'Tags', category: 'decisao', defaultVisible: false,
+    format: (p) => {
+      const t = p.tags;
+      if (Array.isArray(t) && t.length) return t.join(', ');
+      if (typeof t === 'string' && t !== '[]' && t) return t;
+      return null;
+    },
+  },
+  { key: 'focar', label: 'Focar', category: 'decisao', defaultVisible: true,
+    format: (p) => p.focar || null,
+    highlight: (p) => p.focar === 'SIM',
+  },
+  // Financeiro
+  { key: 'estimated_value', label: 'Valor Estimado', category: 'financeiro', defaultVisible: true,
+    format: (p) => p.estimated_value ? `$${p.estimated_value.toLocaleString()}` : null,
+  },
+  { key: 'cash_offer_amount', label: 'Oferta', category: 'financeiro', defaultVisible: true,
+    format: (p) => p.cash_offer_amount ? `$${p.cash_offer_amount.toLocaleString()}` : null,
+  },
+  // Imóvel
+  { key: 'year_built', label: 'Ano Construção', category: 'imovel', defaultVisible: true,
+    format: (p) => p.year_built ? String(p.year_built) : null,
+  },
+  { key: 'bedrooms', label: 'Quartos', category: 'imovel', defaultVisible: true,
+    format: (p) => p.bedrooms ? String(p.bedrooms) : null,
+  },
+  { key: 'bathrooms', label: 'Banheiros', category: 'imovel', defaultVisible: true,
+    format: (p) => p.bathrooms ? String(p.bathrooms) : null,
+  },
+  { key: 'lot_size', label: 'Lote', category: 'imovel', defaultVisible: true,
+    format: (p) => {
+      if (!p.lot_size) return null;
+      const v = Number(p.lot_size);
+      return v >= 1 ? `${v.toFixed(1)} acres` : `${(v * 43560).toFixed(0)} sqft`;
+    },
+  },
+  { key: 'square_feet', label: 'Área (sqft)', category: 'imovel', defaultVisible: true,
+    format: (p) => p.square_feet ? p.square_feet.toLocaleString() : null,
+  },
+  { key: 'property_type', label: 'Tipo', category: 'imovel', defaultVisible: true,
+    format: (p) => p.property_type || null,
+  },
+  { key: 'neighborhood', label: 'Bairro', category: 'imovel', defaultVisible: false,
+    format: (p) => p.neighborhood || null,
+  },
+  { key: 'zip_code', label: 'CEP', category: 'imovel', defaultVisible: false,
+    format: (p) => p.zip_code || null,
+  },
+  // Dono
+  { key: 'owner_name', label: 'Proprietário', category: 'dono', defaultVisible: true,
+    format: (p) => p.owner_name || null,
+  },
+  { key: 'owner_address', label: 'End. Dono', category: 'dono', defaultVisible: true,
+    format: (p) => p.owner_address || null,
+  },
+  { key: 'owner_phone', label: 'Telefone', category: 'dono', defaultVisible: true,
+    format: (p) => p.owner_phone || null,
+  },
+  { key: 'origem', label: 'Parcel ID', category: 'dono', defaultVisible: false,
+    format: (p) => p.origem || null,
+  },
+];
 
-  // Decision-critical: Evaluation tier + Lead Score
-  if (prop.evaluation) {
-    // Parse evaluation string like "Score:240 | Combined:260 | Tier:1-CALL_NOW | Visual:HOT | Cond:3"
-    const tierMatch = prop.evaluation.match(/Tier:(\S+)/);
-    const visualMatch = prop.evaluation.match(/Visual:(\S+)/);
-    const condMatch = prop.evaluation.match(/Cond:(\d+)/);
-    const tier = tierMatch?.[1] || '';
-    const visual = visualMatch?.[1] || '';
-    const cond = condMatch?.[1] || '';
-    const tierLabel = tier.replace(/^\d+-/, '').replace(/_/g, ' ');
-    rows.push({
-      label: 'Tier',
-      value: `${tierLabel}${visual ? ` (${visual})` : ''}${cond ? ` | Cond:${cond}` : ''}`,
-      highlight: tier.startsWith('1-') || visual === 'HOT',
-    });
+const CATEGORY_LABELS: Record<string, string> = {
+  decisao: 'Decisão',
+  financeiro: 'Financeiro',
+  imovel: 'Imóvel',
+  dono: 'Proprietário',
+};
+
+const STORAGE_KEY = 'review-queue-visible-fields-v2';
+
+const loadVisibleFields = (): Set<string> => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return new Set(JSON.parse(saved));
+  } catch {}
+  return new Set(DETAIL_FIELDS.filter(f => f.defaultVisible).map(f => f.key));
+};
+
+const saveVisibleFields = (fields: Set<string>) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...fields]));
+};
+
+// Compute fill rates from loaded properties
+const computeFillRates = (props: QueueProperty[]): Map<string, number> => {
+  const rates = new Map<string, number>();
+  if (props.length === 0) return rates;
+  for (const field of DETAIL_FIELDS) {
+    const filled = props.filter(p => field.format(p) !== null).length;
+    rates.set(field.key, Math.round((filled / props.length) * 100));
   }
-  if (prop.lead_score) rows.push({ label: 'Lead Score', value: String(prop.lead_score), highlight: prop.lead_score >= 230 });
-
-  // Financial
-  if (prop.estimated_value) rows.push({ label: 'Valor Estimado', value: `$${prop.estimated_value.toLocaleString()}` });
-  if (prop.cash_offer_amount) rows.push({ label: 'Oferta', value: `$${prop.cash_offer_amount.toLocaleString()}` });
-
-  // Property info
-  if (prop.year_built) rows.push({ label: 'Ano Construção', value: String(prop.year_built) });
-  if (prop.bedrooms || prop.bathrooms) {
-    const parts = [];
-    if (prop.bedrooms) parts.push(`${prop.bedrooms} quartos`);
-    if (prop.bathrooms) parts.push(`${prop.bathrooms} ban.`);
-    rows.push({ label: 'Quartos/Ban.', value: parts.join(' / ') });
-  }
-  if (prop.lot_size) {
-    // lot_size is in acres for Orlando batch
-    const acres = Number(prop.lot_size);
-    rows.push({ label: 'Lote', value: acres >= 1 ? `${acres.toFixed(1)} acres` : `${(acres * 43560).toFixed(0)} sqft` });
-  }
-  if (prop.square_feet) rows.push({ label: 'Área (sqft)', value: prop.square_feet.toLocaleString() });
-  if (prop.property_type) rows.push({ label: 'Tipo', value: prop.property_type });
-  if (prop.neighborhood) rows.push({ label: 'Bairro', value: prop.neighborhood });
-
-  // Owner / contact
-  if (prop.owner_name) rows.push({ label: 'Proprietário', value: prop.owner_name });
-  if (prop.owner_address) rows.push({ label: 'End. Dono', value: prop.owner_address });
-  if (prop.owner_phone) rows.push({ label: 'Telefone', value: prop.owner_phone });
-  if (prop.origem) rows.push({ label: 'Parcel ID', value: prop.origem });
-  if (prop.focar) rows.push({ label: 'Focar', value: prop.focar, highlight: prop.focar === 'SIM' });
-
-  return rows;
+  return rates;
 };
 
 interface QueueProperty {
@@ -197,6 +262,9 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
+  const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
+  const [showFieldSettings, setShowFieldSettings] = useState(false);
+  const [fillRates, setFillRates] = useState<Map<string, number>>(new Map());
   // Inline rejection state
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
@@ -215,6 +283,16 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const currentProperty = properties[currentIndex];
   const progress = properties.length > 0 ? ((currentIndex + 1) / properties.length) * 100 : 0;
 
+  const toggleField = (key: string) => {
+    setVisibleFields(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      saveVisibleFields(next);
+      return next;
+    });
+  };
+
   useEffect(() => {
     fetchPendingProperties();
     if (user) {
@@ -222,6 +300,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, selectedBatch]);
+
+  // Compute fill rates when properties load
+  useEffect(() => {
+    if (properties.length > 0) {
+      setFillRates(computeFillRates(properties));
+    }
+  }, [properties]);
 
   // Reset forms when changing property
   useEffect(() => {
@@ -815,37 +900,96 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             </div>
           </div>
 
-          {/* Property Details - only fields with actual data */}
-          {(() => {
-            const details = buildPropertyDetails(currentProperty);
-            if (details.length === 0) return null;
-            return (
-              <div className="border rounded-lg overflow-hidden">
-                <button
-                  onClick={() => setDetailsExpanded(!detailsExpanded)}
-                  className="w-full flex items-center justify-between bg-muted/50 px-3 py-2 hover:bg-muted/70 transition-colors"
-                >
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    {detailsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                    Detalhes
-                    <Badge variant="secondary" className="text-[10px]">{details.length}</Badge>
-                  </span>
-                </button>
-                {detailsExpanded && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-                    {details.map((row) => (
-                      <div key={row.label} className={`px-3 py-2 border-t border-r ${row.highlight ? 'bg-emerald-50' : ''}`}>
-                        <p className="text-[10px] text-muted-foreground">{row.label}</p>
-                        <p className={`text-xs font-semibold truncate ${row.highlight ? 'text-emerald-700' : ''}`}>
-                          {row.value}
-                        </p>
+          {/* Property Details - configurable with fill rates */}
+          <div className="border rounded-lg overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between bg-muted/50 px-3 py-2 border-b">
+              <button
+                onClick={() => setDetailsExpanded(!detailsExpanded)}
+                className="flex items-center gap-2 text-sm font-semibold hover:text-primary transition-colors"
+              >
+                {detailsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                Detalhes
+                <Badge variant="secondary" className="text-[10px]">{visibleFields.size} campos</Badge>
+              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-muted-foreground"
+                onClick={() => setShowFieldSettings(!showFieldSettings)}
+              >
+                <Settings2 className="h-3.5 w-3.5" />
+                Colunas
+              </Button>
+            </div>
+
+            {/* Field Settings Panel with % fill rates */}
+            {showFieldSettings && (
+              <div className="bg-muted/20 border-b px-3 py-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    Dados disponíveis neste batch ({properties.length} imóveis)
+                  </p>
+                </div>
+                {(['decisao', 'financeiro', 'imovel', 'dono'] as const).map(category => {
+                  const fields = DETAIL_FIELDS.filter(f => f.category === category);
+                  return (
+                    <div key={category}>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">{CATEGORY_LABELS[category]}</p>
+                      <div className="space-y-1">
+                        {fields.map(field => {
+                          const pct = fillRates.get(field.key) ?? 0;
+                          const isVisible = visibleFields.has(field.key);
+                          const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : pct > 0 ? 'bg-red-400' : 'bg-gray-300';
+                          return (
+                            <button
+                              key={field.key}
+                              onClick={() => toggleField(field.key)}
+                              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] border transition-all ${
+                                isVisible
+                                  ? 'bg-primary/5 border-primary/30 text-foreground'
+                                  : 'bg-background border-border/50 text-muted-foreground hover:bg-accent/50'
+                              }`}
+                            >
+                              {isVisible ? <Eye className="h-3 w-3 text-primary shrink-0" /> : <EyeOff className="h-3 w-3 shrink-0" />}
+                              <span className="w-20 text-left truncate font-medium">{field.label}</span>
+                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className={`w-8 text-right text-[10px] font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : pct > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                {pct}%
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  );
+                })}
+                <p className="text-[10px] text-muted-foreground text-center pt-1">
+                  Clique para mostrar/ocultar. Barra = % de dados disponíveis no batch.
+                </p>
               </div>
-            );
-          })()}
+            )}
+
+            {/* Detail Values */}
+            {detailsExpanded && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+                {DETAIL_FIELDS.filter(f => visibleFields.has(f.key)).map(field => {
+                  const value = field.format(currentProperty);
+                  const isHighlight = field.highlight?.(currentProperty) ?? false;
+                  return (
+                    <div key={field.key} className={`px-3 py-2 border-t border-r ${isHighlight ? 'bg-emerald-50' : ''}`}>
+                      <p className="text-[10px] text-muted-foreground">{field.label}</p>
+                      <p className={`text-xs font-semibold truncate ${value ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
+                        {value || '—'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Inline Approve / Reject Buttons */}
           <div className="pt-3 sm:pt-4 border-t space-y-3">
