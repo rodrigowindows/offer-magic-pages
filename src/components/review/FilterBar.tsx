@@ -1,5 +1,4 @@
 import type { StatusFilter, StatusCounts } from './types';
-import { VISUAL_COLORS } from './constants';
 
 interface FilterBarProps {
   statusFilter: StatusFilter;
@@ -12,10 +11,51 @@ interface FilterBarProps {
 }
 
 const STATUS_OPTIONS = [
-  { key: 'pending' as const, label: 'Pendentes', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  { key: 'approved' as const, label: 'Aprovados', color: 'bg-green-100 text-green-800 border-green-300' },
-  { key: 'rejected' as const, label: 'Rejeitados', color: 'bg-red-100 text-red-800 border-red-300' },
+  {
+    key: 'pending' as const,
+    label: 'Pendentes',
+    icon: '⏳',
+    active: 'bg-yellow-500 text-white border-yellow-600 shadow-md shadow-yellow-200',
+    inactive: 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100',
+  },
+  {
+    key: 'approved' as const,
+    label: 'Aprovados',
+    icon: '✅',
+    active: 'bg-green-500 text-white border-green-600 shadow-md shadow-green-200',
+    inactive: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
+  },
+  {
+    key: 'rejected' as const,
+    label: 'Rejeitados',
+    icon: '❌',
+    active: 'bg-red-500 text-white border-red-600 shadow-md shadow-red-200',
+    inactive: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
+  },
 ] as const;
+
+const VISUAL_CONFIG = {
+  HOT: {
+    icon: '🔥',
+    active: 'bg-red-500 text-white border-red-600 shadow-md shadow-red-200',
+    inactive: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
+  },
+  WARM: {
+    icon: '🟡',
+    active: 'bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-200',
+    inactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
+  },
+  COLD: {
+    icon: '❄️',
+    active: 'bg-blue-500 text-white border-blue-600 shadow-md shadow-blue-200',
+    inactive: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100',
+  },
+  LAND: {
+    icon: '🏜️',
+    active: 'bg-stone-500 text-white border-stone-600 shadow-md shadow-stone-200',
+    inactive: 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100',
+  },
+} as const;
 
 const VISUAL_ORDER = ['HOT', 'WARM', 'COLD', 'LAND'] as const;
 
@@ -33,50 +73,57 @@ export const FilterBar = ({
   return (
     <div className="space-y-2">
       {/* Status filter */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {STATUS_OPTIONS.map(s => (
           <button
             key={s.key}
             onClick={() => onStatusChange(s.key)}
-            className={`shrink-0 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-colors ${
-              statusFilter === s.key
-                ? s.color + ' ring-2 ring-offset-1 ring-current'
-                : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+            className={`shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border transition-all ${
+              statusFilter === s.key ? s.active : s.inactive
             }`}
           >
-            {s.label} <span className="font-bold">{statusCounts[s.key]}</span>
+            <span>{s.icon}</span>
+            {s.label}
+            <span className={`font-bold ${statusFilter === s.key ? 'bg-white/25 px-1.5 py-0.5 rounded-md' : ''}`}>
+              {statusCounts[s.key]}
+            </span>
           </button>
         ))}
       </div>
 
       {/* Visual filter */}
       {hasVisualData && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => onVisualChange('all')}
-            className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
               visualFilter === 'all'
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                ? 'bg-slate-700 text-white border-slate-800 shadow-md shadow-slate-200'
+                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
             }`}
           >
-            Todos {totalProperties}
+            Todos
+            <span className={`font-bold ${visualFilter === 'all' ? 'bg-white/25 px-1.5 py-0.5 rounded-md' : ''}`}>
+              {totalProperties}
+            </span>
           </button>
           {VISUAL_ORDER.map(v => {
             const count = visualCounts[v] || 0;
             if (count === 0) return null;
-            const colors = VISUAL_COLORS[v];
+            const config = VISUAL_CONFIG[v];
             return (
               <button
                 key={v}
                 onClick={() => onVisualChange(v)}
-                className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  visualFilter === v
-                    ? `${colors.bg} ${colors.text} ${colors.border} ring-2 ring-offset-1 ring-current`
-                    : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                  visualFilter === v ? config.active : config.inactive
                 }`}
               >
-                {v} <span className="font-bold">{count}</span>
+                <span>{config.icon}</span>
+                {v}
+                <span className={`font-bold ${visualFilter === v ? 'bg-white/25 px-1.5 py-0.5 rounded-md' : ''}`}>
+                  {count}
+                </span>
               </button>
             );
           })}
