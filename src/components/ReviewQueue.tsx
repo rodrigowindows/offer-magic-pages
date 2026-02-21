@@ -63,24 +63,50 @@ interface DetailRow {
 const buildPropertyDetails = (prop: QueueProperty): DetailRow[] => {
   const rows: DetailRow[] = [];
 
-  // Property info
-  if (prop.property_type) rows.push({ label: 'Tipo', value: prop.property_type });
-  if (prop.year_built) rows.push({ label: 'Ano Construção', value: String(prop.year_built) });
-  if (prop.bedrooms) rows.push({ label: 'Quartos', value: String(prop.bedrooms) });
-  if (prop.bathrooms) rows.push({ label: 'Banheiros', value: String(prop.bathrooms) });
-  if (prop.square_feet) rows.push({ label: 'Área (sqft)', value: prop.square_feet.toLocaleString() });
-  if (prop.lot_size) rows.push({ label: 'Lote (sqft)', value: prop.lot_size.toLocaleString() });
-  if (prop.neighborhood) rows.push({ label: 'Bairro', value: prop.neighborhood });
-  if (prop.zip_code) rows.push({ label: 'CEP', value: prop.zip_code });
+  // Decision-critical: Evaluation tier + Lead Score
+  if (prop.evaluation) {
+    // Parse evaluation string like "Score:240 | Combined:260 | Tier:1-CALL_NOW | Visual:HOT | Cond:3"
+    const tierMatch = prop.evaluation.match(/Tier:(\S+)/);
+    const visualMatch = prop.evaluation.match(/Visual:(\S+)/);
+    const condMatch = prop.evaluation.match(/Cond:(\d+)/);
+    const tier = tierMatch?.[1] || '';
+    const visual = visualMatch?.[1] || '';
+    const cond = condMatch?.[1] || '';
+    const tierLabel = tier.replace(/^\d+-/, '').replace(/_/g, ' ');
+    rows.push({
+      label: 'Tier',
+      value: `${tierLabel}${visual ? ` (${visual})` : ''}${cond ? ` | Cond:${cond}` : ''}`,
+      highlight: tier.startsWith('1-') || visual === 'HOT',
+    });
+  }
+  if (prop.lead_score) rows.push({ label: 'Lead Score', value: String(prop.lead_score), highlight: prop.lead_score >= 230 });
 
   // Financial
   if (prop.estimated_value) rows.push({ label: 'Valor Estimado', value: `$${prop.estimated_value.toLocaleString()}` });
   if (prop.cash_offer_amount) rows.push({ label: 'Oferta', value: `$${prop.cash_offer_amount.toLocaleString()}` });
 
+  // Property info
+  if (prop.year_built) rows.push({ label: 'Ano Construção', value: String(prop.year_built) });
+  if (prop.bedrooms || prop.bathrooms) {
+    const parts = [];
+    if (prop.bedrooms) parts.push(`${prop.bedrooms} quartos`);
+    if (prop.bathrooms) parts.push(`${prop.bathrooms} ban.`);
+    rows.push({ label: 'Quartos/Ban.', value: parts.join(' / ') });
+  }
+  if (prop.lot_size) {
+    // lot_size is in acres for Orlando batch
+    const acres = Number(prop.lot_size);
+    rows.push({ label: 'Lote', value: acres >= 1 ? `${acres.toFixed(1)} acres` : `${(acres * 43560).toFixed(0)} sqft` });
+  }
+  if (prop.square_feet) rows.push({ label: 'Área (sqft)', value: prop.square_feet.toLocaleString() });
+  if (prop.property_type) rows.push({ label: 'Tipo', value: prop.property_type });
+  if (prop.neighborhood) rows.push({ label: 'Bairro', value: prop.neighborhood });
+
   // Owner / contact
   if (prop.owner_name) rows.push({ label: 'Proprietário', value: prop.owner_name });
+  if (prop.owner_address) rows.push({ label: 'End. Dono', value: prop.owner_address });
   if (prop.owner_phone) rows.push({ label: 'Telefone', value: prop.owner_phone });
-  if (prop.lead_score) rows.push({ label: 'Lead Score', value: String(prop.lead_score), highlight: true });
+  if (prop.origem) rows.push({ label: 'Parcel ID', value: prop.origem });
   if (prop.focar) rows.push({ label: 'Focar', value: prop.focar, highlight: prop.focar === 'SIM' });
 
   return rows;
@@ -108,6 +134,11 @@ interface QueueProperty {
   lead_score: number | null;
   zillow_url: string | null;
   focar: string | null;
+  // New fields from Orlando batch analysis
+  evaluation: string | null;
+  tags: string[] | string | null;
+  owner_address: string | null;
+  origem: string | null;
 }
 
 // Pre-denial rules
@@ -130,8 +161,9 @@ const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestion[] => 
     suggestions.push({ reason: 'multi-family', label: 'Multi-Family' });
   }
 
-  // Land
-  if (prop.property_type?.toLowerCase() === 'land' || prop.property_type?.toLowerCase() === 'vacant land') {
+  // Land (from property_type or tags/evaluation)
+  const tagsStr = Array.isArray(prop.tags) ? prop.tags.join(',') : (prop.tags || '');
+  if (prop.property_type?.toLowerCase() === 'land' || prop.property_type?.toLowerCase() === 'vacant land' || tagsStr.includes('LAND')) {
     suggestions.push({ reason: 'land', label: 'Terreno (Land)' });
   }
 
@@ -275,7 +307,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       setIsLoading(true);
       let query = supabase
         .from("properties")
-        .select("id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar")
+        .select("id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem")
         .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(500);
@@ -649,6 +681,37 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                   {[currentProperty.city, currentProperty.state, currentProperty.zip_code].filter(Boolean).join(', ')}
                 </p>
               </div>
+
+              {/* Tags badges */}
+              {(() => {
+                const rawTags = currentProperty.tags;
+                let tagList: string[] = [];
+                if (Array.isArray(rawTags)) tagList = rawTags;
+                else if (typeof rawTags === 'string' && rawTags.startsWith('[')) {
+                  try { tagList = JSON.parse(rawTags.replace(/'/g, '"')); } catch {}
+                }
+                if (tagList.length === 0) return null;
+                const tagColors: Record<string, string> = {
+                  'HOT': 'bg-red-100 text-red-700 border-red-300',
+                  'WARM': 'bg-orange-100 text-orange-700 border-orange-300',
+                  'COLD': 'bg-blue-100 text-blue-700 border-blue-300',
+                  'LAND': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+                  '1-CALL_NOW': 'bg-red-100 text-red-700 border-red-300',
+                  '2-CALL_SOON': 'bg-orange-100 text-orange-700 border-orange-300',
+                  '3-EVALUATE': 'bg-amber-100 text-amber-700 border-amber-300',
+                  '5-NO_VISUAL': 'bg-gray-100 text-gray-600 border-gray-300',
+                  '6-LOW_PRIORITY': 'bg-slate-100 text-slate-600 border-slate-300',
+                };
+                return (
+                  <div className="flex flex-wrap gap-1">
+                    {tagList.map(tag => (
+                      <Badge key={tag} variant="outline" className={`text-[10px] sm:text-xs font-semibold ${tagColors[tag] || 'bg-gray-50 text-gray-600 border-gray-300'}`}>
+                        {tag.replace(/^\d+-/, '').replace(/_/g, ' ')}
+                      </Badge>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Pre-denial warnings */}
               {(() => {
