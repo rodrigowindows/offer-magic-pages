@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -168,12 +168,20 @@ const saveVisibleFields = (fields: Set<string>) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify([...fields]));
 };
 
+// Helper: check if a formatted value is truly "has data" (not empty string, whitespace, etc.)
+const hasRealValue = (formatted: string | null): boolean => {
+  if (formatted === null || formatted === undefined) return false;
+  const trimmed = formatted.trim();
+  if (trimmed === '' || trimmed === '—' || trimmed === '-' || trimmed === '$0' || trimmed === '$0.00' || trimmed === '0') return false;
+  return true;
+};
+
 // Compute fill rates from loaded properties
 const computeFillRates = (props: QueueProperty[]): Map<string, number> => {
   const rates = new Map<string, number>();
   if (props.length === 0) return rates;
   for (const field of DETAIL_FIELDS) {
-    const filled = props.filter(p => field.format(p) !== null).length;
+    const filled = props.filter(p => hasRealValue(field.format(p))).length;
     rates.set(field.key, Math.round((filled / props.length) * 100));
   }
   return rates;
@@ -281,7 +289,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [statusCounts, setStatusCounts] = useState<{ pending: number; approved: number; rejected: number }>({ pending: 0, approved: 0, rejected: 0 });
   const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
   const [showFieldSettings, setShowFieldSettings] = useState(false);
-  const [fillRates, setFillRates] = useState<Map<string, number>>(new Map());
+  // Fill rates computed in real-time from loaded properties
   // Inline rejection state
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
@@ -310,6 +318,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   const currentProperty = filteredProperties[currentIndex];
   const progress = filteredProperties.length > 0 ? ((currentIndex + 1) / filteredProperties.length) * 100 : 0;
+  const fillRates = useMemo(() => computeFillRates(properties), [properties]);
 
   const toggleField = (key: string) => {
     setVisibleFields(prev => {
@@ -334,13 +343,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   useEffect(() => {
     setCurrentIndex(0);
   }, [visualFilter, statusFilter]);
-
-  // Compute fill rates when properties load
-  useEffect(() => {
-    if (properties.length > 0) {
-      setFillRates(computeFillRates(properties));
-    }
-  }, [properties]);
 
   // Reset forms when changing property
   useEffect(() => {
@@ -1105,13 +1107,14 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             {detailsExpanded && (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
                 {DETAIL_FIELDS.filter(f => visibleFields.has(f.key)).map(field => {
-                  const value = field.format(currentProperty);
-                  const isHighlight = field.highlight?.(currentProperty) ?? false;
+                  const formatted = field.format(currentProperty);
+                  const realValue = hasRealValue(formatted);
+                  const isHighlight = realValue && (field.highlight?.(currentProperty) ?? false);
                   return (
                     <div key={field.key} className={`px-3 py-2 border-t border-r ${isHighlight ? 'bg-emerald-50' : ''}`}>
                       <p className="text-[10px] text-muted-foreground">{field.label}</p>
-                      <p className={`text-xs font-semibold truncate ${value ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
-                        {value || '—'}
+                      <p className={`text-xs font-semibold truncate ${realValue ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
+                        {realValue ? formatted : '—'}
                       </p>
                     </div>
                   );
