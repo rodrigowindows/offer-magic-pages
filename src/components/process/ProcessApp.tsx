@@ -40,51 +40,89 @@ export const ProcessApp = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b bg-card sticky top-0 z-40">
-        <div className="container mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3">
+      {/* Mobile: single compact header with back + steps + batch */}
+      <header className="sm:hidden border-b bg-card sticky top-0 z-40">
+        <div className="flex items-center gap-1 px-2 py-1.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/')}
-            className="gap-1 shrink-0 h-8 w-8 sm:h-9 sm:w-auto p-0 sm:px-3"
+            className="shrink-0 h-7 w-7 p-0"
           >
             <ChevronLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Menu</span>
           </Button>
-          <h1 className="text-base sm:text-lg font-semibold truncate">Processo de Investimento</h1>
+
+          {/* Inline steps */}
+          <nav className="flex items-center gap-0.5">
+            {PROCESS_STEPS.map((step, index) => {
+              const Icon = step.icon;
+              const isCurrent = index === currentIndex;
+              const isPast = index < currentIndex;
+              return (
+                <div key={step.number} className="flex items-center">
+                  {index > 0 && (
+                    <div className={cn('h-0.5 w-3 mx-0.5', index <= currentIndex ? 'bg-primary' : 'bg-border')} />
+                  )}
+                  <Link
+                    to={step.fullPath}
+                    className={cn(
+                      'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
+                      isCurrent
+                        ? 'bg-primary text-primary-foreground'
+                        : isPast
+                        ? 'text-primary/70'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    <span>{step.title}</span>
+                  </Link>
+                </div>
+              );
+            })}
+          </nav>
+
           <div className="ml-auto shrink-0">
             <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
           </div>
         </div>
       </header>
 
-      {/* Stepper - Mobile optimized with horizontal scroll */}
-      <div className="border-b bg-card/50">
-        <div className="container mx-auto px-2 sm:px-4 py-2.5 sm:py-4">
-          <nav className="flex items-center overflow-x-auto scrollbar-hide gap-0 sm:justify-center pb-1 sm:pb-0 -mx-2 px-2 sm:mx-0 sm:px-0">
+      {/* Desktop: full header + stepper */}
+      <header className="hidden sm:block border-b bg-card sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="gap-1 shrink-0 h-9 px-3"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Menu</span>
+          </Button>
+          <h1 className="text-lg font-semibold truncate">Processo de Investimento</h1>
+          <div className="ml-auto shrink-0">
+            <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
+          </div>
+        </div>
+      </header>
+
+      <div className="hidden sm:block border-b bg-card/50">
+        <div className="container mx-auto px-4 py-4">
+          <nav className="flex items-center justify-center">
             {PROCESS_STEPS.map((step, index) => {
               const Icon = step.icon;
               const isCurrent = index === currentIndex;
               const isPast = index < currentIndex;
-
               return (
                 <div key={step.number} className="flex items-center shrink-0">
-                  {/* Connector line */}
                   {index > 0 && (
-                    <div
-                      className={cn(
-                        'h-0.5 w-4 sm:w-10 mx-0.5 sm:mx-1',
-                        index <= currentIndex ? 'bg-primary' : 'bg-border'
-                      )}
-                    />
+                    <div className={cn('h-0.5 w-10 mx-1', index <= currentIndex ? 'bg-primary' : 'bg-border')} />
                   )}
-
-                  {/* Step button */}
                   <Link
                     to={step.fullPath}
                     className={cn(
-                      'flex items-center gap-1 sm:gap-2 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap',
+                      'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap',
                       isCurrent
                         ? 'bg-primary text-primary-foreground shadow-sm'
                         : isPast
@@ -93,10 +131,10 @@ export const ProcessApp = () => {
                     )}
                   >
                     <div className="flex items-center gap-1">
-                      <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <Icon className="h-4 w-4" />
                       <span className="font-semibold">{step.number}</span>
                     </div>
-                    <span className="hidden md:inline">{step.title}</span>
+                    <span>{step.title}</span>
                   </Link>
                 </div>
               );
@@ -105,8 +143,8 @@ export const ProcessApp = () => {
         </div>
       </div>
 
-      {/* Content - grows to fill, with padding for bottom nav */}
-      <main className="flex-1 container mx-auto py-3 sm:py-6 pb-20 sm:pb-24">
+      {/* Content */}
+      <main className="flex-1 container mx-auto py-2 sm:py-6 pb-14 sm:pb-24">
         <Routes>
           <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
           <Route path="/step-2" element={<MAOCalculator />} />
@@ -114,31 +152,29 @@ export const ProcessApp = () => {
         </Routes>
       </main>
 
-      {/* Footer Navigation - Mobile optimized */}
+      {/* Footer Navigation */}
       <div className="border-t bg-card sticky bottom-0 z-30">
-        <div className="container mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between">
+        <div className="container mx-auto px-3 sm:px-4 py-1.5 sm:py-3 flex items-center justify-between">
           {currentIndex > 0 ? (
-            <Button variant="outline" onClick={goToPrevious} size="sm" className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9">
-              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Anterior</span>
-              <span className="xs:hidden">Ant.</span>
+            <Button variant="outline" onClick={goToPrevious} size="sm" className="gap-1.5 text-xs h-7 sm:h-9 sm:text-sm sm:gap-2">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Ant.
             </Button>
           ) : (
             <div />
           )}
 
-          <span className="text-xs sm:text-sm text-muted-foreground">
+          <span className="text-[10px] sm:text-sm text-muted-foreground">
             {currentIndex + 1}/{PROCESS_STEPS.length}
           </span>
 
           {currentIndex < PROCESS_STEPS.length - 1 ? (
-            <Button onClick={goToNext} size="sm" className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9">
-              <span className="hidden xs:inline">Próximo</span>
-              <span className="xs:hidden">Próx.</span>
-              <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <Button onClick={goToNext} size="sm" className="gap-1.5 text-xs h-7 sm:h-9 sm:text-sm sm:gap-2">
+              Próx.
+              <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           ) : (
-            <Button variant="default" onClick={() => navigate('/')} size="sm" className="gap-1.5 sm:gap-2 text-xs sm:text-sm h-8 sm:h-9">
+            <Button variant="default" onClick={() => navigate('/')} size="sm" className="text-xs h-7 sm:h-9 sm:text-sm">
               Finalizar
             </Button>
           )}
