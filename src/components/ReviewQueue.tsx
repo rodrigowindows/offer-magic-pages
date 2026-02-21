@@ -32,6 +32,8 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  BarChart3,
+  SkipForward,
   Settings2,
   Eye,
   EyeOff,
@@ -267,11 +269,14 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [rejectionNotes, setRejectionNotes] = useState("");
-  // Quick offer on approve
-  const [showOfferInput, setShowOfferInput] = useState(false);
+  // Quick offer amount
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
-  // Comps modal after approve
+  // Approve flow phases: null → 'choose' → 'comps' → 'offer' → save → advance
+  type ApprovePhase = 'choose' | 'comps' | 'offer' | null;
+  const [approvePhase, setApprovePhase] = useState<ApprovePhase>(null);
+  const [pendingApproveProperty, setPendingApproveProperty] = useState<QueueProperty | null>(null);
   const [compsModalProperty, setCompsModalProperty] = useState<QueueProperty | null>(null);
+  const [compsARV, setCompsARV] = useState<number | null>(null);
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
 
@@ -312,37 +317,65 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setQuickOfferAmount("");
   }, [currentIndex]);
 
-  // Keyboard shortcuts: A = approve, R = reject, arrows = navigate, 1-9 = reasons, Enter = confirm
+  // Keyboard shortcuts: A = approve, R = reject, C = comps, N = next, Enter = confirm
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (!currentProperty || isProcessing) return;
+      if (isProcessing) return;
+
+      // Phase: choose (C = comps, N = skip comps)
+      if (approvePhase === 'choose') {
+        switch (e.key) {
+          case 'c':
+          case 'C':
+            e.preventDefault();
+            handleOpenComps();
+            return;
+          case 'n':
+          case 'N':
+          case 'ArrowRight':
+            e.preventDefault();
+            handleSkipComps();
+            return;
+          case 'Escape':
+            e.preventDefault();
+            handleCancelApprove();
+            return;
+        }
+        return;
+      }
+
+      // Phase: offer (Enter = confirm, Esc = cancel)
+      // Note: input fields are handled by the early return above
+      if (approvePhase === 'offer') {
+        return; // Let the input handle keys
+      }
+
+      if (!currentProperty) return;
 
       switch (e.key) {
         case 'a':
         case 'A':
-          if (!showRejectForm && !showOfferInput) {
+          if (!showRejectForm) {
             e.preventDefault();
-            setShowOfferInput(true);
-            // Pre-fill with cash_offer_amount if available
-            if (currentProperty.cash_offer_amount) {
-              setQuickOfferAmount(currentProperty.cash_offer_amount.toString());
-            }
+            handleStartApprove();
           }
           break;
         case 'r':
         case 'R':
-          e.preventDefault();
-          setShowRejectForm(true);
+          if (!approvePhase) {
+            e.preventDefault();
+            setShowRejectForm(true);
+          }
           break;
         case 'ArrowRight':
-          if (!showRejectForm && !showOfferInput) {
+          if (!showRejectForm && !approvePhase) {
             e.preventDefault();
             handleNext();
           }
           break;
         case 'ArrowLeft':
-          if (!showRejectForm && !showOfferInput) {
+          if (!showRejectForm && !approvePhase) {
             e.preventDefault();
             handlePrevious();
           }
@@ -354,24 +387,14 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             setSelectedReason("");
             setRejectionNotes("");
           }
-          if (showOfferInput) {
-            e.preventDefault();
-            setShowOfferInput(false);
-            setQuickOfferAmount("");
-          }
           break;
         case 'Enter':
           if (showRejectForm && selectedReason) {
             e.preventDefault();
             handleReject();
           }
-          if (showOfferInput) {
-            e.preventDefault();
-            handleApproveWithOffer();
-          }
           break;
         default:
-          // Number keys 1-9 for quick rejection reason selection
           if (showRejectForm && e.key >= '1' && e.key <= '9') {
             const index = parseInt(e.key) - 1;
             if (index < REJECTION_REASONS.length) {
@@ -385,7 +408,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, properties.length, currentProperty, showRejectForm, showOfferInput, selectedReason, isProcessing]);
+  }, [currentIndex, properties.length, currentProperty, showRejectForm, selectedReason, isProcessing, approvePhase]);
 
   const fetchPendingProperties = async () => {
     try {
@@ -507,42 +530,81 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
-    setShowOfferInput(false);
     setQuickOfferAmount("");
+    setApprovePhase(null);
+    setPendingApproveProperty(null);
+    setCompsARV(null);
   };
 
-  const handleApprove = async () => {
-    if (!userId || !userName || !currentProperty) return;
-    setIsProcessing(true);
-    try {
-      const { error } = await supabase
-        .from("properties")
-        .update({
-          approval_status: "approved",
-          approved_by: userId,
-          approved_by_name: userName,
-          approved_at: new Date().toISOString(),
-          rejection_reason: null,
-          rejection_notes: null,
-          updated_by: userId,
-          updated_by_name: userName,
-        } as any)
-        .eq("id", currentProperty.id);
-      if (error) throw error;
-      toast({
-        title: "Aprovado!",
-        description: currentProperty.address,
-      });
-      await advanceAfterAction();
-    } catch (error: any) {
-      toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
+  // Step 1: User clicks APROVAR → show choice (Comps or Skip)
+  const handleStartApprove = () => {
+    if (!currentProperty) return;
+    setPendingApproveProperty(currentProperty);
+    setApprovePhase('choose');
+  };
+
+  // Step 2a: User chooses COMPS → open modal
+  const handleOpenComps = () => {
+    if (pendingApproveProperty) {
+      setCompsModalProperty(pendingApproveProperty);
+      setApprovePhase('comps');
     }
   };
 
-  const handleApproveWithOffer = async () => {
-    if (!userId || !userName || !currentProperty) return;
+  // Step 2b: User chooses SKIP → go straight to offer
+  const handleSkipComps = () => {
+    setCompsARV(null);
+    setApprovePhase('offer');
+    // Pre-fill with 70% of estimated value
+    if (pendingApproveProperty?.estimated_value) {
+      setQuickOfferAmount(Math.round(pendingApproveProperty.estimated_value * 0.7).toString());
+    }
+  };
+
+  // Step 3: Comps modal closed → fetch ARV from comps → show offer input
+  const handleCompsModalClose = async () => {
+    setCompsModalProperty(null);
+    if (!pendingApproveProperty) {
+      setApprovePhase(null);
+      return;
+    }
+    // Fetch comps to calculate ARV
+    try {
+      const { data: comps } = await supabase
+        .from('manual_comps_links' as any)
+        .select('comp_data')
+        .eq('property_id', pendingApproveProperty.id);
+
+      const validComps = (comps as any[] || []).filter(
+        (c: any) => c.comp_data?.sale_price && c.comp_data?.square_feet && c.comp_data.square_feet > 0
+      );
+
+      if (validComps.length > 0 && pendingApproveProperty.square_feet) {
+        const avgPricePerSqft = validComps.reduce(
+          (sum: number, c: any) => sum + (c.comp_data.sale_price / c.comp_data.square_feet), 0
+        ) / validComps.length;
+        const arv = Math.round(pendingApproveProperty.square_feet * avgPricePerSqft);
+        setCompsARV(arv);
+        // Pre-fill offer at 70% of ARV
+        setQuickOfferAmount(Math.round(arv * 0.7).toString());
+      } else {
+        setCompsARV(null);
+        if (pendingApproveProperty.estimated_value) {
+          setQuickOfferAmount(Math.round(pendingApproveProperty.estimated_value * 0.7).toString());
+        }
+      }
+    } catch {
+      setCompsARV(null);
+      if (pendingApproveProperty?.estimated_value) {
+        setQuickOfferAmount(Math.round(pendingApproveProperty.estimated_value * 0.7).toString());
+      }
+    }
+    setApprovePhase('offer');
+  };
+
+  // Step 4: Confirm offer → save to DB → advance
+  const handleConfirmOffer = async () => {
+    if (!userId || !userName || !pendingApproveProperty) return;
     setIsProcessing(true);
     try {
       const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
@@ -562,18 +624,17 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       const { error } = await supabase
         .from("properties")
         .update(updateData)
-        .eq("id", currentProperty.id);
+        .eq("id", pendingApproveProperty.id);
       if (error) throw error;
       toast({
         title: "Aprovado!",
-        description: `${currentProperty.address}${offerValue ? ` - Oferta: $${offerValue.toLocaleString()}` : ''}`,
+        description: `${pendingApproveProperty.address}${offerValue ? ` - Oferta: $${offerValue.toLocaleString()}` : ''}`,
       });
-      // Open comps modal for this property before advancing
-      const approvedProp = { ...currentProperty, cash_offer_amount: offerValue ?? currentProperty.cash_offer_amount };
-      setCompsModalProperty(approvedProp);
-      // Reset offer input but don't advance yet (modal will trigger advance on close)
-      setShowOfferInput(false);
+      setApprovePhase(null);
+      setPendingApproveProperty(null);
+      setCompsARV(null);
       setQuickOfferAmount("");
+      await advanceAfterAction();
     } catch (error: any) {
       toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
     } finally {
@@ -581,9 +642,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     }
   };
 
-  const handleCompsModalClose = async () => {
-    setCompsModalProperty(null);
-    await advanceAfterAction();
+  // Cancel the approve flow
+  const handleCancelApprove = () => {
+    setApprovePhase(null);
+    setPendingApproveProperty(null);
+    setCompsARV(null);
+    setQuickOfferAmount("");
   };
 
   const handleReject = async () => {
@@ -929,15 +993,56 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
           {/* Inline Approve / Reject Buttons */}
           <div className="pt-3 sm:pt-4 border-t space-y-3">
-            {showOfferInput ? (
-              /* Offer Input before Approve */
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 space-y-3">
+            {approvePhase === 'choose' ? (
+              /* Phase 1: Choose Comps or Skip */
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 sm:p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-green-800">Definir Valor da Oferta (opcional)</p>
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <p className="text-sm font-bold text-blue-800">Adicionar comps antes da oferta?</p>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => { setShowOfferInput(false); setQuickOfferAmount(""); }}
+                    onClick={handleCancelApprove}
+                    className="text-xs text-muted-foreground gap-1 h-7"
+                  >
+                    <Undo2 className="h-3 w-3" />
+                    <kbd className="px-1 py-0.5 text-[10px] bg-white border rounded">Esc</kbd>
+                  </Button>
+                </div>
+                <div className="flex gap-2 sm:gap-3">
+                  <Button
+                    onClick={handleOpenComps}
+                    className="flex-1 h-12 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-lg font-bold gap-2"
+                  >
+                    <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    COMPS
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-blue-800/40 rounded">C</kbd>
+                  </Button>
+                  <Button
+                    onClick={handleSkipComps}
+                    variant="outline"
+                    className="flex-1 h-12 sm:h-14 border-blue-300 text-blue-700 hover:bg-blue-100 text-sm sm:text-lg font-bold gap-2"
+                  >
+                    <SkipForward className="h-5 w-5 sm:h-6 sm:w-6" />
+                    PULAR
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-blue-100 border-blue-200 border rounded">N</kbd>
+                  </Button>
+                </div>
+              </div>
+            ) : approvePhase === 'offer' ? (
+              /* Phase 2: Offer input (after comps or skip) */
+              <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 sm:p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-green-800">
+                    Definir Valor da Oferta
+                    {compsARV && <span className="ml-2 text-xs font-normal text-green-600">(ARV: ${compsARV.toLocaleString()})</span>}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelApprove}
                     className="text-xs text-muted-foreground gap-1 h-7"
                   >
                     <Undo2 className="h-3 w-3" />
@@ -951,7 +1056,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                     <span className="absolute left-3 top-2.5 text-lg font-bold text-green-700">$</span>
                     <Input
                       type="number"
-                      placeholder={currentProperty.estimated_value ? `Sugestao: ${Math.round(currentProperty.estimated_value * 0.7).toLocaleString()}` : "Ex: 150000"}
+                      placeholder="Ex: 150000"
                       value={quickOfferAmount}
                       onChange={(e) => setQuickOfferAmount(e.target.value)}
                       className="pl-8 h-12 text-lg font-bold border-green-300 focus:border-green-500"
@@ -960,31 +1065,36 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                   </div>
                 </div>
 
-                {/* Quick percentage buttons */}
-                {currentProperty.estimated_value && currentProperty.estimated_value > 0 && (
-                  <div className="flex gap-1.5 flex-wrap">
-                    {[60, 65, 70, 75, 80].map(pct => {
-                      const val = Math.round(currentProperty.estimated_value * (pct / 100));
-                      return (
-                        <button
-                          key={pct}
-                          onClick={() => setQuickOfferAmount(val.toString())}
-                          className={`px-2.5 py-1.5 rounded-md text-xs border transition-colors ${
-                            quickOfferAmount === val.toString()
-                              ? 'bg-green-600 text-white border-green-600 font-bold'
-                              : 'bg-white text-green-800 border-green-200 hover:bg-green-100'
-                          }`}
-                        >
-                          {pct}% = ${val.toLocaleString()}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+                {/* Quick percentage buttons based on ARV or estimated_value */}
+                {(() => {
+                  const baseValue = compsARV || pendingApproveProperty?.estimated_value;
+                  if (!baseValue || baseValue <= 0) return null;
+                  const label = compsARV ? 'ARV' : 'Est.';
+                  return (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {[60, 65, 70, 75, 80].map(pct => {
+                        const val = Math.round(baseValue * (pct / 100));
+                        return (
+                          <button
+                            key={pct}
+                            onClick={() => setQuickOfferAmount(val.toString())}
+                            className={`px-2.5 py-1.5 rounded-md text-xs border transition-colors ${
+                              quickOfferAmount === val.toString()
+                                ? 'bg-green-600 text-white border-green-600 font-bold'
+                                : 'bg-white text-green-800 border-green-200 hover:bg-green-100'
+                            }`}
+                          >
+                            {pct}% {label} = ${val.toLocaleString()}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
 
                 <div className="flex gap-2">
                   <Button
-                    onClick={handleApproveWithOffer}
+                    onClick={handleConfirmOffer}
                     disabled={isProcessing}
                     className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold gap-2"
                   >
@@ -999,12 +1109,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 {/* Main action row */}
                 <div className="flex gap-2 sm:gap-3">
                   <Button
-                    onClick={() => {
-                      setShowOfferInput(true);
-                      if (currentProperty.cash_offer_amount) {
-                        setQuickOfferAmount(currentProperty.cash_offer_amount.toString());
-                      }
-                    }}
+                    onClick={handleStartApprove}
                     disabled={isProcessing}
                     className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-lg font-bold gap-2"
                   >
