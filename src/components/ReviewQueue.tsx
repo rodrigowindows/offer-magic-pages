@@ -259,6 +259,19 @@ interface DailyStats {
   total_users: number;
 }
 
+// Extract Visual category from evaluation string
+const getVisualCategory = (evaluation: string | null): string | null => {
+  const m = evaluation?.match(/Visual:(\S+)/);
+  return m ? m[1] : null;
+};
+
+const VISUAL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  HOT: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300' },
+  WARM: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-300' },
+  COLD: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300' },
+  LAND: { bg: 'bg-stone-100', text: 'text-stone-700', border: 'border-stone-300' },
+};
+
 interface ReviewQueueProps {
   selectedBatch?: string;
 }
@@ -270,6 +283,10 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
+  const [visualFilter, setVisualFilter] = useState<string>('all');
+  const [statusCounts, setStatusCounts] = useState<{ pending: number; approved: number; rejected: number }>({ pending: 0, approved: 0, rejected: 0 });
   const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
   const [showFieldSettings, setShowFieldSettings] = useState(false);
   // Fill rates computed in real-time from loaded properties
@@ -288,8 +305,19 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
 
-  const currentProperty = properties[currentIndex];
-  const progress = properties.length > 0 ? ((currentIndex + 1) / properties.length) * 100 : 0;
+  // Filter properties by Visual category (client-side)
+  const visualCounts = properties.reduce((acc, p) => {
+    const v = getVisualCategory(p.evaluation);
+    if (v) acc[v] = (acc[v] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const filteredProperties = visualFilter === 'all'
+    ? properties
+    : properties.filter(p => getVisualCategory(p.evaluation) === visualFilter);
+
+  const currentProperty = filteredProperties[currentIndex];
+  const progress = filteredProperties.length > 0 ? ((currentIndex + 1) / filteredProperties.length) * 100 : 0;
   const fillRates = useMemo(() => computeFillRates(properties), [properties]);
 
   const toggleField = (key: string) => {
@@ -303,19 +331,28 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   };
 
   useEffect(() => {
-    fetchPendingProperties();
+    fetchProperties();
     if (user) {
       fetchDailyStats();
+      fetchStatusCounts();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, selectedBatch]);
+  }, [user, selectedBatch, statusFilter]);
+
+  // Reset index when filter changes
+  useEffect(() => {
+    setCurrentIndex(0);
+  }, [visualFilter, statusFilter]);
 
   // Reset forms when changing property
   useEffect(() => {
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
+    setApprovePhase(null);
+    setPendingApproveProperty(null);
     setQuickOfferAmount("");
+    setCompsARV(null);
   }, [currentIndex]);
 
   // Keyboard shortcuts: A = approve, R = reject, C = comps, N = next, Enter = confirm
@@ -411,15 +448,21 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentIndex, properties.length, currentProperty, showRejectForm, selectedReason, isProcessing, approvePhase]);
 
-  const fetchPendingProperties = async () => {
+  const fetchProperties = async () => {
     try {
       setIsLoading(true);
       let query = supabase
         .from("properties")
         .select("id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem")
-        .or("approval_status.is.null,approval_status.eq.pending")
         .order("created_at", { ascending: true })
         .limit(500);
+
+      // Filter by status
+      if (statusFilter === 'pending') {
+        query = query.or("approval_status.is.null,approval_status.eq.pending");
+      } else {
+        query = query.eq("approval_status", statusFilter);
+      }
 
       if (selectedBatch && selectedBatch !== 'all') {
         query = query.eq('import_batch', selectedBatch);
@@ -431,12 +474,41 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       setProperties((data as unknown as QueueProperty[]) || []);
     } catch (error: any) {
       toast({
-        title: "Erro ao carregar fila",
+        title: "Erro ao carregar",
         description: error.message,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchStatusCounts = async () => {
+    try {
+      const batchFilter = selectedBatch && selectedBatch !== 'all' ? selectedBatch : null;
+
+      let pQ = supabase.from("properties").select("*", { count: "exact", head: true })
+        .or("approval_status.is.null,approval_status.eq.pending");
+      let aQ = supabase.from("properties").select("*", { count: "exact", head: true })
+        .eq("approval_status", "approved");
+      let rQ = supabase.from("properties").select("*", { count: "exact", head: true })
+        .eq("approval_status", "rejected");
+
+      if (batchFilter) {
+        pQ = pQ.eq('import_batch', batchFilter);
+        aQ = aQ.eq('import_batch', batchFilter);
+        rQ = rQ.eq('import_batch', batchFilter);
+      }
+
+      const [pendingRes, approvedRes, rejectedRes] = await Promise.all([pQ, aQ, rQ]);
+
+      setStatusCounts({
+        pending: pendingRes.count || 0,
+        approved: approvedRes.count || 0,
+        rejected: rejectedRes.count || 0,
+      });
+    } catch (err) {
+      console.error('Error fetching status counts:', err);
     }
   };
 
@@ -509,12 +581,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   };
 
   const handleNext = () => {
-    if (currentIndex < properties.length - 1) {
+    if (currentIndex < filteredProperties.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
       toast({
-        title: "🎉 Parabéns!",
-        description: "Você revisou todas as propriedades da fila!",
+        title: "Fim da lista",
+        description: "Você chegou ao final das propriedades filtradas.",
       });
     }
   };
@@ -526,8 +598,9 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   };
 
   const advanceAfterAction = async () => {
-    await fetchPendingProperties();
+    await fetchProperties();
     await fetchDailyStats();
+    fetchStatusCounts();
     setShowRejectForm(false);
     setSelectedReason("");
     setRejectionNotes("");
@@ -690,18 +763,15 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     );
   }
 
-  if (properties.length === 0) {
+  if (properties.length === 0 && statusFilter === 'pending') {
     return (
       <EmptyState
         icon={CheckCircle}
-        title="Fila Vazia! 🎉"
-        description="Parabéns! Não há propriedades pendentes para revisar. Você está em dia com o trabalho!"
+        title="Fila Vazia!"
+        description="Não há propriedades pendentes para revisar."
         action={{
-          label: "Ver Todas as Propriedades",
-          onClick: () => {
-            const tabs = document.querySelector('[value="properties"]') as HTMLElement;
-            tabs?.click();
-          },
+          label: "Ver Aprovadas",
+          onClick: () => setStatusFilter('approved'),
         }}
       />
     );
@@ -794,18 +864,78 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         </Card>
       </div>
 
+      {/* Filter Bar */}
+      <div className="space-y-2">
+        {/* Status filter */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {([
+            { key: 'pending' as const, label: 'Pendentes', count: statusCounts.pending, color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+            { key: 'approved' as const, label: 'Aprovados', count: statusCounts.approved, color: 'bg-green-100 text-green-800 border-green-300' },
+            { key: 'rejected' as const, label: 'Rejeitados', count: statusCounts.rejected, color: 'bg-red-100 text-red-800 border-red-300' },
+          ]).map(s => (
+            <button
+              key={s.key}
+              onClick={() => setStatusFilter(s.key)}
+              className={`shrink-0 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-colors ${
+                statusFilter === s.key
+                  ? s.color + ' ring-2 ring-offset-1 ring-current'
+                  : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+              }`}
+            >
+              {s.label} <span className="font-bold">{s.count}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Visual filter */}
+        {Object.keys(visualCounts).length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            <button
+              onClick={() => setVisualFilter('all')}
+              className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                visualFilter === 'all'
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+              }`}
+            >
+              Todos {properties.length}
+            </button>
+            {(['HOT', 'WARM', 'COLD', 'LAND'] as const).map(v => {
+              const count = visualCounts[v] || 0;
+              if (count === 0) return null;
+              const colors = VISUAL_COLORS[v];
+              return (
+                <button
+                  key={v}
+                  onClick={() => setVisualFilter(v)}
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    visualFilter === v
+                      ? `${colors.bg} ${colors.text} ${colors.border} ring-2 ring-offset-1 ring-current`
+                      : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                  }`}
+                >
+                  {v} <span className="font-bold">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Main Review Card */}
       <Card>
         <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <CardTitle className="text-base sm:text-lg">Revisar Propriedades</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                {statusFilter === 'pending' ? 'Revisar' : statusFilter === 'approved' ? 'Aprovadas' : 'Rejeitadas'}
+              </CardTitle>
               <CardDescription className="text-xs sm:text-sm">
-                {currentIndex + 1} de {properties.length}
+                {filteredProperties.length > 0 ? `${currentIndex + 1} de ${filteredProperties.length}` : 'Nenhuma'}
               </CardDescription>
             </div>
             <Badge variant="outline" className="text-sm sm:text-lg px-2 py-1 sm:px-4 sm:py-2 shrink-0">
-              {properties.length - currentIndex} restantes
+              {filteredProperties.length - currentIndex} restantes
             </Badge>
           </div>
           <Progress value={progress} className="mt-3 sm:mt-4" />
@@ -993,9 +1123,36 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             )}
           </div>
 
-          {/* Inline Approve / Reject Buttons */}
+          {/* Action area */}
           <div className="pt-3 sm:pt-4 border-t space-y-3">
-            {approvePhase === 'choose' ? (
+            {statusFilter !== 'pending' ? (
+              /* Read-only mode: just navigation */
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePrevious}
+                  disabled={currentIndex === 0}
+                  className="text-xs text-muted-foreground"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+                  Anterior
+                </Button>
+                <Badge variant="secondary" className="text-xs">
+                  {statusFilter === 'approved' ? 'Aprovada' : 'Rejeitada'}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNext}
+                  disabled={currentIndex === filteredProperties.length - 1}
+                  className="text-xs text-muted-foreground"
+                >
+                  Próxima
+                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </div>
+            ) : approvePhase === 'choose' ? (
               /* Phase 1: Choose Comps or Skip */
               <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3 sm:p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -1147,7 +1304,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                     variant="ghost"
                     size="sm"
                     onClick={handleNext}
-                    disabled={currentIndex === properties.length - 1}
+                    disabled={currentIndex === filteredProperties.length - 1}
                     className="text-xs text-muted-foreground"
                   >
                     Pular
