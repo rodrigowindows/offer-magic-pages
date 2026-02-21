@@ -1,6 +1,6 @@
 /**
  * MAO Calculator - Maximum Allowable Offer
- * Step 4: Calculate offer price based on ARV, renovation costs, and wholesale commission
+ * Step 2: Calculate offer price based on ARV, renovation costs, and wholesale commission
  * Formula: MAO = ARV - Renovation Cost - Wholesale Commission
  */
 
@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -19,13 +18,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
 import {
   DollarSign,
   Calculator,
   Home,
   Save,
-  ChevronDown,
-  ChevronUp,
   Hammer,
   Percent,
   ArrowDown,
@@ -84,14 +82,6 @@ const RENOVATION_LABELS: Record<RenovationType, string> = {
   medium: 'Média (25%)',
   heavy: 'Grande (40%)',
   custom: 'Personalizada',
-};
-
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value);
 };
 
 export const MAOCalculator = () => {
@@ -305,7 +295,7 @@ export const MAOCalculator = () => {
       <div className="flex items-center gap-2 sm:gap-3">
         <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
         <div>
-          <h1 className="text-lg sm:text-2xl font-bold">Passo 4: Oferta MAO</h1>
+          <h1 className="text-lg sm:text-2xl font-bold">Passo 2: Oferta MAO</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Calcular oferta máxima (ARV - Reforma - Comissão)
           </p>
@@ -427,7 +417,7 @@ export const MAOCalculator = () => {
               ) : (
                 <p className="text-xs text-amber-600 flex items-center gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  Nenhum comp encontrado. Insira o valor manualmente ou adicione comps no Passo 3.
+                  Nenhum comp encontrado. Insira o valor manualmente ou adicione comps no Passo 1.
                 </p>
               )}
 
