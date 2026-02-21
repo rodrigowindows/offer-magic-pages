@@ -32,6 +32,8 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  BarChart3,
+  SkipForward,
 } from "lucide-react";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
 import { EmptyState } from "./EmptyState";
@@ -202,7 +204,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   // Quick offer on approve
   const [showOfferInput, setShowOfferInput] = useState(false);
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
-  // Comps modal after approve
+  // Post-approve: choice to do comps or advance
+  const [approvedProperty, setApprovedProperty] = useState<QueueProperty | null>(null);
   const [compsModalProperty, setCompsModalProperty] = useState<QueueProperty | null>(null);
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
@@ -227,11 +230,31 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setQuickOfferAmount("");
   }, [currentIndex]);
 
-  // Keyboard shortcuts: A = approve, R = reject, arrows = navigate, 1-9 = reasons, Enter = confirm
+  // Keyboard shortcuts: A = approve, R = reject, arrows = navigate, 1-9 = reasons, Enter = confirm, C = comps, N = next
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (!currentProperty || isProcessing) return;
+      if (isProcessing) return;
+
+      // Post-approve choice: C = comps, N = next
+      if (approvedProperty) {
+        switch (e.key) {
+          case 'c':
+          case 'C':
+            e.preventDefault();
+            handleOpenComps();
+            return;
+          case 'n':
+          case 'N':
+          case 'ArrowRight':
+            e.preventDefault();
+            handleSkipComps();
+            return;
+        }
+        return;
+      }
+
+      if (!currentProperty) return;
 
       switch (e.key) {
         case 'a':
@@ -239,7 +262,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           if (!showRejectForm && !showOfferInput) {
             e.preventDefault();
             setShowOfferInput(true);
-            // Pre-fill with cash_offer_amount if available
             if (currentProperty.cash_offer_amount) {
               setQuickOfferAmount(currentProperty.cash_offer_amount.toString());
             }
@@ -286,7 +308,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           }
           break;
         default:
-          // Number keys 1-9 for quick rejection reason selection
           if (showRejectForm && e.key >= '1' && e.key <= '9') {
             const index = parseInt(e.key) - 1;
             if (index < REJECTION_REASONS.length) {
@@ -300,7 +321,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, properties.length, currentProperty, showRejectForm, showOfferInput, selectedReason, isProcessing]);
+  }, [currentIndex, properties.length, currentProperty, showRejectForm, showOfferInput, selectedReason, isProcessing, approvedProperty]);
 
   const fetchPendingProperties = async () => {
     try {
@@ -483,10 +504,9 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         title: "Aprovado!",
         description: `${currentProperty.address}${offerValue ? ` - Oferta: $${offerValue.toLocaleString()}` : ''}`,
       });
-      // Open comps modal for this property before advancing
+      // Show post-approve choice (Comps or Next)
       const approvedProp = { ...currentProperty, cash_offer_amount: offerValue ?? currentProperty.cash_offer_amount };
-      setCompsModalProperty(approvedProp);
-      // Reset offer input but don't advance yet (modal will trigger advance on close)
+      setApprovedProperty(approvedProp);
       setShowOfferInput(false);
       setQuickOfferAmount("");
     } catch (error: any) {
@@ -494,6 +514,18 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleOpenComps = () => {
+    if (approvedProperty) {
+      setCompsModalProperty(approvedProperty);
+      setApprovedProperty(null);
+    }
+  };
+
+  const handleSkipComps = async () => {
+    setApprovedProperty(null);
+    await advanceAfterAction();
   };
 
   const handleCompsModalClose = async () => {
@@ -785,7 +817,34 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
           {/* Inline Approve / Reject Buttons */}
           <div className="pt-3 sm:pt-4 border-t space-y-3">
-            {showOfferInput ? (
+            {approvedProperty ? (
+              /* Post-approve choice: Comps or Next */
+              <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 sm:p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <p className="text-sm font-bold text-green-800">Aprovado! Deseja adicionar comps?</p>
+                </div>
+                <div className="flex gap-2 sm:gap-3">
+                  <Button
+                    onClick={handleOpenComps}
+                    className="flex-1 h-12 sm:h-14 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-lg font-bold gap-2"
+                  >
+                    <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6" />
+                    COMPS
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-blue-800/40 rounded">C</kbd>
+                  </Button>
+                  <Button
+                    onClick={handleSkipComps}
+                    variant="outline"
+                    className="flex-1 h-12 sm:h-14 border-green-300 text-green-700 hover:bg-green-100 text-sm sm:text-lg font-bold gap-2"
+                  >
+                    <SkipForward className="h-5 w-5 sm:h-6 sm:w-6" />
+                    PROXIMA
+                    <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-green-100 border-green-200 border rounded">N</kbd>
+                  </Button>
+                </div>
+              </div>
+            ) : showOfferInput ? (
               /* Offer Input before Approve */
               <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4 space-y-3">
                 <div className="flex items-center justify-between">
