@@ -5,6 +5,7 @@
 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { formatCurrency } from '@/lib/utils';
 
 interface PropertyData {
   address: string;
@@ -50,16 +51,6 @@ export const generatePropertyOfferPDF = async (options: OfferPDFOptions): Promis
   const primaryColor: [number, number, number] = [16, 185, 129]; // Green
   const secondaryColor: [number, number, number] = [55, 65, 81]; // Gray-700
   const lightGray: [number, number, number] = [243, 244, 246]; // Gray-100
-
-  // Helper function to format currency
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   // Helper function to format date
   const formatDate = (date: Date): string => {

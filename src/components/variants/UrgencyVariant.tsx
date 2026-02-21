@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { defaultOffer } from "@/lib/utils";
 import { AlertTriangle, Clock, Phone } from "lucide-react";
 import OfferCountdown from "@/components/OfferCountdown";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
@@ -114,7 +115,7 @@ export const UrgencyVariant = ({ property }: UrgencyVariantProps) => {
   };
 
   const offerType = getOfferType(property);
-  const offerAmount = property.cash_offer_amount || Math.round(property.estimated_value * 0.7);
+  const offerAmount = property.cash_offer_amount || defaultOffer(property.estimated_value);
   const offerDisplay = offerType === "range"
     ? formatOffer(property, { shortForm: true })
     : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 0 }).format(offerAmount);

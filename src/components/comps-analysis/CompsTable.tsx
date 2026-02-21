@@ -10,6 +10,7 @@ import { MapPin, TrendingUp, TrendingDown, Star, ExternalLink, Eye } from 'lucid
 import { formatDistanceToNow } from 'date-fns';
 import type { ComparableProperty } from './types';
 import { useState } from 'react';
+import { formatCurrency } from '@/lib/utils';
 
 export interface CompsTableProps {
   comparables: ComparableProperty[];
@@ -80,15 +81,6 @@ export const CompsTable = ({
       return aValue < bValue ? 1 : -1;
     }
   });
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const getQualityBadge = (score?: number) => {
     if (!score) return null;

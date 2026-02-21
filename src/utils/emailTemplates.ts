@@ -4,6 +4,7 @@
  */
 
 import { generateQRCodeUrl, getQRCodeWithFallbacks } from './qrCodeGenerator';
+import { formatCurrency } from '@/lib/utils';
 
 interface EmailTemplateProps {
   property: {
@@ -37,15 +38,6 @@ export const generatePropertyOfferEmail = ({
   propertyUrl,
   qrCodeUrl
 }: EmailTemplateProps): string => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   // Create property slug for URL if not provided
   const createPropertySlug = (address: string, city: string) => {
     return `${address.toLowerCase()

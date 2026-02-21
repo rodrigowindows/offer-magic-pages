@@ -230,20 +230,6 @@ export const cleanPhoneNumber = (phone: string): string => {
   return phone.replace(/\D/g, '');
 };
 
-/**
- * Formata número de telefone para exibição
- * Ex: 7868828251 -> (786) 882-8251
- */
-export const formatPhoneNumber = (phone: string): string => {
-  const cleaned = cleanPhoneNumber(phone);
-
-  if (cleaned.length !== 10) {
-    return phone;
-  }
-
-  return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
-};
-
 export default {
   validatePhoneNumber,
   validateEmail,
@@ -253,5 +239,4 @@ export default {
   validateImageFile,
   validateBatchCSV,
   cleanPhoneNumber,
-  formatPhoneNumber,
 };

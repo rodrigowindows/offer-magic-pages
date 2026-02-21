@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, MapPin, Calendar, Home, Ruler, DollarSign } from 'lucide-react';
 import type { ComparableProperty } from './types';
+import { formatCurrency } from '@/lib/utils';
 
 export interface CompareDialogProps {
   open: boolean;
@@ -30,15 +31,6 @@ export const CompareDialog = ({
   onRemoveComparable,
   maxComparables = 4,
 }: CompareDialogProps) => {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',

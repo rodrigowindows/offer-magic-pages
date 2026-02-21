@@ -3,6 +3,7 @@ import { SimpleLeadCapture } from "@/components/SimpleLeadCapture";
 import { OfferRevealCard } from "@/components/OfferRevealCard";
 import { InterestCapture } from "@/components/InterestCapture";
 import { getOfferAverage, getOfferType, type OfferData } from "@/utils/offerUtils";
+import { defaultOffer } from "@/lib/utils";
 import { trackABEvent } from "@/utils/abTesting";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -106,7 +107,7 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
   const offerType = getOfferType(property);
   const offerAmount = offerType === 'range'
     ? Math.round(getOfferAverage(property))
-    : Math.round(property.cash_offer_amount || property.estimated_value * 0.7);
+    : (property.cash_offer_amount || defaultOffer(property.estimated_value));
 
   return (
     <div className="space-y-6">

@@ -8,23 +8,12 @@ import type {
   InitiateCallRequest,
   HealthCheckResponse,
 } from '@/types/marketing.types';
+import { cleanPhoneNumber } from '@/utils/validators';
 
 // Get Supabase URL from environment
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-
-// ===== PHONE NUMBER CLEANING UTILITY =====
-/**
- * Removes all non-numeric characters from phone number
- * @param phone - Phone number with formatting like "(786)882-8251" or "(240) 581-4595"
- * @returns Clean phone number like "7868828251" or "2405814595"
- */
-const cleanPhoneNumber = (phone: string): string => {
-  if (!phone) return '';
-  // Remove all non-numeric characters
-  return phone.replace(/\D/g, '');
-};
 // ===== SKIP TRACE DATA TYPES =====
 export interface SkipTracePhone {
   number: string;

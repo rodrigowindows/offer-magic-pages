@@ -12,6 +12,7 @@ import { ActionArea } from "./review/ActionArea";
 import type { QueueProperty, ApprovePhase, StatusFilter, DailyStats, StatusCounts } from "./review/types";
 import { REJECTION_REASONS } from "./review/constants";
 import { getVisualCategory, countByVisual } from "./review/helpers";
+import { defaultOffer } from "@/lib/utils";
 
 const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem";
 
@@ -202,7 +203,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setCompsARV(null);
     setApprovePhase('offer');
     if (pendingApproveProperty?.estimated_value) {
-      setQuickOfferAmount(Math.round(pendingApproveProperty.estimated_value * 0.7).toString());
+      setQuickOfferAmount(defaultOffer(pendingApproveProperty.estimated_value).toString());
     }
   };
 
@@ -228,17 +229,17 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         ) / validComps.length;
         const arv = Math.round(pendingApproveProperty.square_feet * avgPricePerSqft);
         setCompsARV(arv);
-        setQuickOfferAmount(Math.round(arv * 0.7).toString());
+        setQuickOfferAmount(defaultOffer(arv).toString());
       } else {
         setCompsARV(null);
         if (pendingApproveProperty.estimated_value) {
-          setQuickOfferAmount(Math.round(pendingApproveProperty.estimated_value * 0.7).toString());
+          setQuickOfferAmount(defaultOffer(pendingApproveProperty.estimated_value).toString());
         }
       }
     } catch {
       setCompsARV(null);
       if (pendingApproveProperty?.estimated_value) {
-        setQuickOfferAmount(Math.round(pendingApproveProperty.estimated_value * 0.7).toString());
+        setQuickOfferAmount(defaultOffer(pendingApproveProperty.estimated_value).toString());
       }
     }
     setApprovePhase('offer');

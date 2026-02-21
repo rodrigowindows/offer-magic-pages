@@ -21,6 +21,7 @@ import {
   Calendar,
   MapPin
 } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface PropertyOfferProps {
   property: {
@@ -54,15 +55,6 @@ export const PropertyOffer = ({
 }: PropertyOfferProps) => {
   const [isAccepted, setIsAccepted] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const handleAcceptOffer = () => {
     setIsAccepted(true);

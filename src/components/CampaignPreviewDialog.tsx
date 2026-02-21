@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { generateTrackablePropertyLink } from "@/lib/trackingLinks";
+import { formatCurrency } from "@/lib/utils";
 
 interface Property {
   id: string;
@@ -83,14 +84,6 @@ export const CampaignPreviewDialog = ({
     } catch (error) {
       console.error("Error fetching settings:", error);
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const generatePreviewMessage = (property: Property) => {

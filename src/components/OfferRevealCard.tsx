@@ -12,6 +12,7 @@ import {
   Download,
   Sparkles,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface OfferRevealCardProps {
   cashOfferAmount: number;
@@ -52,15 +53,6 @@ export const OfferRevealCard = ({
 
     return () => clearInterval(timer);
   }, [cashOfferAmount]);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
 
   const savingsFromNoRealtor = estimatedValue * 0.06; // 6% realtor fee
   const closingSpeed = "7-14 days";

@@ -1,22 +1,17 @@
 import { useState } from 'react';
-import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { PROCESS_STEPS } from './processSteps';
+import { StepperNav } from './StepperNav';
 import { ReviewQueue } from '@/components/ReviewQueue';
 import { MAOCalculator } from './MAOCalculator';
 import { BatchSelector } from './BatchSelector';
 
-const STEP_PATH_TO_INDEX: Record<string, number> = {
-  '': 0,
-  'step-2': 1,
-};
-
 const getCurrentStepIndex = (pathname: string): number => {
   if (pathname === '/process' || pathname === '/process/') return 0;
-  const match = pathname.match(/\/process\/(step-\d+)/);
-  if (match) return STEP_PATH_TO_INDEX[match[1]] ?? 0;
+  const match = pathname.match(/\/process\/step-(\d+)/);
+  if (match) return parseInt(match[1], 10) - 1;
   return 0;
 };
 
@@ -27,76 +22,32 @@ export const ProcessApp = () => {
   const [selectedBatch, setSelectedBatch] = useState<string>('all');
 
   const goToPrevious = () => {
-    if (currentIndex > 0) {
-      navigate(PROCESS_STEPS[currentIndex - 1].fullPath);
-    }
+    if (currentIndex > 0) navigate(PROCESS_STEPS[currentIndex - 1].fullPath);
   };
 
   const goToNext = () => {
-    if (currentIndex < PROCESS_STEPS.length - 1) {
-      navigate(PROCESS_STEPS[currentIndex + 1].fullPath);
-    }
+    if (currentIndex < PROCESS_STEPS.length - 1) navigate(PROCESS_STEPS[currentIndex + 1].fullPath);
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Mobile: single compact header with back + steps + batch */}
+      {/* Mobile header */}
       <header className="sm:hidden border-b bg-card sticky top-0 z-40">
         <div className="flex items-center gap-1 px-2 py-1.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="shrink-0 h-7 w-7 p-0"
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="shrink-0 h-7 w-7 p-0">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-
-          {/* Inline steps */}
-          <nav className="flex items-center gap-0.5">
-            {PROCESS_STEPS.map((step, index) => {
-              const Icon = step.icon;
-              const isCurrent = index === currentIndex;
-              const isPast = index < currentIndex;
-              return (
-                <div key={step.number} className="flex items-center">
-                  {index > 0 && (
-                    <div className={cn('h-0.5 w-3 mx-0.5', index <= currentIndex ? 'bg-primary' : 'bg-border')} />
-                  )}
-                  <Link
-                    to={step.fullPath}
-                    className={cn(
-                      'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                      isCurrent
-                        ? 'bg-primary text-primary-foreground'
-                        : isPast
-                        ? 'text-primary/70'
-                        : 'text-muted-foreground'
-                    )}
-                  >
-                    <Icon className="h-3 w-3" />
-                    <span>{step.title}</span>
-                  </Link>
-                </div>
-              );
-            })}
-          </nav>
-
+          <StepperNav currentIndex={currentIndex} compact />
           <div className="ml-auto shrink-0">
             <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
           </div>
         </div>
       </header>
 
-      {/* Desktop: full header + stepper */}
+      {/* Desktop header */}
       <header className="hidden sm:block border-b bg-card sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="gap-1 shrink-0 h-9 px-3"
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="gap-1 shrink-0 h-9 px-3">
             <ChevronLeft className="h-4 w-4" />
             <span>Menu</span>
           </Button>
@@ -107,39 +58,10 @@ export const ProcessApp = () => {
         </div>
       </header>
 
+      {/* Desktop stepper */}
       <div className="hidden sm:block border-b bg-card/50">
         <div className="container mx-auto px-4 py-4">
-          <nav className="flex items-center justify-center">
-            {PROCESS_STEPS.map((step, index) => {
-              const Icon = step.icon;
-              const isCurrent = index === currentIndex;
-              const isPast = index < currentIndex;
-              return (
-                <div key={step.number} className="flex items-center shrink-0">
-                  {index > 0 && (
-                    <div className={cn('h-0.5 w-10 mx-1', index <= currentIndex ? 'bg-primary' : 'bg-border')} />
-                  )}
-                  <Link
-                    to={step.fullPath}
-                    className={cn(
-                      'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap',
-                      isCurrent
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : isPast
-                        ? 'text-primary/70 hover:bg-accent hover:text-accent-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                    )}
-                  >
-                    <div className="flex items-center gap-1">
-                      <Icon className="h-4 w-4" />
-                      <span className="font-semibold">{step.number}</span>
-                    </div>
-                    <span>{step.title}</span>
-                  </Link>
-                </div>
-              );
-            })}
-          </nav>
+          <StepperNav currentIndex={currentIndex} />
         </div>
       </div>
 
@@ -170,7 +92,7 @@ export const ProcessApp = () => {
 
           {currentIndex < PROCESS_STEPS.length - 1 ? (
             <Button onClick={goToNext} size="sm" className="gap-1.5 text-xs h-7 sm:h-9 sm:text-sm sm:gap-2">
-              Próx.
+              Prox.
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           ) : (

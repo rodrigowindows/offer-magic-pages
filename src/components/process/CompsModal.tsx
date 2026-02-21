@@ -15,8 +15,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useComps } from '@/hooks/useComps';
 import { extractDataFromUrl } from '@/utils/urlDataExtractor';
 import {
   Plus,
@@ -26,11 +26,10 @@ import {
   CheckCircle,
   DollarSign,
   Ruler,
-  X,
   SkipForward,
 } from 'lucide-react';
 
-interface CompsModalProperty {
+export interface CompsModalProperty {
   id: string;
   address: string;
   city: string | null;
@@ -41,17 +40,6 @@ interface CompsModalProperty {
   square_feet: number | null;
 }
 
-interface SavedComp {
-  id: string;
-  url: string;
-  source: string;
-  comp_data: {
-    sale_price?: number;
-    square_feet?: number;
-  } | null;
-  created_at: string;
-}
-
 interface CompsModalProps {
   open: boolean;
   onClose: () => void;
@@ -59,49 +47,24 @@ interface CompsModalProps {
 }
 
 export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
-  const [comps, setComps] = useState<SavedComp[]>([]);
-  const [compsLoading, setCompsLoading] = useState(false);
   const [compUrl, setCompUrl] = useState('');
   const [compPrice, setCompPrice] = useState('');
   const [compSqft, setCompSqft] = useState('');
-  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  // Fetch comps when property changes
-  useEffect(() => {
-    if (!property || !open) return;
-    const fetchComps = async () => {
-      setCompsLoading(true);
-      const { data, error } = await supabase
-        .from('manual_comps_links' as any)
-        .select('id, url, source, comp_data, created_at')
-        .eq('property_id', property.id)
-        .order('created_at', { ascending: false });
+  const { comps, validComps, avgPricePerSqft, loading: compsLoading, saving, addComp, deleteComp } =
+    useComps(property, open);
 
-      if (error) {
-        console.error('Error fetching comps:', error);
-      } else {
-        setComps((data as unknown as SavedComp[]) || []);
-      }
-      setCompsLoading(false);
-    };
-    fetchComps();
-    // Reset form
-    setCompUrl('');
-    setCompPrice('');
-    setCompSqft('');
+  // Reset form when property changes
+  useEffect(() => {
+    if (open) {
+      setCompUrl('');
+      setCompPrice('');
+      setCompSqft('');
+    }
   }, [property?.id, open]);
 
-  const detectSource = (url: string): string => {
-    if (url.includes('trulia.com')) return 'trulia';
-    if (url.includes('zillow.com')) return 'zillow';
-    if (url.includes('redfin.com')) return 'redfin';
-    if (url.includes('realtor.com')) return 'realtor';
-    return 'other';
-  };
-
   const handleAddComp = async () => {
-    if (!property) return;
     if (!compUrl.trim()) {
       toast({ title: 'URL necessario', description: 'Cole o link do comp', variant: 'destructive' });
       return;
@@ -118,69 +81,14 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
       return;
     }
 
-    setSaving(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ title: 'Nao autenticado', variant: 'destructive' });
-        setSaving(false);
-        return;
-      }
-
-      const addressStr = `${property.address}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`;
-
-      const { error } = await supabase
-        .from('manual_comps_links' as any)
-        .insert([{
-          property_address: addressStr,
-          property_id: property.id,
-          url: compUrl.trim(),
-          source: detectSource(compUrl),
-          comp_data: { sale_price: priceNum, square_feet: sqftNum },
-          user_id: user.id,
-        }]);
-
-      if (error) throw error;
-
-      toast({ title: 'Comp adicionado!', description: `$${priceNum.toLocaleString()} | ${sqftNum} sqft` });
-
-      // Refresh comps
-      const { data: newComps } = await supabase
-        .from('manual_comps_links' as any)
-        .select('id, url, source, comp_data, created_at')
-        .eq('property_id', property.id)
-        .order('created_at', { ascending: false });
-
-      setComps((newComps as unknown as SavedComp[]) || []);
+    const ok = await addComp(compUrl, priceNum, sqftNum);
+    if (ok) {
       setCompUrl('');
       setCompPrice('');
       setCompSqft('');
-    } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-    } finally {
-      setSaving(false);
     }
   };
 
-  const handleDeleteComp = async (compId: string) => {
-    try {
-      const { error } = await supabase
-        .from('manual_comps_links' as any)
-        .delete()
-        .eq('id', compId);
-
-      if (error) throw error;
-      setComps(comps.filter(c => c.id !== compId));
-      toast({ title: 'Comp removido' });
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-    }
-  };
-
-  const validComps = comps.filter(c => c.comp_data?.sale_price && c.comp_data?.square_feet && c.comp_data.square_feet > 0);
-  const avgPricePerSqft = validComps.length > 0
-    ? validComps.reduce((sum, c) => sum + (c.comp_data!.sale_price! / c.comp_data!.square_feet!), 0) / validComps.length
-    : 0;
   const estimatedARV = property?.square_feet && avgPricePerSqft > 0
     ? property.square_feet * avgPricePerSqft
     : 0;
@@ -336,7 +244,7 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
                     <Button variant="ghost" size="sm" onClick={() => window.open(comp.url, '_blank')} className="h-7 w-7 p-0">
                       <ExternalLink className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeleteComp(comp.id)} className="h-7 w-7 p-0 text-red-500 hover:text-red-700">
+                    <Button variant="ghost" size="sm" onClick={() => deleteComp(comp.id)} className="h-7 w-7 p-0 text-red-500 hover:text-red-700">
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
