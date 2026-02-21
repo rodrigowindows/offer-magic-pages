@@ -51,6 +51,7 @@ import {
 } from "lucide-react";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
 import { EmptyState } from "./EmptyState";
+import { CompsModal } from "./process/CompsModal";
 
 // Razões predefinidas para rejeição
 const REJECTION_REASONS = [
@@ -241,6 +242,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   // Quick offer on approve
   const [showOfferInput, setShowOfferInput] = useState(false);
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
+  // Comps modal after approve
+  const [compsModalProperty, setCompsModalProperty] = useState<QueueProperty | null>(null);
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
 
@@ -537,12 +540,22 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         title: "Aprovado!",
         description: `${currentProperty.address}${offerValue ? ` - Oferta: $${offerValue.toLocaleString()}` : ''}`,
       });
-      await advanceAfterAction();
+      // Open comps modal for this property before advancing
+      const approvedProp = { ...currentProperty, cash_offer_amount: offerValue ?? currentProperty.cash_offer_amount };
+      setCompsModalProperty(approvedProp);
+      // Reset offer input but don't advance yet (modal will trigger advance on close)
+      setShowOfferInput(false);
+      setQuickOfferAmount("");
     } catch (error: any) {
       toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleCompsModalClose = async () => {
+    setCompsModalProperty(null);
+    await advanceAfterAction();
   };
 
   const handleReject = async () => {
@@ -1022,6 +1035,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Comps Modal - opens after approving */}
+      <CompsModal
+        open={!!compsModalProperty}
+        onClose={handleCompsModalClose}
+        property={compsModalProperty}
+      />
     </div>
   );
 };
