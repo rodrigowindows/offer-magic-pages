@@ -1,18 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useToast } from "@/hooks/use-toast";
@@ -21,10 +13,7 @@ import {
   XCircle,
   ArrowRight,
   ArrowLeft,
-  Award,
   Target,
-  Keyboard,
-  TrendingUp,
   MapPin,
   ThumbsUp,
   ThumbsDown,
@@ -254,9 +243,6 @@ interface DailyStats {
   reviewed_today: number;
   approved_today: number;
   rejected_today: number;
-  total_pending: number;
-  user_rank: number;
-  total_users: number;
 }
 
 // Extract Visual category from evaluation string
@@ -514,66 +500,20 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   const fetchDailyStats = async () => {
     if (!user) return;
-
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get today's reviews by current user
-      const { data: userReviews, error: userError } = await supabase
+      const { data: userReviews } = await supabase
         .from("properties")
         .select("approval_status")
         .eq("approved_by", user.id)
         .gte("approved_at", today.toISOString());
 
-      if (userError) throw userError;
-
-      const reviewed_today = userReviews?.length || 0;
-      const approved_today = userReviews?.filter(p => p.approval_status === "approved").length || 0;
-      const rejected_today = userReviews?.filter(p => p.approval_status === "rejected").length || 0;
-
-      // Get total pending (filtered by batch if selected)
-      let pendingQuery = supabase
-        .from("properties")
-        .select("*", { count: "exact", head: true })
-        .or("approval_status.is.null,approval_status.eq.pending");
-
-      if (selectedBatch && selectedBatch !== 'all') {
-        pendingQuery = pendingQuery.eq('import_batch', selectedBatch);
-      }
-
-      const { count: totalPending, error: countError } = await pendingQuery;
-
-      if (countError) throw countError;
-
-      // Get all users' stats for ranking
-      const { data: allUsers, error: rankError } = await supabase
-        .from("properties")
-        .select("approved_by")
-        .not("approved_by", "is", null)
-        .gte("approved_at", today.toISOString());
-
-      if (rankError) throw rankError;
-
-      // Calculate user counts
-      const userCounts = new Map<string, number>();
-      allUsers?.forEach(p => {
-        const count = userCounts.get(p.approved_by) || 0;
-        userCounts.set(p.approved_by, count + 1);
-      });
-
-      const sortedUsers = Array.from(userCounts.entries())
-        .sort((a, b) => b[1] - a[1]);
-
-      const userRank = sortedUsers.findIndex(([userId]) => userId === user.id) + 1;
-
       setDailyStats({
-        reviewed_today,
-        approved_today,
-        rejected_today,
-        total_pending: totalPending || 0,
-        user_rank: userRank || sortedUsers.length + 1,
-        total_users: sortedUsers.length,
+        reviewed_today: userReviews?.length || 0,
+        approved_today: userReviews?.filter(p => p.approval_status === "approved").length || 0,
+        rejected_today: userReviews?.filter(p => p.approval_status === "rejected").length || 0,
       });
     } catch (error: any) {
       console.error("Error fetching daily stats:", error);
@@ -779,89 +719,23 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   return (
     <div className="space-y-4 sm:space-y-6 px-1 sm:px-0">
-      {/* Stats Header - compact bar on mobile, cards on desktop */}
-      {/* Mobile: single compact bar */}
-      <div className="sm:hidden flex items-center justify-between gap-1 p-2 bg-card border rounded-lg">
+      {/* Stats bar - compact for all screens */}
+      <div className="flex items-center justify-between gap-1 p-2 bg-card border rounded-lg text-xs sm:text-sm">
         <div className="flex items-center gap-1.5">
           <Target className="h-3.5 w-3.5 text-blue-500" />
-          <span className="text-sm font-bold">{dailyStats?.reviewed_today || 0}</span>
-          <span className="text-[10px] text-muted-foreground">rev</span>
+          <span className="font-bold">{dailyStats?.reviewed_today || 0}</span>
+          <span className="text-muted-foreground">hoje</span>
         </div>
         <div className="w-px h-4 bg-border" />
         <div className="flex items-center gap-1.5">
           <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-          <span className="text-sm font-bold text-green-700">{dailyStats?.approved_today || 0}</span>
-          <span className="text-[10px] text-muted-foreground">ok</span>
+          <span className="font-bold text-green-700">{dailyStats?.approved_today || 0}</span>
         </div>
         <div className="w-px h-4 bg-border" />
         <div className="flex items-center gap-1.5">
           <XCircle className="h-3.5 w-3.5 text-red-500" />
-          <span className="text-sm font-bold text-red-700">{dailyStats?.rejected_today || 0}</span>
-          <span className="text-[10px] text-muted-foreground">rej</span>
+          <span className="font-bold text-red-700">{dailyStats?.rejected_today || 0}</span>
         </div>
-        <div className="w-px h-4 bg-border" />
-        <div className="flex items-center gap-1.5">
-          <TrendingUp className="h-3.5 w-3.5 text-orange-500" />
-          <span className="text-sm font-bold">{dailyStats?.total_pending || 0}</span>
-          <span className="text-[10px] text-muted-foreground">fila</span>
-        </div>
-      </div>
-
-      {/* Desktop: full cards */}
-      <div className="hidden sm:grid sm:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6 px-6">
-            <div className="text-center">
-              <Target className="h-8 w-8 mx-auto mb-2 text-blue-500" />
-              <div className="text-2xl font-bold">{dailyStats?.reviewed_today || 0}</div>
-              <p className="text-xs text-muted-foreground">Revisadas</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 px-6">
-            <div className="text-center">
-              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-              <div className="text-2xl font-bold">{dailyStats?.approved_today || 0}</div>
-              <p className="text-xs text-muted-foreground">Aprovadas</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 px-6">
-            <div className="text-center">
-              <XCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
-              <div className="text-2xl font-bold">{dailyStats?.rejected_today || 0}</div>
-              <p className="text-xs text-muted-foreground">Rejeitadas</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 px-6">
-            <div className="text-center">
-              <TrendingUp className="h-8 w-8 mx-auto mb-2 text-orange-500" />
-              <div className="text-2xl font-bold">{dailyStats?.total_pending || 0}</div>
-              <p className="text-xs text-muted-foreground">Pendentes</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6 px-6">
-            <div className="text-center">
-              <Award className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
-              <div className="text-2xl font-bold">
-                #{dailyStats?.user_rank || "-"}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Ranking
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filter Bar */}
@@ -924,24 +798,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
       {/* Main Review Card */}
       <Card>
-        <CardHeader className="px-3 sm:px-6 py-3 sm:py-6">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <CardTitle className="text-base sm:text-lg">
-                {statusFilter === 'pending' ? 'Revisar' : statusFilter === 'approved' ? 'Aprovadas' : 'Rejeitadas'}
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm">
-                {filteredProperties.length > 0 ? `${currentIndex + 1} de ${filteredProperties.length}` : 'Nenhuma'}
-              </CardDescription>
-            </div>
-            <Badge variant="outline" className="text-sm sm:text-lg px-2 py-1 sm:px-4 sm:py-2 shrink-0">
-              {filteredProperties.length - currentIndex} restantes
-            </Badge>
-          </div>
-          <Progress value={progress} className="mt-3 sm:mt-4" />
-        </CardHeader>
-
-        <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6">
+        <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6 pt-3 sm:pt-6">
           {/* Property Display */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Image */}
@@ -1020,13 +877,11 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 <a href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(currentProperty.address.replace(/\s+/g, '-'))}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors"><span className="font-bold">Re</span>Realtor</a>
               </div>
 
-              {/* Keyboard Shortcuts - condensed */}
+              {/* Keyboard hints */}
               <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted-foreground">
-                <Keyboard className="h-3.5 w-3.5" />
                 <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">A</kbd> Aprovar</span>
                 <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">R</kbd> Rejeitar</span>
-                <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">→</kbd> Próx.</span>
-                <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">←</kbd> Ant.</span>
+                <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">→</kbd><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">←</kbd> Nav</span>
               </div>
             </div>
           </div>
