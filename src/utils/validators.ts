@@ -33,72 +33,7 @@ export const recipientInfoSchema = z.object({
   seller_name: z.string().optional(),
 });
 
-// Schema de CompanyConfig
-export const companyConfigSchema = z.object({
-  company_name: z.string().min(1, 'Company name is required'),
-  contact_phone: z.string().min(1, 'Contact phone is required'),
-  contact_phone_alt: z.string().min(1, 'Alternative contact phone is required'),
-  from_phone_number: phoneSchema,
-  city: z.string().min(1, 'City is required'),
-  region: z.string().min(1, 'Region is required'),
-});
-
-// Schema de LLMConfig
-export const llmConfigSchema = z.object({
-  use_llm: z.boolean(),
-  llm_model: z.enum(['mistral', 'llama', 'gpt-4']),
-  llm_prompt_style: z.enum(['persuasive', 'friendly', 'professional', 'casual']),
-  llm_max_words_voicemail: z.number().min(10).max(100),
-});
-
-// Schema de Channels
-export const channelsSchema = z
-  .array(z.enum(['sms', 'email', 'call']))
-  .min(1, 'At least one channel must be selected');
-
 // ===== FUNÇÕES DE VALIDAÇÃO =====
-
-/**
- * Valida formato de telefone (10 dígitos)
- */
-export const validatePhoneNumber = (phone: string): ValidationResult => {
-  const cleaned = phone.replace(/\D/g, '');
-
-  if (cleaned.length !== 10) {
-    return {
-      isValid: false,
-      errors: [
-        {
-          field: 'phone_number',
-          message: 'Phone number must be exactly 10 digits',
-        },
-      ],
-    };
-  }
-
-  return { isValid: true, errors: [] };
-};
-
-/**
- * Valida formato de email
- */
-export const validateEmail = (email: string): ValidationResult => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (!emailRegex.test(email)) {
-    return {
-      isValid: false,
-      errors: [
-        {
-          field: 'email',
-          message: 'Invalid email format',
-        },
-      ],
-    };
-  }
-
-  return { isValid: true, errors: [] };
-};
 
 /**
  * Valida informações do destinatário
@@ -120,84 +55,6 @@ export const validateRecipientInfo = (data: any): ValidationResult => {
       errors: [{ field: 'unknown', message: 'Validation failed' }],
     };
   }
-};
-
-/**
- * Valida configuração de empresa
- */
-export const validateCompanyConfig = (data: any): ValidationResult => {
-  try {
-    companyConfigSchema.parse(data);
-    return { isValid: true, errors: [] };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errors: ValidationError[] = error.errors.map((err) => ({
-        field: err.path.join('.'),
-        message: err.message,
-      }));
-      return { isValid: false, errors };
-    }
-    return {
-      isValid: false,
-      errors: [{ field: 'unknown', message: 'Validation failed' }],
-    };
-  }
-};
-
-/**
- * Valida seleção de canais
- */
-export const validateChannels = (channels: any): ValidationResult => {
-  try {
-    channelsSchema.parse(channels);
-    return { isValid: true, errors: [] };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const errors: ValidationError[] = error.errors.map((err) => ({
-        field: 'channels',
-        message: err.message,
-      }));
-      return { isValid: false, errors };
-    }
-    return {
-      isValid: false,
-      errors: [{ field: 'channels', message: 'Invalid channels selection' }],
-    };
-  }
-};
-
-/**
- * Valida formato de arquivo de imagem
- */
-export const validateImageFile = (file: File): ValidationResult => {
-  const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
-  const maxSize = 5 * 1024 * 1024; // 5MB
-
-  if (!validTypes.includes(file.type)) {
-    return {
-      isValid: false,
-      errors: [
-        {
-          field: 'image',
-          message: 'Image must be PNG, JPG, JPEG, or GIF format',
-        },
-      ],
-    };
-  }
-
-  if (file.size > maxSize) {
-    return {
-      isValid: false,
-      errors: [
-        {
-          field: 'image',
-          message: 'Image size must not exceed 5MB',
-        },
-      ],
-    };
-  }
-
-  return { isValid: true, errors: [] };
 };
 
 /**
@@ -228,15 +85,4 @@ export const validateBatchCSV = (headers: string[]): ValidationResult => {
  */
 export const cleanPhoneNumber = (phone: string): string => {
   return phone.replace(/\D/g, '');
-};
-
-export default {
-  validatePhoneNumber,
-  validateEmail,
-  validateRecipientInfo,
-  validateCompanyConfig,
-  validateChannels,
-  validateImageFile,
-  validateBatchCSV,
-  cleanPhoneNumber,
 };
