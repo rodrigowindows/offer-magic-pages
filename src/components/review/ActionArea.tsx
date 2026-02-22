@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import type { ApprovePhase, StatusFilter } from './types';
 import { REJECTION_REASONS } from './constants';
+import { formatCurrency } from '@/lib/utils';
 
 interface ActionAreaProps {
   statusFilter: StatusFilter;
@@ -136,7 +137,7 @@ export const ActionArea = ({
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-green-800">
               Definir Valor da Oferta
-              {compsARV && <span className="ml-2 text-xs font-normal text-green-600">(ARV: ${compsARV.toLocaleString()})</span>}
+              {compsARV && <span className="ml-2 text-xs font-normal text-green-600">(ARV: {formatCurrency(compsARV)})</span>}
             </p>
             <Button variant="ghost" size="sm" onClick={onCancelApprove} className="text-xs text-muted-foreground gap-1 h-7">
               <Undo2 className="h-3 w-3" />
@@ -174,7 +175,7 @@ export const ActionArea = ({
                         : 'bg-white text-green-800 border-green-200 hover:bg-green-100'
                     }`}
                   >
-                    {pct}% {label} = ${val.toLocaleString()}
+                    {pct}% {label} = {formatCurrency(val)}
                   </button>
                 );
               })}
@@ -184,7 +185,7 @@ export const ActionArea = ({
           <div className="flex gap-2">
             <Button onClick={onConfirmOffer} disabled={isProcessing} className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
               <ThumbsUp className="h-5 w-5" />
-              {isProcessing ? "..." : quickOfferAmount ? `APROVAR ($${Number(quickOfferAmount).toLocaleString()})` : "APROVAR SEM OFERTA"}
+              {isProcessing ? "..." : quickOfferAmount ? `APROVAR (${formatCurrency(Number(quickOfferAmount))})` : "APROVAR SEM OFERTA"}
               <kbd className="hidden sm:inline ml-2 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">Enter</kbd>
             </Button>
           </div>

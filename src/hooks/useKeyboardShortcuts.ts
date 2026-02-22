@@ -49,21 +49,21 @@ export function useKeyboardShortcuts() {
       // Ctrl/Cmd + N: New communication
       if (modifierKey && e.key === 'n') {
         e.preventDefault();
-        navigate('/send');
+        navigate('/marketing/send');
         toast.info('New communication');
       }
 
       // Ctrl/Cmd + H: Go to history
       if (modifierKey && e.key === 'h') {
         e.preventDefault();
-        navigate('/history');
+        navigate('/marketing/history');
         toast.info('History');
       }
 
       // Ctrl/Cmd + ,: Go to settings
       if (modifierKey && e.key === ',') {
         e.preventDefault();
-        navigate('/settings');
+        navigate('/marketing/settings');
         toast.info('Settings');
       }
 

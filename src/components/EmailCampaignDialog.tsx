@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Loader2, Settings } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatCurrency } from "@/lib/utils";
 
 interface Property {
   id: string;
@@ -278,7 +279,7 @@ export function EmailCampaignDialog({
             <ul className="text-sm space-y-1">
               {properties.map((prop) => (
                 <li key={prop.id} className="text-muted-foreground">
-                  {prop.address}, {prop.city} - ${prop.cash_offer_amount.toLocaleString()}
+                  {prop.address}, {prop.city} - {formatCurrency(prop.cash_offer_amount)}
                 </li>
               ))}
             </ul>

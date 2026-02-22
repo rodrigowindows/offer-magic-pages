@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatCurrency } from "@/lib/utils";
 import { formatOfferForTemplate } from "@/utils/offerUtils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -268,7 +269,7 @@ export const PropertyCardView = ({
               <TrendingUp className="h-4 w-4 text-blue-600" />
               <div>
                 <p className="text-xs text-muted-foreground">Valor</p>
-                <p className="font-semibold">${property.estimated_value.toLocaleString()}</p>
+                <p className="font-semibold">{formatCurrency(property.estimated_value)}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-950 rounded">
@@ -276,7 +277,7 @@ export const PropertyCardView = ({
               <div>
                 <p className="text-xs text-muted-foreground">Oferta</p>
                 <p className="font-semibold text-green-600">
-                  ${property.cash_offer_amount.toLocaleString()}
+                  {formatCurrency(property.cash_offer_amount)}
                 </p>
               </div>
             </div>
@@ -330,7 +331,7 @@ export const PropertyCardView = ({
           <div className="flex flex-wrap gap-2 text-xs">
             {property.comparative_price && (
               <Badge variant="outline" className="gap-1">
-                🤖 AI: ${property.comparative_price.toLocaleString()}
+                🤖 AI: {formatCurrency(property.comparative_price)}
               </Badge>
             )}
             {property.airbnb_eligible && (
