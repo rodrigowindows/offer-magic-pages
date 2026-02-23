@@ -1,6 +1,6 @@
-import PropertyHero from "@/components/PropertyHero";
-import CashOfferSectionB from "@/components/CashOfferSectionB";
-import TrustCredentials from "@/components/TrustCredentials";
+import PropertyHero from "@/components/property/PropertyHero";
+import CashOfferSectionB from "@/components/offer/CashOfferSectionB";
+import TrustCredentials from "@/components/shared/TrustCredentials";
 import { formatCurrency } from "@/lib/utils";
 
 interface PropertyData {

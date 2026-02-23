@@ -14,7 +14,7 @@ import ImportProperties from "./pages/ImportProperties";
 import SkipTrace from "./pages/SkipTrace";
 import { MarketingApp } from "./components/marketing/MarketingApp";
 import { ProcessApp } from "./components/process/ProcessApp";
-import { FeaturesGuide } from "./components/FeaturesGuide";
+import { FeaturesGuide } from "./components/shared/FeaturesGuide";
 
 const queryClient = new QueryClient();
 

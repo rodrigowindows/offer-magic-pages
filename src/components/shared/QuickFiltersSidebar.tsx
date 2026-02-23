@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { X, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
-import { PropertyUserFilter } from "./PropertyUserFilter";
+import { PropertyUserFilter } from "../property/PropertyUserFilter";
 import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "./AdvancedPropertyFilters";
 import { ContactAvailabilityFilter, ContactFilters } from "./ContactAvailabilityFilter";
 import {

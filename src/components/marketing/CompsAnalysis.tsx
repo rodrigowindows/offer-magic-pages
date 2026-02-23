@@ -58,9 +58,9 @@ import { useAnalysisHistory } from '@/hooks/comps-analysis/useAnalysisHistory';
 // Legacy components (still needed)
 import { CompsMapboxMap } from './CompsMapboxMap';
 import { CompsComparison } from './CompsComparison';
-import { CompsApiSettings } from '@/components/CompsApiSettings';
-import { ManualCompsManager } from '@/components/ManualCompsManager';
-import { AdjustmentCalculator } from '@/components/AdjustmentCalculator';
+import { CompsApiSettings } from '@/components/shared/CompsApiSettings';
+import { ManualCompsManager } from '@/components/shared/ManualCompsManager';
+import { AdjustmentCalculator } from '@/components/offer/AdjustmentCalculator';
 
 // Services
 import { CompsDataService } from '@/services/compsDataService';

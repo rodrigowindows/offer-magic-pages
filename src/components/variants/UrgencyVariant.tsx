@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultOffer } from "@/lib/utils";
 import { AlertTriangle, Clock, Phone } from "lucide-react";
-import OfferCountdown from "@/components/OfferCountdown";
+import OfferCountdown from "@/components/offer/OfferCountdown";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { trackABEvent } from "@/utils/abTesting";
 import { supabase } from "@/integrations/supabase/client";

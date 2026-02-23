@@ -1,7 +1,7 @@
 // AI-Powered Column Mapping using Lovable AI
 import { supabase } from "@/integrations/supabase/client";
-import { DATABASE_FIELDS } from "@/components/ColumnMappingDialog";
-import type { DatabaseFieldKey } from "@/components/ColumnMappingDialog";
+import { DATABASE_FIELDS } from "@/components/import-data/ColumnMappingDialog";
+import type { DatabaseFieldKey } from "@/components/import-data/ColumnMappingDialog";
 
 interface AIColumnMapping {
   csvColumn: string;

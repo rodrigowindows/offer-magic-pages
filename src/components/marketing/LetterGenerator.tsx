@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CashOfferLetter } from '@/components/CashOfferLetter';
+import { CashOfferLetter } from '@/components/offer/CashOfferLetter';
 import {
   FileText,
   Download,

@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PROCESS_STEPS } from './processSteps';
 import { StepperNav } from './StepperNav';
-import { ReviewQueue } from '@/components/ReviewQueue';
+import { ReviewQueue } from '@/components/shared/ReviewQueue';
 import { MAOCalculator } from './MAOCalculator';
 import { BatchSelector } from './BatchSelector';
 

@@ -16,8 +16,8 @@ import {
   Rocket,
 } from 'lucide-react';
 import { useMemo } from 'react';
-import { LeadScoringDashboard } from '../LeadScoringDashboard';
-import { AutomatedSequences } from '../AutomatedSequences';
+import { LeadScoringDashboard } from '../lead/LeadScoringDashboard';
+import { AutomatedSequences } from '../follow-up/AutomatedSequences';
 import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
 
 export const Dashboard = () => {

@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { X, QrCode, Trash2, FileText, Sparkles, Rocket, Play, CheckCircle2 } from "lucide-react";
-import { LeadStatusSelect } from "./LeadStatusSelect";
-import { LeadStatus } from "./LeadStatusBadge";
+import { LeadStatusSelect } from "../lead/LeadStatusSelect";
+import { LeadStatus } from "../lead/LeadStatusBadge";
 import { useState } from "react";
 
 interface BulkActionsBarProps {

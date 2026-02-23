@@ -1,6 +1,6 @@
 // Smart field detector that tests combinations against database
 import { supabase } from "@/integrations/supabase/client";
-import type { CombinedField, CleanupRule } from "@/components/FieldCombiner";
+import type { CombinedField, CleanupRule } from "@/components/import-data/FieldCombiner";
 
 export interface DetectionResult {
   field: CombinedField;

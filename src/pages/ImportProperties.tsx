@@ -10,10 +10,10 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import ColumnMappingDialog, { ColumnMapping, DatabaseFieldKey } from "@/components/ColumnMappingDialog";
-import { FieldCombiner, CombinedField } from "@/components/FieldCombiner";
+import ColumnMappingDialog, { ColumnMapping, DatabaseFieldKey } from "@/components/import-data/ColumnMappingDialog";
+import { FieldCombiner, CombinedField } from "@/components/import-data/FieldCombiner";
 import { processRowWithCombinedFields } from "@/utils/fieldCombinerUtils";
-import { SkipTracingImporter } from "@/components/SkipTracingImporter";
+import { SkipTracingImporter } from "@/components/skip-trace/SkipTracingImporter";
 import {
   Upload,
   Image,

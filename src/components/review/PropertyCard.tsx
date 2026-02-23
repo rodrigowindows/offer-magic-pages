@@ -10,7 +10,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { PropertyImageDisplay } from '../PropertyImageDisplay';
+import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import type { QueueProperty } from './types';
 import { DETAIL_FIELDS, CATEGORY_LABELS, TAG_COLORS } from './constants';
 import { parseTags, hasRealValue, getPreDenialSuggestions, computeFillRates, saveVisibleFields, loadVisibleFields } from './helpers';

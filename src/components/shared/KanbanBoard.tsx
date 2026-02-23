@@ -2,7 +2,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { LeadStatus } from "./LeadStatusBadge";
+import { LeadStatus } from "../lead/LeadStatusBadge";
 import { Phone, MapPin, DollarSign, User } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils";

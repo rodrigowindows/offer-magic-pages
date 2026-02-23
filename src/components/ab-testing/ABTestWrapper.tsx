@@ -7,7 +7,7 @@ import { defaultOffer } from "@/lib/utils";
 import { ProgressiveVariant } from "@/components/variants/ProgressiveVariant";
 import { SocialProofVariant } from "@/components/variants/SocialProofVariant";
 import { UrgencyVariant } from "@/components/variants/UrgencyVariant";
-import PropertyPageMinimal from "@/components/PropertyPageMinimal";
+import PropertyPageMinimal from "@/components/property/PropertyPageMinimal";
 import { type OfferData } from "@/utils/offerUtils";
 
 interface ABTestWrapperProps {

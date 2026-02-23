@@ -1,6 +1,6 @@
 // Enhanced field matcher with flexible column selection and AI comparison
 import { supabase } from "@/integrations/supabase/client";
-import type { CombinedField } from "@/components/FieldCombiner";
+import type { CombinedField } from "@/components/import-data/FieldCombiner";
 
 export interface MatchResult {
   csvValue: string;

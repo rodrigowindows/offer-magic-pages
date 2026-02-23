@@ -8,7 +8,7 @@ import { Toaster } from 'sonner';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useMarketing } from '@/hooks/useMarketing';
 import { useEffect } from 'react';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 
 // Components
 import { Dashboard } from './Dashboard';
@@ -21,9 +21,9 @@ import CampaignManager from './CampaignManager';
 // Note: PredictiveAnalyticsDashboard and IntelligentFollowUps removed - need database tables
 import { AdvancedWebhookManager } from './AdvancedWebhookManager';
 import { AutomatedABTesting } from './AutomatedABTesting';
-import { ABTestAnalytics } from '@/components/ABTestAnalytics';
+import { ABTestAnalytics } from '@/components/ab-testing/ABTestAnalytics';
 import TemplateManager from './TemplateManager';
-import { SimpleCampaignDashboard } from '../SimpleCampaignDashboard';
+import { SimpleCampaignDashboard } from '../campaign/SimpleCampaignDashboard';
 import { ClicksAnalytics } from './ClicksAnalytics';
 import { LeadsManagerEnhanced } from './LeadsManagerEnhanced';
 import { LetterGenerator } from './LetterGenerator';

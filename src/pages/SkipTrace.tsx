@@ -1,5 +1,5 @@
 import React from 'react';
-import { SkipTraceDataViewer } from '@/components/SkipTraceDataViewer';
+import { SkipTraceDataViewer } from '@/components/skip-trace/SkipTraceDataViewer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSkipTraceData } from '@/hooks/useSkipTraceData';
 import {

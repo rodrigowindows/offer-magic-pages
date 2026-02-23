@@ -1,6 +1,6 @@
 // Utility functions for combining and processing CSV fields
 
-import type { CombinedField, CleanupRule } from "@/components/FieldCombiner";
+import type { CombinedField, CleanupRule } from "@/components/import-data/FieldCombiner";
 
 /**
  * Apply cleanup rules to a value

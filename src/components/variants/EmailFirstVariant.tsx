@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { SimpleLeadCapture } from "@/components/SimpleLeadCapture";
-import { OfferRevealCard } from "@/components/OfferRevealCard";
-import { InterestCapture } from "@/components/InterestCapture";
+import { SimpleLeadCapture } from "@/components/lead/SimpleLeadCapture";
+import { OfferRevealCard } from "@/components/offer/OfferRevealCard";
+import { InterestCapture } from "@/components/lead/InterestCapture";
 import { getOfferAverage, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { defaultOffer } from "@/lib/utils";
 import { trackABEvent } from "@/utils/abTesting";

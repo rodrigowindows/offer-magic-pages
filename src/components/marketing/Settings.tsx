@@ -24,8 +24,8 @@ import { useMarketingStore } from '@/store/marketingStore';
 import { toast } from 'sonner';
 import { Settings as SettingsIcon, Building2, Cpu, Zap, Save, Database, Link } from 'lucide-react';
 import type { MarketingSettings } from '@/types/marketing.types';
-import { CompsApiSettings } from '@/components/CompsApiSettings';
-import { ManualCompsManager } from '@/components/ManualCompsManager';
+import { CompsApiSettings } from '@/components/shared/CompsApiSettings';
+import { ManualCompsManager } from '@/components/shared/ManualCompsManager';
 
 // Schema de validação
 const settingsSchema = z.object({

@@ -8,7 +8,7 @@ import { CheckCircle2, MessageSquare, Phone, Users } from "lucide-react";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { trackABEvent } from "@/utils/abTesting";
 import { supabase } from "@/integrations/supabase/client";
-import SocialProofBanner from "@/components/SocialProofBanner";
+import SocialProofBanner from "@/components/shared/SocialProofBanner";
 import { useToast } from "@/hooks/use-toast";
 
 type SocialProofFlow = "interested" | "questions";

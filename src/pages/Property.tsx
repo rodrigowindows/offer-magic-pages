@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ABTestWrapper } from "@/components/ABTestWrapper";
-import { PropertyPageFollowUp } from "@/components/PropertyPageFollowUp";
+import { ABTestWrapper } from "@/components/ab-testing/ABTestWrapper";
+import { PropertyPageFollowUp } from "@/components/property/PropertyPageFollowUp";
 
 interface PropertyData {
   id: string;
