@@ -189,23 +189,33 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
         )}
 
         {/* Detail Values */}
-        {detailsExpanded && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-            {DETAIL_FIELDS.filter(f => visibleFields.has(f.key)).map(field => {
-              const formatted = field.format(property);
-              const realValue = hasRealValue(formatted);
-              const isHighlight = realValue && (field.highlight?.(property) ?? false);
-              return (
-                <div key={field.key} className={`px-3 py-2 border-t border-r ${isHighlight ? 'bg-emerald-50' : ''}`}>
-                  <p className="text-[10px] text-muted-foreground">{field.label}</p>
-                  <p className={`text-xs font-semibold truncate ${realValue ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
-                    {realValue ? formatted : '—'}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {detailsExpanded && (() => {
+          const activeFields = DETAIL_FIELDS.filter(f => visibleFields.has(f.key));
+          const count = activeFields.length;
+          // Dynamic columns: adapt based on how many fields are visible
+          const gridCols = count <= 3
+            ? 'grid-cols-1 sm:grid-cols-3'
+            : count <= 6
+              ? 'grid-cols-2 sm:grid-cols-3'
+              : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
+          return (
+            <div className={`grid ${gridCols}`}>
+              {activeFields.map(field => {
+                const formatted = field.format(property);
+                const realValue = hasRealValue(formatted);
+                const isHighlight = realValue && (field.highlight?.(property) ?? false);
+                return (
+                  <div key={field.key} className={`px-3 py-2.5 border-t border-r ${isHighlight ? 'bg-emerald-50' : ''}`}>
+                    <p className="text-xs text-muted-foreground font-medium">{field.label}</p>
+                    <p className={`text-sm font-bold truncate ${realValue ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
+                      {realValue ? formatted : '—'}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
