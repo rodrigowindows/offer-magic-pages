@@ -39,10 +39,26 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
     });
   };
 
+  const activeFields = DETAIL_FIELDS.filter(f => visibleFields.has(f.key));
+
+  const renderDetailItem = (field: typeof DETAIL_FIELDS[number]) => {
+    const formatted = field.format(property);
+    const realValue = hasRealValue(formatted);
+    const isHighlight = realValue && (field.highlight?.(property) ?? false);
+    return (
+      <div key={field.key} className={`px-3 py-2 border-b border-r last:border-r-0 ${isHighlight ? 'bg-emerald-50' : ''}`}>
+        <p className="text-xs text-muted-foreground font-medium">{field.label}</p>
+        <p className={`text-sm font-bold truncate ${realValue ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
+          {realValue ? formatted : '—'}
+        </p>
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Property Display */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+    <div className="space-y-3">
+      {/* Main layout: Image left + Info & Details right */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* Image */}
         <div>
           <PropertyImageDisplay
@@ -51,11 +67,11 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
           />
         </div>
 
-        {/* Info */}
-        <div className="space-y-3 sm:space-y-4">
+        {/* Info + Inline Details */}
+        <div className="flex flex-col gap-3">
           {/* Address + Location */}
           <div>
-            <h3 className="text-lg sm:text-2xl font-bold mb-1 line-clamp-2">{property.address}</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-0.5 line-clamp-2">{property.address}</h3>
             <p className="text-xs sm:text-sm text-muted-foreground">
               {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
             </p>
@@ -78,7 +94,7 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
 
           {/* Pre-denial warnings */}
           {suggestions.length > 0 && (
-            <div className="p-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-xs font-semibold text-amber-800 mb-1">PRE-NEGACAO SUGERIDA:</p>
               <div className="flex flex-wrap gap-1">
                 {suggestions.map(s => (
@@ -109,113 +125,90 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
             </a>
           </div>
 
-          {/* Keyboard hints */}
-          <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted-foreground">
-            <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">A</kbd> Aprovar</span>
-            <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">R</kbd> Rejeitar</span>
-            <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&rarr;</kbd><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&larr;</kbd> Nav</span>
-          </div>
+          {/* Inline Details - fill the remaining space beside the image */}
+          {activeFields.length > 0 && (
+            <div className="flex-1 border rounded-lg overflow-hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-3">
+                {activeFields.map(renderDetailItem)}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Property Details - configurable with fill rates */}
-      <div className="border rounded-lg overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between bg-muted/50 px-3 py-2 border-b">
-          <button
-            onClick={() => setDetailsExpanded(!detailsExpanded)}
-            className="flex items-center gap-2 text-sm font-semibold hover:text-primary transition-colors"
-          >
-            {detailsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            Detalhes
-            <Badge variant="secondary" className="text-[10px]">{visibleFields.size} campos</Badge>
-          </button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 gap-1.5 text-xs text-muted-foreground"
-            onClick={() => setShowFieldSettings(!showFieldSettings)}
-          >
-            <Settings2 className="h-3.5 w-3.5" />
-            Colunas
-          </Button>
-        </div>
+      {/* Details config bar */}
+      <div className="flex items-center justify-between px-1">
+        <button
+          onClick={() => setDetailsExpanded(!detailsExpanded)}
+          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+        >
+          {detailsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {detailsExpanded ? 'Ocultar' : 'Mostrar'} detalhes
+          <Badge variant="secondary" className="text-[10px]">{visibleFields.size}</Badge>
+        </button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs text-muted-foreground"
+          onClick={() => setShowFieldSettings(!showFieldSettings)}
+        >
+          <Settings2 className="h-3.5 w-3.5" />
+          Colunas
+        </Button>
+      </div>
 
-        {/* Field Settings Panel */}
-        {showFieldSettings && (
-          <div className="bg-muted/20 border-b px-3 py-3 space-y-3">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-              Dados disponíveis neste batch ({allProperties.length} imóveis)
-            </p>
-            {(['decisao', 'financeiro', 'imovel', 'dono'] as const).map(category => {
-              const fields = DETAIL_FIELDS.filter(f => f.category === category);
-              return (
-                <div key={category}>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">{CATEGORY_LABELS[category]}</p>
-                  <div className="space-y-1">
-                    {fields.map(field => {
-                      const pct = fillRates.get(field.key) ?? 0;
-                      const isVisible = visibleFields.has(field.key);
-                      const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : pct > 0 ? 'bg-red-400' : 'bg-gray-300';
-                      return (
-                        <button
-                          key={field.key}
-                          onClick={() => toggleField(field.key)}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] border transition-all ${
-                            isVisible
-                              ? 'bg-primary/5 border-primary/30 text-foreground'
-                              : 'bg-background border-border/50 text-muted-foreground hover:bg-accent/50'
-                          }`}
-                        >
-                          {isVisible ? <Eye className="h-3 w-3 text-primary shrink-0" /> : <EyeOff className="h-3 w-3 shrink-0" />}
-                          <span className="w-20 text-left truncate font-medium">{field.label}</span>
-                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className={`w-8 text-right text-[10px] font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : pct > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                            {pct}%
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+      {/* Field Settings Panel (collapsible) */}
+      {showFieldSettings && (
+        <div className="border rounded-lg bg-muted/20 px-3 py-3 space-y-3">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+            Dados disponíveis neste batch ({allProperties.length} imóveis)
+          </p>
+          {(['decisao', 'financeiro', 'imovel', 'dono'] as const).map(category => {
+            const fields = DETAIL_FIELDS.filter(f => f.category === category);
+            return (
+              <div key={category}>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">{CATEGORY_LABELS[category]}</p>
+                <div className="space-y-1">
+                  {fields.map(field => {
+                    const pct = fillRates.get(field.key) ?? 0;
+                    const isVisible = visibleFields.has(field.key);
+                    const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : pct > 0 ? 'bg-red-400' : 'bg-gray-300';
+                    return (
+                      <button
+                        key={field.key}
+                        onClick={() => toggleField(field.key)}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] border transition-all ${
+                          isVisible
+                            ? 'bg-primary/5 border-primary/30 text-foreground'
+                            : 'bg-background border-border/50 text-muted-foreground hover:bg-accent/50'
+                        }`}
+                      >
+                        {isVisible ? <Eye className="h-3 w-3 text-primary shrink-0" /> : <EyeOff className="h-3 w-3 shrink-0" />}
+                        <span className="w-20 text-left truncate font-medium">{field.label}</span>
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`w-8 text-right text-[10px] font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : pct > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {pct}%
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-              );
-            })}
-            <p className="text-[10px] text-muted-foreground text-center pt-1">
-              Clique para mostrar/ocultar. Barra = % de dados disponíveis no batch.
-            </p>
-          </div>
-        )}
+              </div>
+            );
+          })}
+          <p className="text-[10px] text-muted-foreground text-center pt-1">
+            Clique para mostrar/ocultar. Barra = % de dados disponíveis no batch.
+          </p>
+        </div>
+      )}
 
-        {/* Detail Values */}
-        {detailsExpanded && (() => {
-          const activeFields = DETAIL_FIELDS.filter(f => visibleFields.has(f.key));
-          const count = activeFields.length;
-          // Dynamic columns: adapt based on how many fields are visible
-          const gridCols = count <= 3
-            ? 'grid-cols-1 sm:grid-cols-3'
-            : count <= 6
-              ? 'grid-cols-2 sm:grid-cols-3'
-              : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5';
-          return (
-            <div className={`grid ${gridCols}`}>
-              {activeFields.map(field => {
-                const formatted = field.format(property);
-                const realValue = hasRealValue(formatted);
-                const isHighlight = realValue && (field.highlight?.(property) ?? false);
-                return (
-                  <div key={field.key} className={`px-3 py-2.5 border-t border-r ${isHighlight ? 'bg-emerald-50' : ''}`}>
-                    <p className="text-xs text-muted-foreground font-medium">{field.label}</p>
-                    <p className={`text-sm font-bold truncate ${realValue ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
-                      {realValue ? formatted : '—'}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
+      {/* Keyboard hints */}
+      <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted-foreground px-1">
+        <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">A</kbd> Aprovar</span>
+        <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">R</kbd> Rejeitar</span>
+        <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&rarr;</kbd><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&larr;</kbd> Nav</span>
       </div>
     </div>
   );
