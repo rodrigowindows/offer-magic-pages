@@ -5,7 +5,7 @@
 
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AutoFollowUpSystem } from "./AutoFollowUpSystem";
+import { AutoFollowUpSystem } from "@/components/follow-up/AutoFollowUpSystem";
 
 interface PropertyPageFollowUpProps {
   propertyId: string;

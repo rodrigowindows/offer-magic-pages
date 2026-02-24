@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import ContactFormModal from "./ContactFormModal";
+import ContactFormModal from "@/components/lead/ContactFormModal";
 
 interface CashOfferSectionBProps {
   offerAmount?: string;

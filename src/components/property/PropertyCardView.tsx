@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PropertyImageDisplay } from "./PropertyImageDisplay";
-import { SkipTracingDataModal } from "./SkipTracingDataModal";
+import { SkipTracingDataModal } from "@/components/skip-trace/SkipTracingDataModal";
 import { MoreVertical, TrendingUp, DollarSign, MapPin, ExternalLink, Phone } from "lucide-react";
 
 interface Property {

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LeadStatus } from "./LeadStatusBadge";
+import { LeadStatus } from "@/components/lead/LeadStatusBadge";
 import { Filter } from "lucide-react";
 
 interface PropertyFiltersProps {
