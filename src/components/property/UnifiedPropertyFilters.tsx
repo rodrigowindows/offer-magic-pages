@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { Filter, X, ChevronDown, User, Tag, Settings } from "lucide-react";
 import { PropertyTagsFilter } from "./PropertyTagsFilter";
-import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "./AdvancedPropertyFilters";
+import { AdvancedPropertyFilters, PropertyFilters as AdvancedFilters } from "@/components/shared/AdvancedPropertyFilters";
 
 interface UnifiedPropertyFiltersProps {
   // Status filters
