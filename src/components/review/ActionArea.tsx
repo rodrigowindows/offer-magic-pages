@@ -268,14 +268,17 @@ export const ActionArea = ({
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onPrevious} disabled={currentIndex === 0} className="text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" onClick={onPrevious} disabled={currentIndex === 0} className="text-xs text-muted-foreground h-10 px-3">
           <ArrowLeft className="h-3.5 w-3.5 mr-1" />
           Anterior
         </Button>
-        <Button variant="ghost" size="sm" onClick={onNext} disabled={currentIndex === totalFiltered - 1} className="text-xs text-muted-foreground">
+        <span className="text-sm font-bold text-muted-foreground tabular-nums">
+          {currentIndex + 1}/{totalFiltered}
+        </span>
+        <Button onClick={onNext} disabled={currentIndex === totalFiltered - 1} className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold gap-2">
+          <SkipForward className="h-4 w-4" />
           Pular
-          <ArrowRight className="h-3.5 w-3.5 ml-1" />
         </Button>
       </div>
     </div>
