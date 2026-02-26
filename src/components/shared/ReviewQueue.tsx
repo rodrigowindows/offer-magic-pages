@@ -445,6 +445,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
               isProcessing={isProcessing}
               currentIndex={currentIndex}
               totalFiltered={filteredProperties.length}
+              compsCount={currentCompsCount}
               showRejectForm={showRejectForm}
               selectedReason={selectedReason}
               rejectionNotes={rejectionNotes}
