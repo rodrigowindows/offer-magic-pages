@@ -14,7 +14,6 @@ import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import type { QueueProperty } from './types';
 import { DETAIL_FIELDS, CATEGORY_LABELS, TAG_COLORS } from './constants';
 import { parseTags, hasRealValue, getPreDenialSuggestions, computeFillRates, saveVisibleFields, loadVisibleFields } from './helpers';
-import { cleanCity } from '@/lib/utils';
 
 interface PropertyCardProps {
   property: QueueProperty;
@@ -74,7 +73,7 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
           <div>
             <h3 className="text-lg sm:text-xl font-bold mb-0.5 line-clamp-2">{property.address}</h3>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              {[cleanCity(property.city), property.state, property.zip_code].filter(Boolean).join(', ')}
+              {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
             </p>
           </div>
 

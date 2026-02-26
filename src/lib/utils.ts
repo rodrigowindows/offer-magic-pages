@@ -37,14 +37,3 @@ export function safeIncludes<T = any>(value: T[] | string | undefined | null, ne
   if (typeof value === 'string') return value.includes(String(needle));
   return false;
 }
-
-/**
- * Clean city name: remove "UNINCORPORATED" (unincorporated areas in Florida
- * that don't belong to any incorporated city). Returns empty string if only
- * UNINCORPORATED was present.
- */
-export function cleanCity(city: string | null | undefined): string {
-  if (!city) return '';
-  const cleaned = city.replace(/\bUNINCORPORATED\b/gi, '').replace(/,\s*,/g, ',').trim().replace(/^,|,$/g, '').trim();
-  return cleaned;
-}

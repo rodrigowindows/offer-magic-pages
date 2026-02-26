@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { detectSource } from '@/utils/urlDataExtractor';
 import { calculateCompsPricing } from '@/services/compsPricing';
-import { cleanCity } from '@/lib/utils';
 
 export interface CompData {
   sale_price?: number;
@@ -75,7 +74,7 @@ export function useComps(property: CompProperty | null, enabled = true) {
         return false;
       }
 
-      const addressStr = `${property.address}, ${cleanCity(property.city) || ''}, ${property.state || ''} ${property.zip_code || ''}`;
+      const addressStr = `${property.address}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`;
 
       const { error } = await supabase
         .from('manual_comps_links' as any)

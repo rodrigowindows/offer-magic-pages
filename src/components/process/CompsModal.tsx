@@ -33,7 +33,6 @@ import {
   Bath,
   LandPlot,
 } from 'lucide-react';
-import { cleanCity } from '@/lib/utils';
 
 export interface CompsModalProperty {
   id: string;
@@ -155,7 +154,7 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
 
   const handleCopyAddress = () => {
     if (!property) return;
-    const addr = `${property.address}, ${cleanCity(property.city) || ''}, ${property.state || ''} ${property.zip_code || ''}`.trim();
+    const addr = `${property.address}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`.trim();
     navigator.clipboard.writeText(addr);
     toast({ title: 'Endereço copiado!' });
   };
@@ -174,7 +173,7 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
             )}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm flex items-center gap-1">
-            <span className="truncate">{property.address} — {[cleanCity(property.city), property.state].filter(Boolean).join(', ')}</span>
+            <span className="truncate">{property.address} — {[property.city, property.state].filter(Boolean).join(', ')}</span>
             <Button variant="ghost" size="sm" onClick={handleCopyAddress} className="h-6 w-6 p-0 shrink-0" title="Copiar endereço">
               <Copy className="h-3 w-3" />
             </Button>
