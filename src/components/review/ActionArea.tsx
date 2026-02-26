@@ -23,6 +23,7 @@ interface ActionAreaProps {
   isProcessing: boolean;
   currentIndex: number;
   totalFiltered: number;
+  compsCount: number;
   // Reject form state
   showRejectForm: boolean;
   selectedReason: string;
@@ -47,12 +48,22 @@ interface ActionAreaProps {
   onOfferAmountChange: (amount: string) => void;
 }
 
+/** Small comps button shown persistently */
+const CompsButton = ({ onClick, count }: { onClick: () => void; count: number }) => (
+  <Button variant="outline" size="sm" onClick={onClick} className="gap-1.5 text-xs border-blue-300 text-blue-700 hover:bg-blue-50">
+    <BarChart3 className="h-3.5 w-3.5" />
+    Comps
+    <Badge variant="secondary" className="text-[10px] px-1.5 min-w-[18px]">{count}</Badge>
+  </Button>
+);
+
 export const ActionArea = ({
   statusFilter,
   approvePhase,
   isProcessing,
   currentIndex,
   totalFiltered,
+  compsCount,
   showRejectForm,
   selectedReason,
   rejectionNotes,
@@ -82,9 +93,12 @@ export const ActionArea = ({
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
             Anterior
           </Button>
-          <Badge variant="secondary" className="text-xs">
-            {statusFilter === 'approved' ? 'Aprovada' : 'Rejeitada'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <CompsButton onClick={onOpenComps} count={compsCount} />
+            <Badge variant="secondary" className="text-xs">
+              {statusFilter === 'approved' ? 'Aprovada' : 'Rejeitada'}
+            </Badge>
+          </div>
           <Button variant="ghost" size="sm" onClick={onNext} disabled={currentIndex === totalFiltered - 1} className="text-xs text-muted-foreground">
             Próxima
             <ArrowRight className="h-3.5 w-3.5 ml-1" />
@@ -103,6 +117,7 @@ export const ActionArea = ({
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-blue-600" />
               <p className="text-sm font-bold text-blue-800">Adicionar comps antes da oferta?</p>
+              {compsCount > 0 && <Badge variant="secondary" className="text-[10px]">{compsCount} salvo{compsCount > 1 ? 's' : ''}</Badge>}
             </div>
             <Button variant="ghost" size="sm" onClick={onCancelApprove} className="text-xs text-muted-foreground gap-1 h-7">
               <Undo2 className="h-3 w-3" />
@@ -135,10 +150,13 @@ export const ActionArea = ({
       <div className="pt-3 sm:pt-4 border-t">
         <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 sm:p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-green-800">
-              Definir Valor da Oferta
-              {compsARV && <span className="ml-2 text-xs font-normal text-green-600">(ARV: {formatCurrency(compsARV)})</span>}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold text-green-800">
+                Definir Valor da Oferta
+                {compsARV && <span className="ml-2 text-xs font-normal text-green-600">(ARV: {formatCurrency(compsARV)})</span>}
+              </p>
+              <CompsButton onClick={onOpenComps} count={compsCount} />
+            </div>
             <Button variant="ghost" size="sm" onClick={onCancelApprove} className="text-xs text-muted-foreground gap-1 h-7">
               <Undo2 className="h-3 w-3" />
               Voltar
@@ -252,7 +270,7 @@ export const ActionArea = ({
     );
   }
 
-  // Default: Approve/Reject buttons + navigation
+  // Default: Approve/Reject buttons + navigation + persistent comps
   return (
     <div className="pt-3 sm:pt-4 border-t space-y-3">
       <div className="flex gap-2 sm:gap-3">
@@ -273,9 +291,12 @@ export const ActionArea = ({
           <ArrowLeft className="h-3.5 w-3.5 mr-1" />
           Anterior
         </Button>
-        <span className="text-sm font-bold text-muted-foreground tabular-nums">
-          {currentIndex + 1}/{totalFiltered}
-        </span>
+        <div className="flex items-center gap-2">
+          <CompsButton onClick={onOpenComps} count={compsCount} />
+          <span className="text-sm font-bold text-muted-foreground tabular-nums">
+            {currentIndex + 1}/{totalFiltered}
+          </span>
+        </div>
         <Button onClick={onNext} disabled={currentIndex === totalFiltered - 1} className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold gap-2">
           <SkipForward className="h-4 w-4" />
           Pular
