@@ -9,11 +9,13 @@ import { CompsModal } from "@/components/process/CompsModal";
 import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
+import { InlineCompsList } from "@/components/review/InlineCompsList";
 import type { QueueProperty, ApprovePhase, StatusFilter, DailyStats, StatusCounts } from "@/components/review/types";
 import { REJECTION_REASONS } from "@/components/review/constants";
 import { getVisualCategory, countByVisual } from "@/components/review/helpers";
 import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { calculateCompsPricing } from "@/services/compsPricing";
+import type { SavedComp } from "@/hooks/useComps";
 
 const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem";
 
@@ -45,6 +47,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [compsARV, setCompsARV] = useState<number | null>(null);
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
   const [currentCompsCount, setCurrentCompsCount] = useState(0);
+  const [currentComps, setCurrentComps] = useState<SavedComp[]>([]);
 
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
@@ -77,22 +80,29 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setQuickOfferAmount("");
     setCompsARV(null);
     setCurrentCompsCount(0);
+    setCurrentComps([]);
   }, [currentIndex]);
 
-  // Fetch comps count for current property
-  const fetchCompsCount = useCallback(async (propertyId: string) => {
+  // Fetch comps for current property (full data for inline list + count)
+  const fetchCurrentComps = useCallback(async (propertyId: string) => {
     try {
       const { data } = await supabase
         .from('manual_comps_links' as any)
-        .select('id')
-        .eq('property_id', propertyId);
-      setCurrentCompsCount((data as any[])?.length || 0);
-    } catch { setCurrentCompsCount(0); }
+        .select('id, url, source, comp_data, created_at')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+      const comps = (data as unknown as SavedComp[]) || [];
+      setCurrentComps(comps);
+      setCurrentCompsCount(comps.length);
+    } catch {
+      setCurrentComps([]);
+      setCurrentCompsCount(0);
+    }
   }, []);
 
   useEffect(() => {
-    if (currentProperty?.id) fetchCompsCount(currentProperty.id);
-  }, [currentProperty?.id, fetchCompsCount]);
+    if (currentProperty?.id) fetchCurrentComps(currentProperty.id);
+  }, [currentProperty?.id, fetchCurrentComps]);
 
   const fetchProperties = async () => {
     try {
@@ -211,9 +221,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   };
 
   const handleOpenComps = () => {
-    if (pendingApproveProperty) {
-      setCompsModalProperty(pendingApproveProperty);
-      setApprovePhase('comps');
+    // Works both inside approve flow and standalone (from Comps button)
+    const target = pendingApproveProperty || currentProperty;
+    if (target) {
+      setCompsModalProperty(target);
+      if (pendingApproveProperty) {
+        setApprovePhase('comps');
+      }
     }
   };
 
@@ -226,7 +240,15 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   };
 
   const handleCompsModalClose = async () => {
+    const targetProperty = compsModalProperty;
     setCompsModalProperty(null);
+
+    // Refresh inline comps list
+    if (targetProperty?.id) {
+      fetchCurrentComps(targetProperty.id);
+    }
+
+    // If not in approve flow, just close (standalone mode)
     if (!pendingApproveProperty) {
       setApprovePhase(null);
       return;
@@ -438,6 +460,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         <Card>
           <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6 pt-3 sm:pt-6">
             <PropertyCard property={currentProperty} allProperties={properties} />
+
+            <InlineCompsList comps={currentComps} onOpenComps={handleOpenComps} />
 
             <ActionArea
               statusFilter={statusFilter}
