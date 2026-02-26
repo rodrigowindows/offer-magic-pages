@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import type { QueueProperty, ApprovePhase, StatusFilter, DailyStats, StatusCount
 import { REJECTION_REASONS } from "@/components/review/constants";
 import { getVisualCategory, countByVisual } from "@/components/review/helpers";
 import { defaultOffer, formatCurrency } from "@/lib/utils";
+import { calculateCompsPricing } from "@/services/compsPricing";
 
 const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem";
 
@@ -43,6 +44,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [compsModalProperty, setCompsModalProperty] = useState<QueueProperty | null>(null);
   const [compsARV, setCompsARV] = useState<number | null>(null);
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
+  const [currentCompsCount, setCurrentCompsCount] = useState(0);
 
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
@@ -74,7 +76,23 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setPendingApproveProperty(null);
     setQuickOfferAmount("");
     setCompsARV(null);
+    setCurrentCompsCount(0);
   }, [currentIndex]);
+
+  // Fetch comps count for current property
+  const fetchCompsCount = useCallback(async (propertyId: string) => {
+    try {
+      const { data } = await supabase
+        .from('manual_comps_links' as any)
+        .select('id')
+        .eq('property_id', propertyId);
+      setCurrentCompsCount((data as any[])?.length || 0);
+    } catch { setCurrentCompsCount(0); }
+  }, []);
+
+  useEffect(() => {
+    if (currentProperty?.id) fetchCompsCount(currentProperty.id);
+  }, [currentProperty?.id, fetchCompsCount]);
 
   const fetchProperties = async () => {
     try {

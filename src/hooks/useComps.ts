@@ -1,21 +1,29 @@
 /**
  * useComps - Shared hook for managing manual comps (add, delete, fetch, stats).
- * Eliminates duplication between CompsModal and MAOCalculator.
+ * Supports expanded comp_data fields for Step 4.
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { detectSource, extractDataFromUrl } from '@/utils/urlDataExtractor';
+import { detectSource } from '@/utils/urlDataExtractor';
+import { calculateCompsPricing } from '@/services/compsPricing';
+
+export interface CompData {
+  sale_price?: number;
+  square_feet?: number;
+  lot_size?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  sale_date?: string;
+  address?: string;
+}
 
 export interface SavedComp {
   id: string;
   url: string;
   source: string;
-  comp_data: {
-    sale_price?: number;
-    square_feet?: number;
-  } | null;
+  comp_data: CompData | null;
   created_at: string;
 }
 
@@ -25,6 +33,7 @@ interface CompProperty {
   city?: string | null;
   state?: string | null;
   zip_code?: string | null;
+  square_feet?: number | null;
 }
 
 export function useComps(property: CompProperty | null, enabled = true) {
@@ -54,7 +63,7 @@ export function useComps(property: CompProperty | null, enabled = true) {
     if (enabled && property) fetchComps();
   }, [property?.id, enabled]);
 
-  const addComp = useCallback(async (url: string, price: number, sqft: number) => {
+  const addComp = useCallback(async (url: string, compData: CompData) => {
     if (!property) return false;
 
     setSaving(true);
@@ -74,13 +83,16 @@ export function useComps(property: CompProperty | null, enabled = true) {
           property_id: property.id,
           url: url.trim(),
           source: detectSource(url),
-          comp_data: { sale_price: price, square_feet: sqft },
+          comp_data: compData,
           user_id: user.id,
         }]);
 
       if (error) throw error;
 
-      toast({ title: 'Comp adicionado!', description: `$${price.toLocaleString()} | ${sqft} sqft` });
+      toast({
+        title: 'Comp adicionado!',
+        description: `$${(compData.sale_price || 0).toLocaleString()} | ${compData.square_feet || 0} sqft`,
+      });
       await fetchComps();
       return true;
     } catch (error: any) {
@@ -106,21 +118,25 @@ export function useComps(property: CompProperty | null, enabled = true) {
     }
   }, [toast]);
 
+  const pricing = useMemo(
+    () => calculateCompsPricing(
+      comps.map(c => c.comp_data || {}),
+      property?.square_feet || 0,
+    ),
+    [comps, property?.square_feet],
+  );
+
+  // Backward compat
   const validComps = useMemo(
     () => comps.filter(c => c.comp_data?.sale_price && c.comp_data?.square_feet && c.comp_data.square_feet > 0),
     [comps],
   );
 
-  const avgPricePerSqft = useMemo(() => {
-    if (validComps.length === 0) return 0;
-    const total = validComps.reduce((sum, c) => sum + (c.comp_data!.sale_price! / c.comp_data!.square_feet!), 0);
-    return Math.round(total / validComps.length);
-  }, [validComps]);
-
   return {
     comps,
     validComps,
-    avgPricePerSqft,
+    avgPricePerSqft: pricing.avgPricePerSqft,
+    pricing,
     loading,
     saving,
     addComp,
