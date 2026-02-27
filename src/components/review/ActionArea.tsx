@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import {
   XCircle,
   BarChart3,
   SkipForward,
+  RefreshCw,
 } from 'lucide-react';
 import type { ApprovePhase, StatusFilter } from './types';
 import { REJECTION_REASONS } from './constants';
@@ -90,10 +92,15 @@ export const ActionArea = ({
   onNotesChange,
   onOfferAmountChange,
 }: ActionAreaProps) => {
-  // Read-only mode for non-pending
-  if (statusFilter !== 'pending') {
+  const [showReDecide, setShowReDecide] = useState(false);
+
+  // Reset re-decide mode when navigating to another property
+  useEffect(() => {
+    setShowReDecide(false);
+  }, [currentIndex]);
+  if (statusFilter !== 'pending' && !showReDecide) {
     return (
-      <div className="pt-3 sm:pt-4 border-t">
+      <div className="pt-3 sm:pt-4 border-t space-y-3">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="sm" onClick={onPrevious} disabled={currentIndex === 0} className="text-xs text-muted-foreground">
             <ArrowLeft className="h-3.5 w-3.5 mr-1" />
@@ -110,6 +117,15 @@ export const ActionArea = ({
             <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowReDecide(true)}
+          className="w-full h-10 gap-2 text-xs border-amber-300 text-amber-700 hover:bg-amber-50"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          Alterar Decisão
+        </Button>
       </div>
     );
   }
@@ -281,8 +297,20 @@ export const ActionArea = ({
   }
 
   // Default: Approve/Reject buttons + navigation + persistent comps
+  const isReDeciding = statusFilter !== 'pending';
+
   return (
     <div className="pt-3 sm:pt-4 border-t space-y-3">
+      {isReDeciding && (
+        <div className="flex items-center justify-between px-1">
+          <p className="text-xs font-semibold text-amber-700">Alterar decisão desta propriedade:</p>
+          <Button variant="ghost" size="sm" onClick={() => setShowReDecide(false)} className="text-xs text-muted-foreground gap-1 h-7">
+            <Undo2 className="h-3 w-3" />
+            Cancelar
+          </Button>
+        </div>
+      )}
+
       <div className="flex gap-2 sm:gap-3">
         <Button onClick={onStartApprove} disabled={isProcessing} className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-sm sm:text-lg font-bold gap-2">
           <ThumbsUp className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -307,9 +335,9 @@ export const ActionArea = ({
             {currentIndex + 1}/{totalFiltered}
           </span>
         </div>
-        <Button onClick={onNext} disabled={currentIndex === totalFiltered - 1} className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold gap-2">
-          <SkipForward className="h-4 w-4" />
-          Pular
+        <Button onClick={onNext} disabled={currentIndex === totalFiltered - 1} className={`h-10 px-5 text-sm font-bold gap-2 ${isReDeciding ? 'bg-slate-600 hover:bg-slate-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}>
+          {isReDeciding ? <ArrowRight className="h-4 w-4" /> : <SkipForward className="h-4 w-4" />}
+          {isReDeciding ? 'Próxima' : 'Pular'}
         </Button>
       </div>
     </div>
