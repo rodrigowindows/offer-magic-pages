@@ -16,6 +16,7 @@ import {
 import type { ApprovePhase, StatusFilter } from './types';
 import { REJECTION_REASONS } from './constants';
 import { formatCurrency } from '@/lib/utils';
+import { DecisionPhotoUpload } from './DecisionPhotoUpload';
 
 interface ActionAreaProps {
   statusFilter: StatusFilter;
@@ -32,6 +33,9 @@ interface ActionAreaProps {
   quickOfferAmount: string;
   compsARV: number | null;
   pendingEstimatedValue: number | null;
+  // Photos
+  decisionPhotos: File[];
+  onDecisionPhotosChange: (files: File[]) => void;
   // Callbacks
   onStartApprove: () => void;
   onOpenComps: () => void;
@@ -70,6 +74,8 @@ export const ActionArea = ({
   quickOfferAmount,
   compsARV,
   pendingEstimatedValue,
+  decisionPhotos,
+  onDecisionPhotosChange,
   onStartApprove,
   onOpenComps,
   onSkipComps,
@@ -200,6 +206,8 @@ export const ActionArea = ({
             </div>
           )}
 
+          <DecisionPhotoUpload files={decisionPhotos} onChange={onDecisionPhotosChange} accent="green" />
+
           <div className="flex gap-2">
             <Button onClick={onConfirmOffer} disabled={isProcessing} className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
               <ThumbsUp className="h-5 w-5" />
@@ -259,6 +267,8 @@ export const ActionArea = ({
               className="mt-1 text-sm bg-white"
             />
           </div>
+
+          <DecisionPhotoUpload files={decisionPhotos} onChange={onDecisionPhotosChange} accent="red" />
 
           <Button onClick={onReject} disabled={isProcessing || !selectedReason} className="w-full h-11 bg-red-600 hover:bg-red-700 text-white font-bold gap-2">
             <XCircle className="h-5 w-5" />
