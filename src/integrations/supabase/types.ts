@@ -814,6 +814,7 @@ export type Database = {
           created_at: string
           deceased: boolean | null
           decision_date: string | null
+          decision_photos: string[] | null
           dnc_flag: boolean | null
           dnc_litigator_scrub: string | null
           email_sent: boolean
@@ -1163,6 +1164,7 @@ export type Database = {
           created_at?: string
           deceased?: boolean | null
           decision_date?: string | null
+          decision_photos?: string[] | null
           dnc_flag?: boolean | null
           dnc_litigator_scrub?: string | null
           email_sent?: boolean
@@ -1512,6 +1514,7 @@ export type Database = {
           created_at?: string
           deceased?: boolean | null
           decision_date?: string | null
+          decision_photos?: string[] | null
           dnc_flag?: boolean | null
           dnc_litigator_scrub?: string | null
           email_sent?: boolean
