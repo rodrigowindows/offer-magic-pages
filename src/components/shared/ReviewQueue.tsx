@@ -17,7 +17,7 @@ import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { calculateCompsPricing } from "@/services/compsPricing";
 import type { SavedComp } from "@/hooks/useComps";
 
-const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem";
+const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem";
 
 interface ReviewQueueProps {
   selectedBatch?: string;
@@ -68,6 +68,32 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       fetchStatusCounts();
     }
   }, [user, selectedBatch, statusFilter]);
+
+  // Real-time subscription: refresh when another user approves/rejects
+  useEffect(() => {
+    const channel = supabase
+      .channel('properties-approval-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'properties',
+        },
+        (payload: any) => {
+          // Only refresh if the change was made by another user
+          if (payload.new?.approved_by && payload.new.approved_by !== userId) {
+            fetchProperties();
+            fetchStatusCounts();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, selectedBatch, statusFilter]);
 
   useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter]);
 

@@ -9,6 +9,8 @@ import {
   Settings2,
   Eye,
   EyeOff,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import type { QueueProperty } from './types';
@@ -76,6 +78,31 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
               {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
             </p>
           </div>
+
+          {/* Approval/Rejection info */}
+          {property.approval_status === 'approved' && property.approved_by_name && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
+              <span className="text-xs text-green-800">
+                Aprovado por <strong>{property.approved_by_name}</strong>
+                {property.approved_at && (
+                  <> em {new Date(property.approved_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</>
+                )}
+              </span>
+            </div>
+          )}
+          {property.approval_status === 'rejected' && property.approved_by_name && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-red-50 border border-red-200 rounded-lg">
+              <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+              <span className="text-xs text-red-800">
+                Rejeitado por <strong>{property.approved_by_name}</strong>
+                {property.rejection_reason && <> — {property.rejection_reason}</>}
+                {property.approved_at && (
+                  <> em {new Date(property.approved_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</>
+                )}
+              </span>
+            </div>
+          )}
 
           {/* Tags badges */}
           {tagList.length > 0 && (

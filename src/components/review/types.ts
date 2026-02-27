@@ -10,6 +10,9 @@ export interface QueueProperty {
   estimated_value: number;
   cash_offer_amount: number;
   approval_status: string | null;
+  approved_by_name: string | null;
+  approved_at: string | null;
+  rejection_reason: string | null;
   property_type: string | null;
   year_built: number | null;
   square_feet: number | null;
