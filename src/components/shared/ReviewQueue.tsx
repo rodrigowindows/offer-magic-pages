@@ -69,6 +69,32 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     }
   }, [user, selectedBatch, statusFilter]);
 
+  // Real-time subscription: refresh when another user approves/rejects
+  useEffect(() => {
+    const channel = supabase
+      .channel('properties-approval-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'properties',
+        },
+        (payload: any) => {
+          // Only refresh if the change was made by another user
+          if (payload.new?.approved_by && payload.new.approved_by !== userId) {
+            fetchProperties();
+            fetchStatusCounts();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, selectedBatch, statusFilter]);
+
   useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter]);
 
   useEffect(() => {

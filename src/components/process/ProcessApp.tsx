@@ -1,13 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ReviewQueue } from '@/components/shared/ReviewQueue';
 import { BatchSelector } from './BatchSelector';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export const ProcessApp = () => {
   const navigate = useNavigate();
   const [selectedBatch, setSelectedBatch] = useState<string>('all');
+  const { user, loading } = useCurrentUser();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth?redirect=/process', { replace: true });
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
