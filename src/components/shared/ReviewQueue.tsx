@@ -429,7 +429,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         }
         return;
       }
-      if (approvePhase === 'offer') return;
+      if (approvePhase === 'offer') {
+        switch (e.key) {
+          case 'Enter': e.preventDefault(); handleConfirmOffer(); return;
+          case 'Escape': e.preventDefault(); handleCancelApprove(); return;
+        }
+        return;
+      }
       if (!currentProperty) return;
 
       switch (e.key) {
@@ -491,17 +497,20 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       <div className="flex items-center justify-between gap-1 p-2 bg-card border rounded-lg text-xs sm:text-sm">
         <div className="flex items-center gap-1.5">
           <Target className="h-3.5 w-3.5 text-blue-500" />
+          <span className="text-muted-foreground hidden sm:inline">Analisados:</span>
           <span className="font-bold">{dailyStats?.reviewed_today || 0}</span>
-          <span className="text-muted-foreground">hoje</span>
+          <span className="text-muted-foreground sm:hidden">hoje</span>
         </div>
         <div className="w-px h-4 bg-border" />
         <div className="flex items-center gap-1.5">
           <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+          <span className="text-muted-foreground hidden sm:inline">Aprovados:</span>
           <span className="font-bold text-green-700">{dailyStats?.approved_today || 0}</span>
         </div>
         <div className="w-px h-4 bg-border" />
         <div className="flex items-center gap-1.5">
           <XCircle className="h-3.5 w-3.5 text-red-500" />
+          <span className="text-muted-foreground hidden sm:inline">Rejeitados:</span>
           <span className="font-bold text-red-700">{dailyStats?.rejected_today || 0}</span>
         </div>
       </div>
