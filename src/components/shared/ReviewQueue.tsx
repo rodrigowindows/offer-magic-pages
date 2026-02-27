@@ -59,6 +59,33 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     : properties.filter(p => getVisualCategory(p.evaluation) === visualFilter);
   const currentProperty = filteredProperties[currentIndex];
 
+  // ── Chrome Extension sync ─────────────────────────────────────
+  useEffect(() => {
+    if (currentProperty) {
+      window.postMessage({
+        type: 'OFFER_MAGIC_PROPERTY_CHANGED',
+        payload: {
+          id: currentProperty.id,
+          address: currentProperty.address,
+          city: currentProperty.city,
+          state: currentProperty.state,
+          zip_code: currentProperty.zip_code,
+          estimated_value: currentProperty.estimated_value,
+          cash_offer_amount: currentProperty.cash_offer_amount,
+          square_feet: currentProperty.square_feet,
+          bedrooms: currentProperty.bedrooms,
+          bathrooms: currentProperty.bathrooms,
+          lot_size: currentProperty.lot_size,
+          year_built: currentProperty.year_built,
+          property_type: currentProperty.property_type,
+          zillow_url: currentProperty.zillow_url,
+          evaluation: currentProperty.evaluation,
+          import_batch: selectedBatch,
+        }
+      }, '*');
+    }
+  }, [currentProperty, selectedBatch]);
+
   // ── Data fetching ─────────────────────────────────────────────
 
   useEffect(() => {
