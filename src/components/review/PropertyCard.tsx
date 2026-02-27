@@ -104,6 +104,17 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
             </div>
           )}
 
+          {/* Decision photos */}
+          {property.decision_photos && property.decision_photos.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              {property.decision_photos.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-md overflow-hidden border hover:ring-2 hover:ring-primary transition-all">
+                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                </a>
+              ))}
+            </div>
+          )}
+
           {/* Tags badges */}
           {tagList.length > 0 && (
             <div className="flex flex-wrap gap-1">

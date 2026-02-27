@@ -17,7 +17,7 @@ import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { calculateCompsPricing } from "@/services/compsPricing";
 import type { SavedComp } from "@/hooks/useComps";
 
-const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem";
+const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem";
 
 interface ReviewQueueProps {
   selectedBatch?: string;
@@ -48,6 +48,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
   const [currentCompsCount, setCurrentCompsCount] = useState(0);
   const [currentComps, setCurrentComps] = useState<SavedComp[]>([]);
+  const [decisionPhotos, setDecisionPhotos] = useState<File[]>([]);
 
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
@@ -107,6 +108,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setCompsARV(null);
     setCurrentCompsCount(0);
     setCurrentComps([]);
+    setDecisionPhotos([]);
   }, [currentIndex]);
 
   // Fetch comps for current property (full data for inline list + count)
@@ -231,6 +233,27 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setApprovePhase(null);
     setPendingApproveProperty(null);
     setCompsARV(null);
+    setDecisionPhotos([]);
+  };
+
+  const uploadDecisionPhotos = async (propertyId: string, decision: string): Promise<string[]> => {
+    if (decisionPhotos.length === 0) return [];
+    const urls: string[] = [];
+    for (const file of decisionPhotos) {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const ts = Date.now();
+      const path = `decisions/${propertyId}/${decision}_${ts}_${Math.random().toString(36).slice(2, 6)}.${ext}`;
+      const { error } = await supabase.storage
+        .from('property-images')
+        .upload(path, file, { contentType: file.type });
+      if (!error) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('property-images')
+          .getPublicUrl(path);
+        urls.push(publicUrl);
+      }
+    }
+    return urls;
   };
 
   const advanceAfterAction = async () => {
@@ -315,6 +338,9 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     if (!userId || !userName || !pendingApproveProperty) return;
     setIsProcessing(true);
     try {
+      // Upload decision photos
+      const photoUrls = await uploadDecisionPhotos(pendingApproveProperty.id, 'approved');
+
       const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
       const updateData: any = {
         approval_status: "approved",
@@ -328,6 +354,9 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       };
       if (offerValue && offerValue > 0) {
         updateData.cash_offer_amount = offerValue;
+      }
+      if (photoUrls.length > 0) {
+        updateData.decision_photos = photoUrls;
       }
       const { error } = await supabase
         .from("properties")
@@ -354,18 +383,25 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     if (!userId || !userName || !currentProperty || !selectedReason) return;
     setIsProcessing(true);
     try {
+      // Upload decision photos
+      const photoUrls = await uploadDecisionPhotos(currentProperty.id, 'rejected');
+
+      const updateData: any = {
+        approval_status: "rejected",
+        approved_by: userId,
+        approved_by_name: userName,
+        approved_at: new Date().toISOString(),
+        rejection_reason: selectedReason,
+        rejection_notes: rejectionNotes.trim() || null,
+        updated_by: userId,
+        updated_by_name: userName,
+      };
+      if (photoUrls.length > 0) {
+        updateData.decision_photos = photoUrls;
+      }
       const { error } = await supabase
         .from("properties")
-        .update({
-          approval_status: "rejected",
-          approved_by: userId,
-          approved_by_name: userName,
-          approved_at: new Date().toISOString(),
-          rejection_reason: selectedReason,
-          rejection_notes: rejectionNotes.trim() || null,
-          updated_by: userId,
-          updated_by_name: userName,
-        } as any)
+        .update(updateData)
         .eq("id", currentProperty.id);
       if (error) throw error;
       const reasonLabel = REJECTION_REASONS.find(r => r.value === selectedReason)?.label;
@@ -502,6 +538,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
               quickOfferAmount={quickOfferAmount}
               compsARV={compsARV}
               pendingEstimatedValue={pendingApproveProperty?.estimated_value ?? null}
+              decisionPhotos={decisionPhotos}
+              onDecisionPhotosChange={setDecisionPhotos}
               onStartApprove={handleStartApprove}
               onOpenComps={handleOpenComps}
               onSkipComps={handleSkipComps}
