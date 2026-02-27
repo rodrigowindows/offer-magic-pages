@@ -8,8 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
 
-const emailSchema = z.string().email("Invalid email address");
-const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
+const emailSchema = z.string().email("Endereço de email inválido");
+const passwordSchema = z.string().min(6, "Senha deve ter no mínimo 6 caracteres");
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -55,27 +55,27 @@ const Auth = () => {
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
           toast({
-            title: "Login failed",
-            description: "Invalid email or password. Please try again.",
+            title: "Falha no login",
+            description: "Email ou senha inválidos. Tente novamente.",
             variant: "destructive",
           });
         } else {
           toast({
-            title: "Error",
+            title: "Erro",
             description: error.message,
             variant: "destructive",
           });
         }
       } else {
         toast({
-          title: "Success!",
-          description: "You've been logged in successfully.",
+          title: "Sucesso!",
+          description: "Login realizado com sucesso.",
         });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: "Validation error",
+          title: "Erro de validação",
           description: error.errors[0].message,
           variant: "destructive",
         });
@@ -95,8 +95,8 @@ const Auth = () => {
 
       if (signupData.password !== signupData.confirmPassword) {
         toast({
-          title: "Validation error",
-          description: "Passwords do not match",
+          title: "Erro de validação",
+          description: "As senhas não coincidem",
           variant: "destructive",
         });
         setIsLoading(false);
@@ -114,28 +114,28 @@ const Auth = () => {
       if (error) {
         if (error.message.includes("already registered")) {
           toast({
-            title: "Account exists",
-            description: "This email is already registered. Please login instead.",
+            title: "Conta já existe",
+            description: "Este email já está cadastrado. Faça login.",
             variant: "destructive",
           });
         } else {
           toast({
-            title: "Error",
+            title: "Erro",
             description: error.message,
             variant: "destructive",
           });
         }
       } else {
         toast({
-          title: "Account created!",
-          description: "You can now login with your credentials.",
+          title: "Conta criada!",
+          description: "Agora você pode fazer login com suas credenciais.",
         });
         setSignupData({ email: "", password: "", confirmPassword: "" });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
-          title: "Validation error",
+          title: "Erro de validação",
           description: error.errors[0].message,
           variant: "destructive",
         });
@@ -150,13 +150,13 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">MyLocalInvest</h1>
-          <p className="text-muted-foreground">Admin Portal</p>
+          <p className="text-muted-foreground">Portal Administrativo</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="signup">Criar Conta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
@@ -175,7 +175,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
+                  <Label htmlFor="login-password">Senha</Label>
                   <Input
                     id="login-password"
                     type="password"
@@ -191,7 +191,7 @@ const Auth = () => {
                   disabled={isLoading}
                   className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
                 >
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoading ? "Entrando..." : "Login"}
                 </Button>
               </form>
             </div>
@@ -213,7 +213,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">Senha</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -225,7 +225,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                  <Label htmlFor="signup-confirm-password">Confirmar Senha</Label>
                   <Input
                     id="signup-confirm-password"
                     type="password"
@@ -241,7 +241,7 @@ const Auth = () => {
                   disabled={isLoading}
                   className="w-full bg-primary hover:bg-primary-hover text-primary-foreground"
                 >
-                  {isLoading ? "Creating account..." : "Sign Up"}
+                  {isLoading ? "Criando conta..." : "Criar Conta"}
                 </Button>
               </form>
             </div>
@@ -250,7 +250,7 @@ const Auth = () => {
 
         <div className="mt-6 text-center">
           <a href="/" className="text-sm text-primary hover:underline">
-            ← Back to Home
+            ← Voltar ao Início
           </a>
         </div>
       </div>

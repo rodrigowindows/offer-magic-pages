@@ -194,6 +194,10 @@ export const ActionArea = ({
                 placeholder="Ex: 150000"
                 value={quickOfferAmount}
                 onChange={(e) => onOfferAmountChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); onConfirmOffer(); }
+                  if (e.key === 'Escape') { e.preventDefault(); onCancelApprove(); }
+                }}
                 className="pl-8 h-12 text-lg font-bold border-green-300 focus:border-green-500"
                 autoFocus
               />
