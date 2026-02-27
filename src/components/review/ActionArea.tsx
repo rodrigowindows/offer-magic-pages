@@ -35,6 +35,9 @@ interface ActionAreaProps {
   quickOfferAmount: string;
   compsARV: number | null;
   pendingEstimatedValue: number | null;
+  // Approval notes
+  approvalNotes: string;
+  onApprovalNotesChange: (notes: string) => void;
   // Photos
   decisionPhotos: File[];
   onDecisionPhotosChange: (files: File[]) => void;
@@ -76,6 +79,8 @@ export const ActionArea = ({
   quickOfferAmount,
   compsARV,
   pendingEstimatedValue,
+  approvalNotes,
+  onApprovalNotesChange,
   decisionPhotos,
   onDecisionPhotosChange,
   onStartApprove,
@@ -225,6 +230,17 @@ export const ActionArea = ({
               })}
             </div>
           )}
+
+          <div>
+            <Label className="text-xs text-green-800">Notas (opcional)</Label>
+            <Textarea
+              value={approvalNotes}
+              onChange={(e) => onApprovalNotesChange(e.target.value)}
+              placeholder="Ex: Score 280, bairro bom no Maps, casa precisa reforma..."
+              rows={2}
+              className="mt-1 text-sm bg-white"
+            />
+          </div>
 
           <DecisionPhotoUpload files={decisionPhotos} onChange={onDecisionPhotosChange} accent="green" />
 

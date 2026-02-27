@@ -13,6 +13,7 @@ export interface QueueProperty {
   approved_by_name: string | null;
   approved_at: string | null;
   rejection_reason: string | null;
+  rejection_notes: string | null;
   decision_photos: string[] | null;
   property_type: string | null;
   year_built: number | null;
