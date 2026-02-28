@@ -29,6 +29,8 @@ export interface QueueProperty {
   tags: string[] | string | null;
   owner_address: string | null;
   origem: string | null;
+  ai_score: number | null;
+  ai_reasoning: string | null;
 }
 
 export type ApprovePhase = 'choose' | 'comps' | 'offer' | null;
