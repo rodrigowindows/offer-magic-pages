@@ -50,6 +50,18 @@ export const DETAIL_FIELDS: DetailField[] = [
   { key: 'cash_offer_amount', label: 'Oferta', category: 'financeiro', defaultVisible: true,
     format: (p) => p.cash_offer_amount ? `$${p.cash_offer_amount.toLocaleString()}` : null,
   },
+  { key: 'offer_pct', label: '% Oferta', category: 'financeiro', defaultVisible: true,
+    format: (p) => {
+      if (!p.cash_offer_amount || !p.estimated_value || p.estimated_value === 0) return null;
+      const pct = (p.cash_offer_amount / p.estimated_value) * 100;
+      return `${pct.toFixed(0)}%`;
+    },
+    highlight: (p) => {
+      if (!p.cash_offer_amount || !p.estimated_value || p.estimated_value === 0) return false;
+      const pct = (p.cash_offer_amount / p.estimated_value) * 100;
+      return pct <= 70;
+    },
+  },
   // Imovel
   { key: 'year_built', label: 'Ano Construção', category: 'imovel', defaultVisible: true,
     format: (p) => p.year_built ? String(p.year_built) : null,
