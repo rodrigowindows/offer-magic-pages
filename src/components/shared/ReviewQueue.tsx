@@ -532,7 +532,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       {currentProperty && (
         <Card>
           <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6 pt-3 sm:pt-6">
-            <PropertyCard property={currentProperty} allProperties={properties} />
+            <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} />
 
             <InlineCompsList comps={currentComps} onOpenComps={handleOpenComps} />
 
