@@ -1,0 +1,1 @@
+ALTER TABLE public.property_notes ADD COLUMN image_urls text[] DEFAULT '{}';
