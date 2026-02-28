@@ -787,6 +787,8 @@ export type Database = {
         Row: {
           address: string
           age: number | null
+          ai_reasoning: string | null
+          ai_score: number | null
           airbnb_check_date: string | null
           airbnb_eligible: boolean | null
           airbnb_notes: string | null
@@ -1137,6 +1139,8 @@ export type Database = {
         Insert: {
           address: string
           age?: number | null
+          ai_reasoning?: string | null
+          ai_score?: number | null
           airbnb_check_date?: string | null
           airbnb_eligible?: boolean | null
           airbnb_notes?: string | null
@@ -1487,6 +1491,8 @@ export type Database = {
         Update: {
           address?: string
           age?: number | null
+          ai_reasoning?: string | null
+          ai_score?: number | null
           airbnb_check_date?: string | null
           airbnb_eligible?: boolean | null
           airbnb_notes?: string | null
