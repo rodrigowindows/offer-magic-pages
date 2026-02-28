@@ -787,6 +787,8 @@ export type Database = {
         Row: {
           address: string
           age: number | null
+          ai_reasoning: string | null
+          ai_score: number | null
           airbnb_check_date: string | null
           airbnb_eligible: boolean | null
           airbnb_notes: string | null
@@ -814,6 +816,7 @@ export type Database = {
           created_at: string
           deceased: boolean | null
           decision_date: string | null
+          decision_photos: string[] | null
           dnc_flag: boolean | null
           dnc_litigator_scrub: string | null
           email_sent: boolean
@@ -1136,6 +1139,8 @@ export type Database = {
         Insert: {
           address: string
           age?: number | null
+          ai_reasoning?: string | null
+          ai_score?: number | null
           airbnb_check_date?: string | null
           airbnb_eligible?: boolean | null
           airbnb_notes?: string | null
@@ -1163,6 +1168,7 @@ export type Database = {
           created_at?: string
           deceased?: boolean | null
           decision_date?: string | null
+          decision_photos?: string[] | null
           dnc_flag?: boolean | null
           dnc_litigator_scrub?: string | null
           email_sent?: boolean
@@ -1485,6 +1491,8 @@ export type Database = {
         Update: {
           address?: string
           age?: number | null
+          ai_reasoning?: string | null
+          ai_score?: number | null
           airbnb_check_date?: string | null
           airbnb_eligible?: boolean | null
           airbnb_notes?: string | null
@@ -1512,6 +1520,7 @@ export type Database = {
           created_at?: string
           deceased?: boolean | null
           decision_date?: string | null
+          decision_photos?: string[] | null
           dnc_flag?: boolean | null
           dnc_litigator_scrub?: string | null
           email_sent?: boolean
@@ -1966,6 +1975,7 @@ export type Database = {
           created_by: string | null
           follow_up_date: string | null
           id: string
+          image_urls: string[] | null
           note_text: string
           property_id: string
         }
@@ -1974,6 +1984,7 @@ export type Database = {
           created_by?: string | null
           follow_up_date?: string | null
           id?: string
+          image_urls?: string[] | null
           note_text: string
           property_id: string
         }
@@ -1982,6 +1993,7 @@ export type Database = {
           created_by?: string | null
           follow_up_date?: string | null
           id?: string
+          image_urls?: string[] | null
           note_text?: string
           property_id?: string
         }

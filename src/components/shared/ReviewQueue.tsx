@@ -207,10 +207,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         .eq("approved_by", user.id)
         .gte("approved_at", today.toISOString());
 
+      const approved = userReviews?.filter(p => p.approval_status === "approved").length || 0;
+      const rejected = userReviews?.filter(p => p.approval_status === "rejected").length || 0;
       setDailyStats({
-        reviewed_today: userReviews?.length || 0,
-        approved_today: userReviews?.filter(p => p.approval_status === "approved").length || 0,
-        rejected_today: userReviews?.filter(p => p.approval_status === "rejected").length || 0,
+        reviewed_today: approved + rejected,
+        approved_today: approved,
+        rejected_today: rejected,
       });
     } catch (error: any) {
       console.error("Error fetching daily stats:", error);
@@ -539,7 +541,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       {currentProperty && (
         <Card>
           <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6 pt-3 sm:pt-6">
-            <PropertyCard property={currentProperty} allProperties={properties} />
+            <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} />
 
             <InlineCompsList comps={currentComps} onOpenComps={handleOpenComps} />
 
