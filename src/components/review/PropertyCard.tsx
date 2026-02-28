@@ -107,7 +107,23 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
                 <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
                 <span className="text-xs text-red-800">
                   Rejeitado por <strong>{property.approved_by_name}</strong>
-                  {property.rejection_reason && <> — {property.rejection_reason}</>}
+                {property.rejection_reason && (() => {
+                  const REASON_LABELS: Record<string, string> = {
+                    'new-construction': 'Casa Nova (menos de 20 anos)',
+                    'recent-sale': 'Recém Vendida (menos de 2 anos)',
+                    'too-good-condition': 'Casa em Bom Estado',
+                    'multi-family': 'Multi-Family',
+                    'hoa-restrictions': 'Propriedade com HOA',
+                    'land': 'Terreno (Land)',
+                    'no-equity': 'Low-Equity',
+                    'agent-listed': 'Anunciada por Corretor',
+                    'commercial': 'Imóvel Comercial',
+                    'duplicate': 'Duplicado',
+                    'wrong-location': 'Localização errada',
+                    'other': 'Outro motivo',
+                  };
+                  return <> — <strong>{REASON_LABELS[property.rejection_reason] || property.rejection_reason}</strong></>;
+                })()}
                   {property.approved_at && (
                     <> em {new Date(property.approved_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</>
                   )}
