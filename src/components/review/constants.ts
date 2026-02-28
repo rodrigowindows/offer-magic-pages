@@ -31,6 +31,10 @@ export const DETAIL_FIELDS: DetailField[] = [
     format: (p) => p.lead_score ? String(p.lead_score) : null,
     highlight: (p) => (p.lead_score ?? 0) >= 230,
   },
+  { key: 'ai_score', label: 'AI Score', category: 'decisao', defaultVisible: true,
+    format: (p) => p.ai_score != null ? `${p.ai_score}/100` : null,
+    highlight: (p) => (p.ai_score ?? 0) >= 70,
+  },
   { key: 'tags', label: 'Tags', category: 'decisao', defaultVisible: false,
     format: (p) => {
       const t = p.tags;
