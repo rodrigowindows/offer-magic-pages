@@ -11,7 +11,9 @@ import {
   EyeOff,
   CheckCircle,
   XCircle,
+  StickyNote,
 } from 'lucide-react';
+import { PropertyNotesPanel } from '../property/PropertyNotesPanel';
 import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import type { QueueProperty } from './types';
 import { DETAIL_FIELDS, CATEGORY_LABELS, TAG_COLORS } from './constants';
@@ -25,6 +27,7 @@ interface PropertyCardProps {
 export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => {
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [showFieldSettings, setShowFieldSettings] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
 
   const fillRates = useMemo(() => computeFillRates(allProperties), [allProperties]);
@@ -248,6 +251,26 @@ export const PropertyCard = ({ property, allProperties }: PropertyCardProps) => 
         <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">R</kbd> Rejeitar</span>
         <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&rarr;</kbd><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&larr;</kbd> Nav</span>
       </div>
+
+      {/* Notes toggle button */}
+      <div className="flex items-center gap-2 px-1">
+        <Button
+          variant={showNotes ? 'default' : 'outline'}
+          size="sm"
+          className="gap-1.5 text-xs"
+          onClick={() => setShowNotes(!showNotes)}
+        >
+          <StickyNote className="h-3.5 w-3.5" />
+          Notas
+        </Button>
+      </div>
+
+      {/* Notes Panel */}
+      {showNotes && (
+        <div className="border rounded-lg p-3 bg-muted/10">
+          <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} />
+        </div>
+      )}
     </div>
   );
 };
