@@ -10,12 +10,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Plus, Trash2, Calendar, StickyNote } from "lucide-react";
 import { format } from "date-fns";
+import { DecisionPhotoUpload } from "@/components/review/DecisionPhotoUpload";
 
 interface PropertyNote {
   id: string;
   property_id: string;
   note_text: string;
   follow_up_date: string | null;
+  image_urls: string[] | null;
   created_at: string;
 }
 
@@ -31,6 +33,7 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNote
   const [saving, setSaving] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [followUpDate, setFollowUpDate] = useState("");
+  const [notePhotos, setNotePhotos] = useState<File[]>([]);
 
   useEffect(() => {
     if (propertyId) {
@@ -67,27 +70,42 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNote
 
     setSaving(true);
     try {
+      // Upload photos if any
+      const uploadedUrls: string[] = [];
+      for (const file of notePhotos) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `notes/${propertyId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from("property-images")
+          .upload(fileName, file, { contentType: file.type });
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from("property-images").getPublicUrl(fileName);
+        uploadedUrls.push(publicUrl);
+      }
+
       const { error } = await supabase.from("property_notes").insert({
         property_id: propertyId,
         note_text: noteText.trim(),
         follow_up_date: followUpDate || null,
+        image_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
       });
 
       if (error) throw error;
 
       toast({
-        title: "Note added",
-        description: "Your note has been saved",
+        title: "Nota adicionada",
+        description: "Sua nota foi salva",
       });
 
       setNoteText("");
       setFollowUpDate("");
+      setNotePhotos([]);
       await fetchNotes();
     } catch (error) {
       console.error("Error adding note:", error);
       toast({
-        title: "Error",
-        description: "Failed to add note",
+        title: "Erro",
+        description: "Falha ao adicionar nota",
         variant: "destructive",
       });
     } finally {
@@ -165,9 +183,14 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNote
           />
         </div>
 
+        <div className="space-y-2">
+          <Label>Fotos (opcional)</Label>
+          <DecisionPhotoUpload files={notePhotos} onChange={setNotePhotos} accent="green" />
+        </div>
+
         <div className="flex items-end gap-3">
           <div className="flex-1 space-y-2">
-            <Label htmlFor="followUpDate">Follow-up Date (optional)</Label>
+            <Label htmlFor="followUpDate">Follow-up (opcional)</Label>
             <Input
               id="followUpDate"
               type="date"
@@ -181,7 +204,7 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNote
             ) : (
               <>
                 <Plus className="h-4 w-4 mr-1" />
-                Add Note
+                Adicionar
               </>
             )}
           </Button>
@@ -203,6 +226,16 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNote
                   <div className="flex justify-between items-start gap-2">
                     <div className="flex-1 space-y-2">
                       <p className="text-sm whitespace-pre-wrap">{note.note_text}</p>
+                      
+                      {note.image_urls && note.image_urls.length > 0 && (
+                        <div className="flex gap-1.5 flex-wrap">
+                          {note.image_urls.map((url, i) => (
+                            <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-md overflow-hidden border hover:ring-2 hover:ring-primary transition-all">
+                              <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                       
                       <div className="flex items-center gap-2 flex-wrap">
                         {note.follow_up_date && (

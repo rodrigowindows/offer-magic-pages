@@ -1969,6 +1969,7 @@ export type Database = {
           created_by: string | null
           follow_up_date: string | null
           id: string
+          image_urls: string[] | null
           note_text: string
           property_id: string
         }
@@ -1977,6 +1978,7 @@ export type Database = {
           created_by?: string | null
           follow_up_date?: string | null
           id?: string
+          image_urls?: string[] | null
           note_text: string
           property_id: string
         }
@@ -1985,6 +1987,7 @@ export type Database = {
           created_by?: string | null
           follow_up_date?: string | null
           id?: string
+          image_urls?: string[] | null
           note_text?: string
           property_id?: string
         }
