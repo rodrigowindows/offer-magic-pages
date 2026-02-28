@@ -10,6 +10,8 @@ import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
 import { InlineCompsList } from "@/components/review/InlineCompsList";
+import { AIScorePanel } from "@/components/review/AIScorePanel";
+import { PropertyNotesPanel } from "@/components/property/PropertyNotesPanel";
 import type { QueueProperty, ApprovePhase, StatusFilter, DailyStats, StatusCounts } from "@/components/review/types";
 import { REJECTION_REASONS } from "@/components/review/constants";
 import { getVisualCategory, countByVisual } from "@/components/review/helpers";
@@ -17,7 +19,7 @@ import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { calculateCompsPricing } from "@/services/compsPricing";
 import type { SavedComp } from "@/hooks/useComps";
 
-const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning";
+const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning";
 
 interface ReviewQueueProps {
   selectedBatch?: string;
@@ -49,6 +51,11 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [currentCompsCount, setCurrentCompsCount] = useState(0);
   const [currentComps, setCurrentComps] = useState<SavedComp[]>([]);
   const [decisionPhotos, setDecisionPhotos] = useState<File[]>([]);
+  const [approvalNotes, setApprovalNotes] = useState("");
+
+  // Inline panels
+  const [showNotesPanel, setShowNotesPanel] = useState(false);
+  const [showAIScorePanel, setShowAIScorePanel] = useState(false);
 
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();
@@ -109,6 +116,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setCurrentCompsCount(0);
     setCurrentComps([]);
     setDecisionPhotos([]);
+    setApprovalNotes("");
   }, [currentIndex]);
 
   // Fetch comps for current property (full data for inline list + count)
@@ -236,6 +244,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setPendingApproveProperty(null);
     setCompsARV(null);
     setDecisionPhotos([]);
+    setApprovalNotes("");
   };
 
   const uploadDecisionPhotos = async (propertyId: string, decision: string): Promise<string[]> => {
@@ -350,7 +359,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         approved_by_name: userName,
         approved_at: new Date().toISOString(),
         rejection_reason: null,
-        rejection_notes: null,
+        rejection_notes: approvalNotes.trim() || null,
         updated_by: userId,
         updated_by_name: userName,
       };
@@ -549,6 +558,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
               quickOfferAmount={quickOfferAmount}
               compsARV={compsARV}
               pendingEstimatedValue={pendingApproveProperty?.estimated_value ?? null}
+              approvalNotes={approvalNotes}
+              onApprovalNotesChange={setApprovalNotes}
               decisionPhotos={decisionPhotos}
               onDecisionPhotosChange={setDecisionPhotos}
               onStartApprove={handleStartApprove}

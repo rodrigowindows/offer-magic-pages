@@ -43,6 +43,14 @@ export const DETAIL_FIELDS: DetailField[] = [
       return null;
     },
   },
+  { key: 'ai_score', label: 'AI Score', category: 'decisao', defaultVisible: true,
+    format: (p) => {
+      if (p.ai_score == null) return null;
+      const rec = p.ai_score >= 70 ? 'BUY' : p.ai_score >= 50 ? 'HOLD' : 'PASS';
+      return `${p.ai_score}/100 (${rec})`;
+    },
+    highlight: (p) => (p.ai_score ?? 0) >= 70,
+  },
   { key: 'focar', label: 'Focar', category: 'decisao', defaultVisible: true,
     format: (p) => p.focar || null,
     highlight: (p) => p.focar === 'SIM',
