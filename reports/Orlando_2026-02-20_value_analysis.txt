@@ -1,0 +1,118 @@
+========================================================================================================================
+ANÁLISE DE VALORES E QUALIDADE - Orlando_2026-02-20
+Gerado em: 2026-03-01
+========================================================================================================================
+
+RESUMO DOS VALORES:
+  Total Aprovados: 61
+  Com ARV nas Notes: 39
+  Com Notes sem ARV: 7
+  Sem Notes: 15
+
+  Media Offer/ARV: 61.7%
+  Range: 57% - 65%
+  Abaixo de 60%: 6
+  60-65%: 32
+  65-70%: 1
+  Acima de 70%: 0
+
+CONCLUSÃO: Nenhum offer acima do ARV. Todos entre 57-65%, conservador e bom para wholesale.
+
+========================================================================================================================
+TABELA: OFFER vs ARV (ordenado por % Offer/ARV)
+========================================================================================================================
+#    Endereco                                                Est      Offer    ARV Mid  Off/ARV  Est/ARV
+----------------------------------------------------------------------------------------------------
+27   3605 ROUND LAKE RD UNINCORPORATED 32798          $  180,192 $  260,000 $  452,500     57%     40%
+26   3553 STUART ST UNINCORPORATED 32703              $   98,372 $  120,000 $  205,500     58%     48%
+24   3302 JOHIO SHORES RD UNINCORPORATED 34761        $  201,724 $  214,000 $  362,000     59%     56%
+20   248 W LAFAYETTE ST WINTER GARDEN 34787           $   80,831 $  143,000 $  240,000     60%     34%
+22   3034 EVELYN SCOTT ST UNINCORPORATED 32712        $   94,513 $  130,000 $  218,000     60%     43%
+31   405 CABALLERO RD OCOEE 34761                     $  193,779 $  166,750 $  278,000     60%     70%
+28   3722 WINONA DR UNINCORPORATED 32812              $   89,547 $  162,000 $  270,000     60%     33%
+18   235 E 13TH ST UNINCORPORATED 32703               $  101,999 $  136,000 $  225,000     60%     45%
+52   743 ALFRED DR UNINCORPORATED 32810               $  229,940 $  182,000 $  300,000     61%     77%
+1    10 E ELLA J GILMORE ST UNINCORPORATED 32703      $   89,203 $  139,750 $  230,000     61%     39%
+57   911 CARVER ST WINTER PARK 32789                  $  124,399 $  171,665 $  282,000     61%     44%
+40   5665 TOMOKA DR UNINCORPORATED 32839              $   90,222 $  162,000 $  265,000     61%     34%
+51   718 MALONE DR UNINCORPORATED 32810               $  234,597 $  190,450 $  311,500     61%     75%
+32   409 S PHELPS AVE WINTER PARK 32789               $  234,549 $  403,000 $  658,000     61%     36%
+46   7033 SLATE ST UNINCORPORATED 32810               $  159,763 $  260,000 $  422,500     62%     38%
+4    1400 GREENWOOD ST ORLANDO 32801                  $  299,340 $  234,000 $  380,000     62%     79%
+6    1440 AVALON RD UNINCORPORATED 34787              $  270,876 $  204,750 $  332,500     62%     81%
+30   3913 MERRYWEATHER DR UNINCORPORATED 32812        $   99,591 $  188,000 $  305,000     62%     33%
+10   16077 MORRIS DR UNINCORPORATED 32833             $   85,578 $  156,000 $  252,500     62%     34%
+49   7149 GREEN NEEDLE DR UNINCORPORATED 32792        $  272,883 $  206,050 $  333,500     62%     82%
+35   5014 SHOSHONE ST UNINCORPORATED 32819            $  122,656 $  172,250 $  277,500     62%     44%
+36   5032 VANGUARD ST UNINCORPORATED 32819            $  135,309 $  172,250 $  277,500     62%     49%
+45   6827 POMELO DR UNINCORPORATED 32819              $   98,390 $  172,250 $  277,500     62%     35%
+7    14420 HERTHA AVE UNINCORPORATED 32826            $  109,776 $  156,000 $  250,000     62%     44%
+55   8300 ALVERON AVE UNINCORPORATED 32817            $  176,099 $  167,895 $  269,000     62%     65%
+21   2712 GEOFFREY DR UNINCORPORATED 32826            $  136,839 $  169,000 $  270,000     63%     51%
+42   607 PINE ST UNINCORPORATED 34761                 $   83,295 $  165,620 $  264,500     63%     31%
+9    1606 OVERDALE ST UNINCORPORATED 32825            $  130,160 $  163,410 $  260,500     63%     50%
+8    1559 40TH ST UNINCORPORATED 32839                $  153,672 $  182,000 $  290,000     63%     53%
+13   1742 S WASHINGTON AVE UNINCORPORATED 32703       $  106,905 $  182,000 $  290,000     63%     37%
+44   6130 SHENANDOAH WAY ORLANDO 32807                $  218,053 $  247,000 $  392,500     63%     56%
+33   4131 ORTISI DR UNINCORPORATED 32822              $  130,033 $  189,000 $  300,000     63%     43%
+60   966 BARBADOS AVE UNINCORPORATED 32825            $  180,953 $  200,200 $  316,500     63%     57%
+58   9255 2ND AVE UNINCORPORATED 32824                $  150,839 $  195,000 $  307,500     63%     49%
+17   2011 JESSICA LEA LN OCOEE 34761                  $  123,930 $  178,000 $  280,000     64%     44%
+19   245 N LAKE AVE APOPKA 32703                      $  183,431 $  220,000 $  345,000     64%     53%
+39   5309 E KALEY ST ORLANDO 32812                    $   98,024 $  200,000 $  312,500     64%     31%
+53   7633 AVONWOOD CT UNINCORPORATED 32810            $  143,530 $  154,765 $  241,500     64%     59%
+12   1719 SUE ANN ST UNINCORPORATED 32825             $  153,743 $  195,000 $  300,000     65%     51%
+
+========================================================================================================================
+SEM ARV MAS COM NOTES:
+========================================================================================================================
+  #15 18046 10TH AVE UNINCORPORATED 32833
+      Est: $132 | Offer: $0 (0% Est)
+      Notes: CMA: Terrenos de 0.5-1.0 acre na região (Bithlo) variam de $10k a $25k. Comp: 18114 10th Ave (0.11 ac) vendido por $5k. Valor estimado para 0.5 ac: $15k-$25k. Risco: Possíveis áreas úmidas (wetlands).
+
+  #25 3433 N TANNER RD UNINCORPORATED 32826
+      Est: $327,469 | Offer: $212,855 (65% Est)
+      Notes: HOT Tier. Lote excepcional 4.7 acres em 32826. Casa 1969, 4/2, 2257sqft. Aparência de abandono no Street View (vegetação densa, cerca alta). Proprietário empresa (INVERSIONES JIREH). Bairro tranquilo 
+
+  #29 3757 COUNTRY ROSE LN UNINCORPORATED 32703
+      Est: $123,710 | Offer: $150,000 (121% Est)
+      Zillow: $231,400 | Offer/Zillow: 65%
+      Notes: APROVADO - Triplex 1945 (2/1 duplex + 2/1 SFH), HOT CALL NOW, Lead Score 225, AI 55/100. Zillow $231,400 (vs $123k estimado). Bairro Apopka 32703 - suburbano, baixo crime, próx. Advent Health. Proprie
+
+  #34 4605 ANDRUS AVE UNINCORPORATED 32804
+      Est: $189,509 | Offer: $204,000 (108% Est)
+      Notes: APROVADO - SFR 1953, College Park (Edgewater Dr), Orlando 32804. Zillow: $313,800 (vs $189k estimado). Lead Score 195, AI 72/100 (BUY). Proprietario JOHNSON KELLY S (individual, 41 Interlaken Rd). Lot
+
+  #38 517 OWL CIR UNINCORPORATED 32825
+      Est: $109,717 | Offer: $143,650 (131% Est)
+      Zillow: $221,000 | Offer/Zillow: 65%
+      Notes: APROVADO - MultiFamily 2/2, 952sqft, 1978, HOT CALL NOW, Lead Score 212, AI 60/100. Zillow $221,000 (vs $109k estimado). Trulia $221,000 - HOA: None. Bairro 32825 mediana $382k. Proprietário MUOIO DUY
+
+  #50 717 E CHURCH ST ORLANDO 32801
+      Est: $299,089 | Offer: $291,200 (97% Est)
+      Zillow: $448,000 | Offer/Zillow: 65%
+      Notes: APROVADO - MultiFamily 2/2, 1953, Thornton Park (Downtown Orlando), 2 blocos do Lake Eola Park. Zillow $448k (vs $299k estimado). Rent Zestimate $2,692/mo. Proprietario BOATMAN VERN L (individual, 624
+
+  #59 9601 SEIDEL RD UNINCORPORATED 34787
+      Est: $197,486 | Offer: $370,000 (187% Est)
+      Zillow: $569,000 | Offer/Zillow: 65%
+      Notes: APROVADO - Terreno desenvolvimento Horizon West Village F, 1.5 acres. Zillow $569k, vendido 2021 por $2M. Zoneamento: 44 townhomes, escola, ALF. Frontage 964ft na Seidel Rd (expansao 4 pistas). Propri
+
+========================================================================================================================
+SEM NOTES (precisam analise):
+========================================================================================================================
+  #02 103 SHORT ST UNINCORPORATED 32703 | Nonebd/Noneba yr:None | Est:$18,150 Offer:$12,705 (70%)
+  #03 1030 HERMAN AVE UNINCORPORATED 32803 | Nonebd/Noneba yr:None | Est:$55,734 Offer:$39,014 (70%)
+  #05 1435 WAKULLA WAY UNINCORPORATED 32839 | 2bd/1ba yr:1958 | Est:$103,288 Offer:$123,000 (119%)
+  #11 1687 W MILLER AVE UNINCORPORATED 32805 | Nonebd/Noneba yr:None | Est:$3,101 Offer:$2,171 (70%)
+  #14 1800 PALM LN UNINCORPORATED 32803 | 3bd/1ba yr:1955 | Est:$286,131 Offer:$200,292 (70%)
+  #16 201 CLARK ST EATONVILLE 32751 | 3bd/2ba yr:1955 | Est:$145,023 Offer:$101,516 (70%)
+  #23 31 E SPRUCE ST ORLANDO 32804 | 4bd/2ba yr:1969 | Est:$287,103 Offer:$200,972 (70%)
+  #37 51 E 13TH ST UNINCORPORATED 32703 | Nonebd/Noneba yr:None | Est:$17,303 Offer:$12,112 (70%)
+  #41 5739 DOGWOOD DR UNINCORPORATED 32807 | 2bd/1ba yr:1952 | Est:$108,418 Offer:$153,000 (141%)
+  #43 611 BARRY ST UNINCORPORATED 32808 | 3bd/1ba yr:1952 | Est:$96,394 Offer:$67,476 (70%)
+  #47 710 COLUMBIA ST ORLANDO 32805 | Nonebd/Noneba yr:None | Est:$50,000 Offer:$35,000 (70%)
+  #48 7115 POMELO DR UNINCORPORATED 32819 | 3bd/2ba yr:1960 | Est:$107,742 Offer:$75,419 (70%)
+  #54 8275 LAKE UNDERHILL RD UNINCORPORATED 32825 | Nonebd/Noneba yr:None | Est:$120,000 Offer:$84,000 (70%)
+  #56 909 FERNDELL RD UNINCORPORATED 32808 | 3bd/1ba yr:1954 | Est:$88,504 Offer:$61,953 (70%)
+  #61 DUSKIN AVE UNINCORPORATED 32839 | Nonebd/Noneba yr:None | Est:$37,389 Offer:$26,172 (70%)
