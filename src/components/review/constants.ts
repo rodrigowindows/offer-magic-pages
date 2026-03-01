@@ -12,6 +12,7 @@ export const REJECTION_REASONS = [
   { value: "commercial", label: "Imóvel Comercial" },
   { value: "duplicate", label: "Duplicado" },
   { value: "wrong-location", label: "Localização errada" },
+  { value: "bad-neighborhood", label: "Bairro Ruim / Alta Criminalidade" },
   { value: "other", label: "Outro motivo" },
 ];
 

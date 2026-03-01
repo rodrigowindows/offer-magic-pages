@@ -111,6 +111,7 @@ export const PropertyCardView = ({
     "recent-sale": "Venda recente",
     "hoa-restrictions": "Restrições HOA",
     "title-issues": "Problemas título",
+    "bad-neighborhood": "Bairro Ruim",
     "other": "Outro",
   };
 

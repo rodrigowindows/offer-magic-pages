@@ -137,6 +137,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
                     'commercial': 'Imóvel Comercial',
                     'duplicate': 'Duplicado',
                     'wrong-location': 'Localização errada',
+                    'bad-neighborhood': 'Bairro Ruim / Alta Criminalidade',
                     'other': 'Outro motivo',
                   };
                   return <> — <strong>{REASON_LABELS[property.rejection_reason] || property.rejection_reason}</strong></>;
