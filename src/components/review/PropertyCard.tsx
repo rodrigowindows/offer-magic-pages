@@ -78,6 +78,13 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
 
   return (
     <div className="space-y-3">
+      {/* Notes Panel — at the top for visibility */}
+      {showNotes && (
+        <div className="border rounded-lg p-3 bg-muted/10">
+          <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
+        </div>
+      )}
+
       {/* Main layout: Image left + Info & Details right */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* Image */}
@@ -247,12 +254,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
         </div>
       </div>
 
-      {/* Notes Panel — full-width, directly below the grid */}
-      {showNotes && (
-        <div className="border rounded-lg p-3 bg-muted/10">
-          <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
-        </div>
-      )}
+      {/* Notes panel moved to top */}
 
       {/* Details config bar */}
       <div className="flex items-center justify-between px-1">
