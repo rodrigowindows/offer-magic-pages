@@ -1,0 +1,2215 @@
+====================================================================================================
+RELATÓRIO DE APROVAÇÃO - BATCH: Orlando_2026-02-20
+====================================================================================================
+Data do Relatório: 2026-03-01 20:30
+Total de Propriedades no Batch: 221
+Aprovadas: 61 (27.6%)
+Rejeitadas: 160 (72.4%)
+
+====================================================================================================
+RESUMO ESTATÍSTICO DOS APROVADOS
+====================================================================================================
+Valor Estimado (média): $141,622
+Valor Estimado (min/max): $132 / $327,469
+Cash Offer (média): $164,626
+Cash Offer (min/max): $2,171 / $403,000
+AI Score (média): 36
+AI Score (min/max): 5 / 78
+
+Propriedades com Notes de Análise: 46/61
+Propriedades com Comps nas Notes: 42/61
+Propriedades SEM Notes: 15/61
+
+DISTRIBUIÇÃO POR ZIP CODE:
+  32703: 8 propriedades
+  32825: 5 propriedades
+  32839: 4 propriedades
+  34761: 4 propriedades
+  32819: 4 propriedades
+  32810: 4 propriedades
+  34787: 3 propriedades
+  32826: 3 propriedades
+  32812: 3 propriedades
+  32803: 2 propriedades
+  32801: 2 propriedades
+  32833: 2 propriedades
+  32805: 2 propriedades
+  32804: 2 propriedades
+  32789: 2 propriedades
+  32807: 2 propriedades
+  32808: 2 propriedades
+  32751: 1 propriedades
+  32712: 1 propriedades
+  32798: 1 propriedades
+  32822: 1 propriedades
+  32792: 1 propriedades
+  32817: 1 propriedades
+  32824: 1 propriedades
+
+DISTRIBUIÇÃO POR DÉCADA DE CONSTRUÇÃO:
+  1920s: 1 propriedades
+  1940s: 8 propriedades
+  1950s: 23 propriedades
+  1960s: 11 propriedades
+  1970s: 7 propriedades
+  1980s: 3 propriedades
+  N/A: 8 propriedades
+
+DISTRIBUIÇÃO POR QUARTOS:
+  2 quartos: 16 propriedades
+  3 quartos: 29 propriedades
+  4 quartos: 6 propriedades
+  5 quartos: 1 propriedades
+  None quartos: 9 propriedades
+
+
+====================================================================================================
+DETALHES INDIVIDUAIS DOS 61 APROVADOS
+====================================================================================================
+
+----------------------------------------------------------------------------------------------------
+#01 | 10 E ELLA J GILMORE ST UNINCORPORATED 32703
+    Cidade: Orlando, FL 32703
+    Owner: CHAUDHRY IMRAN, NASEEM SOFIA
+    Tipo: N/A | Quartos: 4 | Banheiros: 1
+    Ano Construção: 1940 | Lot Size: 0.15484899 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $89,203
+      Cash Offer: $139,750
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 10 E ELLA J GILMORE ST UNINCORPORATED 32, Orlando. yr1940+10, 4bd+2, no-offer, $89k-sweet+5, hood+5, ORL+5, LS185+5. REVIEW.
+    EVALUATION: Score:180 | Combined:185 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T02:15:32.69+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 16-21-28-6040-04300
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$215k-$245k (comps: 250 W Ella J Gilmore St $245k mesma rua, 227 W 7th St $247k, 746 S Highland Ave $215k). Apopka 32703 - bairro bom. Casa 4/1 de 1940 em estado de abandono. Proprietário pessoa física (Chaudhry Imran - mesmo dono prop 90). Oferta 65% ARV $215k.
+
+----------------------------------------------------------------------------------------------------
+#02 | 103 SHORT ST UNINCORPORATED 32703
+    Cidade: Orlando, FL 32703
+    Owner: 103 SHORT ST LAND TRUST
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.124834 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $18,150
+      Cash Offer: $12,705
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 38
+    AI REASONING: Score 38/100: 103 SHORT ST UNINCORPORATED 32703, Orlando. Land+5, offer70%+10, $18k-low+3, hood+5, ORL+5, LS235+10. REVIEW.
+    EVALUATION: Score:230 | Combined:235 | Tier:4-LAND | Visual:LAND | Cond:0
+    Tags: 4-LAND, LAND
+    Aprovado em: 2026-02-27T19:33:03.654+00:00
+    Aprovado por: rodrigowindows
+    Origem: 15-21-28-1364-00550
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#03 | 1030 HERMAN AVE UNINCORPORATED 32803
+    Cidade: Orlando, FL 32803
+    Owner: PRESTIGE VENTURES LLC
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.31027118 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $55,734
+      Cash Offer: $39,014
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 43
+    AI REASONING: Score 43/100: 1030 HERMAN AVE UNINCORPORATED 32803, Orlando. lot0.31ac+5, land-lot+5, Land+5, offer70%+5, $56k-low+3, hood+5, ORL+5, LS250+10. REVIEW.
+    EVALUATION: Score:245 | Combined:250 | Tier:4-LAND | Visual:LAND | Cond:0
+    Tags: 4-LAND, LAND
+    Aprovado em: 2026-02-27T19:20:32.815+00:00
+    Aprovado por: rodrigowindows
+    Origem: 21-22-30-3932-05080
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#04 | 1400 GREENWOOD ST ORLANDO 32801
+    Cidade: Orlando, FL 32801
+    Owner: JOHNSON KELLY S
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1925 | Lot Size: 0.13811167 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $299,340
+      Cash Offer: $234,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 30
+    AI REASONING: Score 30/100: 1400 GREENWOOD ST ORLANDO 32801, Orlando. yr1925+10, no-offer, $299k-sweet+5, hood+5, ORL+5, LS200+5. REVIEW.
+    EVALUATION: Score:200 | Combined:200 | Tier:2-CALL_SOON | Visual:WARM | Cond:6
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T00:18:40.056+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 36-22-29-7128-00110
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 30, Lead 200. ARV ~$360k-$400k (Zillow $373k, Homes $403k, Realtor $356k). 2/1, 1925, lote 6016sqft. Bairro Lake Davis-Greenwood 32801 EXCELENTE. Última venda $1750 em 2019 (transferência). Proprietário JOHNSON KELLY S ausente (41 Interlaken Rd).
+
+----------------------------------------------------------------------------------------------------
+#05 | 1435 WAKULLA WAY UNINCORPORATED 32839
+    Cidade: Orlando, FL 32839
+    Owner: GLOVER PAUL
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1958 | Lot Size: 0.34566263 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $103,288
+      Cash Offer: $123,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 35
+    AI REASONING: Score 35/100: 1435 WAKULLA WAY UNINCORPORATED 32839, Orlando. yr1958+10, lot0.35ac+5, no-offer, $103k-sweet+5, hood+5, ORL+5, LS205+5. REVIEW.
+    EVALUATION: Score:200 | Combined:205 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T20:11:42.423+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 22-23-29-7268-23007
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#06 | 1440 AVALON RD UNINCORPORATED 34787
+    Cidade: Orlando, FL 34787
+    Owner: MARIAN J MCFARLAND REVOCABLE TRUST
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1945 | Lot Size: 1.87502907 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $270,876
+      Cash Offer: $204,750
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 1440 AVALON RD UNINCORPORATED 34787, Orlando. yr1945+10, lot1.88ac+5, 3bd+2, no-offer, $271k-sweet+5, hood+5, ORL+5, LS178+5. REVIEW.
+    EVALUATION: Score:178 | Combined:178 | Tier:3-EVALUATE | Visual:WARM | Cond:5
+    Tags: 3-EVALUATE, WARM
+    Aprovado em: 2026-03-01T04:57:47.931+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 28-22-27-0000-00013
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$315k-$350k (comps: 154 Avalon Rd $315k, Winter Garden 34787, lote 1.9 acres, 1945, C/O trust motivado)
+
+----------------------------------------------------------------------------------------------------
+#07 | 14420 HERTHA AVE UNINCORPORATED 32826
+    Cidade: Orlando, FL 32826
+    Owner: RIVERA-GARCIA ALIDA
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1958 | Lot Size: 0.17287767 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $109,776
+      Cash Offer: $156,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 14420 HERTHA AVE UNINCORPORATED 32826, Orlando. yr1958+10, no-offer, $110k-sweet+5, hood+5, ORL+5, LS205+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:185 | Combined:205 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T19:57:40.366+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 11-22-31-0784-02170
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Tier, AI Score 32, Lead 205. Casa 1958, 3/1, 900sqft. Proprietário RIVERA-GARCIA ALIDA (mora em 2727 4th St - ausente). Última venda $45k em 2012 (13 anos!). ARV ~$240k-$260k: Zillow $244k, Homes $241k, Realtor $234k-$262k. Bairro East Orlando 32826 - área boa próx UCF.
+
+----------------------------------------------------------------------------------------------------
+#08 | 1559 40TH ST UNINCORPORATED 32839
+    Cidade: Orlando, FL 32839
+    Owner: BATES DWANETTE
+    Tipo: N/A | Quartos: 4 | Banheiros: 1
+    Ano Construção: 1946 | Lot Size: 0.17414077 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $153,672
+      Cash Offer: $182,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 34
+    AI REASONING: Score 34/100: 1559 40TH ST UNINCORPORATED 32839, Orlando. yr1946+10, 4bd+2, no-offer, $154k-sweet+5, hood+5, ORL+5, LS220+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:200 | Combined:220 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T19:46:38.746+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 03-23-29-0183-18131
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Tier, AI Score 34, Lead 220. Single family 1946, 4/1, 1864sqft, lote 7586sqft. ARV ~$280k-$300k (Zillow $272k, Realtor Collateral $321k, CoreLogic $285k). Proprietário BATES DWANETTE mora em Ocoee (ausente). Última venda $73.5k em 2003 - 22 anos sem vender. Casa de 1946 aparência de abandono. Oferta $182k = ~65% ARV.
+
+----------------------------------------------------------------------------------------------------
+#09 | 1606 OVERDALE ST UNINCORPORATED 32825
+    Cidade: Orlando, FL 32825
+    Owner: SIAS RICHARD P, SIAS DONNA J
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1961 | Lot Size: 0.19208901 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $130,160
+      Cash Offer: $163,410
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 1606 OVERDALE ST UNINCORPORATED 32825, Orlando. yr1961+10, 3bd+2, no-offer, $130k-sweet+5, hood+5, ORL+5, LS177+5. REVIEW.
+    EVALUATION: Score:177 | Combined:177 | Tier:3-EVALUATE | Visual:WARM | Cond:5
+    Tags: 3-EVALUATE, WARM
+    Aprovado em: 2026-03-01T05:05:31.946+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 24-22-30-2295-00710
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$251k-$270k (comps: 1324 Overdale $315k, 1103 Overdale $190k, 1200 Vonderay $317k). Sias Richard P, 32825 Union Park, 1961, 3/1.
+
+----------------------------------------------------------------------------------------------------
+#10 | 16077 MORRIS DR UNINCORPORATED 32833
+    Cidade: Orlando, FL 32833
+    Owner: BROWNING KATIE G ESTATE, MAYNARD LOUISE G ESTATE
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1950 | Lot Size: 0.6044793 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $85,578
+      Cash Offer: $156,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 16077 MORRIS DR UNINCORPORATED 32833, Orlando. yr1950+10, lot0.60ac+5, no-offer, $86k-sweet+5, hood+5, ORL+5, LS200+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:180 | Combined:200 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T20:29:47.772+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 19-22-32-7880-02092
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Cond:3, AI Score 37, Lead 200. ARV ~$240k-$265k (Zillow $262k, Trulia $258k). 2/1, 1950, lote 26331sqft (0.6ac). Bairro Wedgefield 32833. Proprietária BROWNING KATIE G c/o PAMELA SHAW ausente. Abandono total.
+
+----------------------------------------------------------------------------------------------------
+#11 | 1687 W MILLER AVE UNINCORPORATED 32805
+    Cidade: Orlando, FL 32805
+    Owner: MOUNTFORD MICHAEL C
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.20652045 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $3,101
+      Cash Offer: $2,171
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 33
+    AI REASONING: Score 33/100: 1687 W MILLER AVE UNINCORPORATED 32805, Orlando. Land+5, offer70%+5, $3k-low+3, hood+5, ORL+5, LS248+10. REVIEW.
+    EVALUATION: Score:243 | Combined:248 | Tier:4-LAND | Visual:LAND | Cond:0
+    Tags: 4-LAND, LAND
+    Aprovado em: 2026-02-27T19:23:29.811+00:00
+    Aprovado por: rodrigowindows
+    Origem: 03-23-29-0000-00001
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#12 | 1719 SUE ANN ST UNINCORPORATED 32825
+    Cidade: Orlando, FL 32825
+    Owner: HALCYON INVESTMENTS PARTNERS LLC
+    Tipo: N/A | Quartos: 4 | Banheiros: 2
+    Ano Construção: 1957 | Lot Size: 0.50244073 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $153,743
+      Cash Offer: $195,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 39
+    AI REASONING: Score 39/100: 1719 SUE ANN ST UNINCORPORATED 32825, Orlando. yr1957+10, lot0.50ac+5, 4bd+2, no-offer, $154k-sweet+5, hood+5, ORL+5, LS213+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:188 | Combined:213 | Tier:1-CALL_NOW | Visual:HOT | Cond:2
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T19:35:10.488+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 24-22-30-1836-01050
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Tier, AI Score 39, Lead 213. Single family 1957, 4/2, 1199sqft, lote ENORME 21886sqft (0.5 acres). ARV ~$295k-$305k (Homes $298k, Realtor $301k). Proprietário HALCYON INVESTMENTS (empresa). Bairro 32825 East Orlando, área boa. Aparência de abandono no Street View. Oferta $195k = ~65% ARV.
+
+----------------------------------------------------------------------------------------------------
+#13 | 1742 S WASHINGTON AVE UNINCORPORATED 32703
+    Cidade: Orlando, FL 32703
+    Owner: BECKWOOD REAL ESTATE DEVELOPMENT LLC
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1975 | Lot Size: 0.96320822 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $106,905
+      Cash Offer: $182,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 1742 S WASHINGTON AVE UNINCORPORATED 327, Orlando. yr1975+10, lot0.96ac+5, 3bd+2, no-offer, $107k-sweet+5, hood+5, ORL+5, LS200+5. REVIEW.
+    EVALUATION: Score:195 | Combined:200 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T00:37:05.282+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 21-21-28-0004-00123
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 37, Lead 200. Lote 41957sqft (quase 1 acre). Proprietario BECKWOOD REAL ESTATE (empresa, PO BOX Apopka). ARV ~$280k-$300k. Oferta 65% = $182k.
+
+----------------------------------------------------------------------------------------------------
+#14 | 1800 PALM LN UNINCORPORATED 32803
+    Cidade: Orlando, FL 32803
+    Owner: J3 EQUITIES LLC
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1955 | Lot Size: 0.21855173 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $286,131
+      Cash Offer: $200,292
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 44
+    AI REASONING: Score 44/100: 1800 PALM LN UNINCORPORATED 32803, Orlando. yr1955+10, 3bd+2, offer70%+5, $286k-sweet+5, hood+5, ORL+5, LS235+10, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:215 | Combined:235 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-27T19:46:14.838+00:00
+    Aprovado por: rodrigowindows
+    Origem: 18-22-30-4748-00010
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#15 | 18046 10TH AVE UNINCORPORATED 32833
+    Cidade: Orlando, FL 32833
+    Owner: ROUSE VAN E MRS ESTATE
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.05728887 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $132
+      Cash Offer: $0
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 5
+    AI REASONING: Score 5/100 (PASS): 18046 10th Ave, Bithlo/Orlando 32833. TERRENO minusculo 2496sqft em area rural Bithlo. Zillow valor $3,700. Sem imagem, sem estrutura, sem dados (bd/ba/sqft/ano). NO VISUAL tier. Lead Score 222. Proprietario estate (probate). Area muito rural/isolada no satelite. Sem potencial para flip ou construcao. REJEITAR - terreno sem valor em bairro ruim/rural.
+    EVALUATION: Score:222 | Combined:222 | Tier:5-NO_VISUAL | Cond:0
+    Tags: 5-NO_VISUAL
+    Aprovado em: 2026-02-28T18:58:30.793+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 22-22-32-0712-45014
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      CMA: Terrenos de 0.5-1.0 acre na região (Bithlo) variam de $10k a $25k. Comp: 18114 10th Ave (0.11 ac) vendido por $5k. Valor estimado para 0.5 ac: $15k-$25k. Risco: Possíveis áreas úmidas (wetlands). Recomendação: Aprovar com cautela se o preço for baixo.
+
+----------------------------------------------------------------------------------------------------
+#16 | 201 CLARK ST EATONVILLE 32751
+    Cidade: Orlando, FL 32751
+    Owner: JUANITA N BOYER REVOCABLE TRUST
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1955 | Lot Size: 0.32076729 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $145,023
+      Cash Offer: $101,516
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 49
+    AI REASONING: Score 49/100: 201 CLARK ST EATONVILLE 32751, Orlando. yr1955+10, lot0.32ac+5, 3bd+2, offer70%+10, $145k-sweet+5, hood+5, ORL+5, LS228+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:208 | Combined:228 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T02:02:22.054+00:00
+    Aprovado por: rodrigowindows
+    Origem: 35-21-29-4024-01030
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#17 | 2011 JESSICA LEA LN OCOEE 34761
+    Cidade: Ocoee, FL 34761
+    Owner: N & S BOARDMAN FAMILY TRUST I
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1982 | Lot Size: 0.20854485 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $123,930
+      Cash Offer: $178,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 27
+    AI REASONING: Score 27/100: 2011 JESSICA LEA LN OCOEE 34761, Ocoee. yr1982+5, 3bd+2, no-offer, $124k-sweet+5, hood+5, Ocoee+5, LS218+5. PASS.
+    EVALUATION: Score:213 | Combined:218 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T19:44:34.899+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 08-22-28-3990-00320
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 27, Lead 218. Single family 1982, 3/2, 1066sqft, lote 9084sqft. ARV ~$270k-$290k (Zillow $270.8k, Redfin $274k, Homes $265k-$292k). Proprietário N & S BOARDMAN FAMILY c/o KIMBERLY B HENS. Bairro Ocoee 34761, área boa West Orlando. Quintal sem grama, barco na entrada - sinais de descuido. Oferta $178k = ~65% ARV.
+
+----------------------------------------------------------------------------------------------------
+#18 | 235 E 13TH ST UNINCORPORATED 32703
+    Cidade: Orlando, FL 32703
+    Owner: TAYLOR SANDRA B
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1975 | Lot Size: 0.32170392 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $101,999
+      Cash Offer: $136,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 235 E 13TH ST UNINCORPORATED 32703, Orlando. yr1975+10, lot0.32ac+5, 3bd+2, no-offer, $102k-sweet+5, hood+5, ORL+5, LS197+5. REVIEW.
+    EVALUATION: Score:177 | Combined:197 | Tier:2-CALL_SOON | Visual:HOT | Cond:3
+    Tags: 2-CALL_SOON, HOT
+    Aprovado em: 2026-03-01T01:09:39.632+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 15-21-28-1368-02550
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT CALL SOON, AI Score 37, Lead 197. 3/1, 1975, lote 14013sqft. ARV ~$210k-$240k (Zillow $211k, Homes $197k-$241k). Proprietária ausente (5763 Creek Dale Dr). South Apopka 32703.
+
+----------------------------------------------------------------------------------------------------
+#19 | 245 N LAKE AVE APOPKA 32703
+    Cidade: Apopka, FL 32703
+    Owner: GLOBAL FUNDING AND DEVELOPMENT INC TR
+    Tipo: N/A | Quartos: 2 | Banheiros: 2
+    Ano Construção: 1967 | Lot Size: 0.4113621 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $183,431
+      Cash Offer: $220,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 35
+    AI REASONING: Score 35/100: 245 N LAKE AVE APOPKA 32703, Apopka. yr1967+10, lot0.41ac+5, no-offer, $183k-sweet+5, hood+5, Apopka+5, LS207+5. REVIEW.
+    EVALUATION: Score:207 | Combined:207 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T19:55:15.907+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 04-21-28-4836-00631
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 35, Lead 207. Lote 17919sqft (0.41 acres). Proprietário GLOBAL FUNDING AND (empresa). Última venda $130k em 2000 (26 anos!). ARV ~$330k-$360k: Zillow $312k, Redfin $360k, Homes $318k-$397k. Bairro Apopka 32703 - suburb bom de Orlando.
+
+----------------------------------------------------------------------------------------------------
+#20 | 248 W LAFAYETTE ST WINTER GARDEN 34787
+    Cidade: Winter Garden, FL 34787
+    Owner: CHAUDHRY IMRAN, NASEEM SOFIA
+    Tipo: N/A | Quartos: 4 | Banheiros: 1
+    Ano Construção: 1952 | Lot Size: 0.10949019 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $80,831
+      Cash Offer: $143,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 248 W LAFAYETTE ST WINTER GARDEN 34787, Winter Garden. yr1952+10, 4bd+2, no-offer, $81k-sweet+5, hood+5, Winter Garden+5, LS185+5. REVIEW.
+    EVALUATION: Score:180 | Combined:185 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T02:07:35.443+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 23-22-27-6650-00110
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$220k-$260k (comps: 135 E Story Rd $280k, 232 W Lafayette St $260k, 1400 Eagle Ln $220k). Winter Garden Historic District 34787 - bairro excelente. Casa 4/1 de 1952 em estado de abandono. Proprietário pessoa física (Chaudhry Imran). Oferta 65% ARV $220k.
+
+----------------------------------------------------------------------------------------------------
+#21 | 2712 GEOFFREY DR UNINCORPORATED 32826
+    Cidade: Orlando, FL 32826
+    Owner: PERRY CLIFFORD L, PERRY RONDI L
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1959 | Lot Size: 0.14968973 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $136,839
+      Cash Offer: $169,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 2712 GEOFFREY DR UNINCORPORATED 32826, Orlando. yr1959+10, 3bd+2, no-offer, $137k-sweet+5, hood+5, ORL+5, LS205+5. REVIEW.
+    EVALUATION: Score:200 | Combined:205 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T20:03:53.303+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 11-22-31-0786-06330
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 32, Lead 205. ARV ~$260k-$280k (Zillow $249k, Realtor $287k, Homes $268k-$299k). Non-Owner Occupied. Proprietário ausente (3947 Valencia Grove). Casa 1959, 3/1, 1185sqft. Bairro East Orlando 32826 razoável.
+
+----------------------------------------------------------------------------------------------------
+#22 | 3034 EVELYN SCOTT ST UNINCORPORATED 32712
+    Cidade: Orlando, FL 32712
+    Owner: VINSON ANTHONY BRIAN
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1964 | Lot Size: 0.33317416 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $94,513
+      Cash Offer: $130,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 3034 EVELYN SCOTT ST UNINCORPORATED 3271, Orlando. yr1964+10, lot0.33ac+5, no-offer, $95k-sweet+5, hood+5, ORL+5, LS202+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:177 | Combined:202 | Tier:1-CALL_NOW | Visual:HOT | Cond:2
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T20:20:47.962+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 21-20-28-0032-01080
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Cond:2, AI Score 37, Lead 202. ARV ~$200k-$236k (Zillow $206k, Realtor $236k). Lote 14513sqft. Abandono total no Street View. Última venda $100 em 2020 (transferência familiar). Bairro Apopka 32712 bom.
+
+----------------------------------------------------------------------------------------------------
+#23 | 31 E SPRUCE ST ORLANDO 32804
+    Cidade: Orlando, FL 32804
+    Owner: WATSON REAL ESTATE AND MANAGEMENT INC
+    Tipo: N/A | Quartos: 4 | Banheiros: 2
+    Ano Construção: 1969 | Lot Size: 0.14921999 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $287,103
+      Cash Offer: $200,972
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 31 E SPRUCE ST ORLANDO 32804, Orlando. yr1969+10, 4bd+2, no-offer, $287k-sweet+5, hood+5, ORL+5, LS210+5. REVIEW.
+    EVALUATION: Score:210 | Combined:210 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T18:59:44.33+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 14-22-29-5633-01340
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#24 | 3302 JOHIO SHORES RD UNINCORPORATED 34761
+    Cidade: Orlando, FL 34761
+    Owner: ROBINSON INVESTMENT PARTNERS LLC
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1952 | Lot Size: 1.00192655 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $201,724
+      Cash Offer: $214,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 3302 JOHIO SHORES RD UNINCORPORATED 3476, Orlando. yr1952+10, lot1.00ac+5, 3bd+2, no-offer, $202k-sweet+5, hood+5, ORL+5, LS193+5. REVIEW.
+    EVALUATION: Score:188 | Combined:193 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T01:29:32.236+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 09-22-28-0000-00026
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 37, Lead 193. Lote 1.0 acre, casa 1952, proprietário ROBINSON INVESTMENTS (empresa). ARV ~$330k-$394k (Zillow $329.5k, Realtor $394k). Última venda $206k em 2021. Bairro Ocoee bom.
+
+----------------------------------------------------------------------------------------------------
+#25 | 3433 N TANNER RD UNINCORPORATED 32826
+    Cidade: Orlando, FL 32826
+    Owner: INVERSIONES JIREH WORLD US LLC
+    Tipo: N/A | Quartos: 4 | Banheiros: 2
+    Ano Construção: 1969 | Lot Size: 4.73289134 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $327,469
+      Cash Offer: $212,855
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 36
+    AI REASONING: Score 36/100: 3433 N TANNER RD UNINCORPORATED 32826, Orlando. yr1969+10, lot4.73ac+5, 4bd+2, no-offer, $327k-high+2, hood+5, ORL+5, LS208+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:188 | Combined:208 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T19:26:16.192+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 12-22-31-0000-00022
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Tier. Lote excepcional 4.7 acres em 32826. Casa 1969, 4/2, 2257sqft. Aparência de abandono no Street View (vegetação densa, cerca alta). Proprietário empresa (INVERSIONES JIREH). Bairro tranquilo próximo Econ Park. ARV ~$400-500k. Oferta 65% = $212,855.
+
+----------------------------------------------------------------------------------------------------
+#26 | 3553 STUART ST UNINCORPORATED 32703
+    Cidade: Orlando, FL 32703
+    Owner: VIDALES LUIS
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1946 | Lot Size: 0.12608513 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $98,372
+      Cash Offer: $120,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 3553 STUART ST UNINCORPORATED 32703, Orlando. yr1946+10, 3bd+2, no-offer, $98k-sweet+5, hood+5, ORL+5, LS205+5. REVIEW.
+    EVALUATION: Score:200 | Combined:205 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T20:09:50.754+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 29-21-28-6640-19380
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 32, Lead 205. Casa 1946, 3/1, lote 5492sqft. ARV ~$185k-$226k (Zillow $185k, Redfin $191k, Homes $226k). Abandono total no Street View: quintal cheio de mato, árvores cobrindo fachada, carros velhos. Proprietário ausente (13625 Florida Ave). Oferta conservadora $120k (65% ARV $185k).
+
+----------------------------------------------------------------------------------------------------
+#27 | 3605 ROUND LAKE RD UNINCORPORATED 32798
+    Cidade: Orlando, FL 32798
+    Owner: NGUYEN HIEP VAN, NGUYEN CU HUU, LE THI THANH HIEN
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1960 | Lot Size: 5.00271749 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $180,192
+      Cash Offer: $260,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 3605 ROUND LAKE RD UNINCORPORATED 32798, Orlando. yr1960+10, lot5.00ac+5, 3bd+2, no-offer, $180k-sweet+5, hood+5, ORL+5, LS197+5. REVIEW.
+    EVALUATION: Score:197 | Combined:197 | Tier:5-NO_VISUAL | Cond:0
+    Tags: 5-NO_VISUAL
+    Aprovado em: 2026-03-01T01:06:53.253+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 23-20-27-0000-00006
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      NO VISUAL Cond:0, AI Score 37, Lead 197. 3/1, 1960, lote 5.0 acres. ARV ~$400k-$505k (Zillow $505k, Realtor $371k). Proprietário ausente (1128 Pal Harbor Way). Zellwood 32798 área rural boa.
+
+----------------------------------------------------------------------------------------------------
+#28 | 3722 WINONA DR UNINCORPORATED 32812
+    Cidade: Orlando, FL 32812
+    Owner: PAGE JOSEPH P JR, PAGE CHRISTINA M
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1948 | Lot Size: 0.18967164 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $89,547
+      Cash Offer: $162,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 30
+    AI REASONING: Score 30/100: 3722 WINONA DR UNINCORPORATED 32812, Orlando. yr1948+10, no-offer, $90k-sweet+5, hood+5, ORL+5, LS200+5. REVIEW.
+    EVALUATION: Score:200 | Combined:200 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T20:23:34.587+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 29-23-30-8036-07080
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 30, Lead 200. ARV ~$250k-$290k (Zillow $227k, Realtor $277k, Homes $293k). 2/1, 1948, 630sqft, lote 8262sqft. Proprietário ausente PO BOX. Última venda $19,800 em 1994 (32 anos!). Bairro Lake Conway 32812 bom.
+
+----------------------------------------------------------------------------------------------------
+#29 | 3757 COUNTRY ROSE LN UNINCORPORATED 32703
+    Cidade: Orlando, FL 32703
+    Owner: VIDALES LUIS
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1945 | Lot Size: 0.18046859 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $123,710
+      Cash Offer: $150,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 55
+    AI REASONING: Score 32/100: 3757 COUNTRY ROSE LN UNINCORPORATED 3270, Orlando. yr1945+10, no-offer, $124k-sweet+5, hood+5, ORL+5, LS225+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:200 | Combined:225 | Tier:1-CALL_NOW | Visual:HOT | Cond:2
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-03-01T15:28:10.646+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 29-21-28-6640-15320
+    
+    TEM NOTES: SIM | TEM COMPS: NÃO
+    NOTES/COMPS:
+      APROVADO - Triplex 1945 (2/1 duplex + 2/1 SFH), HOT CALL NOW, Lead Score 225, AI 55/100. Zillow $231,400 (vs $123k estimado). Bairro Apopka 32703 - suburbano, baixo crime, próx. Advent Health. Proprietário VIDALES LUIS (individual). Unidades alugadas mês a mês. Oferta 65% de $231k = $150k. Verificado: Zillow, Trulia, Google Maps.
+
+----------------------------------------------------------------------------------------------------
+#30 | 3913 MERRYWEATHER DR UNINCORPORATED 32812
+    Cidade: Orlando, FL 32812
+    Owner: PAGE JOSEPH P JR, PAGE CHRISTINA
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1958 | Lot Size: 0.20564968 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $99,591
+      Cash Offer: $188,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 3913 MERRYWEATHER DR UNINCORPORATED 3281, Orlando. yr1958+10, 3bd+2, no-offer, $100k-sweet+5, hood+5, ORL+5, LS200+5. REVIEW.
+    EVALUATION: Score:200 | Combined:200 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T20:27:38.279+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 29-23-30-8044-15171
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 32, Lead 200. ARV ~$290k-$320k (Zillow $292k, Homes $326k). 3/1, 1958, lote 8958sqft. Bairro Lake Conway 32812 bom. Proprietário PAGE JOSEPH P JR PO BOX ausente. Última venda 2011 (14 anos).
+
+----------------------------------------------------------------------------------------------------
+#31 | 405 CABALLERO RD OCOEE 34761
+    Cidade: Ocoee, FL 34761
+    Owner: STEFFEY JAN ALAN ESTATE
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1980 | Lot Size: 0.18515565 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $193,779
+      Cash Offer: $166,750
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 27
+    AI REASONING: Score 27/100: 405 CABALLERO RD OCOEE 34761, Ocoee. yr1980+5, 3bd+2, no-offer, $194k-sweet+5, hood+5, Ocoee+5, LS180+5. PASS.
+    EVALUATION: Score:180 | Combined:180 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T04:23:32.586+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 08-22-28-8812-01470
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$256k-$300k (comps: 602 Lyman $307k, 472 Little Aspen $300k). Espólio motivado. Ocoee 34761 bairro bom.
+
+----------------------------------------------------------------------------------------------------
+#32 | 409 S PHELPS AVE WINTER PARK 32789
+    Cidade: Winter Park, FL 32789
+    Owner: CAROLYN L LOBMILLER LIVING TRUST
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1957 | Lot Size: 0.193807 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $234,549
+      Cash Offer: $403,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 30
+    AI REASONING: Score 30/100: 409 S PHELPS AVE WINTER PARK 32789, Winter Park. yr1957+10, 3bd+2, no-offer, $235k-sweet+5, hood+5, Winter Park+5, LS168+5, COLD-2. REVIEW.
+    EVALUATION: Score:178 | Combined:168 | Tier:6-LOW_PRIORITY | Visual:COLD | Cond:7
+    Tags: 6-LOW_PRIORITY, COLD
+    Aprovado em: 2026-03-01T05:25:03.231+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 08-22-30-4128-04020
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      AI Score 30/100 | Zillow ARV ~$620k-$696k (comps: 624 Dunraven Dr $618k, 402 Saint Dunstan Way $656k, 2441 Banchory Rd $586k) | Winter Park 32789 excelente bairro | 3/2 1681sqft 1957 | Proprietario C/O heranca/trust motivado | Casa com abandono total (arvores cobrindo) | Oferta 65% ARV $620k = $403k
+
+----------------------------------------------------------------------------------------------------
+#33 | 4131 ORTISI DR UNINCORPORATED 32822
+    Cidade: Orlando, FL 32822
+    Owner: PAGE JOSEPH P JR, PAGE CHRISTINA M
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1971 | Lot Size: 0.17906408 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $130,033
+      Cash Offer: $189,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 34
+    AI REASONING: Score 34/100: 4131 ORTISI DR UNINCORPORATED 32822, Orlando. yr1971+10, 3bd+2, no-offer, $130k-sweet+5, hood+5, ORL+5, LS212+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:192 | Combined:212 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T19:33:20.128+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 13-23-30-2333-03650
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Tier, AI Score 34, Lead 212. Single family 1971, 3/1, 1380sqft, lote 7800sqft. ARV ~$290k-$310k (Zillow $272k, Redfin $307k, Homes $317k). Proprietário PO BOX (ausente). Bairro 32822 Azalea Park, área razoável. Oferta $189k = ~65% ARV.
+
+----------------------------------------------------------------------------------------------------
+#34 | 4605 ANDRUS AVE UNINCORPORATED 32804
+    Cidade: Orlando, FL 32804
+    Owner: JOHNSON KELLY S
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: 1953 | Lot Size: 0.14316735 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $189,509
+      Cash Offer: $204,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 72
+    AI REASONING: Score 30/100: 4605 ANDRUS AVE UNINCORPORATED 32804, Orlando. yr1953+10, no-offer, $190k-sweet+5, hood+5, ORL+5, LS195+5. REVIEW.
+    EVALUATION: Score:195 | Combined:195 | Tier:2-CALL_SOON | Visual:WARM | Cond:6
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T15:51:47.884+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 03-22-29-2628-08340
+    
+    TEM NOTES: SIM | TEM COMPS: NÃO
+    NOTES/COMPS:
+      APROVADO - SFR 1953, College Park (Edgewater Dr), Orlando 32804. Zillow: $313,800 (vs $189k estimado). Lead Score 195, AI 72/100 (BUY). Proprietario JOHNSON KELLY S (individual, 41 Interlaken Rd). Lote 6236 sqft. Casa branca bem mantida (Street View), palmeiras, bairro premium de Orlando. Sem HOA. Oferta $204,000 = 65% de $313,800. Google Maps: bairro College Park excelente, ruas pavimentadas, vizinhanca classe media-alta. Atenção: imóvel usado como escritório (0 quartos listados) - verificar uso atual.
+
+----------------------------------------------------------------------------------------------------
+#35 | 5014 SHOSHONE ST UNINCORPORATED 32819
+    Cidade: Orlando, FL 32819
+    Owner: ANTHONY RENEE V
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1959 | Lot Size: 0.15676299 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $122,656
+      Cash Offer: $172,250
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 5014 SHOSHONE ST UNINCORPORATED 32819, Orlando. yr1959+10, 3bd+2, no-offer, $123k-sweet+5, hood+5, ORL+5, LS188+5. REVIEW.
+    EVALUATION: Score:188 | Combined:188 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T01:57:46.405+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 30-23-29-8555-04040
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$265k-$290k (comps: 7616 Mandarin $300k, 5008 Vanguard $294k, 6918 Ravenna $290k). Bairro Tangelo Park 32819 aceitável. Off market. Proprietário pessoa física mora no bairro. Oferta 65% ARV $265k = $172k.
+
+----------------------------------------------------------------------------------------------------
+#36 | 5032 VANGUARD ST UNINCORPORATED 32819
+    Cidade: Orlando, FL 32819
+    Owner: ANTHONY RENEE V
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1961 | Lot Size: 0.14930747 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $135,309
+      Cash Offer: $172,250
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 30
+    AI REASONING: Score 30/100: 5032 VANGUARD ST UNINCORPORATED 32819, Orlando. yr1961+10, 3bd+2, no-offer, $135k-sweet+5, hood+5, ORL+5, LS170+5, COLD-2. REVIEW.
+    EVALUATION: Score:180 | Combined:170 | Tier:6-LOW_PRIORITY | Visual:COLD | Cond:7
+    Tags: 6-LOW_PRIORITY, COLD
+    Aprovado em: 2026-03-01T05:18:54.664+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 30-23-29-8557-09120
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      AI Score 30/100 | Zillow ARV ~$265k-$290k | Comps: 5008 Vanguard St $294k, 7617 Udine Ave $265k, 7616 Mandarin Dr $300k | Tangelo Park 32819 bairro aceitavel | Proprietario pessoa fisica mora na prop | Casa 1961 3/2 6504sqft | Oferta 65% ARV $265k
+
+----------------------------------------------------------------------------------------------------
+#37 | 51 E 13TH ST UNINCORPORATED 32703
+    Cidade: Orlando, FL 32703
+    Owner: YARBOUGH KEVIN M
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.16354489 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $17,303
+      Cash Offer: $12,112
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 35
+    AI REASONING: Score 35/100: 51 E 13TH ST UNINCORPORATED 32703, Orlando. offer70%+10, $17k-low+3, hood+5, ORL+5, LS245+10, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:220 | Combined:245 | Tier:1-CALL_NOW | Visual:HOT | Cond:2
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-27T19:30:16.82+00:00
+    Aprovado por: rodrigowindows
+    Origem: 09-21-28-0197-10384
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#38 | 517 OWL CIR UNINCORPORATED 32825
+    Cidade: Orlando, FL 32825
+    Owner: MUOIO DUYEN T
+    Tipo: N/A | Quartos: 2 | Banheiros: 2
+    Ano Construção: 1978 | Lot Size: 0.08601253 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $109,717
+      Cash Offer: $143,650
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 60
+    AI REASONING: Score 32/100: 517 OWL CIR UNINCORPORATED 32825, Orlando. yr1978+10, no-offer, $110k-sweet+5, hood+5, ORL+5, LS212+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:192 | Combined:212 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-03-01T15:32:58.962+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 35-22-30-7271-08090
+    
+    TEM NOTES: SIM | TEM COMPS: NÃO
+    NOTES/COMPS:
+      APROVADO - MultiFamily 2/2, 952sqft, 1978, HOT CALL NOW, Lead Score 212, AI 60/100. Zillow $221,000 (vs $109k estimado). Trulia $221,000 - HOA: None. Bairro 32825 mediana $382k. Proprietário MUOIO DUYEN T (individual, End: 1423 Skybolt Ct). Unidade multi-familiar sem HOA, bom bairro suburbano. Oferta 65% Zillow = $143,650. Verificado: Zillow, Trulia, Google Maps.
+
+----------------------------------------------------------------------------------------------------
+#39 | 5309 E KALEY ST ORLANDO 32812
+    Cidade: Orlando, FL 32812
+    Owner: LAND TRUST 5309-K
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1955 | Lot Size: 0.24096232 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $98,024
+      Cash Offer: $200,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 5309 E KALEY ST ORLANDO 32812, Orlando. yr1955+10, 3bd+2, no-offer, $98k-sweet+5, hood+5, ORL+5, LS210+5. REVIEW.
+    EVALUATION: Score:205 | Combined:210 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T19:37:03.634+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 04-23-30-7272-02160
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 32, Lead 210. Single family 1955, 3/1, 1104sqft, lote 10496sqft. ARV ~$300k-$325k (Zillow $324k, Homes $323k, Redfin $287k). Proprietário LAND TRUST c/o HELIOS INVESTMENTS. Bairro 32812 Conway/Dixie Belle, área boa South Orlando. Casa humilde/deteriorada no Street View. Oferta $200k = ~65% ARV.
+
+----------------------------------------------------------------------------------------------------
+#40 | 5665 TOMOKA DR UNINCORPORATED 32839
+    Cidade: Orlando, FL 32839
+    Owner: GUEVARA BECERRA MARIO ALEJANDRO
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1949 | Lot Size: 0.37516629 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $90,222
+      Cash Offer: $162,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 5665 TOMOKA DR UNINCORPORATED 32839, Orlando. yr1949+10, lot0.38ac+5, no-offer, $90k-sweet+5, hood+5, ORL+5, LS205+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:185 | Combined:205 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T20:06:05.546+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 22-23-29-2792-03090
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Tier Cond:3, AI Score 37, Lead 205. ARV ~$250k-$280k (Zillow $243k, Realtor $250k, Homes $302k). Lote 16342sqft. Última venda $35k em 2014 como fixer upper. Proprietário ausente (4326 S Rio Grande Ave). Casa 1949, 2/1, bairro Pine Castle 32839.
+
+----------------------------------------------------------------------------------------------------
+#41 | 5739 DOGWOOD DR UNINCORPORATED 32807
+    Cidade: Orlando, FL 32807
+    Owner: PAGE JOSEPH P JR, PAGE CHRISTINA M
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1952 | Lot Size: 0.23414639 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $108,418
+      Cash Offer: $153,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 30
+    AI REASONING: Score 30/100: 5739 DOGWOOD DR UNINCORPORATED 32807, Orlando. yr1952+10, no-offer, $108k-sweet+5, hood+5, ORL+5, LS205+5. REVIEW.
+    EVALUATION: Score:200 | Combined:205 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-02-28T20:13:38.564+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 27-22-30-0380-01060
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#42 | 607 PINE ST UNINCORPORATED 34761
+    Cidade: Orlando, FL 34761
+    Owner: RICHARDS JAMEY E
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1942 | Lot Size: 0.52811215 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $83,295
+      Cash Offer: $165,620
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 33
+    AI REASONING: Score 33/100: 607 PINE ST UNINCORPORATED 34761, Orlando. yr1942+10, lot0.53ac+5, no-offer, $83k-sweet+5, hood+5, ORL+5, LS175+5, COLD-2. REVIEW.
+    EVALUATION: Score:185 | Combined:175 | Tier:6-LOW_PRIORITY | Visual:COLD | Cond:7
+    Tags: 6-LOW_PRIORITY, COLD
+    Aprovado em: 2026-03-01T05:14:52.141+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 18-22-28-0000-00067
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      AI Score 33/100 | Zillow ARV ~$254k-$275k | Comps: 602 Lyman St $307k (3/1, 960sqft), 577 Maxey Ave $275k (2/1, 1k sqft), 809 Flewelling Ave $225k (3/2, 975sqft) | Ocoee 34761 bairro bom | Lote 0.53 acres | Casa 1942, 2/1, 960sqft | Proprietário mora na prop (RICHARDS JAMEY E) | Oferta 65% ARV $254k
+
+----------------------------------------------------------------------------------------------------
+#43 | 611 BARRY ST UNINCORPORATED 32808
+    Cidade: Orlando, FL 32808
+    Owner: CHAUDHRY IMRAN, NASEEM SOFIA
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1952 | Lot Size: 0.15990458 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $96,394
+      Cash Offer: $67,476
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 39
+    AI REASONING: Score 39/100: 611 BARRY ST UNINCORPORATED 32808, Orlando. yr1952+10, 3bd+2, offer70%+5, $96k-sweet+5, hood+5, ORL+5, LS225+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:200 | Combined:225 | Tier:1-CALL_NOW | Visual:HOT | Cond:2
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T02:13:18.857+00:00
+    Aprovado por: rodrigowindows
+    Origem: 29-22-29-7056-01100
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#44 | 6130 SHENANDOAH WAY ORLANDO 32807
+    Cidade: Orlando, FL 32807
+    Owner: VELAZQUEZ VICTOR, VELAZQUEZ VICTOR LUIS
+    Tipo: N/A | Quartos: 5 | Banheiros: 2
+    Ano Construção: 1959 | Lot Size: 0.39885542 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $218,053
+      Cash Offer: $247,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 6130 SHENANDOAH WAY ORLANDO 32807, Orlando. yr1959+10, lot0.40ac+5, 5bd+2, no-offer, $218k-sweet+5, hood+5, ORL+5, LS198+5. REVIEW.
+    EVALUATION: Score:178 | Combined:198 | Tier:2-CALL_SOON | Visual:HOT | Cond:3
+    Tags: 2-CALL_SOON, HOT
+    Aprovado em: 2026-03-01T01:04:21.579+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 34-22-30-2500-12010
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      HOT Tier, AI Score 37, Lead 198. 5/2, 1959, lote 17374sqft. ARV ~$380k-$405k (Zillow $405k, Realtor $383k, Homes $378k). Proprietário ausente (719 Humber Ln). 20 anos sem vender. Bairro Engelwood Park 32807 bom.
+
+----------------------------------------------------------------------------------------------------
+#45 | 6827 POMELO DR UNINCORPORATED 32819
+    Cidade: Orlando, FL 32819
+    Owner: LUTHER C DAVIS TRUST
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1960 | Lot Size: 0.15677405 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $98,390
+      Cash Offer: $172,250
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 6827 POMELO DR UNINCORPORATED 32819, Orlando. yr1960+10, 3bd+2, no-offer, $98k-sweet+5, hood+5, ORL+5, LS185+5. REVIEW.
+    EVALUATION: Score:180 | Combined:185 | Tier:2-CALL_SOON | Visual:WARM | Cond:4
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T02:25:19.367+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 30-23-29-8557-06150
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$265k-$290k (comps: 7616 Mandarin Dr $300k, 7617 Udine Ave $265k, 5008 Vanguard St $294k). Trust/espólio motivado. Casa 1960, bairro Tangelo Park 32819.
+
+----------------------------------------------------------------------------------------------------
+#46 | 7033 SLATE ST UNINCORPORATED 32810
+    Cidade: Orlando, FL 32810
+    Owner: HIBNER LISA DIANNE ESTATE
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1979 | Lot Size: 1.25820118 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $159,763
+      Cash Offer: $260,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 7033 SLATE ST UNINCORPORATED 32810, Orlando. yr1979+10, lot1.26ac+5, 3bd+2, no-offer, $160k-sweet+5, hood+5, ORL+5, LS178+5. REVIEW.
+    EVALUATION: Score:178 | Combined:178 | Tier:3-EVALUATE | Visual:WARM | Cond:5
+    Tags: 3-EVALUATE, WARM
+    Aprovado em: 2026-03-01T04:55:03.045+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 35-21-28-0750-00140
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$400k-$445k (comps: 6126 Clarcona $400k, 6821 Rembrandt $395k, 5830 Lullaby $365k). Lockhart 32810, 1.3 acres, prop mora na casa, aparencia abandono.
+
+----------------------------------------------------------------------------------------------------
+#47 | 710 COLUMBIA ST ORLANDO 32805
+    Cidade: Orlando, FL 32805
+    Owner: GORDON ORRIN JOSHUA
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.11192097 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $50,000
+      Cash Offer: $35,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 35
+    AI REASONING: Score 35/100: 710 COLUMBIA ST ORLANDO 32805, Orlando. offer70%+10, $50k-low+3, hood+5, ORL+5, LS260+10, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:260 | Combined:260 | Tier:1-CALL_NOW | Visual:WARM | Cond:5
+    Tags: 1-CALL_NOW, WARM
+    Aprovado em: 2026-02-27T19:16:24.843+00:00
+    Aprovado por: rodrigowindows
+    Origem: 35-22-29-1568-00090
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#48 | 7115 POMELO DR UNINCORPORATED 32819
+    Cidade: Orlando, FL 32819
+    Owner: MARY ELLEN PATRICK REVOCABLE TRUST
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1960 | Lot Size: 0.14479267 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $107,742
+      Cash Offer: $75,419
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 7115 POMELO DR UNINCORPORATED 32819, Orlando. yr1960+10, 3bd+2, no-offer, $108k-sweet+5, hood+5, ORL+5, LS185+5. REVIEW.
+    EVALUATION: Score:185 | Combined:185 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T02:33:55.217+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 30-23-29-8556-06060
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#49 | 7149 GREEN NEEDLE DR UNINCORPORATED 32792
+    Cidade: Orlando, FL 32792
+    Owner: ROCHELLE MEEKS REVOCABLE TRUST
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1983 | Lot Size: 0.18477491 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $272,883
+      Cash Offer: $206,050
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 27
+    AI REASONING: Score 27/100: 7149 GREEN NEEDLE DR UNINCORPORATED 3279, Orlando. yr1983+5, 3bd+2, no-offer, $273k-sweet+5, hood+5, ORL+5, LS178+5. PASS.
+    EVALUATION: Score:178 | Combined:178 | Tier:3-EVALUATE | Visual:WARM | Cond:5
+    Tags: 3-EVALUATE, WARM
+    Aprovado em: 2026-03-01T04:39:43.938+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 10-22-30-0584-00970
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$317k-$350k (comps: 3117 Shady Pine $350k, 3083 Crane Strand $375k). Trust motivado. Winter Park 32792 bairro excelente.
+
+----------------------------------------------------------------------------------------------------
+#50 | 717 E CHURCH ST ORLANDO 32801
+    Cidade: Orlando, FL 32801
+    Owner: BOATMAN VERN L, BOATMAN SUSAN G
+    Tipo: N/A | Quartos: 2 | Banheiros: 2
+    Ano Construção: 1953 | Lot Size: 0.17524039 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $299,089
+      Cash Offer: $291,200
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 78
+    AI REASONING: Score 30/100: 717 E CHURCH ST ORLANDO 32801, Orlando. yr1953+10, no-offer, $299k-sweet+5, hood+5, ORL+5, LS180+5. REVIEW.
+    EVALUATION: Score:180 | Combined:180 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T15:57:30.198+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 25-22-29-9312-04151
+    
+    TEM NOTES: SIM | TEM COMPS: NÃO
+    NOTES/COMPS:
+      APROVADO - MultiFamily 2/2, 1953, Thornton Park (Downtown Orlando), 2 blocos do Lake Eola Park. Zillow $448k (vs $299k estimado). Rent Zestimate $2,692/mo. Proprietario BOATMAN VERN L (individual, 624 E Pine St). Lead Score 180, AI 78/100 BUY. Oferta $291,200 = 65% de $448k. Bairro premium, vizinhanca excelente (RusTeak, Bynx Orlando, Hilton Downtown). Sem HOA. Google Maps confirma localizacao premium. ALTA PRIORIDADE.
+
+----------------------------------------------------------------------------------------------------
+#51 | 718 MALONE DR UNINCORPORATED 32810
+    Cidade: Orlando, FL 32810
+    Owner: NICHOLAS DANIEL L ESTATE
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1957 | Lot Size: 0.18488496 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $234,597
+      Cash Offer: $190,450
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 718 MALONE DR UNINCORPORATED 32810, Orlando. yr1957+10, 3bd+2, no-offer, $235k-sweet+5, hood+5, ORL+5, LS178+5. REVIEW.
+    EVALUATION: Score:178 | Combined:178 | Tier:3-EVALUATE | Visual:WARM | Cond:5
+    Tags: 3-EVALUATE, WARM
+    Aprovado em: 2026-03-01T04:48:02.389+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 02-22-29-0066-05160
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$293k-$330k (comps: 1001 Malone Dr $300k, 735 Baltimore Dr $330k). Lockhart 32810, bom bairro. Casa 3/2 1551sqft 1957, proprietário mora na prop.
+
+----------------------------------------------------------------------------------------------------
+#52 | 743 ALFRED DR UNINCORPORATED 32810
+    Cidade: Orlando, FL 32810
+    Owner: SALIH JEHAN A 75% INT, SALIH MADZ FAITH SALIH 25% INT
+    Tipo: N/A | Quartos: 2 | Banheiros: 2
+    Ano Construção: 1959 | Lot Size: 0.2104856 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $229,940
+      Cash Offer: $182,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 30
+    AI REASONING: Score 30/100: 743 ALFRED DR UNINCORPORATED 32810, Orlando. yr1959+10, no-offer, $230k-sweet+5, hood+5, ORL+5, LS185+5. REVIEW.
+    EVALUATION: Score:185 | Combined:185 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T04:10:37.516+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 02-22-29-0066-01100
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$280k-$320k (Lockhart 32810, 2/2 1248sqft 1959). Proprietario 75% interest = heranca/divisao. Oferta 65% ARV real.
+
+----------------------------------------------------------------------------------------------------
+#53 | 7633 AVONWOOD CT UNINCORPORATED 32810
+    Cidade: Orlando, FL 32810
+    Owner: SIAS RICHARD P, SIAS DONNA J
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1971 | Lot Size: 0.23108355 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $143,530
+      Cash Offer: $154,765
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 7633 AVONWOOD CT UNINCORPORATED 32810, Orlando. yr1971+10, 3bd+2, no-offer, $144k-sweet+5, hood+5, ORL+5, LS177+5. REVIEW.
+    EVALUATION: Score:177 | Combined:177 | Tier:3-EVALUATE | Visual:WARM | Cond:6
+    Tags: 3-EVALUATE, WARM
+    Aprovado em: 2026-03-01T05:11:03.584+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 27-21-29-0362-00100
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      AI Score 32/100 | Zillow ARV ~$238k-$245k | Comps: 331 Greens End St $280k (3/1 900sqft), 7626 Orange Pl $225k, 2312 Calloway Dr $245k | Lockhart 32810 bairro ok | Casa 1971 3/1 875sqft lote 10066sqft | Prop SIAS RICHARD P multiplas props motivado | Oferta 65% ARV $238k
+
+----------------------------------------------------------------------------------------------------
+#54 | 8275 LAKE UNDERHILL RD UNINCORPORATED 32825
+    Cidade: Orlando, FL 32825
+    Owner: FABRHANA INVESTMENTS LLC
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.5 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $120,000
+      Cash Offer: $84,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 50
+    AI REASONING: Score 50/100: 8275 LAKE UNDERHILL RD UNINCORPORATED 32, Orlando. lot0.50ac+5, land-lot+5, Land+5, offer70%+10, $120k-sweet+5, hood+5, ORL+5, LS290+10. HOLD.
+    EVALUATION: Score:285 | Combined:290 | Tier:4-LAND | Visual:LAND | Cond:0
+    Tags: 4-LAND, LAND
+    Aprovado em: 2026-02-28T00:42:05.15+00:00
+    Aprovado por: rodrigowindows
+    Origem: 25-22-30-0000-00060
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#55 | 8300 ALVERON AVE UNINCORPORATED 32817
+    Cidade: Orlando, FL 32817
+    Owner: VEGA-DRANKUS MICHAEL ESTATE
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1959 | Lot Size: 0.1515185 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $176,099
+      Cash Offer: $167,895
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 8300 ALVERON AVE UNINCORPORATED 32817, Orlando. yr1959+10, 3bd+2, no-offer, $176k-sweet+5, hood+5, ORL+5, LS178+5. REVIEW.
+    EVALUATION: Score:178 | Combined:178 | Tier:3-EVALUATE | Visual:WARM | Cond:5
+    Tags: 3-EVALUATE, WARM
+    Aprovado em: 2026-03-01T04:45:30.096+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 12-22-30-8410-01150
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$258k-$280k (comps: 3101 Via Uno $310k, 8144 Bucksaw Dr $299k, 2933 Chickasaw $320k). Union Park 32817, 3/2 1959, proprietário mora na propriedade.
+
+----------------------------------------------------------------------------------------------------
+#56 | 909 FERNDELL RD UNINCORPORATED 32808
+    Cidade: Orlando, FL 32808
+    Owner: RIB FAMILY TRUST HOLDINGS LLC
+    Tipo: N/A | Quartos: 3 | Banheiros: 1
+    Ano Construção: 1954 | Lot Size: 0.12173997 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $88,504
+      Cash Offer: $61,953
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 44
+    AI REASONING: Score 44/100: 909 FERNDELL RD UNINCORPORATED 32808, Orlando. yr1954+10, 3bd+2, offer70%+5, $89k-sweet+5, hood+5, ORL+5, LS235+10, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:215 | Combined:235 | Tier:1-CALL_NOW | Visual:HOT | Cond:3
+    Tags: 1-CALL_NOW, HOT
+    Aprovado em: 2026-02-28T01:59:49.862+00:00
+    Aprovado por: rodrigowindows
+    Origem: 19-22-29-6956-02200
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+----------------------------------------------------------------------------------------------------
+#57 | 911 CARVER ST WINTER PARK 32789
+    Cidade: Winter Park, FL 32789
+    Owner: MORRIS DAVID ESTATE
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1954 | Lot Size: 0.13800154 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $124,399
+      Cash Offer: $171,665
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 30
+    AI REASONING: Score 30/100: 911 CARVER ST WINTER PARK 32789, Winter Park. yr1954+10, no-offer, $124k-sweet+5, hood+5, Winter Park+5, LS180+5. REVIEW.
+    EVALUATION: Score:180 | Combined:180 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T04:35:51.684+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 06-22-30-5436-02020
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$264k-$300k (comps: 600 W Webster $300k, 1872 Biscayne $405k). Espólio motivado. Winter Park 32789 bairro excelente.
+
+----------------------------------------------------------------------------------------------------
+#58 | 9255 2ND AVE UNINCORPORATED 32824
+    Cidade: Orlando, FL 32824
+    Owner: FIRST BAPTIST CHURCH OF TAFT INC
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1977 | Lot Size: 0.44311885 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $150,839
+      Cash Offer: $195,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 37
+    AI REASONING: Score 37/100: 9255 2ND AVE UNINCORPORATED 32824, Orlando. yr1977+10, lot0.44ac+5, 3bd+2, no-offer, $151k-sweet+5, hood+5, ORL+5, LS200+5. REVIEW.
+    EVALUATION: Score:200 | Combined:200 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T00:40:22.571+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 36-23-29-8228-50903
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      WARM Tier, AI Score 37, Lead 200. Lote 19302sqft. Proprietario FIRST BAPTIST CHURCH (entidade, nao mora no imovel). ARV ~$295k-$320k. Oferta 65% = $195k.
+
+----------------------------------------------------------------------------------------------------
+#59 | 9601 SEIDEL RD UNINCORPORATED 34787
+    Cidade: Orlando, FL 34787
+    Owner: AMBIENTA SEIDEL LLC
+    Tipo: N/A | Quartos: 2 | Banheiros: 1
+    Ano Construção: 1963 | Lot Size: 1.49784143 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $197,486
+      Cash Offer: $370,000
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 35
+    AI REASONING: Score 35/100: 9601 SEIDEL RD UNINCORPORATED 34787, Orlando. yr1963+10, lot1.50ac+5, no-offer, $197k-sweet+5, hood+5, ORL+5, LS180+5. REVIEW.
+    EVALUATION: Score:180 | Combined:180 | Tier:5-NO_VISUAL | Cond:0
+    Tags: 5-NO_VISUAL
+    Aprovado em: 2026-03-01T13:51:59.574+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 04-24-27-0000-00016
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      APROVADO - Terreno desenvolvimento Horizon West Village F, 1.5 acres. Zillow $569k, vendido 2021 por $2M. Zoneamento: 44 townhomes, escola, ALF. Frontage 964ft na Seidel Rd (expansao 4 pistas). Proprietario AMBIENTA SEIDEL LLC. Oferta $370k (65% Zillow). Lead Score 180, AI 35/100. Maior crescimento FL.
+
+----------------------------------------------------------------------------------------------------
+#60 | 966 BARBADOS AVE UNINCORPORATED 32825
+    Cidade: Orlando, FL 32825
+    Owner: FOXEN OF ORANGE COUNTY INC
+    Tipo: N/A | Quartos: 3 | Banheiros: 2
+    Ano Construção: 1969 | Lot Size: 0.19417073 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $180,953
+      Cash Offer: $200,200
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 32
+    AI REASONING: Score 32/100: 966 BARBADOS AVE UNINCORPORATED 32825, Orlando. yr1969+10, 3bd+2, no-offer, $181k-sweet+5, hood+5, ORL+5, LS180+5. REVIEW.
+    EVALUATION: Score:180 | Combined:180 | Tier:2-CALL_SOON | Visual:WARM | Cond:5
+    Tags: 2-CALL_SOON, WARM
+    Aprovado em: 2026-03-01T04:27:59.097+00:00
+    Aprovado por: rodrigowindows1
+    Origem: 21-22-31-6692-01000
+    
+    TEM NOTES: SIM | TEM COMPS: SIM
+    NOTES/COMPS:
+      ARV ~$308k-$325k (comps: 10800 Fernando $330k, 1212 Park Manor $316k). Union Park 32825 bairro bom. Casa 1969 aparência abandono.
+
+----------------------------------------------------------------------------------------------------
+#61 | DUSKIN AVE UNINCORPORATED 32839
+    Cidade: Orlando, FL 32839
+    Owner: RAMIREZ ROMERO GUADALUPE
+    Tipo: N/A | Quartos: None | Banheiros: None
+    Ano Construção: None | Lot Size: 0.49358215 acres | Pool: Não
+    Sq Ft: N/A
+    
+    VALORES:
+      Valor Estimado: $37,389
+      Cash Offer: $26,172
+      ARV: N/A
+      MAO: N/A
+      Comparative Price: N/A
+      Avg Price/SqFt: N/A
+      Last Sale: N/A por N/A
+    
+    RENOVAÇÃO:
+      Tipo: N/A
+      Valor: N/A (N/A)
+      Wholesale: N/A (N/A)
+    
+    AI SCORE: 40
+    AI REASONING: Score 40/100: DUSKIN AVE UNINCORPORATED 32839, Orlando. lot0.49ac+5, land-lot+5, offer70%+10, $37k-low+3, hood+5, ORL+5, LS225+5, CALL_NOW+2. REVIEW.
+    EVALUATION: Score:225 | Combined:225 | Tier:1-CALL_NOW | Visual:WARM | Cond:5
+    Tags: 1-CALL_NOW, WARM
+    Aprovado em: 2026-02-28T02:19:50.855+00:00
+    Aprovado por: rodrigowindows
+    Origem: 22-23-29-6204-01090
+    
+    TEM NOTES: NÃO | TEM COMPS: NÃO
+    NOTES: (sem notas de análise)
+
+
+====================================================================================================
+TABELA RESUMO - COMPS E NOTES
+====================================================================================================
+#    Endereço                                           Notes  Comps  Cash Offer   Est. Value  
+----------------------------------------------------------------------------------------------------
+1    10 E ELLA J GILMORE ST UNINCORPORATED 32703        SIM    SIM    $139,750     $89,203     
+2    103 SHORT ST UNINCORPORATED 32703                  ---    ---    $12,705      $18,150     
+3    1030 HERMAN AVE UNINCORPORATED 32803               ---    ---    $39,014      $55,734     
+4    1400 GREENWOOD ST ORLANDO 32801                    SIM    SIM    $234,000     $299,340    
+5    1435 WAKULLA WAY UNINCORPORATED 32839              ---    ---    $123,000     $103,288    
+6    1440 AVALON RD UNINCORPORATED 34787                SIM    SIM    $204,750     $270,876    
+7    14420 HERTHA AVE UNINCORPORATED 32826              SIM    SIM    $156,000     $109,776    
+8    1559 40TH ST UNINCORPORATED 32839                  SIM    SIM    $182,000     $153,672    
+9    1606 OVERDALE ST UNINCORPORATED 32825              SIM    SIM    $163,410     $130,160    
+10   16077 MORRIS DR UNINCORPORATED 32833               SIM    SIM    $156,000     $85,578     
+11   1687 W MILLER AVE UNINCORPORATED 32805             ---    ---    $2,171       $3,101      
+12   1719 SUE ANN ST UNINCORPORATED 32825               SIM    SIM    $195,000     $153,743    
+13   1742 S WASHINGTON AVE UNINCORPORATED 32703         SIM    SIM    $182,000     $106,905    
+14   1800 PALM LN UNINCORPORATED 32803                  ---    ---    $200,292     $286,131    
+15   18046 10TH AVE UNINCORPORATED 32833                SIM    SIM    $0           $132        
+16   201 CLARK ST EATONVILLE 32751                      ---    ---    $101,516     $145,023    
+17   2011 JESSICA LEA LN OCOEE 34761                    SIM    SIM    $178,000     $123,930    
+18   235 E 13TH ST UNINCORPORATED 32703                 SIM    SIM    $136,000     $101,999    
+19   245 N LAKE AVE APOPKA 32703                        SIM    SIM    $220,000     $183,431    
+20   248 W LAFAYETTE ST WINTER GARDEN 34787             SIM    SIM    $143,000     $80,831     
+21   2712 GEOFFREY DR UNINCORPORATED 32826              SIM    SIM    $169,000     $136,839    
+22   3034 EVELYN SCOTT ST UNINCORPORATED 32712          SIM    SIM    $130,000     $94,513     
+23   31 E SPRUCE ST ORLANDO 32804                       ---    ---    $200,972     $287,103    
+24   3302 JOHIO SHORES RD UNINCORPORATED 34761          SIM    SIM    $214,000     $201,724    
+25   3433 N TANNER RD UNINCORPORATED 32826              SIM    SIM    $212,855     $327,469    
+26   3553 STUART ST UNINCORPORATED 32703                SIM    SIM    $120,000     $98,372     
+27   3605 ROUND LAKE RD UNINCORPORATED 32798            SIM    SIM    $260,000     $180,192    
+28   3722 WINONA DR UNINCORPORATED 32812                SIM    SIM    $162,000     $89,547     
+29   3757 COUNTRY ROSE LN UNINCORPORATED 32703          SIM    ---    $150,000     $123,710    
+30   3913 MERRYWEATHER DR UNINCORPORATED 32812          SIM    SIM    $188,000     $99,591     
+31   405 CABALLERO RD OCOEE 34761                       SIM    SIM    $166,750     $193,779    
+32   409 S PHELPS AVE WINTER PARK 32789                 SIM    SIM    $403,000     $234,549    
+33   4131 ORTISI DR UNINCORPORATED 32822                SIM    SIM    $189,000     $130,033    
+34   4605 ANDRUS AVE UNINCORPORATED 32804               SIM    ---    $204,000     $189,509    
+35   5014 SHOSHONE ST UNINCORPORATED 32819              SIM    SIM    $172,250     $122,656    
+36   5032 VANGUARD ST UNINCORPORATED 32819              SIM    SIM    $172,250     $135,309    
+37   51 E 13TH ST UNINCORPORATED 32703                  ---    ---    $12,112      $17,303     
+38   517 OWL CIR UNINCORPORATED 32825                   SIM    ---    $143,650     $109,717    
+39   5309 E KALEY ST ORLANDO 32812                      SIM    SIM    $200,000     $98,024     
+40   5665 TOMOKA DR UNINCORPORATED 32839                SIM    SIM    $162,000     $90,222     
+41   5739 DOGWOOD DR UNINCORPORATED 32807               ---    ---    $153,000     $108,418    
+42   607 PINE ST UNINCORPORATED 34761                   SIM    SIM    $165,620     $83,295     
+43   611 BARRY ST UNINCORPORATED 32808                  ---    ---    $67,476      $96,394     
+44   6130 SHENANDOAH WAY ORLANDO 32807                  SIM    SIM    $247,000     $218,053    
+45   6827 POMELO DR UNINCORPORATED 32819                SIM    SIM    $172,250     $98,390     
+46   7033 SLATE ST UNINCORPORATED 32810                 SIM    SIM    $260,000     $159,763    
+47   710 COLUMBIA ST ORLANDO 32805                      ---    ---    $35,000      $50,000     
+48   7115 POMELO DR UNINCORPORATED 32819                ---    ---    $75,419      $107,742    
+49   7149 GREEN NEEDLE DR UNINCORPORATED 32792          SIM    SIM    $206,050     $272,883    
+50   717 E CHURCH ST ORLANDO 32801                      SIM    ---    $291,200     $299,089    
+51   718 MALONE DR UNINCORPORATED 32810                 SIM    SIM    $190,450     $234,597    
+52   743 ALFRED DR UNINCORPORATED 32810                 SIM    SIM    $182,000     $229,940    
+53   7633 AVONWOOD CT UNINCORPORATED 32810              SIM    SIM    $154,765     $143,530    
+54   8275 LAKE UNDERHILL RD UNINCORPORATED 32825        ---    ---    $84,000      $120,000    
+55   8300 ALVERON AVE UNINCORPORATED 32817              SIM    SIM    $167,895     $176,099    
+56   909 FERNDELL RD UNINCORPORATED 32808               ---    ---    $61,953      $88,504     
+57   911 CARVER ST WINTER PARK 32789                    SIM    SIM    $171,665     $124,399    
+58   9255 2ND AVE UNINCORPORATED 32824                  SIM    SIM    $195,000     $150,839    
+59   9601 SEIDEL RD UNINCORPORATED 34787                SIM    SIM    $370,000     $197,486    
+60   966 BARBADOS AVE UNINCORPORATED 32825              SIM    SIM    $200,200     $180,953    
+61   DUSKIN AVE UNINCORPORATED 32839                    ---    ---    $26,172      $37,389     
+
+
+====================================================================================================
+PROPRIEDADES SEM NOTES DE ANÁLISE (15 propriedades)
+====================================================================================================
+  1. 103 SHORT ST UNINCORPORATED 32703 - Orlando, 32703 | Offer: $12,705 | Est: $18,150
+  2. 1030 HERMAN AVE UNINCORPORATED 32803 - Orlando, 32803 | Offer: $39,014 | Est: $55,734
+  3. 1435 WAKULLA WAY UNINCORPORATED 32839 - Orlando, 32839 | Offer: $123,000 | Est: $103,288
+  4. 1687 W MILLER AVE UNINCORPORATED 32805 - Orlando, 32805 | Offer: $2,171 | Est: $3,101
+  5. 1800 PALM LN UNINCORPORATED 32803 - Orlando, 32803 | Offer: $200,292 | Est: $286,131
+  6. 201 CLARK ST EATONVILLE 32751 - Orlando, 32751 | Offer: $101,516 | Est: $145,023
+  7. 31 E SPRUCE ST ORLANDO 32804 - Orlando, 32804 | Offer: $200,972 | Est: $287,103
+  8. 51 E 13TH ST UNINCORPORATED 32703 - Orlando, 32703 | Offer: $12,112 | Est: $17,303
+  9. 5739 DOGWOOD DR UNINCORPORATED 32807 - Orlando, 32807 | Offer: $153,000 | Est: $108,418
+  10. 611 BARRY ST UNINCORPORATED 32808 - Orlando, 32808 | Offer: $67,476 | Est: $96,394
+  11. 710 COLUMBIA ST ORLANDO 32805 - Orlando, 32805 | Offer: $35,000 | Est: $50,000
+  12. 7115 POMELO DR UNINCORPORATED 32819 - Orlando, 32819 | Offer: $75,419 | Est: $107,742
+  13. 8275 LAKE UNDERHILL RD UNINCORPORATED 32825 - Orlando, 32825 | Offer: $84,000 | Est: $120,000
+  14. 909 FERNDELL RD UNINCORPORATED 32808 - Orlando, 32808 | Offer: $61,953 | Est: $88,504
+  15. DUSKIN AVE UNINCORPORATED 32839 - Orlando, 32839 | Offer: $26,172 | Est: $37,389
