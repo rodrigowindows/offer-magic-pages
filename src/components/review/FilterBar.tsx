@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Search, X } from 'lucide-react';
 import type { StatusFilter, StatusCounts } from './types';
 
 interface FilterBarProps {
@@ -8,6 +10,8 @@ interface FilterBarProps {
   onVisualChange: (visual: string) => void;
   visualCounts: Record<string, number>;
   totalProperties: number;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 const STATUS_OPTIONS = [
@@ -67,11 +71,46 @@ export const FilterBar = ({
   onVisualChange,
   visualCounts,
   totalProperties,
+  searchQuery,
+  onSearchChange,
 }: FilterBarProps) => {
   const hasVisualData = Object.keys(visualCounts).length > 0;
+  const [showSearch, setShowSearch] = useState(false);
 
   return (
     <div className="space-y-2">
+      {/* Address search */}
+      <div className="flex items-center gap-2">
+        {showSearch || searchQuery ? (
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Buscar por endereço..."
+              className="w-full pl-8 pr-8 py-1.5 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              autoFocus
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { onSearchChange(''); setShowSearch(false); }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowSearch(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+          >
+            <Search className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Buscar endereço</span>
+          </button>
+        )}
+      </div>
       {/* Status filter */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {STATUS_OPTIONS.map(s => (
