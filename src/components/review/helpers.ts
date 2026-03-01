@@ -1,5 +1,6 @@
 import type { QueueProperty, PreDenialSuggestion } from './types';
 import { DETAIL_FIELDS, VISIBLE_FIELDS_STORAGE_KEY } from './constants';
+import { isGoodNeighborhood, RURAL_ZIPS } from '@/constants/neighborhoodClassification';
 
 /** Extract Visual category (HOT/WARM/COLD/LAND) from evaluation string */
 export const getVisualCategory = (evaluation: string | null): string | null => {
@@ -42,12 +43,17 @@ export const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestio
   if (prop.year_built && (currentYear - prop.year_built) < 20) {
     suggestions.push({ reason: 'new-construction', label: `Casa Nova (${prop.year_built})` });
   }
-  if (prop.property_type?.toLowerCase().includes('multi')) {
-    suggestions.push({ reason: 'multi-family', label: 'Multi-Family' });
+  if (prop.property_type?.toLowerCase().includes('multi') && !isGoodNeighborhood(prop.zip_code)) {
+    suggestions.push({ reason: 'multi-family', label: 'Multi-Family (Bairro Ruim)' });
   }
   const tagsStr = Array.isArray(prop.tags) ? prop.tags.join(',') : (prop.tags || '');
   if (prop.property_type?.toLowerCase() === 'land' || prop.property_type?.toLowerCase() === 'vacant land' || tagsStr.includes('LAND')) {
-    suggestions.push({ reason: 'land', label: 'Terreno (Land)' });
+    const isRural = RURAL_ZIPS.has(prop.zip_code || '');
+    const isLowValue = (prop.estimated_value || 0) < 10000;
+    if (!isGoodNeighborhood(prop.zip_code) || isRural || isLowValue) {
+      const detail = isRural ? '(Zona Rural)' : isLowValue ? '(Valor < $10k)' : '(Bairro Ruim)';
+      suggestions.push({ reason: 'land', label: `Terreno ${detail}` });
+    }
   }
   if (prop.property_type?.toLowerCase().includes('commercial') || prop.property_type?.toLowerCase().includes('comercial')) {
     suggestions.push({ reason: 'commercial', label: 'Imóvel Comercial' });
