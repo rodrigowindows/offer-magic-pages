@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 import {
   MapPin,
   ExternalLink,
@@ -31,6 +32,19 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
   const [showFieldSettings, setShowFieldSettings] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
+  const [noteCount, setNoteCount] = useState<number>(0);
+
+  const fetchNoteCount = useCallback(async () => {
+    const { count } = await supabase
+      .from('property_notes')
+      .select('*', { count: 'exact', head: true })
+      .eq('property_id', property.id);
+    setNoteCount(count || 0);
+  }, [property.id]);
+
+  useEffect(() => {
+    fetchNoteCount();
+  }, [fetchNoteCount]);
 
   const fillRates = useMemo(() => computeFillRates(allProperties), [allProperties]);
   const tagList = parseTags(property.tags);
@@ -97,7 +111,10 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
                 </span>
               </div>
               {property.rejection_notes && (
-                <p className="text-[11px] text-green-700 italic pl-5">{property.rejection_notes}</p>
+                <p className="text-[11px] text-green-700 pl-5">
+                  <span className="font-semibold">Nota de decisão:</span>{' '}
+                  <span className="italic">{property.rejection_notes}</span>
+                </p>
               )}
             </div>
           )}
@@ -130,7 +147,10 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
                 </span>
               </div>
               {property.rejection_notes && (
-                <p className="text-[11px] text-red-700 italic pl-5">{property.rejection_notes}</p>
+                <p className="text-[11px] text-red-700 pl-5">
+                  <span className="font-semibold">Nota de decisão:</span>{' '}
+                  <span className="italic">{property.rejection_notes}</span>
+                </p>
               )}
             </div>
           )}
@@ -202,8 +222,37 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
               </div>
             </div>
           )}
+
+          {/* Notes & AI Score buttons — inside the right column */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={showNotes ? 'default' : 'outline'}
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => setShowNotes(!showNotes)}
+            >
+              <StickyNote className="h-3.5 w-3.5" />
+              Notas
+              {noteCount > 0 && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 min-w-[18px]">{noteCount}</Badge>
+              )}
+            </Button>
+            <AIScoreInput
+              propertyId={property.id}
+              currentScore={property.ai_score}
+              currentReasoning={property.ai_reasoning}
+              onSaved={onScoreSaved}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Notes Panel — full-width, directly below the grid */}
+      {showNotes && (
+        <div className="border rounded-lg p-3 bg-muted/10">
+          <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
+        </div>
+      )}
 
       {/* Details config bar */}
       <div className="flex items-center justify-between px-1">
@@ -280,31 +329,6 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
         <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&rarr;</kbd><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&larr;</kbd> Nav</span>
       </div>
 
-      {/* Notes & AI Score buttons */}
-      <div className="flex items-center gap-2 px-1">
-        <Button
-          variant={showNotes ? 'default' : 'outline'}
-          size="sm"
-          className="gap-1.5 text-xs"
-          onClick={() => setShowNotes(!showNotes)}
-        >
-          <StickyNote className="h-3.5 w-3.5" />
-          Notas
-        </Button>
-        <AIScoreInput
-          propertyId={property.id}
-          currentScore={property.ai_score}
-          currentReasoning={property.ai_reasoning}
-          onSaved={onScoreSaved}
-        />
-      </div>
-
-      {/* Notes Panel */}
-      {showNotes && (
-        <div className="border rounded-lg p-3 bg-muted/10">
-          <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} />
-        </div>
-      )}
     </div>
   );
 };

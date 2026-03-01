@@ -10,8 +10,6 @@ import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
 import { InlineCompsList } from "@/components/review/InlineCompsList";
-import { AIScorePanel } from "@/components/review/AIScorePanel";
-import { PropertyNotesPanel } from "@/components/property/PropertyNotesPanel";
 import type { QueueProperty, ApprovePhase, StatusFilter, DailyStats, StatusCounts } from "@/components/review/types";
 import { REJECTION_REASONS } from "@/components/review/constants";
 import { getVisualCategory, countByVisual } from "@/components/review/helpers";
@@ -52,10 +50,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const [currentComps, setCurrentComps] = useState<SavedComp[]>([]);
   const [decisionPhotos, setDecisionPhotos] = useState<File[]>([]);
   const [approvalNotes, setApprovalNotes] = useState("");
-
-  // Inline panels
-  const [showNotesPanel, setShowNotesPanel] = useState(false);
-  const [showAIScorePanel, setShowAIScorePanel] = useState(false);
 
   const { user, userId, userName } = useCurrentUser();
   const { toast } = useToast();

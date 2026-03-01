@@ -24,9 +24,10 @@ interface PropertyNote {
 interface PropertyNotesPanelProps {
   propertyId: string;
   propertyAddress?: string;
+  onNoteChanged?: () => void;
 }
 
-export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNotesPanelProps) => {
+export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged }: PropertyNotesPanelProps) => {
   const { toast } = useToast();
   const [notes, setNotes] = useState<PropertyNote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,6 +102,7 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNote
       setFollowUpDate("");
       setNotePhotos([]);
       await fetchNotes();
+      onNoteChanged?.();
     } catch (error) {
       console.error("Error adding note:", error);
       toast({
@@ -128,6 +130,7 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress }: PropertyNote
       });
 
       setNotes(notes.filter(n => n.id !== noteId));
+      onNoteChanged?.();
     } catch (error) {
       console.error("Error deleting note:", error);
       toast({
