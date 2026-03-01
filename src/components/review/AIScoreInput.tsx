@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Brain, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,13 @@ export const AIScoreInput = ({ propertyId, currentScore, currentReasoning, onSav
   const [reasoning, setReasoning] = useState(currentReasoning || '');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+
+  // Reset state when property changes
+  useEffect(() => {
+    setScore(currentScore != null ? String(currentScore) : '');
+    setReasoning(currentReasoning || '');
+    setExpanded(false);
+  }, [propertyId, currentScore, currentReasoning]);
 
   const handleSave = async () => {
     const numScore = parseInt(score);
