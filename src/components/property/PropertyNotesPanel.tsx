@@ -56,8 +56,8 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
     } catch (error) {
       console.error("Error fetching notes:", error);
       toast({
-        title: "Error",
-        description: "Failed to load notes",
+        title: "Erro",
+        description: "Falha ao carregar notas",
         variant: "destructive",
       });
     } finally {
@@ -71,7 +71,6 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
 
     setSaving(true);
     try {
-      // Upload photos if any
       const uploadedUrls: string[] = [];
       for (const file of notePhotos) {
         const fileExt = file.name.split(".").pop();
@@ -125,8 +124,8 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
       if (error) throw error;
 
       toast({
-        title: "Note deleted",
-        description: "Your note has been removed",
+        title: "Nota removida",
+        description: "Sua nota foi excluída",
       });
 
       setNotes(notes.filter(n => n.id !== noteId));
@@ -134,8 +133,8 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
     } catch (error) {
       console.error("Error deleting note:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete note",
+        title: "Erro",
+        description: "Falha ao excluir nota",
         variant: "destructive",
       });
     }
@@ -169,56 +168,15 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
     <div className="space-y-4">
       {propertyAddress && (
         <div className="text-sm text-muted-foreground">
-          Notes for: <strong>{propertyAddress}</strong>
+          Notas para: <strong>{propertyAddress}</strong>
         </div>
       )}
 
-      {/* Add Note Form */}
-      <form onSubmit={handleAddNote} className="space-y-3 p-4 border rounded-lg bg-muted/30">
-        <div className="space-y-2">
-          <Label htmlFor="noteText">New Note</Label>
-          <Textarea
-            id="noteText"
-            placeholder="Add a note about this property..."
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            rows={3}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Fotos (opcional)</Label>
-          <DecisionPhotoUpload files={notePhotos} onChange={setNotePhotos} accent="green" />
-        </div>
-
-        <div className="flex items-end gap-3">
-          <div className="flex-1 space-y-2">
-            <Label htmlFor="followUpDate">Follow-up (opcional)</Label>
-            <Input
-              id="followUpDate"
-              type="date"
-              value={followUpDate}
-              onChange={(e) => setFollowUpDate(e.target.value)}
-            />
-          </div>
-          <Button type="submit" disabled={saving || !noteText.trim()}>
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <Plus className="h-4 w-4 mr-1" />
-                Adicionar
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-
-      {/* Notes List */}
+      {/* Notes List — shown first for visibility */}
       {notes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <StickyNote className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">No notes yet for this property</p>
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <StickyNote className="h-10 w-10 text-muted-foreground mb-3" />
+          <p className="text-sm text-muted-foreground">Nenhuma nota ainda</p>
         </div>
       ) : (
         <ScrollArea className="h-[300px]">
@@ -257,7 +215,7 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
                           </Badge>
                         )}
                         <span className="text-xs text-muted-foreground">
-                          Added {format(new Date(note.created_at), "MMM d, yyyy 'at' h:mm a")}
+                          {format(new Date(note.created_at), "MMM d, yyyy 'às' h:mm a")}
                         </span>
                       </div>
                     </div>
@@ -277,6 +235,47 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
           </div>
         </ScrollArea>
       )}
+
+      {/* Add Note Form — below existing notes */}
+      <form onSubmit={handleAddNote} className="space-y-3 p-4 border rounded-lg bg-muted/30">
+        <div className="space-y-2">
+          <Label htmlFor="noteText">Nova Nota</Label>
+          <Textarea
+            id="noteText"
+            placeholder="Adicionar nota sobre este imóvel..."
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Fotos (opcional)</Label>
+          <DecisionPhotoUpload files={notePhotos} onChange={setNotePhotos} accent="green" />
+        </div>
+
+        <div className="flex items-end gap-3">
+          <div className="flex-1 space-y-2">
+            <Label htmlFor="followUpDate">Follow-up (opcional)</Label>
+            <Input
+              id="followUpDate"
+              type="date"
+              value={followUpDate}
+              onChange={(e) => setFollowUpDate(e.target.value)}
+            />
+          </div>
+          <Button type="submit" disabled={saving || !noteText.trim()}>
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };
