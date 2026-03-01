@@ -14,17 +14,14 @@ interface AIScoreInputProps {
 }
 
 export const AIScoreInput = ({ propertyId, currentScore, currentReasoning, onSaved }: AIScoreInputProps) => {
-  const [expanded, setExpanded] = useState(false);
   const [score, setScore] = useState(currentScore != null ? String(currentScore) : '');
   const [reasoning, setReasoning] = useState(currentReasoning || '');
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
-  // Reset state when property changes
   useEffect(() => {
     setScore(currentScore != null ? String(currentScore) : '');
     setReasoning(currentReasoning || '');
-    setExpanded(false);
   }, [propertyId, currentScore, currentReasoning]);
 
   const handleSave = async () => {
@@ -54,54 +51,40 @@ export const AIScoreInput = ({ propertyId, currentScore, currentReasoning, onSav
     : 'text-muted-foreground';
 
   return (
-    <div>
-      <Button
-        variant={expanded ? 'default' : 'outline'}
-        size="sm"
-        className="gap-1.5 text-xs"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <Brain className="h-3.5 w-3.5" />
-        AI Score
+    <div className="border rounded-lg p-3 bg-muted/10 space-y-2">
+      <div className="flex items-center gap-2">
+        <Brain className="h-4 w-4 text-primary" />
+        <label className="text-sm font-semibold">AI Score</label>
         {currentScore != null && (
-          <span className={`font-bold ${scoreColor}`}>{currentScore}/100</span>
+          <span className={`text-sm font-bold ${scoreColor}`}>{currentScore}/100</span>
         )}
-      </Button>
-
-      {expanded && (
-        <div className="mt-2 border rounded-lg p-3 bg-muted/10 space-y-2">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Score (0-100):</label>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={score}
-              onChange={(e) => setScore(e.target.value)}
-              className="w-20 h-7 text-sm"
-              placeholder="0-100"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Reasoning:</label>
-            <Textarea
-              value={reasoning}
-              onChange={(e) => setReasoning(e.target.value)}
-              className="mt-1 text-xs min-h-[60px]"
-              placeholder="Ex: Score 78/100: Casa 1965 SFR, oferta 62%, Lead Score 245, bairro estável..."
-            />
-          </div>
-          <Button
-            size="sm"
-            className="gap-1.5 text-xs"
-            onClick={handleSave}
-            disabled={saving || !score}
-          >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Salvar Score
-          </Button>
-        </div>
-      )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Input
+          type="number"
+          min={0}
+          max={100}
+          value={score}
+          onChange={(e) => setScore(e.target.value)}
+          className="w-24 h-8 text-sm"
+          placeholder="0-100"
+        />
+        <Button
+          size="sm"
+          className="gap-1.5 text-xs"
+          onClick={handleSave}
+          disabled={saving || !score}
+        >
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+          Salvar
+        </Button>
+      </div>
+      <Textarea
+        value={reasoning}
+        onChange={(e) => setReasoning(e.target.value)}
+        className="text-xs min-h-[50px]"
+        placeholder="Ex: Score 78/100: Casa 1965 SFR, oferta 62%, Lead Score 245..."
+      />
     </div>
   );
 };
