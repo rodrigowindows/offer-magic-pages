@@ -78,12 +78,20 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
 
   return (
     <div className="space-y-3">
-      {/* Notes Panel — at the top for visibility */}
-      {showNotes && (
-        <div className="border rounded-lg p-3 bg-muted/10">
-          <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
-        </div>
-      )}
+      {/* AI Score + Notes Panel — at the top for visibility */}
+      <div className="space-y-2">
+        <AIScoreInput
+          propertyId={property.id}
+          currentScore={property.ai_score}
+          currentReasoning={property.ai_reasoning}
+          onSaved={onScoreSaved}
+        />
+        {showNotes && (
+          <div className="border rounded-lg p-3 bg-muted/10">
+            <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
+          </div>
+        )}
+      </div>
 
       {/* Main layout: Image left + Info & Details right */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
@@ -244,12 +252,6 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
                 <Badge variant="secondary" className="text-[10px] px-1.5 min-w-[18px]">{noteCount}</Badge>
               )}
             </Button>
-            <AIScoreInput
-              propertyId={property.id}
-              currentScore={property.ai_score}
-              currentReasoning={property.ai_reasoning}
-              onSaved={onScoreSaved}
-            />
           </div>
         </div>
       </div>
