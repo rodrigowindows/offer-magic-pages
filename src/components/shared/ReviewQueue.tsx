@@ -33,6 +33,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [visualFilter, setVisualFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({ pending: 0, approved: 0, rejected: 0 });
 
   // Reject form
@@ -56,9 +57,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   // Derived
   const visualCounts = countByVisual(properties);
+  const searchFiltered = searchQuery.trim()
+    ? properties.filter(p => p.address.toLowerCase().includes(searchQuery.toLowerCase()))
+    : properties;
   const filteredProperties = visualFilter === 'all'
-    ? properties
-    : properties.filter(p => getVisualCategory(p.evaluation) === visualFilter);
+    ? searchFiltered
+    : searchFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
   const currentProperty = filteredProperties[currentIndex];
 
   // ── Data fetching ─────────────────────────────────────────────
@@ -97,7 +101,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     };
   }, [userId, selectedBatch, statusFilter]);
 
-  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter]);
+  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery]);
 
   useEffect(() => {
     setShowRejectForm(false);
@@ -529,6 +533,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         onVisualChange={setVisualFilter}
         visualCounts={visualCounts}
         totalProperties={properties.length}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       {/* Main Review Card */}
