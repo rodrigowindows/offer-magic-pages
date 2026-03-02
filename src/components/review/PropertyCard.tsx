@@ -59,16 +59,50 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
     });
   };
 
-  const activeFields = DETAIL_FIELDS.filter(f => visibleFields.has(f.key));
+  const activeFields = DETAIL_FIELDS.filter(f => visibleFields.has(f.key) && hasRealValue(f.format(property)));
+
+  const getAiScoreClass = (score: number | null) => {
+    if (score == null) return '';
+    if (score >= 70) return 'text-emerald-600';
+    if (score >= 50) return 'text-amber-600';
+    if (score >= 30) return 'text-orange-600';
+    return 'text-red-600';
+  };
 
   const renderDetailItem = (field: typeof DETAIL_FIELDS[number]) => {
     const formatted = field.format(property);
     const realValue = hasRealValue(formatted);
     const isHighlight = realValue && (field.highlight?.(property) ?? false);
+
+    // Clickable phone
+    if (field.key === 'owner_phone' && realValue && formatted) {
+      const digits = formatted.replace(/\D/g, '');
+      return (
+        <div key={field.key} className={`px-3 py-2 border-b border-r last:border-r-0 ${isHighlight ? 'bg-emerald-50' : ''}`}>
+          <p className="text-xs text-muted-foreground font-medium">{field.label}</p>
+          <a href={`tel:${digits}`} className="text-sm font-bold text-primary hover:underline truncate block">{formatted}</a>
+        </div>
+      );
+    }
+
+    // Clickable owner address (Google Maps)
+    if (field.key === 'owner_address' && realValue && formatted) {
+      return (
+        <div key={field.key} className={`px-3 py-2 border-b border-r last:border-r-0 ${isHighlight ? 'bg-emerald-50' : ''}`}>
+          <p className="text-xs text-muted-foreground font-medium">{field.label}</p>
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formatted)}`} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline truncate block">{formatted}</a>
+        </div>
+      );
+    }
+
+    // AI Score with color
+    const isAiScore = field.key === 'ai_score';
+    const aiScoreClass = isAiScore ? getAiScoreClass(property.ai_score) : '';
+
     return (
       <div key={field.key} className={`px-3 py-2 border-b border-r last:border-r-0 ${isHighlight ? 'bg-emerald-50' : ''}`}>
         <p className="text-xs text-muted-foreground font-medium">{field.label}</p>
-        <p className={`text-sm font-bold truncate ${realValue ? (isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
+        <p className={`text-sm font-bold truncate ${realValue ? (isAiScore ? aiScoreClass : isHighlight ? 'text-emerald-700' : '') : 'text-muted-foreground/40'}`}>
           {realValue ? formatted : '—'}
         </p>
       </div>
