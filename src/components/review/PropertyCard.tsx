@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { PropertyNotesPanel } from '../property/PropertyNotesPanel';
 import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
-import { AIScoreInput } from './AIScoreInput';
+import { ScoresTable } from './ScoresTable';
 import type { QueueProperty } from './types';
 import { DETAIL_FIELDS, CATEGORY_LABELS, TAG_COLORS } from './constants';
 import { parseTags, hasRealValue, getPreDenialSuggestions, computeFillRates, saveVisibleFields, loadVisibleFields } from './helpers';
@@ -28,9 +28,8 @@ interface PropertyCardProps {
 }
 
 export const PropertyCard = ({ property, allProperties, onScoreSaved }: PropertyCardProps) => {
-  const [detailsExpanded, setDetailsExpanded] = useState(true);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [showFieldSettings, setShowFieldSettings] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
   const [noteCount, setNoteCount] = useState<number>(0);
 
@@ -77,23 +76,11 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
   };
 
   return (
-    <div className="space-y-3">
-      {/* AI Score + Notes Panel — at the top for visibility */}
-      <div className="space-y-2">
-        <AIScoreInput
-          propertyId={property.id}
-          currentScore={property.ai_score}
-          currentReasoning={property.ai_reasoning}
-          onSaved={onScoreSaved}
-        />
-        {showNotes && (
-          <div className="border rounded-lg p-3 bg-muted/10">
-            <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
-          </div>
-        )}
-      </div>
+    <div className="space-y-3" data-property-id={property.id}>
+      {/* Scores Table — always visible at top */}
+      <ScoresTable property={property} onScoreSaved={onScoreSaved} />
 
-      {/* Main layout: Image left + Info & Details right */}
+      {/* Main layout: Image left + Info right */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* Image */}
         <div>
@@ -101,13 +88,23 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
             imageUrl={property.property_image_url}
             address={property.address}
           />
+          {/* Decision photos */}
+          {property.decision_photos && property.decision_photos.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap mt-2">
+              {property.decision_photos.map((url, i) => (
+                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-md overflow-hidden border hover:ring-2 hover:ring-primary transition-all">
+                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Info + Inline Details */}
+        {/* Info column */}
         <div className="flex flex-col gap-3">
-          {/* Address + Location */}
+          {/* Address */}
           <div>
-            <h3 className="text-lg sm:text-xl font-bold mb-0.5 line-clamp-2">{property.address}</h3>
+            <h3 className="text-lg sm:text-xl font-bold mb-0.5 line-clamp-2" data-field="address">{property.address}</h3>
             <p className="text-xs sm:text-sm text-muted-foreground">
               {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
             </p>
@@ -170,18 +167,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
             </div>
           )}
 
-          {/* Decision photos */}
-          {property.decision_photos && property.decision_photos.length > 0 && (
-            <div className="flex gap-1.5 flex-wrap">
-              {property.decision_photos.map((url, i) => (
-                <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-md overflow-hidden border hover:ring-2 hover:ring-primary transition-all">
-                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                </a>
-              ))}
-            </div>
-          )}
-
-          {/* Tags badges */}
+          {/* Tags */}
           {tagList.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {tagList.map(tag => (
@@ -211,58 +197,37 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
           )}
 
           {/* External Links */}
-          <div className="flex flex-wrap gap-1.5">
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors">
+          <div className="flex flex-wrap gap-1.5" data-section="external-links">
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer" data-action="open-google-maps" className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors">
               <MapPin className="w-3 h-3" />Maps
             </a>
-            <a href={property.zillow_url || `https://www.zillow.com/homes/${encodeURIComponent(property.address)}_rb/`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors">
+            <a href={property.zillow_url || `https://www.zillow.com/homes/${encodeURIComponent(property.address)}_rb/`} target="_blank" rel="noopener noreferrer" data-action="open-zillow" className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors">
               <span className="font-bold">Z</span>Zillow{property.zillow_url && <ExternalLink className="w-2.5 h-2.5" />}
             </a>
-            <a href={`https://www.redfin.com/search#query=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold hover:bg-red-100 transition-colors">
+            <a href={`https://www.redfin.com/search#query=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer" data-action="open-redfin" className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold hover:bg-red-100 transition-colors">
               <span className="font-bold">R</span>Redfin
             </a>
-            <a href={`https://www.trulia.com/homes/${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold hover:bg-green-100 transition-colors">
+            <a href={`https://www.trulia.com/homes/${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer" data-action="open-trulia" className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold hover:bg-green-100 transition-colors">
               <span className="font-bold">T</span>Trulia
             </a>
-            <a href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(property.address.replace(/\s+/g, '-'))}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors">
+            <a href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(property.address.replace(/\s+/g, '-'))}`} target="_blank" rel="noopener noreferrer" data-action="open-realtor" className="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors">
               <span className="font-bold">Re</span>Realtor
             </a>
-          </div>
-
-          {/* Inline Details - fill the remaining space beside the image */}
-          {activeFields.length > 0 && (
-            <div className="flex-1 border rounded-lg overflow-hidden">
-              <div className="grid grid-cols-2 sm:grid-cols-3">
-                {activeFields.map(renderDetailItem)}
-              </div>
-            </div>
-          )}
-
-          {/* Notes & AI Score buttons — inside the right column */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant={showNotes ? 'default' : 'outline'}
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={() => setShowNotes(!showNotes)}
-            >
-              <StickyNote className="h-3.5 w-3.5" />
-              Notas
-              {noteCount > 0 && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 min-w-[18px]">{noteCount}</Badge>
-              )}
-            </Button>
           </div>
         </div>
       </div>
 
-      {/* Notes panel moved to top */}
+      {/* Notes — always visible */}
+      <div className="border rounded-lg p-3 bg-muted/10" data-section="notes-panel">
+        <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
+      </div>
 
-      {/* Details config bar */}
+      {/* Expandable extra details */}
       <div className="flex items-center justify-between px-1">
         <button
           onClick={() => setDetailsExpanded(!detailsExpanded)}
           className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+          data-action="toggle-details"
         >
           {detailsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           {detailsExpanded ? 'Ocultar' : 'Mostrar'} detalhes
@@ -279,7 +244,15 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
         </Button>
       </div>
 
-      {/* Field Settings Panel (collapsible) */}
+      {detailsExpanded && activeFields.length > 0 && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-3">
+            {activeFields.map(renderDetailItem)}
+          </div>
+        </div>
+      )}
+
+      {/* Field Settings Panel */}
       {showFieldSettings && (
         <div className="border rounded-lg bg-muted/20 px-3 py-3 space-y-3">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
@@ -332,7 +305,6 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
         <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">R</kbd> Rejeitar</span>
         <span><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&rarr;</kbd><kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px]">&larr;</kbd> Nav</span>
       </div>
-
     </div>
   );
 };

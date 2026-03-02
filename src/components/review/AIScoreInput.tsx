@@ -11,9 +11,11 @@ interface AIScoreInputProps {
   currentScore: number | null;
   currentReasoning: string | null;
   onSaved?: () => void;
+  /** Render as compact inline row (no border/padding wrapper) */
+  inline?: boolean;
 }
 
-export const AIScoreInput = ({ propertyId, currentScore, currentReasoning, onSaved }: AIScoreInputProps) => {
+export const AIScoreInput = ({ propertyId, currentScore, currentReasoning, onSaved, inline }: AIScoreInputProps) => {
   const [score, setScore] = useState(currentScore != null ? String(currentScore) : '');
   const [reasoning, setReasoning] = useState(currentReasoning || '');
   const [saving, setSaving] = useState(false);
@@ -45,6 +47,34 @@ export const AIScoreInput = ({ propertyId, currentScore, currentReasoning, onSav
       setSaving(false);
     }
   };
+
+  if (inline) {
+    return (
+      <div className="flex items-center gap-2" data-action="user-score-input">
+        <Input
+          type="number"
+          min={0}
+          max={100}
+          value={score}
+          onChange={(e) => setScore(e.target.value)}
+          className="w-20 h-7 text-xs"
+          placeholder="0-100"
+          data-field="user-score"
+          aria-label="User score"
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-xs gap-1"
+          onClick={handleSave}
+          disabled={saving || !score}
+          data-action="save-score"
+        >
+          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+        </Button>
+      </div>
+    );
+  }
 
   const scoreColor = currentScore != null
     ? currentScore >= 70 ? 'text-emerald-600' : currentScore >= 50 ? 'text-amber-600' : currentScore >= 30 ? 'text-orange-600' : 'text-red-600'
