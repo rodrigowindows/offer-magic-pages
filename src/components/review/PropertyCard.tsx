@@ -28,7 +28,7 @@ interface PropertyCardProps {
 }
 
 export const PropertyCard = ({ property, allProperties, onScoreSaved }: PropertyCardProps) => {
-  const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [showFieldSettings, setShowFieldSettings] = useState(false);
   const [visibleFields, setVisibleFields] = useState<Set<string>>(loadVisibleFields);
   const [noteCount, setNoteCount] = useState<number>(0);
@@ -108,6 +108,11 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
             <p className="text-xs sm:text-sm text-muted-foreground">
               {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
             </p>
+            {property.owner_name && (
+              <p className="text-xs text-muted-foreground mt-0.5" data-field="owner-name">
+                <span className="font-medium">Proprietário:</span> {property.owner_name}
+              </p>
+            )}
           </div>
 
           {/* Approval/Rejection info */}
