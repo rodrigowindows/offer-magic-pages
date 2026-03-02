@@ -145,3 +145,19 @@ export const TAG_COLORS: Record<string, string> = {
 };
 
 export const VISIBLE_FIELDS_STORAGE_KEY = 'review-queue-visible-fields-v2';
+
+/** Score color helpers for AI-operability and semaphore display */
+export const getScoreColor = (score: number | null) => {
+  if (score == null) return { text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border', label: '—' };
+  if (score >= 70) return { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-300', label: 'STRONG' };
+  if (score >= 50) return { text: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-300', label: 'REVIEW' };
+  if (score >= 30) return { text: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-300', label: 'CAUTION' };
+  return { text: 'text-red-600', bg: 'bg-red-50', border: 'border-red-300', label: 'WEAK' };
+};
+
+export const getLeadScoreColor = (score: number | null) => {
+  if (score == null) return { text: 'text-muted-foreground', label: '—' };
+  if (score >= 230) return { text: 'text-emerald-600', label: 'HIGH' };
+  if (score >= 150) return { text: 'text-amber-600', label: 'STANDARD' };
+  return { text: 'text-red-600', label: 'LOW' };
+};
