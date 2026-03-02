@@ -1,113 +1,67 @@
 
-Diagnóstico do que está acontecendo (confere com o seu relato):
-1) O comportamento atual realmente faz o botão de comparativos “sumir” em alguns momentos do fluxo.
-- Hoje, o botão COMPS aparece só na fase de aprovação (`approvePhase = 'choose'`) na `ActionArea`.
-- Depois que o modal fecha, o fluxo muda para oferta (`approvePhase = 'offer'`) e você perde um atalho claro para voltar aos comparativos.
-- Em imóveis já aprovados (filtro “Aprovados”), a área de ação fica em modo leitura e não mostra ação de comparativos.
 
-2) Existe risco real de perda de preenchimento parcial.
-- O formulário do `CompsModal` é resetado quando abre/troca imóvel.
-- Se você sair para Zillow/Redfin e voltar sem ter salvo, os campos preenchidos somem.
+# Plano: Melhorias na UI do /process baseado no protótipo V3
 
-3) Sobre “entrou ou não entrou?”:
-- O backend tem vários comparativos salvos para imóveis aprovados, mas também há imóvel aprovado recente com `comps_count = 0`, então sua dúvida faz sentido: hoje falta transparência imediata na tela principal para confirmar o que foi salvo.
+## Resumo
+Incorporar as melhores ideias do protótipo V3 na interface atual do `/process`, mantendo a arquitetura existente (React + Tailwind + Supabase) e melhorando tanto a experiência humana quanto a AI-operability.
 
-Objetivo da correção:
-- Garantir acesso contínuo aos comparativos (pendente, durante oferta e aprovado).
-- Evitar perda de dados não salvos.
-- Deixar visível na mesma tela quantos comparativos já existem por imóvel e quais são.
-- Completar os campos operacionais do comparativo conforme fluxo do Passo 4.
+## Mudancas Principais
 
-Plano de implementação (ordem de execução):
+### 1. Scores em formato tabela no PropertyCard
+Substituir o grid de detalhes atual por uma tabela compacta no topo do card com as informacoes criticas:
+- AI Score com cor semaforica e label (STRONG/REVIEW/CAUTION/WEAK)
+- Lead Score com indicador (HIGH/STANDARD/LOW)
+- Preco, Sqft, $/Sqft, Beds/Baths, Year Built
+- "Meu Score" (AI Score input) inline na tabela, sempre visivel — sem toggle
 
-Fase 1 — Tornar o acesso aos comparativos persistente
-1. Ajustar `src/components/review/ActionArea.tsx`
-- Incluir botão “Comparativos” também:
-  - no estado padrão (antes de aprovar),
-  - no estado `offer`,
-  - e no modo leitura de “Aprovados”.
-- Mostrar badge com quantidade de comps (ex.: `0`, `1`, `3`) para reduzir dúvida de salvamento.
+### 2. Notas sempre visiveis
+Remover o toggle de notas. O painel de notas fica sempre visivel abaixo da tabela de scores, com:
+- Historico de notas existentes (scroll area compacta)
+- Campo de nova nota com Enter para salvar
+- Notas automaticas (geradas ao aprovar/rejeitar) com borda azul diferenciada
 
-2. Ajustar `src/components/shared/ReviewQueue.tsx`
-- Desacoplar abertura do `CompsModal` da fase de aprovação.
-- Permitir abrir o modal para o `currentProperty` em qualquer status.
-- Manter comportamento atual de aprovação, mas sem bloquear reabertura de comps.
-- Ao fechar modal: atualizar contagem/lista de comps sem forçar o usuário a perder contexto.
+### 3. Comps em tabela inline
+Mover a lista de comps de um componente separado para uma tabela integrada no card:
+- Colunas: Endereco, Preco, Sqft, $/Sqft
+- Botao "+ Adicionar Comp" abre linha de edicao inline
+- Barra de resumo abaixo: Avg $/sqft, ARV, Margem
 
-Fase 2 — Evitar perda de dados ao sair para Zillow/Redfin
-3. Ajustar `src/components/process/CompsModal.tsx`
-- Implementar rascunho local por imóvel (chave por `property.id`) para:
-  - URL,
-  - preço,
-  - área,
-  - demais campos novos.
-- Limpar rascunho somente após salvar com sucesso ou cancelar explicitamente.
-- Adicionar botão “Copiar endereço” da propriedade alvo no topo do modal.
+### 4. Oferta como campo direto
+No fase "offer" do ActionArea, manter o input numerico direto (ja existe) mas adicionar:
+- Calculo automatico de % do ARV ao lado
+- Margem bruta visivel
+- Remover qualquer fricao desnecessaria
 
-Fase 3 — Completar campos do comparativo (Passo 4)
-4. Evoluir formulário e payload de comps
-- Em `CompsModal` + `useComps`, suportar campos:
-  - endereço completo do comp,
-  - link Zillow/Redfin,
-  - data de venda,
-  - valor de venda,
-  - área construída,
-  - área total,
-  - quartos,
-  - banheiros.
-- Como `comp_data` já é JSONB, não é obrigatório criar migração para esses campos (armazenar no JSONB mantendo retrocompatibilidade).
-- Atualizar tipagem em `src/hooks/useComps.ts` para contemplar os novos atributos no `SavedComp.comp_data`.
+### 5. Fotos sempre visiveis + Ctrl+V
+Mover a galeria de fotos da propriedade para uma posicao mais proeminente com:
+- Todas as fotos visiveis em linha horizontal com scroll
+- Area de drop/paste para Ctrl+V
+- Fotos de decisao coladas aparecem imediatamente
 
-Fase 4 — Transparência imediata na tela principal
-5. Exibir resumo/lista curta de comparativos na fila
-- Em `ReviewQueue` (ou `PropertyCard`), mostrar:
-  - contador de comps válidos,
-  - mini-lista dos últimos comps salvos (preço, sqft, data, source),
-  - atalho para “Ver todos / Editar comparativos”.
-- Isso elimina a sensação de “salvei e desapareceu”.
+### 6. Rejeicao em 1 clique (opcional)
+Adicionar modo de rejeicao rapida onde cada motivo e um botao que rejeita e registra em uma unica acao, sem precisar do formulario de dois passos.
 
-Fase 5 — Cálculo robusto de média por sqft (consistência)
-6. Padronizar cálculo em serviço reutilizável
-- Criar serviço de cálculo (ex.: `src/services/compsPricing.ts`) para regra única:
-  - incluir apenas `sale_price > 0` e `square_feet > 0`,
-  - exibir quantidade válida,
-  - mostrar fórmula final e média,
-  - aplicar estratégia simples de outlier (documentada, sem alterar comportamento legado de forma brusca).
-- Integrar no `CompsModal` e no trecho de cálculo do `ReviewQueue` para remover duplicação.
+### 7. data-action attributes para AI-operability
+Adicionar `data-action` e `data-field` nos elementos interativos criticos para facilitar automacao via browser agents.
 
-Arquivos previstos para alteração:
-- `src/components/review/ActionArea.tsx`
-- `src/components/shared/ReviewQueue.tsx`
-- `src/components/process/CompsModal.tsx`
-- `src/hooks/useComps.ts`
-- `src/components/review/PropertyCard.tsx` (se resumo inline for aqui)
-- `src/services/compsPricing.ts` (novo)
-- `docs/process5/11-step4-comps-ui.md` (novo/atualizado)
-- `docs/process5/12-calculo-medio-sqft.md` (novo/atualizado)
+## Detalhes Tecnicos
 
-Banco de dados e segurança:
-- Sem migração obrigatória para os novos campos do comp (JSONB já suporta).
-- RLS de `manual_comps_links` já restringe por `user_id`; manter política atual.
-- Não alterar arquivos gerados automaticamente de integração.
+### Arquivos a modificar:
+1. **`src/components/review/PropertyCard.tsx`** — Refatorar layout: tabela de scores no topo, notas sempre visiveis, fotos proeminentes
+2. **`src/components/review/AIScoreInput.tsx`** — Simplificar para renderizar como linha de tabela (inline)
+3. **`src/components/review/ActionArea.tsx`** — Adicionar modo de rejeicao rapida (1-click), data-attributes
+4. **`src/components/review/InlineCompsList.tsx`** — Converter para formato tabela com formulario inline de adicao
+5. **`src/components/review/constants.ts`** — Adicionar helpers para score color/label
 
-Validação (aceite):
-1) Fluxo manual ponta a ponta
-- Aprovar imóvel, abrir comparativos, adicionar 1 comp, fechar, reabrir e confirmar que continua visível.
-- Adicionar 3–4 comps no mesmo imóvel sem “sumir botão”.
-- Trocar de tela para Zillow e voltar: rascunho ainda preenchido.
-- Ver imóvel aprovado e ainda conseguir abrir/editar comparativos.
+### Arquivos que NAO mudam:
+- `ReviewQueue.tsx` — Orquestracao permanece igual
+- `FilterBar.tsx` — Filtros ja funcionam bem
+- `types.ts` — Tipos existentes suficientes
+- Backend/Supabase — Nenhuma mudanca de schema
 
-2) Persistência e cálculo
-- Conferir no backend se os comps foram salvos com `property_id` correto.
-- Conferir média $/sqft com quantidade válida e fórmula exibida.
+### Abordagem:
+- Manter toda a logica de negocio existente (approve/reject flow, comps, keyboard shortcuts)
+- Apenas reorganizar o layout e adicionar visibilidade aos componentes
+- Usar componentes Tailwind/shadcn existentes (Table, Badge, Button, ScrollArea)
+- Adicionar `data-action`/`data-field` nos elementos criticos para browser automation
 
-3) Regressão
-- Aprovar/rejeitar/pular continuam funcionando.
-- Sem quebra no fluxo de oferta rápida.
-- `type-check` limpo.
-
-Resultado esperado para você após essa entrega:
-- O botão de comparativo não “desaparece” mais.
-- Você consegue continuar cadastrando comps mesmo depois de aprovar.
-- O que foi salvo fica claro na própria tela.
-- Se sair para buscar dados e voltar, não perde preenchimento parcial.
