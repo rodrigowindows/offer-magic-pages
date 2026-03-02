@@ -4,6 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ReviewQueue } from '@/components/shared/ReviewQueue';
 import { BatchSelector } from './BatchSelector';
+import { ApiInfoPanel } from './ApiInfoPanel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export const ProcessApp = () => {
@@ -57,7 +58,10 @@ export const ProcessApp = () => {
       </header>
 
       {/* Content */}
-      <main className="flex-1 container mx-auto py-2 sm:py-6">
+      <main className="flex-1 container mx-auto py-2 sm:py-6 space-y-3">
+        <div className="px-1 sm:px-0">
+          <ApiInfoPanel />
+        </div>
         <Routes>
           <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
           <Route path="*" element={<Navigate to="/process" replace />} />
