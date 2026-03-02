@@ -80,6 +80,83 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
       {/* Scores Table — always visible at top */}
       <ScoresTable property={property} onScoreSaved={onScoreSaved} />
 
+      {/* Expandable extra details — right after scores for quick data access */}
+      <div className="flex items-center justify-between px-1">
+        <button
+          onClick={() => setDetailsExpanded(!detailsExpanded)}
+          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
+          data-action="toggle-details"
+        >
+          {detailsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          {detailsExpanded ? 'Ocultar' : 'Mostrar'} detalhes
+          <Badge variant="secondary" className="text-[10px]">{visibleFields.size}</Badge>
+        </button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs text-muted-foreground"
+          onClick={() => setShowFieldSettings(!showFieldSettings)}
+        >
+          <Settings2 className="h-3.5 w-3.5" />
+          Colunas
+        </Button>
+      </div>
+
+      {detailsExpanded && activeFields.length > 0 && (
+        <div className="border rounded-lg overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-3">
+            {activeFields.map(renderDetailItem)}
+          </div>
+        </div>
+      )}
+
+      {/* Field Settings Panel */}
+      {showFieldSettings && (
+        <div className="border rounded-lg bg-muted/20 px-3 py-3 space-y-3">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+            Dados disponíveis neste batch ({allProperties.length} imóveis)
+          </p>
+          {(['decisao', 'financeiro', 'imovel', 'dono'] as const).map(category => {
+            const fields = DETAIL_FIELDS.filter(f => f.category === category);
+            return (
+              <div key={category}>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">{CATEGORY_LABELS[category]}</p>
+                <div className="space-y-1">
+                  {fields.map(field => {
+                    const pct = fillRates.get(field.key) ?? 0;
+                    const isVisible = visibleFields.has(field.key);
+                    const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : pct > 0 ? 'bg-red-400' : 'bg-gray-300';
+                    return (
+                      <button
+                        key={field.key}
+                        onClick={() => toggleField(field.key)}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] border transition-all ${
+                          isVisible
+                            ? 'bg-primary/5 border-primary/30 text-foreground'
+                            : 'bg-background border-border/50 text-muted-foreground hover:bg-accent/50'
+                        }`}
+                      >
+                        {isVisible ? <Eye className="h-3 w-3 text-primary shrink-0" /> : <EyeOff className="h-3 w-3 shrink-0" />}
+                        <span className="w-20 text-left truncate font-medium">{field.label}</span>
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`w-8 text-right text-[10px] font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : pct > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {pct}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-[10px] text-muted-foreground text-center pt-1">
+            Clique para mostrar/ocultar. Barra = % de dados disponíveis no batch.
+          </p>
+        </div>
+      )}
+
       {/* Main layout: Image left + Info right */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* Image */}
@@ -226,83 +303,6 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
       <div className="border rounded-lg p-3 bg-muted/10" data-section="notes-panel">
         <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
       </div>
-
-      {/* Expandable extra details */}
-      <div className="flex items-center justify-between px-1">
-        <button
-          onClick={() => setDetailsExpanded(!detailsExpanded)}
-          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors"
-          data-action="toggle-details"
-        >
-          {detailsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-          {detailsExpanded ? 'Ocultar' : 'Mostrar'} detalhes
-          <Badge variant="secondary" className="text-[10px]">{visibleFields.size}</Badge>
-        </button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 text-xs text-muted-foreground"
-          onClick={() => setShowFieldSettings(!showFieldSettings)}
-        >
-          <Settings2 className="h-3.5 w-3.5" />
-          Colunas
-        </Button>
-      </div>
-
-      {detailsExpanded && activeFields.length > 0 && (
-        <div className="border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-2 sm:grid-cols-3">
-            {activeFields.map(renderDetailItem)}
-          </div>
-        </div>
-      )}
-
-      {/* Field Settings Panel */}
-      {showFieldSettings && (
-        <div className="border rounded-lg bg-muted/20 px-3 py-3 space-y-3">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
-            Dados disponíveis neste batch ({allProperties.length} imóveis)
-          </p>
-          {(['decisao', 'financeiro', 'imovel', 'dono'] as const).map(category => {
-            const fields = DETAIL_FIELDS.filter(f => f.category === category);
-            return (
-              <div key={category}>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1.5">{CATEGORY_LABELS[category]}</p>
-                <div className="space-y-1">
-                  {fields.map(field => {
-                    const pct = fillRates.get(field.key) ?? 0;
-                    const isVisible = visibleFields.has(field.key);
-                    const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : pct > 0 ? 'bg-red-400' : 'bg-gray-300';
-                    return (
-                      <button
-                        key={field.key}
-                        onClick={() => toggleField(field.key)}
-                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] border transition-all ${
-                          isVisible
-                            ? 'bg-primary/5 border-primary/30 text-foreground'
-                            : 'bg-background border-border/50 text-muted-foreground hover:bg-accent/50'
-                        }`}
-                      >
-                        {isVisible ? <Eye className="h-3 w-3 text-primary shrink-0" /> : <EyeOff className="h-3 w-3 shrink-0" />}
-                        <span className="w-20 text-left truncate font-medium">{field.label}</span>
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className={`w-8 text-right text-[10px] font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : pct > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                          {pct}%
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-          <p className="text-[10px] text-muted-foreground text-center pt-1">
-            Clique para mostrar/ocultar. Barra = % de dados disponíveis no batch.
-          </p>
-        </div>
-      )}
 
       {/* Keyboard hints */}
       <div className="hidden sm:flex items-center gap-3 text-[11px] text-muted-foreground px-1">
