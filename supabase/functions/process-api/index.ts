@@ -204,7 +204,7 @@ async function handleApprove(body: any) {
 
       if (comps && comps.length > 0) {
         const pricing = calculatePricing(comps, prop.square_feet || 0);
-        if (pricing.defaultOffer > 0) {
+        if (pricing.defaultOffer && pricing.defaultOffer > 0) {
           offerAmount = pricing.defaultOffer;
         }
       }
