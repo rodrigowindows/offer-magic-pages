@@ -15,6 +15,7 @@ import { OneClickCampaign } from './OneClickCampaign';
 import { QuickCampaignDialog } from './QuickCampaignDialog';
 import { CampaignScheduler } from './CampaignScheduler';
 import { CampaignInsightsDashboard } from './CampaignInsightsDashboard';
+import { BatchSelector } from '@/components/process/BatchSelector';
 import {
   CheckCircle2,
   Home,
@@ -39,6 +40,7 @@ interface Property {
   approval_status?: string;
   owner_phone?: string;
   owner_email?: string;
+  import_batch?: string;
   sms_sent?: boolean;
   email_sent?: boolean;
   call_sent?: boolean;
@@ -52,19 +54,27 @@ export const SimpleCampaignDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showQuickDialog, setShowQuickDialog] = useState(false);
   const [showScheduler, setShowScheduler] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState<string>('all');
 
-  // Load approved properties
+  // Load approved properties (filtered by batch)
   useEffect(() => {
+    setSelectedIds([]);
     loadApprovedProperties();
-  }, []);
+  }, [selectedBatch]);
 
   const loadApprovedProperties = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
         .select('*')
         .eq('approval_status', 'approved')
         .order('created_at', { ascending: false });
+
+      if (selectedBatch && selectedBatch !== 'all') {
+        query = query.eq('import_batch', selectedBatch);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProperties(data || []);
@@ -201,8 +211,9 @@ export const SimpleCampaignDashboard = () => {
       {/* Search and Filter */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
+          <div className="flex items-center gap-4 flex-wrap">
+            <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 placeholder="Buscar por endereço, cidade ou nome..."
