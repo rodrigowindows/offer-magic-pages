@@ -30,6 +30,7 @@ import {
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { BatchSelector } from '@/components/process/BatchSelector';
 
 interface Property {
   id: string;
@@ -59,20 +60,28 @@ export const LetterGenerator = () => {
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [minOffer, setMinOffer] = useState<string>('');
   const [maxOffer, setMaxOffer] = useState<string>('');
+  const [selectedBatch, setSelectedBatch] = useState<string>('all');
   const { toast} = useToast();
 
   useEffect(() => {
+    setSelectedProperties(new Set());
     fetchProperties();
-  }, []);
+  }, [selectedBatch]);
 
   const fetchProperties = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('properties')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
+
+      if (selectedBatch && selectedBatch !== 'all') {
+        query = query.eq('import_batch', selectedBatch);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProperties(data || []);
@@ -232,8 +241,9 @@ export const LetterGenerator = () => {
         <CardContent className="pt-6">
           <div className="space-y-4">
             {/* Search and Selection Row */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
+            <div className="flex items-center gap-4 flex-wrap">
+              <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
+              <div className="flex-1 min-w-[200px]">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input

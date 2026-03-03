@@ -70,6 +70,7 @@ import { useMarketingStore } from '@/store/marketingStore';
 import { useTemplates } from '@/hooks/useTemplatesDB';
 import type { Channel } from '@/types/marketing.types';
 import { generateDirectPropertyUrlBySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
+import { BatchSelector } from '@/components/process/BatchSelector';
 import { formatCurrency } from '@/lib/utils';
 
 // Colunas de telefone disponíveis na tabela properties
@@ -129,6 +130,7 @@ export const CampaignManager = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<Channel>('sms');
   const [filterStatus, setFilterStatus] = useState<string>('approved');
+  const [selectedBatch, setSelectedBatch] = useState<string>('all');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [showSendPreview, setShowSendPreview] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -440,10 +442,11 @@ export const CampaignManager = () => {
     return allColumns.join(', ');
   };
 
-  // Fetch properties on mount and when columns change
+  // Fetch properties on mount and when columns/batch change
   useEffect(() => {
+    setSelectedIds([]);
     fetchProperties();
-  }, [filterStatus, selectedPhoneColumn, selectedEmailColumn]);
+  }, [filterStatus, selectedPhoneColumn, selectedEmailColumn, selectedBatch]);
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -457,6 +460,10 @@ export const CampaignManager = () => {
 
       if (filterStatus !== 'all') {
         query = query.eq('approval_status', filterStatus);
+      }
+
+      if (selectedBatch && selectedBatch !== 'all') {
+        query = query.eq('import_batch', selectedBatch);
       }
 
       const { data, error } = await query;
@@ -1439,6 +1446,7 @@ export const CampaignManager = () => {
                 {/* Filtros e Busca Avançados */}
                 <div className="space-y-4">
                   <div className="flex flex-wrap gap-2 items-center">
+                    <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
                     <div className="relative flex-1 min-w-[200px]">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                       <Input
