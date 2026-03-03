@@ -34,6 +34,7 @@ data/archives/
 # Supabase (credenciais já estão no .env que não é commitado)
 .env.local
 .env.production
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*
