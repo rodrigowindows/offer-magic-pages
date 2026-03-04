@@ -106,29 +106,34 @@ export const ActionArea = ({
   if (statusFilter !== 'pending' && !showReDecide) {
     return (
       <div className="pt-3 sm:pt-4 border-t space-y-3">
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={onPrevious} disabled={currentIndex === 0} className="text-xs text-muted-foreground">
-            <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+        {/* Property counter */}
+        <div className="flex items-center justify-center">
+          <span className="text-lg sm:text-xl font-extrabold text-muted-foreground tabular-nums">
+            Propriedade {currentIndex + 1} de {totalFiltered}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="outline" onClick={onPrevious} disabled={currentIndex === 0} className="h-12 sm:h-14 px-4 sm:px-6 text-sm sm:text-base font-bold gap-2">
+            <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             Anterior
           </Button>
           <div className="flex items-center gap-2">
             <CompsButton onClick={onOpenComps} count={compsCount} />
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-sm px-3 py-1">
               {statusFilter === 'approved' ? 'Aprovada' : 'Rejeitada'}
             </Badge>
           </div>
-          <Button variant="ghost" size="sm" onClick={onNext} disabled={currentIndex === totalFiltered - 1} className="text-xs text-muted-foreground">
+          <Button variant="outline" onClick={onNext} disabled={currentIndex === totalFiltered - 1} className="h-12 sm:h-14 px-4 sm:px-6 text-sm sm:text-base font-bold gap-2">
             Próxima
-            <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </div>
         <Button
           variant="outline"
-          size="sm"
           onClick={() => setShowReDecide(true)}
-          className="w-full h-10 gap-2 text-xs border-amber-300 text-amber-700 hover:bg-amber-50"
+          className="w-full h-12 gap-2 text-sm font-bold border-amber-300 text-amber-700 hover:bg-amber-50"
         >
-          <RefreshCw className="h-3.5 w-3.5" />
+          <RefreshCw className="h-4 w-4" />
           Alterar Decisão
         </Button>
       </div>
@@ -346,19 +351,21 @@ export const ActionArea = ({
         </Button>
       </div>
 
+      {/* Property counter - large and visible */}
+      <div className="flex items-center justify-center">
+        <span className="text-lg sm:text-xl font-extrabold text-muted-foreground tabular-nums">
+          Propriedade {currentIndex + 1} de {totalFiltered}
+        </span>
+      </div>
+
       <div className="flex items-center justify-between gap-2">
-        <Button variant="ghost" size="sm" onClick={onPrevious} disabled={currentIndex === 0} className="text-xs text-muted-foreground h-10 px-3">
-          <ArrowLeft className="h-3.5 w-3.5 mr-1" />
+        <Button variant="outline" onClick={onPrevious} disabled={currentIndex === 0} className="h-12 sm:h-14 px-4 sm:px-6 text-sm sm:text-base font-bold gap-2">
+          <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           Anterior
         </Button>
-        <div className="flex items-center gap-2">
-          <CompsButton onClick={onOpenComps} count={compsCount} />
-          <span className="text-sm font-bold text-muted-foreground tabular-nums">
-            {currentIndex + 1}/{totalFiltered}
-          </span>
-        </div>
-        <Button onClick={onNext} disabled={currentIndex === totalFiltered - 1} className={`h-10 px-5 text-sm font-bold gap-2 ${isReDeciding ? 'bg-slate-600 hover:bg-slate-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}>
-          {isReDeciding ? <ArrowRight className="h-4 w-4" /> : <SkipForward className="h-4 w-4" />}
+        <CompsButton onClick={onOpenComps} count={compsCount} />
+        <Button onClick={onNext} disabled={currentIndex === totalFiltered - 1} className={`h-12 sm:h-14 px-4 sm:px-6 text-sm sm:text-base font-bold gap-2 ${isReDeciding ? 'bg-slate-600 hover:bg-slate-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}>
+          {isReDeciding ? <ArrowRight className="h-5 w-5 sm:h-6 sm:w-6" /> : <SkipForward className="h-5 w-5 sm:h-6 sm:w-6" />}
           {isReDeciding ? 'Próxima' : 'Pular'}
         </Button>
       </div>

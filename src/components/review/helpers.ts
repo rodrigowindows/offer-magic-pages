@@ -38,19 +38,48 @@ export const computeFillRates = (props: QueueProperty[]): Map<string, number> =>
 export const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestion[] => {
   const suggestions: PreDenialSuggestion[] = [];
   const currentYear = new Date().getFullYear();
+  const addr = (prop.address || '').toUpperCase();
+  const propType = (prop.property_type || '').toLowerCase();
+  const ownerName = (prop.owner_name || '').toUpperCase();
 
+  // Address without house number
+  if (!/^\d/.test(addr.trim())) {
+    suggestions.push({ reason: 'no-address-number', label: 'Endereço sem Número' });
+  }
+
+  // New construction
   if (prop.year_built && (currentYear - prop.year_built) < 20) {
     suggestions.push({ reason: 'new-construction', label: `Casa Nova (${prop.year_built})` });
   }
-  if (prop.property_type?.toLowerCase().includes('multi')) {
+
+  // Multi-family
+  if (propType.includes('multi') || propType.includes('duplex') || propType.includes('triplex')) {
     suggestions.push({ reason: 'multi-family', label: 'Multi-Family' });
   }
+
+  // Land
   const tagsStr = Array.isArray(prop.tags) ? prop.tags.join(',') : (prop.tags || '');
-  if (prop.property_type?.toLowerCase() === 'land' || prop.property_type?.toLowerCase() === 'vacant land' || tagsStr.includes('LAND')) {
+  if (propType === 'land' || propType === 'vacant land' || tagsStr.includes('LAND')) {
     suggestions.push({ reason: 'land', label: 'Terreno (Land)' });
   }
-  if (prop.property_type?.toLowerCase().includes('commercial') || prop.property_type?.toLowerCase().includes('comercial')) {
+
+  // Condominium / Apartment detection
+  if (addr.includes(' APT ') || addr.includes(' UNIT ') || addr.includes(' STE ') ||
+      propType.includes('condo') || propType.includes('apartment') || propType.includes('townhouse')) {
+    suggestions.push({ reason: 'condominium', label: 'Condomínio / Apartamento' });
+  }
+
+  // Commercial (but NOT if already flagged as condo)
+  if ((propType.includes('commercial') || propType.includes('comercial') ||
+       propType.includes('warehouse') || propType.includes('industrial')) &&
+      !suggestions.some(s => s.reason === 'condominium')) {
     suggestions.push({ reason: 'commercial', label: 'Imóvel Comercial' });
+  }
+
+  // LLC / Company owner
+  if (ownerName.includes(' LLC') || ownerName.includes(' INC') || ownerName.includes(' CORP') ||
+      ownerName.includes(' TRUST') || ownerName.includes(' LP') || ownerName.includes(' PARTNERS')) {
+    suggestions.push({ reason: 'llc-owned', label: 'Proprietário LLC/Empresa' });
   }
 
   return suggestions;

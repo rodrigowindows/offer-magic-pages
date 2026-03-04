@@ -121,6 +121,20 @@ export const bulkImportOrlandoLeads = async (
 
   for (const lead of leads) {
     try {
+      // 0. Validate address has a house number
+      const addressTrimmed = (lead.address || '').trim();
+      if (!addressTrimmed || !/^\d/.test(addressTrimmed)) {
+        result.errors.push(`Endereço sem número ignorado: "${addressTrimmed || '(vazio)'}"`);
+        continue;
+      }
+
+      // 0b. Flag suspicious price variations (>40% drop)
+      if (lead.estimated_value && lead.cash_offer_amount &&
+          lead.cash_offer_amount > 0 && lead.estimated_value > 0 &&
+          lead.cash_offer_amount / lead.estimated_value < 0.4) {
+        result.errors.push(`Preço suspeito: "${addressTrimmed}" - Valor: $${lead.estimated_value}, Oferta: $${lead.cash_offer_amount} (${Math.round(lead.cash_offer_amount / lead.estimated_value * 100)}%)`);
+      }
+
       // 1. Generate slug for property
       const slug = generateSlug(lead.address, lead.city);
 
