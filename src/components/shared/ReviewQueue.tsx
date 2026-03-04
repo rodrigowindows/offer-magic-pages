@@ -495,7 +495,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] px-1 sm:px-0">
+    <div className="flex flex-col h-full px-1 sm:px-0">
       {/* TOP: Stats + Filters - compact */}
       <div className="shrink-0 space-y-2 mb-2">
         {/* Stats bar - inline compact */}
