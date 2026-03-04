@@ -58,11 +58,11 @@ export const ProcessApp = () => {
       </header>
 
       {/* Content - fills remaining height */}
-      <main className="flex-1 container mx-auto py-1 sm:py-1.5 space-y-1 min-h-0 overflow-hidden">
-        <div className="px-1 sm:px-0">
+      <main className="flex-1 flex flex-col container mx-auto py-1 sm:py-1.5 gap-1 min-h-0">
+        <div className="shrink-0 px-1 sm:px-0">
           <ApiInfoPanel />
         </div>
-        <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="flex-1 min-h-0">
           <Routes>
             <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
             <Route path="*" element={<Navigate to="/process" replace />} />

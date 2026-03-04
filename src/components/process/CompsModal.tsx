@@ -277,7 +277,7 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
           </div>
 
           {draft.price && draft.sqft && Number(draft.sqft) > 0 && (
-            <div className="p-2 bg-green-50 border border-green-200 rounded text-xs font-semibold text-green-800">
+            <div className="p-2 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded text-xs font-semibold text-green-800 dark:text-green-300">
               $/Sqft: ${Math.round(Number(draft.price) / Number(draft.sqft))}
             </div>
           )}
@@ -325,22 +325,22 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
 
             {/* ARV Summary using pricing service */}
             {pricing.validCount > 0 && (
-              <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg">
+              <div className="p-3 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/40 dark:to-blue-950/40 border-2 border-green-200 dark:border-green-800 rounded-lg">
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
                     <p className="text-[10px] text-muted-foreground">$/Sqft Medio</p>
-                    <p className="text-base font-bold text-green-700">${pricing.avgPricePerSqft}</p>
+                    <p className="text-base font-bold text-green-700 dark:text-green-400">${pricing.avgPricePerSqft}</p>
                     <p className="text-[9px] text-muted-foreground">{pricing.validCount} comp{pricing.validCount > 1 ? 's' : ''} válido{pricing.validCount > 1 ? 's' : ''}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground">Sqft</p>
-                    <p className="text-base font-bold text-blue-700">
+                    <p className="text-base font-bold text-blue-700 dark:text-blue-400">
                       {property.square_feet?.toLocaleString() || 'N/A'}
                     </p>
                   </div>
                   <div>
                     <p className="text-[10px] text-muted-foreground">ARV Estimado</p>
-                    <p className="text-base font-bold text-purple-700">
+                    <p className="text-base font-bold text-purple-700 dark:text-purple-400">
                       {pricing.estimatedARV > 0 ? `$${pricing.estimatedARV.toLocaleString()}` : 'N/A'}
                     </p>
                   </div>

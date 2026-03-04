@@ -59,7 +59,7 @@ export const InlineCompsList = ({ comps, onOpenComps, subjectSqft }: InlineComps
                       <span className="truncate max-w-[140px]">{address || '—'}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="py-1.5 text-xs text-right font-bold text-emerald-700">
+                  <TableCell className="py-1.5 text-xs text-right font-bold text-emerald-700 dark:text-emerald-400">
                     {price ? formatCurrency(price) : '—'}
                   </TableCell>
                   <TableCell className="py-1.5 text-xs text-right text-muted-foreground">
@@ -82,11 +82,11 @@ export const InlineCompsList = ({ comps, onOpenComps, subjectSqft }: InlineComps
 
       {/* Summary bar */}
       {validComps.length > 0 && (
-        <div className="flex gap-4 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-md text-xs" data-section="comps-summary">
-          <span className="font-bold text-emerald-700">Avg $/sqft: ${avgPsf}</span>
-          {arv && <span className="font-bold text-emerald-700">ARV: {formatCurrency(arv)}</span>}
+        <div className="flex gap-4 px-3 py-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-md text-xs" data-section="comps-summary">
+          <span className="font-bold text-emerald-700 dark:text-emerald-400">Avg $/sqft: ${avgPsf}</span>
+          {arv && <span className="font-bold text-emerald-700 dark:text-emerald-400">ARV: {formatCurrency(arv)}</span>}
           {arv && subjectSqft && (
-            <span className="font-bold text-emerald-700">
+            <span className="font-bold text-emerald-700 dark:text-emerald-400">
               Margem: {formatCurrency(arv - (comps[0]?.comp_data?.sale_price || 0))}
             </span>
           )}
