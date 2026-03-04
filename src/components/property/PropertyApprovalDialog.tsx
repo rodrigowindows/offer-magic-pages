@@ -35,21 +35,7 @@ interface PropertyApprovalDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-// Razões predefinidas para rejeição
-const REJECTION_REASONS = [
-  { value: "new-construction", label: "Casa Nova (menos de 20 anos)" },
-  { value: "recent-sale", label: "Recém Vendida (menos de 2 anos)" },
-  { value: "too-good-condition", label: "Casa em Bom Estado" },
-  { value: "multi-family", label: "Multi-Family" },
-  { value: "hoa-restrictions", label: "Propriedade com HOA" },
-  { value: "land", label: "Terreno (Land)" },
-  { value: "no-equity", label: "Low-Equity" },
-  { value: "agent-listed", label: "Anunciada por Corretor" },
-  { value: "commercial", label: "Imóvel Comercial" },
-  { value: "duplicate", label: "Duplicado" },
-  { value: "wrong-location", label: "Localização errada" },
-  { value: "other", label: "Outro motivo" },
-];
+import { REJECTION_REASONS } from "@/components/review/constants";
 
 export const PropertyApprovalDialog = ({
   propertyId,
