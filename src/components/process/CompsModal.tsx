@@ -303,24 +303,22 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
               const pricePerSqft = price && sqft && sqft > 0 ? price / sqft : null;
 
               return (
-                <div key={comp.id} className="p-2 bg-muted/50 rounded-lg border space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      {price && <span className="font-bold text-green-700 text-sm">${price.toLocaleString()}</span>}
+                <div key={comp.id} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-card text-card-foreground">
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {price && <span className="font-bold text-sm">${price.toLocaleString()}</span>}
                       {sqft && <span className="text-muted-foreground text-xs">{sqft} sqft</span>}
                       {pricePerSqft && <Badge variant="secondary" className="text-[10px]">${Math.round(pricePerSqft)}/sqft</Badge>}
-                      <Badge variant="outline" className="text-[10px] uppercase ml-auto">{comp.source}</Badge>
+                      <Badge variant="outline" className="text-[10px] uppercase">{comp.source}</Badge>
                     </div>
-                    <div className="flex items-center gap-0.5 shrink-0 ml-1">
-                      <Button variant="ghost" size="sm" onClick={() => window.open(comp.url, '_blank')} className="h-7 w-7 p-0">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => deleteComp(comp.id)} className="h-7 w-7 p-0 text-red-500 hover:text-red-700">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    {address && <p className="text-xs text-muted-foreground truncate">{address}</p>}
                   </div>
-                  {address && <p className="text-xs text-muted-foreground truncate">{address}</p>}
+                  <Button variant="ghost" size="icon" onClick={() => window.open(comp.url, '_blank')} className="h-7 w-7 shrink-0">
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => deleteComp(comp.id)} className="h-7 w-7 shrink-0 text-destructive hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               );
             })}
