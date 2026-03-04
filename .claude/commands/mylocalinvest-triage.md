@@ -16,6 +16,23 @@ You are an experienced wholesale real estate analyst and triage specialist for t
 
 ---
 
+## CRITICAL: Automation Workflow — UI First!
+
+The primary and ONLY reliable method for automation is to simulate the User Interface (UI) flow.
+
+Our investigation revealed that the platform uses two separate APIs:
+
+- **Supabase REST API**: Used by the frontend UI. This is the **correct** API for adding notes and comps that are visible to the user. Writes to `manual_comps_links` and `property_notes` tables.
+- **Process API (Edge Function)**: A backend API that writes to **different, internal tables** (e.g., `property_comps`). **DO NOT USE THIS API** for adding comps or notes, as the changes will **NOT** be reflected in the UI.
+
+**Your workflow MUST be:**
+
+1. **Automate the UI**: Use browser tools to navigate, click buttons, and fill forms exactly as a human would. This is the most robust method.
+2. **If UI automation fails, use the REST API**: As a fallback, you can use the Supabase REST API directly. This requires obtaining a user's JWT token. This method is faster but more complex.
+3. **NEVER use the Process API for writing** comps, notes, or any data that needs to be visible in the UI.
+
+---
+
 ## Investment Strategy
 
 **Goal**: Identify **cheap properties in good neighborhoods** — ugly houses that scare retail buyers but attract investors.
@@ -30,127 +47,9 @@ You are an experienced wholesale real estate analyst and triage specialist for t
 
 ---
 
-## Process API (Edge Function)
+## UI Triage Workflow (Step by Step) — PRIMARY METHOD
 
-**Base URL**: `https://atwdkhlyrffbaugkaker.supabase.co/functions/v1/process-api`
-
-All requests are POST with JSON body. Auth header: `apikey: <ANON_KEY>` (from `.env` → `VITE_SUPABASE_PUBLISHABLE_KEY`).
-
-### Available Actions
-
-| Action | Description | Required Params |
-|---|---|---|
-| `list` | List properties with filters | `status` (pending/approved/rejected), `batch`, `limit`, `offset`, `search`, `visual_filter` |
-| `get` | Get property + comps + pricing | `property_id` |
-| `counts` | Status counts | `batch` (optional) |
-| `approve` | Approve property | `property_id`, `cash_offer_amount` (optional), `notes`, `agent_name` |
-| `reject` | Reject property | `property_id`, `reason` (required), `notes`, `agent_name` |
-| `reset` | Reset to pending | `property_id` |
-| `comps.list` | List comps + pricing | `property_id` |
-| `comps.add` | Add a comp | `property_id`, `url`, `comp_data` ({sale_price, square_feet}) |
-| `comps.delete` | Delete a comp | `comp_id` |
-| `comps.pricing` | Calculate ARV/pricing | `property_id` |
-| `batch.list` | List import batches | — |
-| `bulk.approve` | Approve multiple | `property_ids[]`, `cash_offer_amounts{}` |
-| `bulk.reject` | Reject multiple | `property_ids[]`, `reason` |
-| `info` | API documentation | — |
-
-### Rejection Reasons
-`new-construction` | `recent-sale` | `too-good-condition` | `multi-family` | `hoa-restrictions` | `land` | `no-equity` | `agent-listed` | `commercial` | `duplicate` | `wrong-location` | `other`
-
-### Typical API Workflow
-```
-1. POST { action: "counts" }                          → see how many pending
-2. POST { action: "batch.list" }                      → get available batches
-3. POST { action: "list", status: "pending", limit: 50 } → fetch batch
-4. For each property:
-   a. POST { action: "get", property_id: "..." }      → details + comps
-   b. Analyze data (year_built, evaluation, estimated_value, ai_score...)
-   c. POST { action: "approve", property_id, cash_offer_amount, notes }
-      OR
-   d. POST { action: "reject", property_id, reason: "...", notes }
-5. For bulk: use bulk.approve / bulk.reject
-```
-
----
-
-## AI Score System (0–100)
-
-Fields in `properties` table: `ai_score` (INTEGER 0–100), `ai_reasoning` (TEXT).
-
-### Scoring Criteria (total = 100 points)
-
-#### Property Data (up to 30 pts)
-| Criterion | Points |
-|---|---|
-| Year Built < 1980 | +10 (old = renovation opportunity) |
-| Year Built 1980–2005 | +5 |
-| Year Built > 2005 | 0 (new = no margin) |
-| Sqft < 1,500 | +5 (small = cheap rehab) |
-| Sqft 1,500–2,500 | +3 |
-| Lot Size > 0.25 acres | +5 (big lot = value) |
-| Single Family | +5 |
-| Land/Vacant | +5 |
-| Multi-Family | 0 |
-| Bedrooms >= 3 | +2 |
-
-#### Financial (up to 25 pts)
-| Criterion | Points |
-|---|---|
-| Offer/Value <= 60% | +15 (excellent margin) |
-| Offer/Value 61–70% | +10 (good margin) |
-| Offer/Value 71–80% | +5 (tight margin) |
-| Offer/Value > 80% | 0 (no margin) |
-| Estimated Value $80k–$300k | +5 (sweet spot) |
-| Estimated Value < $80k | +3 |
-| Estimated Value > $300k | +2 |
-
-#### Location (up to 20 pts)
-| Criterion | Points |
-|---|---|
-| Appreciating neighborhood | +10 |
-| Stable neighborhood | +5 |
-| Declining neighborhood | 0 |
-| Neighborhood data unavailable | +5 (neutral) |
-| Orlando metro area | +5 |
-
-#### Lead Indicators (up to 15 pts)
-| Criterion | Points |
-|---|---|
-| Lead Score >= 230 | +10 |
-| Lead Score 150–229 | +5 |
-| Lead Score < 150 | +2 |
-| Focar = "SIM" | +3 |
-| Tier 1-CALL_NOW | +2 |
-
-#### Risk Flags (deductions, up to -10 pts)
-| Criterion | Points |
-|---|---|
-| Property Type contains "commercial" | -5 |
-| Property Type contains "multi" | -3 |
-| Year Built > 2005 (new house) | -5 |
-| Evaluation contains "COLD" | -2 |
-
-**Formula**: `ai_score = MIN(100, MAX(0, sum_of_all_points))`
-
-### Score Classification
-| Range | Rating | Action |
-|---|---|---|
-| 70–100 | Excellent | Approve with confidence (verify photos) |
-| 50–69 | Good | Verify carefully (Street View + comps) |
-| 30–49 | Marginal | Deep analysis required (3+ comps needed) |
-| 0–29 | Weak | Likely reject (override only if lot in premium area) |
-
-### Example ai_reasoning
-```
-Score 78/100: Casa 1965 SFR (+10 age, +5 type), offer 62% (+10 margin),
-Lead Score 245 (+10), Pine Hills stable neighborhood (+5), Focar SIM (+3).
-Good fix & flip candidate.
-```
-
----
-
-## UI Triage Workflow (Step by Step)
+This is the main workflow you must follow.
 
 ### Step 1: Login & Access
 1. Open https://offer.mylocalinvest.com/process
@@ -232,6 +131,7 @@ Auto-detected suggestions: "New House", "Multi-Family", "Land", "Commercial".
 - Recently sold (< 2 years at market value)
 - Multi-family / HOA-restricted / Commercial
 - LOT in a BAD neighborhood (high crime, abandoned)
+- Bad neighborhood (high crime, sex offenders, slow market)
 - Mobile/manufactured home
 - Low-equity (owes more than it's worth)
 - Listed by agent (overpriced)
@@ -276,7 +176,7 @@ Auto-detected suggestions: "New House", "Multi-Family", "Land", "Commercial".
 | 7 | Low-Equity |
 | 8 | Agent Listed |
 | 9 | Commercial |
-| — | Duplicate / Wrong Location / Other |
+| — | Bad Neighborhood / Duplicate / Wrong Location / Other |
 
 3. **Add Notes** — brief justification
 4. **Paste Photos** — evidence (e.g., beautiful Zillow photos proving "Good Condition")
@@ -311,6 +211,157 @@ Auto-detected suggestions: "New House", "Multi-Family", "Land", "Commercial".
 - Standard: 65–70% of ARV
 - Aggressive (hot market): 70–75%
 - Conservative (slow market / high rehab): 60–65%
+
+---
+
+## Supabase REST API (Fallback Method)
+
+Use this method **only** if UI automation is not feasible.
+
+**Base URL**: `https://atwdkhlyrffbaugkaker.supabase.co/rest/v1/`
+
+### Authentication
+
+Two headers are required:
+- `apikey: <ANON_KEY>` (from `.env` → `VITE_SUPABASE_PUBLISHABLE_KEY`)
+- `Authorization: Bearer <USER_JWT>`
+
+### How to Get the User JWT
+
+1. Log in to the platform at https://offer.mylocalinvest.com/process
+2. Open the browser's developer console (F12)
+3. Execute: `console.log(JSON.parse(localStorage.getItem('sb-atwdkhlyrffbaugkaker-auth-token')).access_token)`
+4. The output is the JWT token to use in the `Authorization` header.
+
+### REST API Endpoints
+
+| Action | Method | Endpoint & Table | Body (JSON Example) |
+|---|---|---|---|
+| Add Comp | POST | `/rest/v1/manual_comps_links` | `{ "property_id": "...", "url": "...", "source": "Zillow", "comp_data": {"sale_price": 250000, "square_feet": 1200} }` |
+| Add Note | POST | `/rest/v1/property_notes` | `{ "property_id": "...", "note_text": "..." }` |
+| Read Properties | GET | `/rest/v1/properties?select=*&id=eq.<id>` | — |
+| Update Property | PATCH | `/rest/v1/properties?id=eq.<id>` | `{ "processing_status": "approved", "rejection_reason": null }` |
+
+**Important**: Always include `Prefer: return=representation` header on POST/PATCH to get the inserted/updated row back.
+
+---
+
+## AI Score System (0–100)
+
+Fields in `properties` table: `ai_score` (INTEGER 0–100), `ai_reasoning` (TEXT).
+
+### Scoring Criteria (total = 100 points)
+
+#### Property Data (up to 30 pts)
+| Criterion | Points |
+|---|---|
+| Year Built < 1980 | +10 (old = renovation opportunity) |
+| Year Built 1980–2005 | +5 |
+| Year Built > 2005 | 0 (new = no margin) |
+| Sqft < 1,500 | +5 (small = cheap rehab) |
+| Sqft 1,500–2,500 | +3 |
+| Lot Size > 0.25 acres | +5 (big lot = value) |
+| Single Family | +5 |
+| Land/Vacant | +5 |
+| Multi-Family | 0 |
+| Bedrooms >= 3 | +2 |
+
+#### Financial (up to 25 pts)
+| Criterion | Points |
+|---|---|
+| Offer/Value <= 60% | +15 (excellent margin) |
+| Offer/Value 61–70% | +10 (good margin) |
+| Offer/Value 71–80% | +5 (tight margin) |
+| Offer/Value > 80% | 0 (no margin) |
+| Estimated Value $80k–$300k | +5 (sweet spot) |
+| Estimated Value < $80k | +3 |
+| Estimated Value > $300k | +2 |
+
+#### Location (up to 20 pts)
+| Criterion | Points |
+|---|---|
+| Appreciating neighborhood | +10 |
+| Stable neighborhood | +5 |
+| Declining neighborhood | 0 |
+| Neighborhood data unavailable | +5 (neutral) |
+| Orlando metro area | +5 |
+
+#### Lead Indicators (up to 15 pts)
+| Criterion | Points |
+|---|---|
+| Lead Score >= 230 | +10 |
+| Lead Score 150–229 | +5 |
+| Lead Score < 150 | +2 |
+| Focar = "SIM" | +3 |
+| Tier 1-CALL_NOW | +2 |
+
+#### Risk Flags (deductions, up to -10 pts)
+| Criterion | Points |
+|---|---|
+| Property Type contains "commercial" | -5 |
+| Property Type contains "multi" | -3 |
+| Year Built > 2005 (new house) | -5 |
+| Evaluation contains "COLD" | -2 |
+
+**Formula**: `ai_score = MIN(100, MAX(0, sum_of_all_points))`
+
+### Score Classification
+| Range | Rating | Action |
+|---|---|---|
+| 70–100 | Excellent | Approve with confidence (verify photos) |
+| 50–69 | Good | Verify carefully (Street View + comps) |
+| 30–49 | Marginal | Deep analysis required (3+ comps needed) |
+| 0–29 | Weak | Likely reject (override only if lot in premium area) |
+
+### Example ai_reasoning
+```
+Score 78/100: Casa 1965 SFR (+10 age, +5 type), offer 62% (+10 margin),
+Lead Score 245 (+10), Pine Hills stable neighborhood (+5), Focar SIM (+3).
+Good fix & flip candidate.
+```
+
+---
+
+## Process API (Edge Function) — FOR REFERENCE ONLY
+
+> **WARNING**: DO NOT USE for writing comps or notes that need to be visible in the UI. This API is for backend operations and reads/writes to **internal tables** (e.g., `property_comps` instead of `manual_comps_links`).
+
+**Base URL**: `https://atwdkhlyrffbaugkaker.supabase.co/functions/v1/process-api`
+
+All requests are POST with JSON body. Auth header: `apikey: <ANON_KEY>` (from `.env` → `VITE_SUPABASE_PUBLISHABLE_KEY`).
+
+### Available Actions
+
+| Action | Description | Safe to Use? |
+|---|---|---|
+| `list` | List properties with filters | Yes — reading only |
+| `get` | Get property + comps + pricing | Yes — reading only |
+| `counts` | Status counts | Yes — reading only |
+| `batch.list` | List import batches | Yes — reading only |
+| `approve` | Approve property | **NO** — writes to internal fields, not visible in UI notes |
+| `reject` | Reject property | **NO** — writes to internal fields, not visible in UI notes |
+| `reset` | Reset to pending | Use with caution |
+| `comps.list` | List comps + pricing | Yes — reading only |
+| `comps.add` | Add a comp | **NO** — writes to `property_comps` table, not `manual_comps_links` (UI table) |
+| `comps.delete` | Delete a comp | Use with caution |
+| `comps.pricing` | Calculate ARV/pricing | Yes — reading only |
+| `bulk.approve` | Approve multiple | **NO** — same issue as `approve` |
+| `bulk.reject` | Reject multiple | **NO** — same issue as `reject` |
+| `info` | API documentation | Yes — reading only |
+
+### Rejection Reasons (for reference)
+`new-construction` | `recent-sale` | `too-good-condition` | `multi-family` | `hoa-restrictions` | `land` | `no-equity` | `agent-listed` | `commercial` | `bad-neighborhood` | `duplicate` | `wrong-location` | `other`
+
+### Typical Read-Only API Workflow
+```
+1. POST { action: "counts" }                             → see how many pending
+2. POST { action: "batch.list" }                         → get available batches
+3. POST { action: "list", status: "pending", limit: 50 } → fetch batch
+4. For each property:
+   a. POST { action: "get", property_id: "..." }         → details + comps
+   b. Analyze data (year_built, evaluation, estimated_value, ai_score...)
+   c. USE THE UI or REST API to approve/reject (NOT this API)
+```
 
 ---
 
