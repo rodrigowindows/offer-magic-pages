@@ -33,7 +33,7 @@ const REJECTION_REASONS = [
   "new-construction", "recent-sale", "too-good-condition", "multi-family",
   "hoa-restrictions", "condominium", "land", "no-equity", "agent-listed",
   "commercial", "photo-unavailable", "bad-neighborhood", "llc-owned",
-  "no-address-number", "duplicate", "wrong-location", "other",
+  "no-address-number", "no-wholesale-margin", "duplicate", "wrong-location", "other",
 ];
 
 const DEFAULT_OFFER_RATIO = 0.7;
@@ -590,6 +590,7 @@ function handleInfo() {
         'bad-neighborhood': 'Bairro Ruim / Alta Criminalidade',
         'llc-owned': 'Proprietário LLC/Empresa',
         'no-address-number': 'Endereço sem Número',
+        'no-wholesale-margin': 'Sem Margem p/ Wholesale',
         'duplicate': 'Duplicado',
         'wrong-location': 'Localização errada',
         'other': 'Outro motivo',
