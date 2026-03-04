@@ -2,7 +2,6 @@ import PropertyHero from "@/components/property/PropertyHero";
 import CashOfferSectionB from "@/components/offer/CashOfferSectionB";
 import TrustCredentials from "@/components/shared/TrustCredentials";
 import { formatCurrency } from "@/lib/utils";
-import { getStreetViewHeroUrl } from "@/utils/streetView";
 
 interface PropertyData {
   id: string;
@@ -30,8 +29,7 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
   const propertyUrl = `${window.location.origin}/property/${property.slug}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
   
-  const imageUrl = property.property_image_url ||
-    getStreetViewHeroUrl(fullAddress) ||
+  const imageUrl = property.property_image_url || 
     "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80";
 
   const ownerFirstName = property.owner_name?.split(' ')[0] || '';

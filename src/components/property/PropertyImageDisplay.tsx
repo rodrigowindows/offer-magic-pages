@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ImageIcon, ZoomIn, Loader2 } from "lucide-react";
-import { getStreetViewUrl } from "@/utils/streetView";
 
 interface PropertyImageDisplayProps {
   imageUrl?: string | null;
@@ -20,22 +19,14 @@ export const PropertyImageDisplay = ({
   const [isZoomed, setIsZoomed] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(true);
-  const [fallbackToStreetView, setFallbackToStreetView] = useState(false);
 
   // Reset loading/error state when imageUrl changes
   useEffect(() => {
     setHasError(false);
     setIsImageLoading(true);
-    setFallbackToStreetView(false);
   }, [imageUrl]);
 
-  const streetViewUrl = getStreetViewUrl(address);
-  // Use uploaded image first, fallback to Street View, then show placeholder
-  const effectiveUrl = fallbackToStreetView
-    ? streetViewUrl
-    : (imageUrl || streetViewUrl);
-
-  if (!effectiveUrl || hasError) {
+  if (!imageUrl || hasError) {
     return (
       <div className={`bg-muted rounded-lg flex items-center justify-center ${className}`}>
         <div className="text-center text-muted-foreground p-4">
@@ -45,17 +36,6 @@ export const PropertyImageDisplay = ({
       </div>
     );
   }
-
-  const handleImageError = () => {
-    // If uploaded image failed and we have Street View, try that
-    if (!fallbackToStreetView && streetViewUrl && imageUrl) {
-      setFallbackToStreetView(true);
-      setIsImageLoading(true);
-    } else {
-      setHasError(true);
-      setIsImageLoading(false);
-    }
-  };
 
   return (
     <>
@@ -68,22 +48,13 @@ export const PropertyImageDisplay = ({
         )}
         {/* Image with scale animation on hover */}
         <img
-          key={effectiveUrl}
-          src={effectiveUrl}
+          key={imageUrl}
+          src={imageUrl}
           alt={address}
           className={`w-full h-full object-cover rounded-lg transition-all duration-300 group-hover:scale-105 ${isImageLoading ? "opacity-0" : "opacity-100"}`}
           onLoad={() => setIsImageLoading(false)}
-          onError={handleImageError}
+          onError={() => { setHasError(true); setIsImageLoading(false); }}
         />
-
-        {/* Street View badge */}
-        {(fallbackToStreetView || !imageUrl) && !isImageLoading && (
-          <div className="absolute bottom-2 left-2 z-10">
-            <Badge variant="secondary" className="bg-black/60 text-white text-[10px] border-0">
-              Google Street View
-            </Badge>
-          </div>
-        )}
 
         {/* Subtle gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
@@ -108,7 +79,7 @@ export const PropertyImageDisplay = ({
             <div className="space-y-2">
               <h3 className="font-semibold">{address}</h3>
               <img
-                src={effectiveUrl}
+                src={imageUrl}
                 alt={address}
                 loading="lazy"
                 className="w-full h-auto rounded-lg"
