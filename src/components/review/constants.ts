@@ -15,6 +15,7 @@ export const REJECTION_REASONS = [
   { value: "bad-neighborhood", label: "Bairro Ruim / Alta Criminalidade" },
   { value: "llc-owned", label: "Proprietário LLC/Empresa" },
   { value: "no-address-number", label: "Endereço sem Número" },
+  { value: "no-wholesale-margin", label: "Sem Margem p/ Wholesale" },
   { value: "duplicate", label: "Duplicado" },
   { value: "wrong-location", label: "Localização errada" },
   { value: "other", label: "Outro motivo" },

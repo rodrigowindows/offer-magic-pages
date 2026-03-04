@@ -87,7 +87,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           table: 'properties',
         },
         (payload: any) => {
-          // Only refresh if the change was made by another user
           if (payload.new?.approved_by && payload.new.approved_by !== userId) {
             fetchProperties();
             fetchStatusCounts();
@@ -117,7 +116,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     setApprovalNotes("");
   }, [currentIndex]);
 
-  // Fetch comps for current property (full data for inline list + count)
+  // Fetch comps for current property
   const fetchCurrentComps = useCallback(async (propertyId: string) => {
     try {
       const { data } = await supabase
@@ -279,7 +278,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   };
 
   const handleOpenComps = () => {
-    // Works both inside approve flow and standalone (from Comps button)
     const target = pendingApproveProperty || currentProperty;
     if (target) {
       setCompsModalProperty(target);
@@ -301,12 +299,10 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     const targetProperty = compsModalProperty;
     setCompsModalProperty(null);
 
-    // Refresh inline comps list
     if (targetProperty?.id) {
       fetchCurrentComps(targetProperty.id);
     }
 
-    // If not in approve flow, just close (standalone mode)
     if (!pendingApproveProperty) {
       setApprovePhase(null);
       return;
@@ -347,7 +343,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     if (!userId || !userName || !pendingApproveProperty) return;
     setIsProcessing(true);
     try {
-      // Upload decision photos
       const photoUrls = await uploadDecisionPhotos(pendingApproveProperty.id, 'approved');
 
       const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
@@ -392,7 +387,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     if (!userId || !userName || !currentProperty || !selectedReason) return;
     setIsProcessing(true);
     try {
-      // Upload decision photos
       const photoUrls = await uploadDecisionPhotos(currentProperty.id, 'rejected');
 
       const updateData: any = {
@@ -501,81 +495,89 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 px-1 sm:px-0">
-      {/* Stats bar */}
-      <div className="flex items-center justify-between gap-1 p-2 bg-card border rounded-lg text-xs sm:text-sm">
-        <div className="flex items-center gap-1.5">
-          <Target className="h-3.5 w-3.5 text-blue-500" />
-          <span className="text-muted-foreground hidden sm:inline">Analisados:</span>
-          <span className="font-bold">{dailyStats?.reviewed_today || 0}</span>
-          <span className="text-muted-foreground sm:hidden">hoje</span>
+    <div className="flex flex-col h-[calc(100vh-80px)] px-1 sm:px-0">
+      {/* TOP: Stats + Filters - compact */}
+      <div className="shrink-0 space-y-2 mb-2">
+        {/* Stats bar - inline compact */}
+        <div className="flex items-center justify-between gap-1 p-1.5 bg-card border rounded-lg text-xs">
+          <div className="flex items-center gap-1">
+            <Target className="h-3 w-3 text-blue-500" />
+            <span className="font-bold">{dailyStats?.reviewed_today || 0}</span>
+            <span className="text-muted-foreground">hoje</span>
+          </div>
+          <div className="w-px h-3 bg-border" />
+          <div className="flex items-center gap-1">
+            <CheckCircle className="h-3 w-3 text-green-500" />
+            <span className="font-bold text-green-700">{dailyStats?.approved_today || 0}</span>
+          </div>
+          <div className="w-px h-3 bg-border" />
+          <div className="flex items-center gap-1">
+            <XCircle className="h-3 w-3 text-red-500" />
+            <span className="font-bold text-red-700">{dailyStats?.rejected_today || 0}</span>
+          </div>
         </div>
-        <div className="w-px h-4 bg-border" />
-        <div className="flex items-center gap-1.5">
-          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-          <span className="text-muted-foreground hidden sm:inline">Aprovados:</span>
-          <span className="font-bold text-green-700">{dailyStats?.approved_today || 0}</span>
-        </div>
-        <div className="w-px h-4 bg-border" />
-        <div className="flex items-center gap-1.5">
-          <XCircle className="h-3.5 w-3.5 text-red-500" />
-          <span className="text-muted-foreground hidden sm:inline">Rejeitados:</span>
-          <span className="font-bold text-red-700">{dailyStats?.rejected_today || 0}</span>
-        </div>
+
+        <FilterBar
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          statusCounts={statusCounts}
+          visualFilter={visualFilter}
+          onVisualChange={setVisualFilter}
+          visualCounts={visualCounts}
+          totalProperties={properties.length}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
       </div>
 
-      {/* Filters */}
-      <FilterBar
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-        statusCounts={statusCounts}
-        visualFilter={visualFilter}
-        onVisualChange={setVisualFilter}
-        visualCounts={visualCounts}
-        totalProperties={properties.length}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
-
-      {/* Main Review Card */}
+      {/* MAIN: Property Card - fills remaining space */}
       {currentProperty && (
-        <Card>
-          <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6 pt-3 sm:pt-6">
-            <InlineCompsList comps={currentComps} onOpenComps={handleOpenComps} subjectSqft={currentProperty.square_feet} />
+        <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <CardContent className="flex flex-col flex-1 p-2 sm:p-3 space-y-2 min-h-0">
+            {/* Property Card - scrollable if needed */}
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} />
 
-            <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} />
+              {/* Inline comps - collapsed */}
+              {currentComps.length > 0 && (
+                <InlineCompsList comps={currentComps} onOpenComps={handleOpenComps} subjectSqft={currentProperty.square_feet} />
+              )}
+            </div>
 
-            <ActionArea
-              statusFilter={statusFilter}
-              approvePhase={approvePhase}
-              isProcessing={isProcessing}
-              currentIndex={currentIndex}
-              totalFiltered={filteredProperties.length}
-              compsCount={currentCompsCount}
-              showRejectForm={showRejectForm}
-              selectedReason={selectedReason}
-              rejectionNotes={rejectionNotes}
-              quickOfferAmount={quickOfferAmount}
-              compsARV={compsARV}
-              pendingEstimatedValue={pendingApproveProperty?.estimated_value ?? null}
-              approvalNotes={approvalNotes}
-              onApprovalNotesChange={setApprovalNotes}
-              decisionPhotos={decisionPhotos}
-              onDecisionPhotosChange={setDecisionPhotos}
-              onStartApprove={handleStartApprove}
-              onOpenComps={handleOpenComps}
-              onSkipComps={handleSkipComps}
-              onCancelApprove={handleCancelApprove}
-              onConfirmOffer={handleConfirmOffer}
-              onShowRejectForm={() => setShowRejectForm(true)}
-              onHideRejectForm={() => { setShowRejectForm(false); setSelectedReason(""); setRejectionNotes(""); }}
-              onReject={handleReject}
-              onNext={handleNext}
-              onPrevious={handlePrevious}
-              onReasonChange={setSelectedReason}
-              onNotesChange={setRejectionNotes}
-              onOfferAmountChange={setQuickOfferAmount}
-            />
+            {/* ACTION AREA - always visible at bottom */}
+            <div className="shrink-0">
+              <ActionArea
+                statusFilter={statusFilter}
+                approvePhase={approvePhase}
+                isProcessing={isProcessing}
+                currentIndex={currentIndex}
+                totalFiltered={filteredProperties.length}
+                compsCount={currentCompsCount}
+                showRejectForm={showRejectForm}
+                selectedReason={selectedReason}
+                rejectionNotes={rejectionNotes}
+                quickOfferAmount={quickOfferAmount}
+                compsARV={compsARV}
+                pendingEstimatedValue={pendingApproveProperty?.estimated_value ?? null}
+                approvalNotes={approvalNotes}
+                onApprovalNotesChange={setApprovalNotes}
+                decisionPhotos={decisionPhotos}
+                onDecisionPhotosChange={setDecisionPhotos}
+                onStartApprove={handleStartApprove}
+                onOpenComps={handleOpenComps}
+                onSkipComps={handleSkipComps}
+                onCancelApprove={handleCancelApprove}
+                onConfirmOffer={handleConfirmOffer}
+                onShowRejectForm={() => setShowRejectForm(true)}
+                onHideRejectForm={() => { setShowRejectForm(false); setSelectedReason(""); setRejectionNotes(""); }}
+                onReject={handleReject}
+                onNext={handleNext}
+                onPrevious={handlePrevious}
+                onReasonChange={setSelectedReason}
+                onNotesChange={setRejectionNotes}
+                onOfferAmountChange={setQuickOfferAmount}
+              />
+            </div>
           </CardContent>
         </Card>
       )}

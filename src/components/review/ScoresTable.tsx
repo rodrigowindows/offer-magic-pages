@@ -34,42 +34,42 @@ export const ScoresTable = ({ property, onScoreSaved }: ScoresTableProps) => {
     <div className="border rounded-lg overflow-hidden" data-section="scores-table">
       {/* Unincorporated warning */}
       {isUnincorporated && (
-        <div className="px-3 py-1.5 bg-amber-50 border-b border-amber-200 text-xs text-amber-800">
+        <div className="px-2 py-1 bg-amber-50 border-b border-amber-200 text-[10px] text-amber-800">
           <Tip
             text="UNINCORPORATED"
-            tip="Área não incorporada = fora dos limites da cidade. Pode ter menos serviços públicos, regras de zoneamento diferentes, e menor demanda de compradores."
-          /> — Área fora dos limites da cidade. Pode afetar interesse do comprador.
+            tip="Área não incorporada = fora dos limites da cidade."
+          /> — Fora dos limites da cidade.
         </div>
       )}
       <Table>
         <TableBody>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5 w-28">
-              <Tip text="AI Score" tip="Pontuação do AI: 70+ = COMPRAR, 50-69 = AVALIAR, 30-49 = CUIDADO, <30 = FRACO" />
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1 w-20">
+              <Tip text="AI Score" tip="70+ = COMPRAR, 50-69 = AVALIAR, <30 = FRACO" />
             </TableCell>
-            <TableCell className="py-1.5" data-field="ai-score">
-              <span className={`font-bold text-lg ${aiC.text}`}>{property.ai_score ?? '—'}</span>
+            <TableCell className="py-1" data-field="ai-score">
+              <span className={`font-bold text-base ${aiC.text}`}>{property.ai_score ?? '—'}</span>
               {property.ai_score != null && (
-                <Badge variant="outline" className={`ml-2 text-[9px] ${aiC.text} ${aiC.bg} ${aiC.border}`}>
+                <Badge variant="outline" className={`ml-1 text-[8px] ${aiC.text} ${aiC.bg} ${aiC.border}`}>
                   {aiC.label}
                 </Badge>
               )}
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5">
-              <Tip text="Lead Score" tip="Pontuação do lead: 230+ = ALTA prioridade, 150-229 = PADRÃO, <150 = BAIXA prioridade" />
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">
+              <Tip text="Lead" tip="230+ = ALTA, 150-229 = PADRÃO, <150 = BAIXA" />
             </TableCell>
-            <TableCell className="py-1.5" data-field="lead-score">
-              <span className={`font-bold text-lg ${ldC.text}`}>{property.lead_score ?? '—'}</span>
+            <TableCell className="py-1" data-field="lead-score">
+              <span className={`font-bold text-base ${ldC.text}`}>{property.lead_score ?? '—'}</span>
               {property.lead_score != null && (
-                <span className={`ml-2 text-[10px] font-bold ${ldC.text}`}>{ldC.label}</span>
+                <span className={`ml-1 text-[9px] font-bold ${ldC.text}`}>{ldC.label}</span>
               )}
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5">Meu Score</TableCell>
-            <TableCell className="py-1">
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">Meu Score</TableCell>
+            <TableCell className="py-0.5">
               <AIScoreInput
                 propertyId={property.id}
                 currentScore={property.ai_score}
@@ -80,42 +80,40 @@ export const ScoresTable = ({ property, onScoreSaved }: ScoresTableProps) => {
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5">
-              <Tip text="Preço" tip="Valor estimado da propriedade baseado em dados do county e avaliação automática" />
-            </TableCell>
-            <TableCell className="py-1.5" data-field="price">
-              <span className="font-bold text-lg">{property.estimated_value ? formatCurrency(property.estimated_value) : '—'}</span>
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">Preço</TableCell>
+            <TableCell className="py-1" data-field="price">
+              <span className="font-bold text-base">{property.estimated_value ? formatCurrency(property.estimated_value) : '—'}</span>
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5">
-              <Tip text="Oferta" tip="Valor da oferta de compra. Idealmente 60-70% do valor estimado para ter margem de lucro no wholesale" />
-            </TableCell>
-            <TableCell className="py-1.5" data-field="offer">
-              <span className="font-bold text-lg">{property.cash_offer_amount ? formatCurrency(property.cash_offer_amount) : '—'}</span>
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">Oferta</TableCell>
+            <TableCell className="py-1" data-field="offer">
+              <span className="font-bold text-base">{property.cash_offer_amount ? formatCurrency(property.cash_offer_amount) : '—'}</span>
               {offerPct != null && (
-                <Badge variant={offerPct <= 70 ? 'default' : 'secondary'} className="ml-2 text-[10px]">
+                <Badge variant={offerPct <= 70 ? 'default' : 'secondary'} className="ml-1 text-[9px]">
                   {offerPct}%
                 </Badge>
               )}
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5">
-              <Tip text="Sqft" tip="Área construída em pés quadrados. Usado para calcular preço por sqft e comparar com comps" />
-            </TableCell>
-            <TableCell className="py-1.5 font-bold" data-field="sqft">
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">Sqft</TableCell>
+            <TableCell className="py-1 font-bold text-sm" data-field="sqft">
               {property.square_feet ? property.square_feet.toLocaleString() : '—'}
-              {pricePsf && <span className="text-muted-foreground text-xs ml-2 font-normal">(${pricePsf}/sqft)</span>}
+              {pricePsf && <span className="text-muted-foreground text-[10px] ml-1 font-normal">(${pricePsf}/sqft)</span>}
             </TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5">Quartos/Banh.</TableCell>
-            <TableCell className="py-1.5 font-bold">{property.bedrooms || '—'} / {property.bathrooms || '—'}</TableCell>
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">Q/B</TableCell>
+            <TableCell className="py-1 font-bold text-sm">{property.bedrooms || '—'} / {property.bathrooms || '—'}</TableCell>
           </TableRow>
           <TableRow>
-            <TableCell className="text-xs text-muted-foreground font-medium py-1.5">Ano</TableCell>
-            <TableCell className="py-1.5 font-bold">{property.year_built || '—'}</TableCell>
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">Ano</TableCell>
+            <TableCell className="py-1 font-bold text-sm">{property.year_built || '—'}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell className="text-[10px] text-muted-foreground font-medium py-1">Tipo</TableCell>
+            <TableCell className="py-1 font-bold text-sm">{property.property_type || '—'}</TableCell>
           </TableRow>
         </TableBody>
       </Table>

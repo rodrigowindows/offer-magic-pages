@@ -82,6 +82,14 @@ export const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestio
     suggestions.push({ reason: 'llc-owned', label: 'Proprietário LLC/Empresa' });
   }
 
+  // No wholesale margin: offer >= 80% of estimated value
+  if (prop.cash_offer_amount && prop.estimated_value && prop.estimated_value > 0) {
+    const pct = (prop.cash_offer_amount / prop.estimated_value) * 100;
+    if (pct >= 80) {
+      suggestions.push({ reason: 'no-wholesale-margin', label: 'Sem Margem Wholesale' });
+    }
+  }
+
   return suggestions;
 };
 
