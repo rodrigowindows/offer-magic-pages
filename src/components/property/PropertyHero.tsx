@@ -2,6 +2,7 @@ import { MapPin, Home } from "lucide-react";
 import { useEffect, useState } from "react";
 import { generateTrackedPropertyUrlBySlug } from "@/utils/urlUtils";
 import { formatCurrency } from "@/lib/utils";
+import { getStreetViewHeroUrl } from "@/utils/streetView";
 
 interface PropertyHeroProps {
   address?: string;
@@ -11,13 +12,15 @@ interface PropertyHeroProps {
   offerValue?: number | string;
 }
 
-const PropertyHero = ({ 
+const PropertyHero = ({
   address = "123 Main Street, Miami, FL 33101",
   propertySlug,
-  imageUrl = "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80",
+  imageUrl,
   qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://mylocalinvest.com",
   offerValue = "$70,000"
 }: PropertyHeroProps) => {
+  // Use real Google Street View photo of the property as default
+  const effectiveImageUrl = imageUrl || getStreetViewHeroUrl(address) || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80";
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -134,12 +137,12 @@ const PropertyHero = ({
                 <div className="w-full h-[400px] md:h-[500px] bg-muted flex items-center justify-center">
                   <div className="text-center text-muted-foreground">
                     <p className="text-lg font-medium">Imagem não disponível</p>
-                    <p className="text-sm mt-2">URL: {imageUrl?.substring(0, 50)}...</p>
+                    <p className="text-sm mt-2">URL: {effectiveImageUrl?.substring(0, 50)}...</p>
                   </div>
                 </div>
               ) : (
                 <img 
-                  src={imageUrl} 
+                  src={effectiveImageUrl} 
                   alt={`Property at ${address}`}
                   className="w-full h-[400px] md:h-[500px] object-cover"
                   onLoad={handleImageLoad}
