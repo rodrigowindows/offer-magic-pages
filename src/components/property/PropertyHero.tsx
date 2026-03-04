@@ -1,5 +1,6 @@
-import { MapPin, Home } from "lucide-react";
+import { MapPin, Home, ZoomIn } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { generateTrackedPropertyUrlBySlug } from "@/utils/urlUtils";
 import { formatCurrency } from "@/lib/utils";
 
@@ -11,7 +12,7 @@ interface PropertyHeroProps {
   offerValue?: number | string;
 }
 
-const PropertyHero = ({ 
+const PropertyHero = ({
   address = "123 Main Street, Miami, FL 33101",
   propertySlug,
   imageUrl = "https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80",
@@ -20,193 +21,179 @@ const PropertyHero = ({
 }: PropertyHeroProps) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
 
-  // Reset states when imageUrl changes
   useEffect(() => {
     setImageError(false);
     setImageLoaded(false);
   }, [imageUrl, address]);
 
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-  };
-
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    setImageError(true);
-  };
-
   const fallbackSlug = address?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const trackedOfferUrl = generateTrackedPropertyUrlBySlug(propertySlug || fallbackSlug, 'sms');
 
   return (
-    <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-12 md:py-20">
-      <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          {/* Left Column - Text Content */}
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-semibold">
-              <Home className="w-4 h-4" />
-              <span>Personalized Cash Offer</span>
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-              Your Fair Cash Offer for
-            </h1>
-            
-            <div className="flex items-start gap-3 p-4 bg-card rounded-lg shadow-sm border border-border">
-              <MapPin className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-              <div>
-                <p className="text-2xl md:text-3xl font-bold text-primary">{address}</p>
-                {/* External Property Links */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    Google Maps
-                  </a>
-                  <a
-                    href={`https://www.zillow.com/homes/${encodeURIComponent(address)}_rb/`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold hover:bg-blue-100 transition-colors"
-                  >
-                    <span className="font-bold">Z</span>
-                    Zillow
-                  </a>
-                  <a
-                    href={`https://www.trulia.com/homes/${encodeURIComponent(address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-semibold hover:bg-green-100 transition-colors"
-                  >
-                    <span className="font-bold">T</span>
-                    Trulia
-                  </a>
-                  <a
-                    href={`https://www.redfin.com/search#query=${encodeURIComponent(address)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-semibold hover:bg-red-100 transition-colors"
-                  >
-                    <span className="font-bold">R</span>
-                    Redfin
-                  </a>
-                  <a
-                    href={`https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(address.replace(/\s+/g, '-'))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 rounded-full text-xs font-semibold hover:bg-orange-100 transition-colors"
-                  >
-                    <span className="font-bold">Re</span>
-                    Realtor
-                  </a>
-                </div>
-              </div>
-            </div>
-            
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-              We know tax issues can be overwhelming. That's why we're making a straightforward, 
-              <span className="text-foreground font-semibold"> no-obligation cash offer</span> to help you move forward with confidence.
-            </p>
+    <section className="bg-white">
+      <div className="container mx-auto px-4 py-6 md:py-10">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-10 items-start">
 
-            {/* QR Code */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-6 bg-card rounded-xl shadow-md border border-border">
-              <img 
-                src={qrCodeUrl} 
-                alt="Scan for property details" 
-                className="w-32 h-32 rounded-lg"
+          {/* Left Column - Product Image (Amazon-style) */}
+          <div className="space-y-3">
+            {/* Main Image */}
+            <div
+              className="relative bg-gray-50 rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in group"
+              onClick={() => !imageError && setIsZoomed(true)}
+            >
+              {imageError ? (
+                <div className="w-full aspect-[4/3] flex items-center justify-center bg-gray-100">
+                  <div className="text-center text-gray-400">
+                    <Home className="h-16 w-16 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Photo not available</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {!imageLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                    </div>
+                  )}
+                  <img
+                    src={imageUrl}
+                    alt={`Property at ${address}`}
+                    className={`w-full aspect-[4/3] object-cover transition-all duration-300 group-hover:scale-[1.02] ${
+                      imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageError(true)}
+                  />
+                  {/* Zoom hint */}
+                  <div className="absolute bottom-3 right-3 bg-black/60 text-white px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <ZoomIn className="h-3.5 w-3.5" />
+                    Click to zoom
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* QR Code - Small below image */}
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+              <img
+                src={qrCodeUrl}
+                alt="QR Code"
+                className="w-14 h-14 rounded"
               />
-              <div className="text-center sm:text-left">
-                <p className="font-semibold text-foreground mb-1">Scan to Save This Offer</p>
-                <p className="text-sm text-muted-foreground">Access your personalized proposal anytime</p>
+              <div>
+                <p className="text-xs font-semibold text-gray-700">Scan to save this offer</p>
+                <p className="text-[10px] text-gray-400">Access your personalized proposal anytime</p>
               </div>
             </div>
           </div>
 
-          {/* Right Column - Property Image */}
-          <div className="relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-strong">
-              {imageError ? (
-                <div className="w-full h-[400px] md:h-[500px] bg-muted flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <p className="text-lg font-medium">Imagem não disponível</p>
-                    <p className="text-sm mt-2">URL: {imageUrl?.substring(0, 50)}...</p>
-                  </div>
-                </div>
-              ) : (
-                <img 
-                  src={imageUrl} 
-                  alt={`Property at ${address}`}
-                  className="w-full h-[400px] md:h-[500px] object-cover"
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
+          {/* Right Column - Product Info (Amazon-style) */}
+          <div className="space-y-5">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-xs font-bold border border-green-200">
+              <Home className="w-3.5 h-3.5" />
+              PERSONALIZED CASH OFFER
             </div>
-            
-            {/* Offer Section - Moved outside the image */}
-            <div className="mt-6 p-6 bg-white rounded-xl shadow-lg border border-gray-200">
-              <div className="text-center">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Your Fair Cash Offer</h2>
-                <div className="text-5xl md:text-6xl font-bold text-green-600 mb-4">{typeof offerValue === 'number' ? formatCurrency(offerValue) : offerValue}</div>
-                <p className="text-lg text-gray-600 mb-6">For {address}</p>
-                
-                {/* Details List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-left max-w-md mx-auto">
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-sm">Close in 7-14 Days</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-sm">Fast closing guaranteed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-sm">No Repairs Needed</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-sm">We buy as-is</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-sm">No Realtor Fees</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-500">✓</span>
-                    <span className="text-sm">Save thousands</span>
-                  </div>
-                </div>
-                
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow">Accept This Offer</button>
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow">I Have Questions</button>
-                  <button className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg shadow border">Download PDF</button>
-                </div>
-                
-                {/* Property Link */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <a
-                    href={trackedOfferUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg shadow text-sm"
-                  >
-                    View Full Offer Details
-                  </a>
-                </div>
+
+            {/* Title/Address */}
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-2">
+                Your Fair Cash Offer
+              </h1>
+              <div className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                <p className="text-base text-gray-600">{address}</p>
               </div>
+            </div>
+
+            {/* Price - Amazon style big green price */}
+            <div className="border-t border-b border-gray-200 py-4">
+              <p className="text-xs text-gray-500 mb-1">Cash Offer Amount</p>
+              <p className="text-4xl md:text-5xl font-bold text-green-600">
+                {typeof offerValue === 'number' ? formatCurrency(offerValue) : offerValue}
+              </p>
+            </div>
+
+            {/* Benefits List - Amazon-style checkmarks */}
+            <ul className="space-y-2.5">
+              {[
+                { text: "Close in 7-14 Days", sub: "Fast closing guaranteed" },
+                { text: "No Repairs Needed", sub: "We buy as-is, any condition" },
+                { text: "No Realtor Fees", sub: "Save thousands in commissions" },
+                { text: "No Hidden Costs", sub: "What we offer is what you get" },
+              ].map((item) => (
+                <li key={item.text} className="flex items-start gap-2.5">
+                  <span className="text-green-500 font-bold mt-0.5">✓</span>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-900">{item.text}</span>
+                    <span className="text-xs text-gray-500 block">{item.sub}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTA Buttons - Amazon-style stacked buttons */}
+            <div className="space-y-3 pt-2">
+              <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-lg shadow-sm transition-colors text-base">
+                Accept This Offer
+              </button>
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-sm transition-colors text-sm">
+                I Have Questions
+              </button>
+              <button className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border border-gray-300 transition-colors text-sm">
+                Download PDF
+              </button>
+            </div>
+
+            {/* External Property Links */}
+            <div className="flex flex-wrap gap-2 pt-2">
+              {[
+                { label: "Google Maps", href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, color: "text-blue-700 bg-blue-50 hover:bg-blue-100" },
+                { label: "Zillow", href: `https://www.zillow.com/homes/${encodeURIComponent(address)}_rb/`, color: "text-blue-600 bg-blue-50 hover:bg-blue-100" },
+                { label: "Trulia", href: `https://www.trulia.com/homes/${encodeURIComponent(address)}`, color: "text-green-700 bg-green-50 hover:bg-green-100" },
+                { label: "Redfin", href: `https://www.redfin.com/search#query=${encodeURIComponent(address)}`, color: "text-red-600 bg-red-50 hover:bg-red-100" },
+                { label: "Realtor", href: `https://www.realtor.com/realestateandhomes-search/${encodeURIComponent(address.replace(/\s+/g, '-'))}`, color: "text-orange-600 bg-orange-50 hover:bg-orange-100" },
+              ].map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${link.color}`}
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            {/* Tracked link */}
+            <div className="pt-2">
+              <a
+                href={trackedOfferUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-purple-600 hover:text-purple-700 underline"
+              >
+                View Full Offer Details
+              </a>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Dialog */}
+      <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
+        <DialogContent className="max-w-5xl p-2">
+          <img
+            src={imageUrl}
+            alt={`Property at ${address}`}
+            className="w-full h-auto rounded-lg"
+          />
+          <p className="text-center text-sm text-gray-500 mt-2">{address}</p>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
