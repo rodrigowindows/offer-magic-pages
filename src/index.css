@@ -88,20 +88,20 @@ All colors MUST be HSL.
     --accent: 25 90% 60%;
     --accent-foreground: 0 0% 100%;
     
-    --background: 220 15% 10%;
+    --background: 220 12% 14%;
     --foreground: 0 0% 95%;
     
-    --card: 220 15% 13%;
+    --card: 220 12% 18%;
     --card-foreground: 0 0% 95%;
     
-    --popover: 220 15% 13%;
+    --popover: 220 12% 18%;
     --popover-foreground: 0 0% 95%;
     
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 220 12% 22%;
+    --muted-foreground: 220 10% 65%;
     
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
+    --border: 220 12% 25%;
+    --input: 220 12% 25%;
     --ring: 211 90% 55%;
     
     --success: 140 55% 50%;
