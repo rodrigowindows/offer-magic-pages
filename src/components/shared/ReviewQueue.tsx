@@ -367,6 +367,17 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         .update(updateData)
         .eq("id", pendingApproveProperty.id);
       if (error) throw error;
+
+      // Auto-save decision to property_notes
+      const noteParts: string[] = [`✅ APROVADO`];
+      if (offerValue) noteParts.push(`Oferta: ${formatCurrency(offerValue)}`);
+      if (approvalNotes.trim()) noteParts.push(approvalNotes.trim());
+      await supabase.from("property_notes").insert({
+        property_id: pendingApproveProperty.id,
+        note_text: noteParts.join(' — '),
+        image_urls: photoUrls.length > 0 ? photoUrls : null,
+      });
+
       toast({
         title: "Aprovado!",
         description: `${pendingApproveProperty.address}${offerValue ? ` - Oferta: ${formatCurrency(offerValue)}` : ''}`,
@@ -407,7 +418,17 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         .update(updateData)
         .eq("id", currentProperty.id);
       if (error) throw error;
+
+      // Auto-save decision to property_notes
       const reasonLabel = REJECTION_REASONS.find(r => r.value === selectedReason)?.label;
+      const noteParts: string[] = [`❌ REJEITADO — ${reasonLabel}`];
+      if (rejectionNotes.trim()) noteParts.push(rejectionNotes.trim());
+      await supabase.from("property_notes").insert({
+        property_id: currentProperty.id,
+        note_text: noteParts.join(' — '),
+        image_urls: photoUrls.length > 0 ? photoUrls : null,
+      });
+
       toast({ title: "Rejeitado", description: `${currentProperty.address} - ${reasonLabel}` });
       await advanceAfterAction();
     } catch (error: any) {
