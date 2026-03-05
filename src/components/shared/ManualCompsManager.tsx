@@ -1240,13 +1240,13 @@ https://www.trulia.com/p/fl/orlando/789-Elm-Dr...`}
                         <span className="text-sm">{getSourceLabel(link.source)}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right font-semibold text-green-700">
+                    <TableCell className="text-right font-semibold text-green-700 dark:text-green-400">
                       {salePrice ? `$${salePrice.toLocaleString()}` : '-'}
                     </TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground">
                       {squareFeet ? squareFeet.toLocaleString() : '-'}
                     </TableCell>
-                    <TableCell className="text-right font-semibold text-blue-700">
+                    <TableCell className="text-right font-semibold text-blue-700 dark:text-blue-400">
                       {pricePerSqft ? `$${Math.round(pricePerSqft)}` : '-'}
                     </TableCell>
                     <TableCell className="max-w-[150px] truncate text-sm text-muted-foreground">

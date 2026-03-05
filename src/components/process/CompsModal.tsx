@@ -163,13 +163,13 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6 bg-white dark:bg-gray-900">
         <DialogHeader>
           <DialogTitle className="text-base sm:text-lg flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-500" />
             Comparativos
             {comps.length > 0 && (
-              <Badge variant="secondary" className="text-xs">{comps.length}</Badge>
+              <Badge className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">{comps.length}</Badge>
             )}
           </DialogTitle>
           <DialogDescription className="text-xs sm:text-sm flex items-center gap-1">
@@ -181,7 +181,7 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
         </DialogHeader>
 
         {/* Property summary */}
-        <div className="flex gap-3 p-2.5 bg-muted/50 rounded-lg text-xs">
+        <div className="flex gap-3 p-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-xs">
           <div>
             <span className="text-muted-foreground">Estimado: </span>
             <span className="font-bold">${property.estimated_value?.toLocaleString() || 'N/A'}</span>
@@ -303,13 +303,13 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
               const pricePerSqft = price && sqft && sqft > 0 ? price / sqft : null;
 
               return (
-                <div key={comp.id} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-card text-card-foreground">
+                <div key={comp.id} className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
                   <div className="flex-1 min-w-0 space-y-0.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       {price && <span className="font-bold text-sm">${price.toLocaleString()}</span>}
                       {sqft && <span className="text-muted-foreground text-xs">{sqft} sqft</span>}
-                      {pricePerSqft && <Badge variant="secondary" className="text-[10px]">${Math.round(pricePerSqft)}/sqft</Badge>}
-                      <Badge variant="outline" className="text-[10px] uppercase">{comp.source}</Badge>
+                      {pricePerSqft && <Badge className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700">${Math.round(pricePerSqft)}/sqft</Badge>}
+                      <Badge variant="outline" className="text-[10px] uppercase border-gray-300 dark:border-gray-600">{comp.source}</Badge>
                     </div>
                     {address && <p className="text-xs text-muted-foreground truncate">{address}</p>}
                   </div>

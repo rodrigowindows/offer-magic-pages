@@ -86,13 +86,13 @@ export const CompsTable = ({
     if (!score) return null;
 
     if (score >= 0.8) {
-      return <Badge className="bg-green-100 text-green-800 border-green-200">Excellent</Badge>;
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-200 dark:border-green-700">Excellent</Badge>;
     } else if (score >= 0.6) {
-      return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Good</Badge>;
+      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border-blue-200 dark:border-blue-700">Good</Badge>;
     } else if (score >= 0.4) {
-      return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Fair</Badge>;
+      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700">Fair</Badge>;
     } else {
-      return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Low</Badge>;
+      return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600">Low</Badge>;
     }
   };
 
@@ -147,8 +147,8 @@ export const CompsTable = ({
                   key={comp.id}
                   className={`
                     hover:bg-accent/50 transition-colors
-                    ${highlightedCompId === comp.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}
-                    ${isManual ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : ''}
+                    ${highlightedCompId === comp.id ? 'bg-blue-50 dark:bg-blue-950/40 border-l-4 border-l-blue-500' : ''}
+                    ${isManual ? 'bg-yellow-50 dark:bg-yellow-950/40 border-l-4 border-l-yellow-400' : ''}
                   `}
                 >
                 {/* Star */}

@@ -33,10 +33,10 @@ export const InlineCompsList = ({ comps, onOpenComps, subjectSqft }: InlineComps
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-900">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30">
+            <TableRow className="bg-gray-50 dark:bg-gray-800/50">
               <TableHead className="text-[10px] py-1.5 h-auto">Endereço</TableHead>
               <TableHead className="text-[10px] py-1.5 h-auto text-right">Preço</TableHead>
               <TableHead className="text-[10px] py-1.5 h-auto text-right">Sqft</TableHead>
@@ -66,7 +66,7 @@ export const InlineCompsList = ({ comps, onOpenComps, subjectSqft }: InlineComps
                     {sqft ? sqft.toLocaleString() : '—'}
                   </TableCell>
                   <TableCell className="py-1.5 text-xs text-right">
-                    {psf && <Badge variant="secondary" className="text-[9px]">${psf}</Badge>}
+                    {psf && <Badge className="text-[9px] bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700">${psf}</Badge>}
                   </TableCell>
                   <TableCell className="py-1.5">
                     <Button variant="ghost" size="sm" onClick={() => window.open(comp.url, '_blank')} className="h-5 w-5 p-0 shrink-0">
