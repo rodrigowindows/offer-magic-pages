@@ -532,10 +532,10 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
       {/* MAIN: Property Card - fills remaining space */}
       {currentProperty && (
-        <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <Card className="flex-1 flex flex-col overflow-hidden min-h-0 bg-card">
           <CardContent className="flex flex-col flex-1 p-2 sm:p-3 space-y-2 min-h-0">
             {/* Property Card - scrollable if needed */}
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-lg">
               <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} />
 
               {/* Inline comps - collapsed */}

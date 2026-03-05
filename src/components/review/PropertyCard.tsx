@@ -25,9 +25,9 @@ interface PropertyCardProps {
 /** Get background color class for the card based on approval status */
 const getStatusBackground = (status: string | null | undefined) => {
   switch (status) {
-    case 'approved': return 'bg-green-50/60 border-green-300';
-    case 'rejected': return 'bg-red-50/60 border-red-300';
-    default: return 'bg-yellow-50/30 border-yellow-200';
+    case 'approved': return 'bg-green-50 dark:bg-green-950/40 border-green-300 dark:border-green-800';
+    case 'rejected': return 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800';
+    default: return 'bg-yellow-50/30 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800';
   }
 };
 
@@ -174,7 +174,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
 
               {/* Pre-denial warnings */}
               {suggestions.length > 0 && (
-                <div className="p-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="p-1.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <div className="flex flex-wrap gap-1 items-center">
                     <span className="text-[10px] font-bold text-amber-800">ALERTA:</span>
                     {suggestions.map(s => (
@@ -188,7 +188,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
 
               {/* Approval/Rejection status banner - compact */}
               {property.approval_status === 'approved' && property.approved_by_name && (
-                <div className="px-2 py-1 bg-green-100 border border-green-300 rounded-lg">
+                <div className="px-2 py-1 bg-green-100 dark:bg-green-950/60 border border-green-300 dark:border-green-800 rounded-lg">
                   <div className="flex items-center gap-1">
                     <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
                     <span className="text-xs font-bold text-green-800">APROVADO</span>
@@ -205,7 +205,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
                 </div>
               )}
               {property.approval_status === 'rejected' && property.approved_by_name && (
-                <div className="px-2 py-1 bg-red-100 border border-red-300 rounded-lg">
+                <div className="px-2 py-1 bg-red-100 dark:bg-red-950/60 border border-red-300 dark:border-red-800 rounded-lg">
                   <div className="flex items-center gap-1">
                     <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
                     <span className="text-xs font-bold text-red-800">REJEITADO</span>
