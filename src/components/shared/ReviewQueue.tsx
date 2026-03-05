@@ -517,24 +517,20 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   return (
     <div className="flex flex-col h-full px-1 sm:px-0">
-      {/* TOP: Stats + Filters - compact */}
-      <div className="shrink-0 space-y-2 mb-2">
-        {/* Stats bar - inline compact */}
-        <div className="flex items-center justify-between gap-1 p-1.5 bg-card border rounded-lg text-xs">
-          <div className="flex items-center gap-1">
+      {/* TOP: Stats + Filters - ultra compact */}
+      <div className="shrink-0 space-y-1 mb-1">
+        {/* Stats inline + search */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-[11px] shrink-0">
             <Target className="h-3 w-3 text-blue-500" />
             <span className="font-bold">{dailyStats?.reviewed_today || 0}</span>
-            <span className="text-muted-foreground">hoje</span>
-          </div>
-          <div className="w-px h-3 bg-border" />
-          <div className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3 text-green-500" />
-            <span className="font-bold text-green-700">{dailyStats?.approved_today || 0}</span>
-          </div>
-          <div className="w-px h-3 bg-border" />
-          <div className="flex items-center gap-1">
-            <XCircle className="h-3 w-3 text-red-500" />
-            <span className="font-bold text-red-700">{dailyStats?.rejected_today || 0}</span>
+            <span className="text-muted-foreground text-[10px]">hoje</span>
+            <div className="w-px h-3 bg-border" />
+            <CheckCircle className="h-2.5 w-2.5 text-green-500" />
+            <span className="font-bold text-green-700 dark:text-green-400">{dailyStats?.approved_today || 0}</span>
+            <div className="w-px h-3 bg-border" />
+            <XCircle className="h-2.5 w-2.5 text-red-500" />
+            <span className="font-bold text-red-700 dark:text-red-400">{dailyStats?.rejected_today || 0}</span>
           </div>
         </div>
 
@@ -554,7 +550,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       {/* MAIN: Property Card - fills remaining space */}
       {currentProperty && (
         <Card className="flex-1 flex flex-col overflow-hidden min-h-0 bg-card">
-          <CardContent className="flex flex-col flex-1 p-2 sm:p-3 space-y-2 min-h-0">
+          <CardContent className="flex flex-col flex-1 p-1 sm:p-1.5 space-y-1 min-h-0">
             {/* Property Card - scrollable if needed */}
             <div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-lg">
               <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} />
