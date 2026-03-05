@@ -61,14 +61,14 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
     : tagList;
 
   return (
-    <div className={`rounded-xl border-2 ${getStatusBackground(property.approval_status)}`} data-property-id={property.id}>
+    <div className={`rounded-lg border-2 ${getStatusBackground(property.approval_status)}`} data-property-id={property.id}>
       {/* Tabs: Avaliação | Notas */}
       <div className="flex border-b">
         <button
           onClick={() => setActiveTab('avaliacao')}
-          className={`flex-1 px-3 py-1.5 text-sm font-bold transition-colors ${
+          className={`flex-1 px-2 py-1 text-xs font-bold transition-colors ${
             activeTab === 'avaliacao'
-              ? 'bg-white border-b-2 border-primary text-primary'
+              ? 'bg-white dark:bg-card border-b-2 border-primary text-primary'
               : 'text-muted-foreground hover:bg-white/50'
           }`}
         >
@@ -76,9 +76,9 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
         </button>
         <button
           onClick={() => setActiveTab('notas')}
-          className={`flex-1 px-3 py-1.5 text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${
+          className={`flex-1 px-2 py-1 text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
             activeTab === 'notas'
-              ? 'bg-white border-b-2 border-primary text-primary'
+              ? 'bg-white dark:bg-card border-b-2 border-primary text-primary'
               : 'text-muted-foreground hover:bg-white/50'
           }`}
         >
@@ -92,12 +92,12 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
 
       {/* Tab Content */}
       {activeTab === 'avaliacao' ? (
-        <div className="p-2 sm:p-3">
+        <div className="p-1.5 sm:p-2">
           {/* COMPACT 3-COLUMN LAYOUT: Photo | Address+Info | Scores */}
-          <div className="grid grid-cols-1 md:grid-cols-[160px_1fr_1fr] gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-[140px_1fr_1fr] gap-1.5 sm:gap-2">
             {/* COL 1: Photo (compact) */}
-            <div className="space-y-1.5">
-              <div className="h-[130px] sm:h-[150px] overflow-hidden rounded-lg">
+            <div className="space-y-1">
+              <div className="h-[110px] sm:h-[130px] overflow-hidden rounded-lg">
                 <PropertyImageDisplay
                   imageUrl={property.property_image_url}
                   address={property.address}
@@ -137,7 +137,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
             <div className="flex flex-col gap-1.5 min-w-0">
               {/* Address - prominent */}
               <div>
-                <h3 className="text-lg sm:text-xl font-extrabold leading-tight line-clamp-2" data-field="address">
+                <h3 className="text-sm sm:text-base font-extrabold leading-tight line-clamp-2" data-field="address">
                   {property.address}
                 </h3>
                 <p className="text-xs text-muted-foreground font-medium">
