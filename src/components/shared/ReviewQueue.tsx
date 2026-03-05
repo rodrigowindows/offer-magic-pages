@@ -313,17 +313,32 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         .select('comp_data')
         .eq('property_id', pendingApproveProperty.id);
 
-      const validComps = (comps as any[] || []).filter(
-        (c: any) => c.comp_data?.sale_price && c.comp_data?.square_feet && c.comp_data.square_feet > 0
+      // Comps with sale_price (sqft optional - used for ARV if available)
+      const compsWithPrice = (comps as any[] || []).filter(
+        (c: any) => c.comp_data?.sale_price && c.comp_data.sale_price > 0
+      );
+      const compsWithSqft = compsWithPrice.filter(
+        (c: any) => c.comp_data?.square_feet && c.comp_data.square_feet > 0
       );
 
-      if (validComps.length > 0 && pendingApproveProperty.square_feet) {
-        const avgPricePerSqft = validComps.reduce(
-          (sum: number, c: any) => sum + (c.comp_data.sale_price / c.comp_data.square_feet), 0
-        ) / validComps.length;
-        const arv = Math.round(pendingApproveProperty.square_feet * avgPricePerSqft);
-        setCompsARV(arv);
-        setQuickOfferAmount(defaultOffer(arv).toString());
+      if (compsWithPrice.length > 0) {
+        // Calculate avg comp sale price as the base value
+        const avgCompPrice = Math.round(
+          compsWithPrice.reduce((sum: number, c: any) => sum + c.comp_data.sale_price, 0) / compsWithPrice.length
+        );
+
+        // If we have sqft data, also calculate ARV for reference
+        if (compsWithSqft.length > 0 && pendingApproveProperty.square_feet) {
+          const avgPricePerSqft = compsWithSqft.reduce(
+            (sum: number, c: any) => sum + (c.comp_data.sale_price / c.comp_data.square_feet), 0
+          ) / compsWithSqft.length;
+          const arv = Math.round(pendingApproveProperty.square_feet * avgPricePerSqft);
+          setCompsARV(arv);
+        } else {
+          // Use avg comp price as the ARV proxy
+          setCompsARV(avgCompPrice);
+        }
+        setQuickOfferAmount(defaultOffer(avgCompPrice).toString());
       } else {
         setCompsARV(null);
         if (pendingApproveProperty.estimated_value) {

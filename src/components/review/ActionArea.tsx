@@ -234,7 +234,7 @@ export const ActionArea = ({
           {/* Quick percentage buttons */}
           {baseValue && baseValue > 0 && (
             <div className="flex gap-1 flex-wrap">
-              {[60, 65, 70, 75, 80].map(pct => {
+              {[45, 50, 55, 60, 65].map(pct => {
                 const val = Math.round(baseValue * (pct / 100));
                 return (
                   <button

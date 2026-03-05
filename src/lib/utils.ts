@@ -17,10 +17,10 @@ export function formatCurrency(value: number) {
 }
 
 /**
- * Default offer ratio: 70% of estimated value.
+ * Default offer ratio: 55% of estimated/comp value (≈45% discount).
  * Used across the app when no explicit cash_offer_amount is set.
  */
-export const DEFAULT_OFFER_RATIO = 0.7;
+export const DEFAULT_OFFER_RATIO = 0.55;
 
 /**
  * Calculate default cash offer from estimated value.
