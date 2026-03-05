@@ -94,11 +94,11 @@ export const ApiInfoPanel = () => {
     <div className="border rounded-lg bg-card overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-muted/30 transition-colors"
       >
-        <Code className="h-4 w-4 text-violet-500" />
-        <span className="text-sm font-semibold">API para Web Agent</span>
-        <Badge variant="secondary" className="text-[9px] ml-1">v1.0</Badge>
+        <Code className="h-3.5 w-3.5 text-violet-500" />
+        <span className="text-xs font-semibold">API para Web Agent</span>
+        <Badge variant="secondary" className="text-[8px] ml-1">v1.0</Badge>
         <div className="flex-1" />
         {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
