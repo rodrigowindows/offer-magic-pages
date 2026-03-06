@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +64,17 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     ? searchFiltered
     : searchFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
   const currentProperty = filteredProperties[currentIndex];
+
+  // Average of 3 most recent comps' sale prices
+  const avgCompPrice = useMemo(() => {
+    if (currentComps.length === 0) return null;
+    const sorted = [...currentComps].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    const recent3 = sorted.slice(0, 3);
+    const prices = recent3
+      .map(c => c.comp_data?.sale_price)
+      .filter((p): p is number => typeof p === 'number' && p > 0);
+    return prices.length > 0 ? Math.round(prices.reduce((s, p) => s + p, 0) / prices.length) : null;
+  }, [currentComps]);
 
   // ── Data fetching ─────────────────────────────────────────────
 
@@ -553,7 +564,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           <CardContent className="flex flex-col flex-1 p-1 sm:p-1.5 space-y-1 min-h-0">
             {/* Property Card - scrollable if needed */}
             <div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-lg">
-              <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} />
+              <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} avgCompPrice={avgCompPrice} />
 
               {/* Inline comps - collapsed */}
               {currentComps.length > 0 && (

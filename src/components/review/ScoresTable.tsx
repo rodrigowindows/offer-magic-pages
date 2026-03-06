@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 interface ScoresTableProps {
   property: QueueProperty;
   onScoreSaved?: () => void;
+  avgCompPrice?: number | null;
 }
 
 /** Tooltip wrapper for technical terms */
@@ -16,14 +17,14 @@ const Tip = ({ text, tip }: { text: string; tip: string }) => (
   </span>
 );
 
-export const ScoresTable = ({ property, onScoreSaved }: ScoresTableProps) => {
+export const ScoresTable = ({ property, onScoreSaved, avgCompPrice }: ScoresTableProps) => {
   const aiC = getScoreColor(property.ai_score);
   const ldC = getLeadScoreColor(property.lead_score);
   const pricePsf = property.estimated_value && property.square_feet && property.square_feet > 0
     ? Math.round(property.estimated_value / property.square_feet)
     : null;
-  const offerPct = property.cash_offer_amount && property.estimated_value && property.estimated_value > 0
-    ? Math.round((property.cash_offer_amount / property.estimated_value) * 100)
+  const discountPct = property.cash_offer_amount && avgCompPrice && avgCompPrice > 0
+    ? Math.round(((avgCompPrice - property.cash_offer_amount) / avgCompPrice) * 100)
     : null;
 
   // Detect UNINCORPORATED in address
@@ -81,11 +82,22 @@ export const ScoresTable = ({ property, onScoreSaved }: ScoresTableProps) => {
           <span className="text-muted-foreground font-medium w-14 shrink-0">Oferta</span>
           <div className="flex-1 font-bold text-sm" data-field="offer">
             {property.cash_offer_amount ? formatCurrency(property.cash_offer_amount) : '—'}
-            {offerPct != null && (
-              <Badge variant={offerPct <= 70 ? 'default' : 'secondary'} className="ml-1 text-[8px]">{offerPct}%</Badge>
+            {discountPct != null && (
+              <Badge variant={discountPct >= 35 ? 'default' : 'secondary'} className="ml-1 text-[8px]">-{discountPct}%</Badge>
             )}
           </div>
         </div>
+        {/* Avg Comps */}
+        {avgCompPrice != null && avgCompPrice > 0 && (
+          <div className="flex items-center px-2 py-0.5">
+            <span className="text-muted-foreground font-medium w-14 shrink-0">
+              <Tip text="Comps" tip="Média de preço dos 3 comps mais recentes" />
+            </span>
+            <div className="flex-1 text-sm text-muted-foreground" data-field="avg-comps">
+              Avg: <span className="font-bold text-foreground">{formatCurrency(avgCompPrice)}</span>
+            </div>
+          </div>
+        )}
         {/* Sqft */}
         <div className="flex items-center px-2 py-0.5">
           <span className="text-muted-foreground font-medium w-14 shrink-0">Sqft</span>

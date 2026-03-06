@@ -20,6 +20,7 @@ interface PropertyCardProps {
   property: QueueProperty;
   allProperties: QueueProperty[];
   onScoreSaved?: () => void;
+  avgCompPrice?: number | null;
 }
 
 /** Get background color class for the card based on approval status */
@@ -31,7 +32,7 @@ const getStatusBackground = (status: string | null | undefined) => {
   }
 };
 
-export const PropertyCard = ({ property, allProperties, onScoreSaved }: PropertyCardProps) => {
+export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPrice }: PropertyCardProps) => {
   const [activeTab, setActiveTab] = useState<'avaliacao' | 'notas'>('avaliacao');
   const [noteCount, setNoteCount] = useState<number>(0);
 
@@ -230,7 +231,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved }: Property
 
             {/* COL 3: Scores Table */}
             <div>
-              <ScoresTable property={property} onScoreSaved={onScoreSaved} />
+              <ScoresTable property={property} onScoreSaved={onScoreSaved} avgCompPrice={avgCompPrice} />
             </div>
           </div>
         </div>
