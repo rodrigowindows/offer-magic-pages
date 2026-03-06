@@ -18,6 +18,7 @@ interface ApprovedPropertiesExportProps {
     userId?: string;
     tags?: string[];
     searchQuery?: string;
+    batch?: string;
   };
 }
 
@@ -39,6 +40,10 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
 
     if (filters?.tags && filters.tags.length > 0) {
       query = query.contains("tags", filters.tags);
+    }
+
+    if (filters?.batch) {
+      query = query.eq("import_batch", filters.batch);
     }
 
     if (filters?.searchQuery) {
@@ -72,6 +77,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
 
       // Basic headers
       const basicHeaders = [
+        "ID",
         "Address",
         "City",
         "State",
@@ -105,6 +111,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
 
       const rows = properties.map((prop) => {
         const basicData = [
+          prop.id || "",
           prop.address || "",
           prop.city || "",
           prop.state || "",
@@ -197,6 +204,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
 
       // Minimal headers for contact list
       const headers = [
+        "ID",
         "Name",
         "Phone",
         "Email",
@@ -205,6 +213,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
       ];
 
       const rows = properties.map((prop) => [
+        prop.id || "",
         prop.owner_name || "",
         prop.owner_phone || "",
         "",
