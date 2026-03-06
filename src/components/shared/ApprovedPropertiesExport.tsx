@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Loader2, FileText, CheckCircle, ChevronRight } from "lucide-react";
+import { Download, Loader2, FileText, CheckCircle, ChevronRight, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -16,6 +16,19 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 
+/**
+ * Clean address: remove UNINCORPORATED, trailing ZIP, city name suffixes
+ */
+const cleanAddress = (address: string): string => {
+  if (!address) return "";
+  let cleaned = address
+    .replace(/\bUNINCORPORATED\b/gi, "")
+    .replace(/\b\d{5}(-\d{4})?\s*$/, "") // trailing ZIP
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  return cleaned;
+};
+
 interface ApprovedPropertiesExportProps {
   filters?: {
     userId?: string;
@@ -27,6 +40,7 @@ interface ApprovedPropertiesExportProps {
 
 export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportProps) {
   const [exporting, setExporting] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
   const [batches, setBatches] = useState<{ name: string; count: number }[]>([]);
   const { toast } = useToast();
 
@@ -119,7 +133,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
       const headers = ["ID", "Address", "City", "State", "ZIP Code", "Owner Name"];
       const rows = properties.map((p) => [
         p.id || "",
-        p.address || "",
+        cleanAddress(p.address || ""),
         p.city || "",
         p.state || "",
         p.zip_code || "",
@@ -173,7 +187,7 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
       const rows = properties.map((prop) => {
         const basicData = [
           prop.id || "",
-          prop.address || "",
+          cleanAddress(prop.address || ""),
           prop.city || "",
           prop.state || "",
           prop.zip_code || "",
@@ -223,6 +237,49 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
       });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const cleanAddressesInDB = async () => {
+    setCleaning(true);
+    try {
+      // Fetch all properties with UNINCORPORATED in address
+      const { data, error } = await supabase
+        .from("properties")
+        .select("id, address")
+        .ilike("address", "%UNINCORPORATED%");
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        toast({ title: "Tudo limpo", description: "Nenhum endereço com UNINCORPORATED encontrado" });
+        return;
+      }
+
+      let updated = 0;
+      for (const row of data) {
+        const cleaned = cleanAddress(row.address);
+        if (cleaned !== row.address) {
+          const { error: updateError } = await supabase
+            .from("properties")
+            .update({ address: cleaned })
+            .eq("id", row.id);
+          if (!updateError) updated++;
+        }
+      }
+
+      toast({
+        title: "Endereços Limpos",
+        description: `${updated} endereços corrigidos (removido UNINCORPORATED e ZIP)`,
+      });
+    } catch (error) {
+      console.error("Clean error:", error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Falha ao limpar endereços",
+        variant: "destructive",
+      });
+    } finally {
+      setCleaning(false);
     }
   };
 
@@ -284,6 +341,16 @@ export function ApprovedPropertiesExport({ filters }: ApprovedPropertiesExportPr
             Nenhum batch com aprovados
           </DropdownMenuItem>
         )}
+
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={cleanAddressesInDB} disabled={cleaning}>
+          {cleaning ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Wrench className="h-4 w-4 mr-2" />
+          )}
+          Limpar Endereços (UNINCORPORATED)
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
