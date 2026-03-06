@@ -90,40 +90,56 @@ export function SkipTracingImporter() {
 
           for (const row of parsedData.data) {
             try {
+              const rowId = (row as any)["ID"]?.trim();
               const address = row["Input Property Address"]?.trim();
               const city = row["Input Property City"]?.trim();
               const state = row["Input Property State"]?.trim();
               const zipCode = row["Input Property Zip"]?.trim();
 
-              if (!address) {
+              if (!rowId && !address) {
                 stats.skipped++;
                 continue;
               }
 
-              // Find property by address - select only existing fields
-              const { data: properties, error: searchError } = await supabase
-                .from("properties")
-                .select("id, address, city, state, zip_code, owner_name, owner_phone, tags")
-                .ilike("address", `%${address}%`)
-                .ilike("city", `%${city}%`)
-                .eq("state", state)
-                .limit(5);
+              let property: any = null;
 
-              if (searchError) throw searchError;
-
-              if (!properties || properties.length === 0) {
-                stats.skipped++;
-                stats.details.push(`⏭️ Not found: ${address}, ${city}, ${state}`);
-                continue;
+              // Match by ID first (most reliable)
+              if (rowId) {
+                const { data, error: idError } = await supabase
+                  .from("properties")
+                  .select("id, address, city, state, zip_code, owner_name, owner_phone, tags")
+                  .eq("id", rowId)
+                  .single();
+                if (!idError && data) property = data;
               }
 
-              // If multiple matches, try exact match
-              let property = properties[0];
-              if (properties.length > 1) {
-                const exactMatch = properties.find(p =>
-                  p.address.toLowerCase().trim() === address.toLowerCase().trim()
-                );
-                if (exactMatch) property = exactMatch;
+              // Fallback to address matching
+              if (!property && address) {
+                const { data: properties, error: searchError } = await supabase
+                  .from("properties")
+                  .select("id, address, city, state, zip_code, owner_name, owner_phone, tags")
+                  .ilike("address", `%${address}%`)
+                  .ilike("city", `%${city}%`)
+                  .eq("state", state)
+                  .limit(5);
+
+                if (searchError) throw searchError;
+
+                if (properties && properties.length > 0) {
+                  property = properties[0];
+                  if (properties.length > 1) {
+                    const exactMatch = properties.find(p =>
+                      p.address.toLowerCase().trim() === address.toLowerCase().trim()
+                    );
+                    if (exactMatch) property = exactMatch;
+                  }
+                }
+              }
+
+              if (!property) {
+                stats.skipped++;
+                stats.details.push(`⏭️ Not found: ${rowId || address}, ${city || ""}, ${state || ""}`);
+                continue;
               }
 
               stats.matched++;

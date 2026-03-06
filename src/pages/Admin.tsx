@@ -1140,6 +1140,7 @@ const Admin = () => {
                   userId: filterUserId || undefined,
                   tags: selectedTags,
                   searchQuery: searchQuery,
+                  batch: advancedFilters.importBatch?.length === 1 ? advancedFilters.importBatch[0] : undefined,
                 }}
               />
               <DesignModeToggle isMinimal={isMinimal} onToggle={toggleDesignMode} />
