@@ -318,7 +318,12 @@ export const parseOrlandoLeadsCSV = (csvContent: string): OrlandoLead[] => {
         case 'address':
         case 'property_address':
         case 'situs_address':
-          lead.address = value;
+          // Clean address: remove UNINCORPORATED and trailing ZIP codes
+          lead.address = value
+            .replace(/\bUNINCORPORATED\b/gi, '')
+            .replace(/\b\d{5}(-\d{4})?\s*$/, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
           break;
         case 'city':
           lead.city = value || 'Orlando';
