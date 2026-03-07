@@ -191,6 +191,33 @@ export function SkipTracingImporter() {
                 if (bestPhone) updateData.owner_phone = bestPhone;
               }
 
+              // Matched name (individual columns)
+              updateData.matched_first_name = firstName;
+              updateData.matched_last_name = lastName;
+
+              // ResultCode
+              updateData.resultcode = resultCode;
+
+              // Input fields (original data sent to skip trace)
+              updateData.input_first_name = val(row, "Input First Name");
+              updateData.input_last_name = val(row, "Input Last Name");
+              updateData.input_mailing_address = val(row, "Input Mailing Address");
+              updateData.input_mailing_city = val(row, "Input Mailing City");
+              updateData.input_mailing_state = val(row, "Input Mailing State");
+              updateData.input_mailing_zip = val(row, "Input Mailing Zip");
+              updateData.input_property_address = val(row, "Input Property Address");
+              updateData.input_property_city = val(row, "Input Property City");
+              updateData.input_property_state = val(row, "Input Property State");
+              updateData.input_property_zip = val(row, "Input Property Zip");
+
+              // Owner Fix fields (corrected owner info from skip trace)
+              updateData.owner_fix_first_name = val(row, "Owner Fix - First Name");
+              updateData.owner_fix_last_name = val(row, "Owner Fix - Last Name");
+              updateData.owner_fix_mailing_address = val(row, "Owner Fix - Mailing Address");
+              updateData.owner_fix_mailing_city = val(row, "Owner Fix - Mailing City");
+              updateData.owner_fix_mailing_state = val(row, "Owner Fix - Mailing State");
+              updateData.owner_fix_mailing_zip = val(row, "Owner Fix - Mailing Zip");
+
               // Primary person fields
               updateData.age = age;
               updateData.deceased = isDeceased;
@@ -390,6 +417,7 @@ export function SkipTracingImporter() {
               <li>Phone1-7 + tipos, Email1-2, Mailing Address confirmado</li>
               <li>Person2 e Person3 completos (phones, emails, relatives)</li>
               <li>5 relatives por pessoa com phones e tipos</li>
+              <li>Matched First/Last Name, Owner Fix, Input fields, ResultCode</li>
               <li>Tags automaticas: DNC, Deceased</li>
               <li>{updateExisting ? "SOBRESCREVE owner existente" : "Nao sobrescreve owner existente"}</li>
             </ul>
