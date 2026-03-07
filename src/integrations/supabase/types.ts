@@ -2239,6 +2239,7 @@ export type Database = {
         Args: { p_column_name: string; p_table_name: string }
         Returns: boolean
       }
+      execute_sql: { Args: { sql_query: string }; Returns: undefined }
       get_table_columns: {
         Args: { p_table_name: string }
         Returns: {
