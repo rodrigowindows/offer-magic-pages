@@ -133,6 +133,33 @@ def process_row(row, session, headers, update_existing=True):
         if best_phone:
             update_data['owner_phone'] = best_phone
 
+    # Matched name and result code
+    if first_name:
+        update_data['matched_first_name'] = first_name
+    if last_name:
+        update_data['matched_last_name'] = last_name
+    if result_code:
+        update_data['resultcode'] = result_code
+
+    # Input fields
+    input_first = val(row, 'Input First Name')
+    input_last = val(row, 'Input Last Name')
+    if input_first:
+        update_data['input_first_name'] = input_first
+    if input_last:
+        update_data['input_last_name'] = input_last
+    if address:
+        update_data['input_property_address'] = address
+    input_city = val(row, 'Input Property City')
+    if input_city:
+        update_data['input_property_city'] = input_city
+    input_state = val(row, 'Input Property State')
+    if input_state:
+        update_data['input_property_state'] = input_state
+    input_zip = val(row, 'Input Property Zip')
+    if input_zip:
+        update_data['input_property_zip'] = input_zip
+
     # Primary person fields
     if age is not None:
         update_data['age'] = age

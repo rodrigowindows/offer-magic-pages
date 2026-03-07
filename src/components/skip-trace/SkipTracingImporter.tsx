@@ -197,6 +197,22 @@ export function SkipTracingImporter() {
                 if (bestPhone) updateData.owner_phone = bestPhone;
               }
 
+              // Matched name and result code
+              if (firstName) updateData.matched_first_name = firstName;
+              if (lastName) updateData.matched_last_name = lastName;
+              if (resultCode) updateData.resultcode = resultCode;
+
+              // Input fields (what was sent to skip trace)
+              const inputFirstName = val(row, "Input First Name");
+              const inputLastName = val(row, "Input Last Name");
+              if (inputFirstName) updateData.input_first_name = inputFirstName;
+              if (inputLastName) updateData.input_last_name = inputLastName;
+              if (address) updateData.input_property_address = address;
+              if (city) updateData.input_property_city = city;
+              if (state) updateData.input_property_state = state;
+              const inputZip = val(row, "Input Property Zip");
+              if (inputZip) updateData.input_property_zip = inputZip;
+
               // Primary person fields
               updateData.age = age;
               updateData.deceased = isDeceased;
