@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 import { Upload, CheckCircle, XCircle, AlertTriangle, Loader2, Download } from "lucide-react";
 import Papa from "papaparse";
 
@@ -19,6 +20,7 @@ export function SkipTracingImporter() {
   const [file, setFile] = useState<File | null>(null);
   const [processing, setProcessing] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number; lastAddress: string } | null>(null);
   const [results, setResults] = useState<{
     total: number;
     matched: number;
@@ -91,12 +93,16 @@ export function SkipTracingImporter() {
             details: [] as string[],
           };
 
-          for (const row of parsedData.data) {
+          for (let rowIndex = 0; rowIndex < parsedData.data.length; rowIndex++) {
+            const row = parsedData.data[rowIndex];
             try {
               // Match by Custom Field 1 (UUID) first, then ID, then address
               const customField1 = val(row, "Input Custom Field 1");
               const rowId = val(row, "ID");
               const address = val(row, "Input Property Address");
+
+              // Update progress
+              setProgress({ current: rowIndex + 1, total: parsedData.data.length, lastAddress: address || customField1 || `Row ${rowIndex + 1}` });
               const city = val(row, "Input Property City");
               const state = val(row, "Input Property State");
 
@@ -285,11 +291,17 @@ export function SkipTracingImporter() {
                 }
               }
 
-              const { error: updateError } = await supabase
-                .from("properties")
-                .update(cleanUpdate)
-                .eq("id", property.id);
-
+              // Retry logic for resilience
+              let updateError: any = null;
+              for (let attempt = 0; attempt < 3; attempt++) {
+                const { error } = await supabase
+                  .from("properties")
+                  .update(cleanUpdate)
+                  .eq("id", property.id);
+                updateError = error;
+                if (!error) break;
+                if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+              }
               if (updateError) throw updateError;
 
               stats.updated++;
@@ -307,6 +319,7 @@ export function SkipTracingImporter() {
           }
 
           setResults(stats);
+          setProgress(null);
           toast({
             title: "Import Completo",
             description: `${stats.updated} de ${stats.total} propriedades atualizadas`,
@@ -409,6 +422,15 @@ export function SkipTracingImporter() {
             </>
           )}
         </Button>
+
+        {processing && progress && (
+          <div className="space-y-2">
+            <Progress value={(progress.current / progress.total) * 100} className="h-2" />
+            <p className="text-xs text-muted-foreground text-center">
+              {progress.current} / {progress.total} — {progress.lastAddress}
+            </p>
+          </div>
+        )}
 
         {results && (
           <div className="space-y-3 mt-4">
