@@ -1121,7 +1121,6 @@ export type Database = {
           renovation_value: number | null
           resultcode: string | null
           reviewed_by: string | null
-          skip_tracing_data: Json | null
           slug: string
           sms_sent: boolean
           square_feet: number | null
@@ -1474,7 +1473,6 @@ export type Database = {
           renovation_value?: number | null
           resultcode?: string | null
           reviewed_by?: string | null
-          skip_tracing_data?: Json | null
           slug: string
           sms_sent?: boolean
           square_feet?: number | null
@@ -1827,7 +1825,6 @@ export type Database = {
           renovation_value?: number | null
           resultcode?: string | null
           reviewed_by?: string | null
-          skip_tracing_data?: Json | null
           slug?: string
           sms_sent?: boolean
           square_feet?: number | null
