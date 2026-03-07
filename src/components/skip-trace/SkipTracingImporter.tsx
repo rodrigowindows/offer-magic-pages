@@ -12,31 +12,6 @@ import { Upload, CheckCircle, XCircle, AlertTriangle, Loader2, Download } from "
 import Papa from "papaparse";
 
 interface SkipTracingRow {
-  "Input Property Address": string;
-  "Input Property City": string;
-  "Input Property State": string;
-  "Input Property Zip": string;
-  "Matched First Name": string;
-  "Matched Last Name": string;
-  "DNC/Litigator Scrub": string;
-  Age: string;
-  Deceased: string;
-  Phone1: string;
-  "Phone1 Type": string;
-  Phone2: string;
-  "Phone2 Type": string;
-  Phone3: string;
-  "Phone3 Type": string;
-  Phone4: string;
-  "Phone4 Type": string;
-  Phone5: string;
-  "Phone5 Type": string;
-  Phone6: string;
-  "Phone6 Type": string;
-  Phone7: string;
-  "Phone7 Type": string;
-  Email1: string;
-  Email2: string;
   [key: string]: string;
 }
 
@@ -55,15 +30,43 @@ export function SkipTracingImporter() {
   const { toast } = useToast();
 
   const getBestPhone = (phones: Array<{ number: string; type: string }>) => {
-    // Priority: Mobile > Residential > OtherPhone
     const mobile = phones.find(p => p.type === "Mobile" && p.number);
     if (mobile) return mobile.number;
-
     const residential = phones.find(p => p.type === "Residential" && p.number);
     if (residential) return residential.number;
-
     const other = phones.find(p => p.number);
     return other?.number || null;
+  };
+
+  const val = (row: SkipTracingRow, key: string) => row[key]?.trim() || null;
+  const valInt = (row: SkipTracingRow, key: string) => {
+    const v = row[key]?.trim();
+    return v ? parseInt(v) || null : null;
+  };
+
+  const extractPersonPhones = (row: SkipTracingRow, prefix: string) => {
+    const data: Record<string, string | null> = {};
+    for (let i = 1; i <= 7; i++) {
+      const phone = val(row, `${prefix}Phone${i}`);
+      const type = val(row, `${prefix}Phone${i} Type`);
+      const dbPrefix = prefix.toLowerCase().replace(/ /g, "_").replace("person2 ", "person2_").replace("person3 ", "person3_");
+      data[`${dbPrefix}phone${i}`] = phone;
+      data[`${dbPrefix}phone${i}_type`] = type;
+    }
+    return data;
+  };
+
+  const extractRelativeColumns = (row: SkipTracingRow, prefix: string, dbPrefix: string) => {
+    const data: Record<string, string | number | null> = {};
+    for (let i = 1; i <= 5; i++) {
+      data[`${dbPrefix}relative${i}_name`] = val(row, `${prefix}Relative${i} Name`);
+      data[`${dbPrefix}relative${i}_age`] = valInt(row, `${prefix}Relative${i} Age`);
+      for (let j = 1; j <= 5; j++) {
+        data[`${dbPrefix}relative${i}_phone${j}`] = val(row, `${prefix}Relative${i} Phone${j}`);
+        data[`${dbPrefix}relative${i}_phone${j}_type`] = val(row, `${prefix}Relative${i} Phone${j} Type`);
+      }
+    }
+    return data;
   };
 
   const processFile = async () => {
@@ -90,37 +93,44 @@ export function SkipTracingImporter() {
 
           for (const row of parsedData.data) {
             try {
-              const rowId = (row as any)["ID"]?.trim();
-              const address = row["Input Property Address"]?.trim();
-              const city = row["Input Property City"]?.trim();
-              const state = row["Input Property State"]?.trim();
-              const zipCode = row["Input Property Zip"]?.trim();
+              // Match by Custom Field 1 (UUID) first, then ID, then address
+              const customField1 = val(row, "Input Custom Field 1");
+              const rowId = val(row, "ID");
+              const address = val(row, "Input Property Address");
+              const city = val(row, "Input Property City");
+              const state = val(row, "Input Property State");
 
-              if (!rowId && !address) {
+              const matchId = customField1 || rowId;
+
+              if (!matchId && !address) {
                 stats.skipped++;
                 continue;
               }
 
+              // Check ResultCode - skip if no result
+              const resultCode = val(row, "ResultCode");
+
               let property: any = null;
 
-              // Match by ID first (most reliable)
-              if (rowId) {
+              // Match by ID (UUID)
+              if (matchId) {
                 const { data, error: idError } = await supabase
                   .from("properties")
                   .select("id, address, city, state, zip_code, owner_name, owner_phone, tags")
-                  .eq("id", rowId)
+                  .eq("id", matchId)
                   .single();
                 if (!idError && data) property = data;
               }
 
               // Fallback to address matching
               if (!property && address) {
+                const cleanAddr = address.replace(/\bUNINCORPORATED\b/gi, "").replace(/\b\d{5}(-\d{4})?\s*$/, "").replace(/\s{2,}/g, " ").trim();
                 const { data: properties, error: searchError } = await supabase
                   .from("properties")
                   .select("id, address, city, state, zip_code, owner_name, owner_phone, tags")
-                  .ilike("address", `%${address}%`)
-                  .ilike("city", `%${city}%`)
-                  .eq("state", state)
+                  .ilike("address", `%${cleanAddr}%`)
+                  .ilike("city", `%${city || ""}%`)
+                  .eq("state", state || "FL")
                   .limit(5);
 
                 if (searchError) throw searchError;
@@ -129,7 +139,7 @@ export function SkipTracingImporter() {
                   property = properties[0];
                   if (properties.length > 1) {
                     const exactMatch = properties.find(p =>
-                      p.address.toLowerCase().trim() === address.toLowerCase().trim()
+                      p.address.toLowerCase().trim() === cleanAddr.toLowerCase()
                     );
                     if (exactMatch) property = exactMatch;
                   }
@@ -138,154 +148,189 @@ export function SkipTracingImporter() {
 
               if (!property) {
                 stats.skipped++;
-                stats.details.push(`⏭️ Not found: ${rowId || address}, ${city || ""}, ${state || ""}`);
+                stats.details.push(`Skip: ${matchId || address} - not found`);
                 continue;
               }
 
               stats.matched++;
 
-              // Extract skip tracing data
-              const firstName = row["Matched First Name"]?.trim();
-              const lastName = row["Matched Last Name"]?.trim();
-              const isDNC = row["DNC/Litigator Scrub"] === "DNC" || row["DNC/Litigator Scrub"] === "Yes";
-              const isDeceased = row["Deceased"] === "Y";
-              const age = row["Age"] ? parseInt(row["Age"]) : null;
+              // If no result from skip trace, mark as skipped but log
+              if (!resultCode || resultCode === "NR") {
+                stats.details.push(`No result: ${address || matchId}`);
+                // Still update to mark that skip trace was attempted
+              }
 
-              // Collect all phones
+              // === PRIMARY PERSON (Person 1) ===
+              const firstName = val(row, "Matched First Name");
+              const lastName = val(row, "Matched Last Name");
+              const isDNC = val(row, "DNC/Litigator Scrub") === "DNC" || val(row, "DNC/Litigator Scrub") === "Yes";
+              const isDeceased = val(row, "Deceased") === "Y";
+              const age = valInt(row, "Age");
+
               const phones = [];
               for (let i = 1; i <= 7; i++) {
-                const phone = row[`Phone${i}`]?.trim();
-                const type = row[`Phone${i} Type`]?.trim();
-                if (phone) {
-                  phones.push({ number: phone, type: type || "Unknown" });
-                }
+                const phone = val(row, `Phone${i}`);
+                const type = val(row, `Phone${i} Type`);
+                if (phone) phones.push({ number: phone, type: type || "Unknown" });
               }
 
               const bestPhone = getBestPhone(phones);
-              const email1 = row["Email1"]?.trim();
-              const email2 = row["Email2"]?.trim();
+              const email1 = val(row, "Email1");
+              const email2 = val(row, "Email2");
 
-              // Build skip tracing metadata
-              const skipTracingData = {
-                firstName,
-                lastName,
-                age,
-                isDNC,
-                isDeceased,
-                phones: phones.map(p => ({ number: p.number, type: p.type })),
-                emails: [email1, email2].filter(Boolean),
-                relatives: extractRelatives(row),
-                updatedAt: new Date().toISOString(),
-              };
+              // Build update with ALL individual columns
+              const updateData: Record<string, any> = {};
 
-              // Build update data
-              const updateData: any = {
-                skip_tracing_data: skipTracingData,
-              };
-
-              // Update owner fields based on checkbox
+              // Owner name & phone
               if (updateExisting || !property.owner_name) {
                 if (firstName && lastName) {
                   updateData.owner_name = `${firstName} ${lastName}`;
                 }
               }
-
               if (updateExisting || !property.owner_phone) {
-                if (bestPhone) {
-                  updateData.owner_phone = bestPhone;
-                }
+                if (bestPhone) updateData.owner_phone = bestPhone;
               }
 
-              // Build tags
+              // Primary person fields
+              updateData.age = age;
+              updateData.deceased = isDeceased;
+              updateData.dnc_flag = isDNC;
+              updateData.dnc_litigator_scrub = val(row, "DNC/Litigator Scrub");
+              updateData.email1 = email1;
+              updateData.email2 = email2;
+
+              // Primary phones 1-7
+              for (let i = 1; i <= 7; i++) {
+                updateData[`phone${i}`] = val(row, `Phone${i}`);
+                updateData[`phone${i}_type`] = val(row, `Phone${i} Type`);
+              }
+
+              // Primary confirmed mailing address
+              updateData.confirmed_mailing_address = val(row, "Confirmed Mailing Address");
+              updateData.confirmed_mailing_city = val(row, "Confirmed Mailing City");
+              updateData.confirmed_mailing_state = val(row, "Confirmed Mailing State");
+              updateData.confirmed_mailing_zip = val(row, "Confirmed Mailing Zip");
+
+              // Primary relatives 1-5
+              Object.assign(updateData, extractRelativeColumns(row, "", ""));
+
+              // === PERSON 2 ===
+              const p2First = val(row, "Person2 First Name");
+              const p2Last = val(row, "Person2 Last Name");
+              if (p2First || p2Last) {
+                updateData.person2_first_name = p2First;
+                updateData.person2_last_name = p2Last;
+                updateData.person2_age = valInt(row, "Person2 Age");
+                updateData.person2_deceased = val(row, "Person2 Deceased") === "Y";
+                updateData.person2_email1 = val(row, "Person2 Email1");
+                updateData.person2_email2 = val(row, "Person2 Email2");
+                updateData.person2_confirmed_mailing_address = val(row, "Person2 Confirmed Mailing Address");
+                updateData.person2_confirmed_mailing_city = val(row, "Person2 Confirmed Mailing City");
+                updateData.person2_confirmed_mailing_state = val(row, "Person2 Confirmed Mailing State");
+                updateData.person2_confirmed_mailing_zip = val(row, "Person2 Confirmed Mailing Zip");
+
+                // Person2 phones 1-7
+                for (let i = 1; i <= 7; i++) {
+                  updateData[`person2_phone${i}`] = val(row, `Person2 Phone${i}`);
+                  updateData[`person2_phone${i}_type`] = val(row, `Person2 Phone${i} Type`);
+                }
+
+                // Person2 relatives
+                Object.assign(updateData, extractRelativeColumns(row, "Person2 ", "person2_"));
+              }
+
+              // === PERSON 3 ===
+              const p3First = val(row, "Person3 First Name");
+              const p3Last = val(row, "Person3 Last Name");
+              if (p3First || p3Last) {
+                updateData.person3_first_name = p3First;
+                updateData.person3_last_name = p3Last;
+                updateData.person3_age = valInt(row, "Person3 Age");
+                updateData.person3_deceased = val(row, "Person3 Deceased") === "Y";
+                updateData.person3_email1 = val(row, "Person3 Email1");
+                updateData.person3_email2 = val(row, "Person3 Email2");
+                updateData.person3_confirmed_mailing_address = val(row, "Person3 Confirmed Mailing Address");
+                updateData.person3_confirmed_mailing_city = val(row, "Person3 Confirmed Mailing City");
+                updateData.person3_confirmed_mailing_state = val(row, "Person3 Confirmed Mailing State");
+                updateData.person3_confirmed_mailing_zip = val(row, "Person3 Confirmed Mailing Zip");
+
+                for (let i = 1; i <= 7; i++) {
+                  updateData[`person3_phone${i}`] = val(row, `Person3 Phone${i}`);
+                  updateData[`person3_phone${i}_type`] = val(row, `Person3 Phone${i} Type`);
+                }
+
+                Object.assign(updateData, extractRelativeColumns(row, "Person3 ", "person3_"));
+              }
+
+              // Tags: DNC / Deceased
               const currentTags = Array.isArray(property.tags) ? property.tags : [];
               const newTags = [...currentTags];
+              if (isDNC && !newTags.includes("DNC")) newTags.push("DNC");
+              if (isDeceased && !newTags.includes("Deceased")) newTags.push("Deceased");
+              if (newTags.length > currentTags.length) updateData.tags = newTags;
 
-              if (isDNC && !newTags.includes("DNC")) {
-                newTags.push("DNC");
-              }
+              // Skip tracing metadata (JSON backup)
+              updateData.skip_tracing_data = {
+                firstName, lastName, age, isDNC, isDeceased, resultCode,
+                phones: phones.map(p => ({ number: p.number, type: p.type })),
+                emails: [email1, email2].filter(Boolean),
+                updatedAt: new Date().toISOString(),
+              };
 
-              if (isDeceased && !newTags.includes("Deceased")) {
-                newTags.push("Deceased");
-              }
-
-              if (newTags.length > currentTags.length) {
-                updateData.tags = newTags;
+              // Remove null/undefined values to avoid overwriting with empty
+              const cleanUpdate: Record<string, any> = {};
+              for (const [key, value] of Object.entries(updateData)) {
+                if (value !== null && value !== undefined) {
+                  cleanUpdate[key] = value;
+                }
               }
 
               const { error: updateError } = await supabase
                 .from("properties")
-                .update(updateData)
+                .update(cleanUpdate)
                 .eq("id", property.id);
 
               if (updateError) throw updateError;
 
               stats.updated++;
-              const tags = [];
-              if (isDNC) tags.push("DNC");
-              if (isDeceased) tags.push("Deceased");
+              const flags = [];
+              if (isDNC) flags.push("DNC");
+              if (isDeceased) flags.push("DEC");
               stats.details.push(
-                `✅ ${address} → ${firstName} ${lastName} | ${phones.length} phones | ${tags.join(", ")}`
+                `OK: ${address || matchId} -> ${firstName} ${lastName} | ${phones.length}ph ${flags.join(" ")}`
               );
 
             } catch (error: any) {
               stats.errors++;
-              stats.details.push(`❌ ${row["Input Property Address"]} - ${error.message}`);
+              stats.details.push(`ERR: ${val(row, "Input Property Address") || val(row, "Input Custom Field 1")} - ${error.message}`);
             }
           }
 
           setResults(stats);
           toast({
-            title: "Import Complete",
-            description: `Updated ${stats.updated} of ${stats.total} properties`,
+            title: "Import Completo",
+            description: `${stats.updated} de ${stats.total} propriedades atualizadas`,
           });
           setProcessing(false);
         },
         error: (error) => {
-          toast({
-            title: "Parse Error",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Erro de Parse", description: error.message, variant: "destructive" });
           setProcessing(false);
         },
       });
     } catch (error: any) {
-      toast({
-        title: "Import Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Import Falhou", description: error.message, variant: "destructive" });
       setProcessing(false);
     }
   };
 
-  const extractRelatives = (row: SkipTracingRow) => {
-    const relatives = [];
-    for (let i = 1; i <= 5; i++) {
-      const name = row[`Relative${i} Name`]?.trim();
-      const age = row[`Relative${i} Age`]?.trim();
-      if (name) {
-        const phones = [];
-        for (let j = 1; j <= 5; j++) {
-          const phone = row[`Relative${i} Phone${j}`]?.trim();
-          const type = row[`Relative${i} Phone${j} Type`]?.trim();
-          if (phone) phones.push({ number: phone, type });
-        }
-        relatives.push({ name, age: age ? parseInt(age) : null, phones });
-      }
-    }
-    return relatives;
-  };
-
   const exportResults = () => {
     if (!results) return;
-
     const csvContent = [
-      "Status,Address,Details",
+      "Status,Details",
       ...results.details.map(detail => {
-        const status = detail.startsWith("✅") ? "Success" : detail.startsWith("⏭️") ? "Skipped" : "Error";
-        const cleanDetail = detail.replace(/^(✅|❌|⏭️)\s*/, "");
-        return `"${status}","${cleanDetail.split(" → ")[0]}","${cleanDetail}"`;
+        const status = detail.startsWith("OK") ? "Success" : detail.startsWith("Skip") ? "Skipped" : "Error";
+        return `"${status}","${detail.replace(/"/g, '""')}"`;
       })
     ].join("\n");
 
@@ -293,7 +338,7 @@ export function SkipTracingImporter() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `skip-tracing-results-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `skip-trace-results-${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -303,15 +348,15 @@ export function SkipTracingImporter() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Upload className="w-5 h-5" />
-          Skip Tracing Importer
+          Skip Trace Importer
         </CardTitle>
         <CardDescription>
-          Import skip tracing data to update property owner information
+          Importar dados de skip trace (BatchSkipTracing) - match por UUID no Custom Field 1
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="skiptracing-file">CSV File</Label>
+          <Label htmlFor="skiptracing-file">Arquivo CSV</Label>
           <Input
             id="skiptracing-file"
             type="file"
@@ -320,7 +365,7 @@ export function SkipTracingImporter() {
             disabled={processing}
           />
           <p className="text-xs text-muted-foreground">
-            Expected format: PropStream/BatchSkipTracing export with property address
+            Format: BatchSkipTracing export com "Input Custom Field 1" = property UUID
           </p>
         </div>
 
@@ -331,42 +376,36 @@ export function SkipTracingImporter() {
             onCheckedChange={(checked) => setUpdateExisting(checked as boolean)}
             disabled={processing}
           />
-          <label
-            htmlFor="update-existing"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Overwrite existing owner data
+          <label htmlFor="update-existing" className="text-sm font-medium leading-none">
+            Sobrescrever owner_name e owner_phone existentes
           </label>
         </div>
 
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            <strong>How it works:</strong>
+            <strong>O que salva:</strong>
             <ul className="list-disc list-inside mt-1 space-y-1">
-              <li>Matches properties by address (fuzzy matching)</li>
-              <li>Updates owner name & phone (mobile preferred)</li>
-              <li>Saves ALL data (emails, relatives, ages) in JSON</li>
-              <li>Auto-tags "DNC" and "Deceased" properties</li>
-              <li>{updateExisting ? "⚠️ WILL overwrite existing data" : "Won't overwrite if data exists"}</li>
+              <li>Match por UUID (Custom Field 1) ou por endereco</li>
+              <li>Phone1-7 + tipos, Email1-2, Mailing Address confirmado</li>
+              <li>Person2 e Person3 completos (phones, emails, relatives)</li>
+              <li>5 relatives por pessoa com phones e tipos</li>
+              <li>Tags automaticas: DNC, Deceased</li>
+              <li>{updateExisting ? "SOBRESCREVE owner existente" : "Nao sobrescreve owner existente"}</li>
             </ul>
           </AlertDescription>
         </Alert>
 
-        <Button
-          onClick={processFile}
-          disabled={!file || processing}
-          className="w-full"
-        >
+        <Button onClick={processFile} disabled={!file || processing} className="w-full">
           {processing ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Processing {results?.matched || 0} / {results?.total || 0}...
+              Processando...
             </>
           ) : (
             <>
-              <Upload className="w-4 w-4 mr-2" />
-              Import Skip Tracing Data
+              <Upload className="w-4 h-4 mr-2" />
+              Importar Skip Trace
             </>
           )}
         </Button>
@@ -374,41 +413,26 @@ export function SkipTracingImporter() {
         {results && (
           <div className="space-y-3 mt-4">
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-              <Badge variant="outline" className="justify-center">
-                Total: {results.total}
-              </Badge>
+              <Badge variant="outline" className="justify-center">Total: {results.total}</Badge>
               <Badge variant="default" className="bg-blue-600 justify-center">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Matched: {results.matched}
+                <CheckCircle className="w-3 h-3 mr-1" /> Match: {results.matched}
               </Badge>
               <Badge variant="default" className="bg-green-600 justify-center">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Updated: {results.updated}
+                <CheckCircle className="w-3 h-3 mr-1" /> Atualizado: {results.updated}
               </Badge>
-              <Badge variant="secondary" className="justify-center">
-                Skipped: {results.skipped}
-              </Badge>
+              <Badge variant="secondary" className="justify-center">Skip: {results.skipped}</Badge>
               <Badge variant="destructive" className="justify-center">
-                <XCircle className="w-3 h-3 mr-1" />
-                Errors: {results.errors}
+                <XCircle className="w-3 h-3 mr-1" /> Erros: {results.errors}
               </Badge>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportResults}
-                className="flex-1"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export Results
-              </Button>
-            </div>
+            <Button variant="outline" size="sm" onClick={exportResults} className="w-full">
+              <Download className="w-4 h-4 mr-2" /> Exportar Resultados
+            </Button>
 
             <details className="text-xs">
               <summary className="cursor-pointer font-semibold">
-                View Details ({results.details.length} entries)
+                Detalhes ({results.details.length} entradas)
               </summary>
               <div className="mt-2 max-h-96 overflow-y-auto bg-muted p-3 rounded space-y-1 font-mono">
                 {results.details.map((detail, i) => (
