@@ -171,7 +171,7 @@ const Admin = () => {
         <AdminHeader
           title={headerTitle} totalCount={admin.properties.length} isMinimal={isMinimal}
           onToggleDesignMode={toggleDesignMode} onLogout={handleLogout}
-          onBulkImport={() => dialogs.setIsBulkImportDialogOpen(true)} onGeminiSettings={() => dialogs.setIsGeminiAPIKeyDialogOpen(true)}
+          onBulkImport={() => dialogs.setIsBulkImportDialogOpen(true)}
           onMarketingSettings={() => dialogs.setIsMarketingSettingsOpen(true)}
           exportFilters={{ userId: admin.filters.filterUserId || undefined, tags: admin.filters.selectedTags, searchQuery: admin.filters.searchQuery, batch: admin.filters.advancedFilters.importBatch?.length === 1 ? admin.filters.advancedFilters.importBatch[0] : undefined }}
         />
