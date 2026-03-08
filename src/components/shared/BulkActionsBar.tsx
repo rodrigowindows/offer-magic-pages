@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, QrCode, Trash2, FileText, Sparkles, Rocket, Play, CheckCircle2 } from "lucide-react";
+import { X, QrCode, Trash2, FileText, Sparkles, Rocket, Play, CheckCircle2, Brain } from "lucide-react";
 import { LeadStatusSelect } from "../lead/LeadStatusSelect";
 import { LeadStatus } from "../lead/LeadStatusBadge";
+import { AILeadSummary } from "../ai/AILeadSummary";
 import { useState } from "react";
 
 interface BulkActionsBarProps {
   selectedCount: number;
+  selectedPropertyIds?: string[];
   onClearSelection: () => void;
   onBulkStatusChange: (status: LeadStatus) => void;
   onBulkDelete: () => void;
