@@ -254,7 +254,8 @@ const Admin = () => {
             selectedPropertyForComparison={dialogs.selectedPropertyForComparison} setSelectedPropertyForComparison={dialogs.setSelectedPropertyForComparison}
           />
 
-          {/* Removed duplicate BulkImportDialog/GeminiAPIKeyDialog — they're in AdminDialogsContainer */}
+          <BulkImportDialog open={dialogs.isBulkImportDialogOpen} onOpenChange={dialogs.setIsBulkImportDialogOpen} onImportComplete={admin.fetchProperties} />
+          <GeminiAPIKeyDialog open={dialogs.isGeminiAPIKeyDialogOpen} onOpenChange={dialogs.setIsGeminiAPIKeyDialogOpen} />
         </main>
 
         <BulkActionsBar
