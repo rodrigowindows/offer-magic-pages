@@ -4,6 +4,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { handleAIResponseError, withAILoading } from '@/lib/aiErrorHandler';
 
 interface AIScoreResult {
   score: number;
@@ -16,8 +17,7 @@ export const useAIScore = () => {
   const { toast } = useToast();
 
   const scoreProperty = useCallback(async (property: Record<string, any>): Promise<AIScoreResult | null> => {
-    setLoading(true);
-    try {
+    return withAILoading(setLoading, 'AI Score', toast, async () => {
       const { data, error } = await supabase.functions.invoke('ai-score-property', {
         body: {
           property: {
@@ -47,16 +47,7 @@ export const useAIScore = () => {
       });
 
       if (error) throw error;
-      if (data?.error) {
-        if (data.error.includes('Rate limit')) {
-          toast({ title: '⏳ Rate limit', description: 'Aguarde um momento e tente novamente.', variant: 'destructive' });
-        } else if (data.error.includes('credits')) {
-          toast({ title: '💳 Créditos', description: 'Créditos de IA esgotados.', variant: 'destructive' });
-        } else {
-          throw new Error(data.error);
-        }
-        return null;
-      }
+      if (handleAIResponseError(data?.error, { toast, context: 'AI Score' })) return null;
 
       // Save score to database
       await supabase.from('properties').update({
@@ -65,12 +56,7 @@ export const useAIScore = () => {
       } as any).eq('id', property.id);
 
       return data as AIScoreResult;
-    } catch (err: any) {
-      toast({ title: 'Erro AI Score', description: err.message, variant: 'destructive' });
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    });
   }, [toast]);
 
   return { scoreProperty, loading };
