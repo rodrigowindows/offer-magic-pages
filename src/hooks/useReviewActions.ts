@@ -192,6 +192,14 @@ export const useReviewActions = ({
         title: "Aprovado!",
         description: `${pendingApproveProperty.address}${offerValue ? ` - Oferta: ${formatCurrency(offerValue)}` : ''}`,
       });
+
+      onActionComplete?.(pendingApproveProperty.id, pendingApproveProperty.address, 'approved', {
+        status: pendingApproveProperty.approval_status || null,
+        offer: pendingApproveProperty.cash_offer_amount,
+        rejectionReason: pendingApproveProperty.rejection_reason || null,
+        rejectionNotes: pendingApproveProperty.rejection_notes || null,
+      });
+
       await onAdvance();
       resetActionState();
     } catch (error: any) {
