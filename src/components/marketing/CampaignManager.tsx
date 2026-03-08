@@ -501,7 +501,7 @@ export const CampaignManager = () => {
 
     // Aggregate all skiptrace phone columns
     const allPhones: string[] = [];
-    const phoneCols = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7'];
+    const phoneCols = ['phone1', 'phone2'];
     for (const col of phoneCols) {
       const val = normalizeContactValue(prop[col]);
       if (val) allPhones.push(val);
