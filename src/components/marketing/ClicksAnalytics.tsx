@@ -1,244 +1,21 @@
 /**
  * Clicks Analytics Dashboard
- * Mostra métricas e análises de cliques nas páginas de propriedades
+ * Refactored: data logic in useClicksAnalytics hook, UI split into sub-components
  */
-
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { supabase } from '@/integrations/supabase/client';
-import {
-  BarChart3,
-  TrendingUp,
-  MousePointerClick,
-  Calendar,
-  RefreshCw,
-  Mail,
-  MessageSquare,
-  Phone,
-  ExternalLink,
-  Copy,
-  Filter,
-  Clock,
-} from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface ClickAnalytic {
-  id: string;
-  property_id: string | null;
-  event_type: string;
-  source: string;
-  referrer: string | null;
-  user_agent: string | null;
-  created_at: string;
-  device_type?: string | null;
-  ip_address?: string | null;
-  city?: string | null;
-  country?: string | null;
-  property_address?: string | null;
-  contact_name?: string | null;
-  contact_email?: string | null;
-  contact_phone?: string | null;
-}
-
-interface ClickMetrics {
-  total: number;
-  bySource: Record<string, number>;
-  byCampaign: Record<string, number>;
-  byDate: Record<string, number>;
-  recentClicks: ClickAnalytic[];
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BarChart3, TrendingUp, MousePointerClick, Calendar, RefreshCw, ExternalLink, Filter } from 'lucide-react';
+import { useClicksAnalytics, getSourceIcon, getSourceColor } from '@/hooks/useClicksAnalytics';
+import { RecentClicksList } from './clicks/RecentClicksList';
 
 export const ClicksAnalytics = () => {
-  const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState<ClickMetrics>({
-    total: 0,
-    bySource: {},
-    byCampaign: {},
-    byDate: {},
-    recentClicks: [],
-  });
   const [dateRange, setDateRange] = useState<'7' | '30' | '90' | 'all'>('30');
-  const [sourceFilter, setSourceFilter] = useState<string>('all');
-  const { toast } = useToast();
+  const [sourceFilter, setSourceFilter] = useState('all');
+  const { loading, metrics, refresh } = useClicksAnalytics(dateRange, sourceFilter);
 
-  useEffect(() => {
-    fetchClicksData();
-  }, [dateRange, sourceFilter]);
-
-  const fetchClicksData = async () => {
-    setLoading(true);
-    try {
-      
-
-      // Calculate date filter
-      let dateFilter: Date | null = null;
-      if (dateRange !== 'all') {
-        dateFilter = new Date();
-        dateFilter.setDate(dateFilter.getDate() - parseInt(dateRange));
-      }
-
-      // Fetch analytics data with property and contact info
-      let query = supabase
-        .from('property_analytics')
-        .select(`
-          *,
-          properties (
-            address,
-            city,
-            state,
-            zip_code,
-            owner_name,
-            phone1,
-            email1,
-            matched_first_name,
-            matched_last_name
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (dateFilter) {
-        query = query.gte('created_at', dateFilter.toISOString());
-      }
-
-      // Apply source filter using the source column
-      if (sourceFilter !== 'all') {
-        query = query.eq('source', sourceFilter);
-      }
-
-      const { data, error } = await query.limit(1000);
-
-      if (error) {
-        console.error('❌ [ClicksAnalytics] Error fetching data:', error);
-        throw error;
-      }
-
-
-      // Process metrics
-      const clicks = data || [];
-
-      const bySource: Record<string, number> = {};
-      const byCampaign: Record<string, number> = {};
-      const byDate: Record<string, number> = {};
-
-      clicks.forEach((click) => {
-        // Count by source (use the source column)
-        const source = (click as any).source || 'direct';
-        bySource[source] = (bySource[source] || 0) + 1;
-
-        // Count by event_type (campaign_name column doesn't exist)
-        const campaign = click.event_type || 'page_view';
-        byCampaign[campaign] = (byCampaign[campaign] || 0) + 1;
-
-        // Count by date (YYYY-MM-DD)
-        const date = new Date(click.created_at || '').toISOString().split('T')[0];
-        byDate[date] = (byDate[date] || 0) + 1;
-      });
-
-      // Map clicks to ClickAnalytic type
-      const mappedClicks: ClickAnalytic[] = clicks.map((c) => {
-        const prop = (c as any).properties;
-
-        // Use contact info from property data
-        const contactName = prop?.owner_name || (prop?.matched_first_name && prop?.matched_last_name 
-          ? `${prop.matched_first_name} ${prop.matched_last_name}` 
-          : null);
-        const contactEmail = prop?.email1 || null;
-        const contactPhone = prop?.phone1 || null;
-
-        return {
-          id: c.id,
-          property_id: c.property_id,
-          event_type: c.event_type,
-          source: (c as any).source || 'direct',
-          referrer: c.referrer,
-          user_agent: c.user_agent,
-          created_at: c.created_at || '',
-          device_type: c.device_type,
-          ip_address: c.ip_address,
-          city: c.city,
-          country: c.country,
-          property_address: prop ? `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}` : null,
-          contact_name: contactName,
-          contact_email: contactEmail,
-          contact_phone: contactPhone,
-        };
-      });
-
-
-      setMetrics({
-        total: clicks.length,
-        bySource,
-        byCampaign,
-        byDate,
-        recentClicks: mappedClicks.slice(0, 20),
-      });
-    } catch (error) {
-      console.error('❌ [ClicksAnalytics] Fatal error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getSourceIcon = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'sms':
-        return MessageSquare;
-      case 'email':
-      case 'email-qr':
-        return Mail;
-      case 'call':
-        return Phone;
-      case 'carta':
-      case 'letter':
-        return Mail; // Use Mail icon for letters too
-      default:
-        return MousePointerClick;
-    }
-  };
-
-  const getSourceColor = (source: string) => {
-    switch (source.toLowerCase()) {
-      case 'sms':
-        return 'text-blue-600';
-      case 'email':
-      case 'email-qr':
-        return 'text-green-600';
-      case 'call':
-        return 'text-purple-600';
-      case 'carta':
-      case 'letter':
-        return 'text-orange-600';
-      default:
-        return 'text-gray-600';
-    }
-  };
-
-  // Calculate time difference helper
-  const getTimeAgo = (createdAt: string) => {
-    const now = new Date();
-    const clickTime = new Date(createdAt);
-    const diffMs = now.getTime() - clickTime.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return { text: 'Just now', color: 'bg-green-500' };
-    if (diffMins < 60) return { text: `${diffMins} min ago`, color: diffMins < 30 ? 'bg-green-500' : 'bg-yellow-500' };
-    if (diffHours < 24) return { text: `${diffHours}h ago`, color: diffHours < 2 ? 'bg-yellow-500' : 'bg-orange-500' };
-    if (diffDays < 7) return { text: `${diffDays}d ago`, color: 'bg-gray-500' };
-    return { text: `${diffDays}d ago`, color: 'bg-gray-400' };
-  };
-
-  // Calculate conversion rates and trends
   const topSource = Object.entries(metrics.bySource).sort((a, b) => b[1] - a[1])[0];
   const topCampaign = Object.entries(metrics.byCampaign).sort((a, b) => b[1] - a[1])[0];
 
@@ -248,18 +25,13 @@ export const ClicksAnalytics = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Clicks Analytics</h2>
-          <p className="text-sm text-muted-foreground">
-            Track and analyze property page clicks from your campaigns
-          </p>
+          <p className="text-sm text-muted-foreground">Track and analyze property page clicks from your campaigns</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={sourceFilter} onValueChange={setSourceFilter}>
-            <SelectTrigger className="w-[160px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
+            <SelectTrigger className="w-[160px]"><Filter className="w-4 h-4 mr-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
-            <SelectItem value="all">All Sources</SelectItem>
+              <SelectItem value="all">All Sources</SelectItem>
               <SelectItem value="email">Email Only</SelectItem>
               <SelectItem value="sms">SMS Only</SelectItem>
               <SelectItem value="carta">Carta Only</SelectItem>
@@ -268,10 +40,7 @@ export const ClicksAnalytics = () => {
             </SelectContent>
           </Select>
           <Select value={dateRange} onValueChange={(v: any) => setDateRange(v)}>
-            <SelectTrigger className="w-[180px]">
-              <Calendar className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
+            <SelectTrigger className="w-[180px]"><Calendar className="w-4 h-4 mr-2" /><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="7">Last 7 days</SelectItem>
               <SelectItem value="30">Last 30 days</SelectItem>
@@ -279,7 +48,7 @@ export const ClicksAnalytics = () => {
               <SelectItem value="all">All time</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={fetchClicksData} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -294,12 +63,9 @@ export const ClicksAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.total.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {dateRange === 'all' ? 'All time' : `Last ${dateRange} days`}
-            </p>
+            <p className="text-xs text-muted-foreground">{dateRange === 'all' ? 'All time' : `Last ${dateRange} days`}</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Top Source</CardTitle>
@@ -307,18 +73,10 @@ export const ClicksAnalytics = () => {
           </CardHeader>
           <CardContent>
             {topSource ? (
-              <>
-                <div className="text-2xl font-bold capitalize">{topSource[0]}</div>
-                <p className="text-xs text-muted-foreground">
-                  {topSource[1]} clicks ({((topSource[1] / metrics.total) * 100).toFixed(1)}%)
-                </p>
-              </>
-            ) : (
-              <div className="text-sm text-muted-foreground">No data</div>
-            )}
+              <><div className="text-2xl font-bold capitalize">{topSource[0]}</div><p className="text-xs text-muted-foreground">{topSource[1]} clicks ({((topSource[1] / metrics.total) * 100).toFixed(1)}%)</p></>
+            ) : <div className="text-sm text-muted-foreground">No data</div>}
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Top Campaign</CardTitle>
@@ -326,18 +84,10 @@ export const ClicksAnalytics = () => {
           </CardHeader>
           <CardContent>
             {topCampaign ? (
-              <>
-                <div className="text-2xl font-bold capitalize">{topCampaign[0]}</div>
-                <p className="text-xs text-muted-foreground">
-                  {topCampaign[1]} clicks ({((topCampaign[1] / metrics.total) * 100).toFixed(1)}%)
-                </p>
-              </>
-            ) : (
-              <div className="text-sm text-muted-foreground">No data</div>
-            )}
+              <><div className="text-2xl font-bold capitalize">{topCampaign[0]}</div><p className="text-xs text-muted-foreground">{topCampaign[1]} clicks ({((topCampaign[1] / metrics.total) * 100).toFixed(1)}%)</p></>
+            ) : <div className="text-sm text-muted-foreground">No data</div>}
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sources</CardTitle>
@@ -358,42 +108,27 @@ export const ClicksAnalytics = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {Object.entries(metrics.bySource)
-              .sort((a, b) => b[1] - a[1])
-              .map(([source, count]) => {
-                const Icon = getSourceIcon(source);
-                const percentage = (count / metrics.total) * 100;
-                return (
-                  <div key={source} className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 w-32">
-                      <Icon className={`w-4 h-4 ${getSourceColor(source)}`} />
-                      <span className="text-sm font-medium capitalize">{source}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="h-8 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary flex items-center justify-end px-2"
-                          style={{ width: `${percentage}%` }}
-                        >
-                          <span className="text-xs font-medium text-primary-foreground">
-                            {count}
-                          </span>
-                        </div>
+            {Object.entries(metrics.bySource).sort((a, b) => b[1] - a[1]).map(([source, count]) => {
+              const Icon = getSourceIcon(source);
+              const pct = (count / metrics.total) * 100;
+              return (
+                <div key={source} className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 w-32">
+                    <Icon className={`w-4 h-4 ${getSourceColor(source)}`} />
+                    <span className="text-sm font-medium capitalize">{source}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="h-8 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary flex items-center justify-end px-2" style={{ width: `${pct}%` }}>
+                        <span className="text-xs font-medium text-primary-foreground">{count}</span>
                       </div>
                     </div>
-                    <div className="w-16 text-right">
-                      <span className="text-sm text-muted-foreground">
-                        {percentage.toFixed(1)}%
-                      </span>
-                    </div>
                   </div>
-                );
-              })}
-            {Object.keys(metrics.bySource).length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No clicks data available
-              </div>
-            )}
+                  <div className="w-16 text-right"><span className="text-sm text-muted-foreground">{pct.toFixed(1)}%</span></div>
+                </div>
+              );
+            })}
+            {Object.keys(metrics.bySource).length === 0 && <div className="text-center py-8 text-muted-foreground">No clicks data available</div>}
           </div>
         </CardContent>
       </Card>
@@ -406,162 +141,30 @@ export const ClicksAnalytics = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {Object.entries(metrics.byCampaign)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 10)
-              .map(([campaign, count]) => {
-                const percentage = (count / metrics.total) * 100;
-                return (
-                  <div key={campaign} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <Badge variant="outline" className="capitalize">
-                        {campaign}
-                      </Badge>
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 ml-4">
-                      <span className="text-sm font-medium">{count} clicks</span>
-                      <span className="text-sm text-muted-foreground w-12 text-right">
-                        {percentage.toFixed(1)}%
-                      </span>
+            {Object.entries(metrics.byCampaign).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([campaign, count]) => {
+              const pct = (count / metrics.total) * 100;
+              return (
+                <div key={campaign} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <Badge variant="outline" className="capitalize">{campaign}</Badge>
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                      <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
-                );
-              })}
-            {Object.keys(metrics.byCampaign).length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No campaign data available
-              </div>
-            )}
+                  <div className="flex items-center gap-4 ml-4">
+                    <span className="text-sm font-medium">{count} clicks</span>
+                    <span className="text-sm text-muted-foreground w-12 text-right">{pct.toFixed(1)}%</span>
+                  </div>
+                </div>
+              );
+            })}
+            {Object.keys(metrics.byCampaign).length === 0 && <div className="text-center py-8 text-muted-foreground">No campaign data available</div>}
           </div>
         </CardContent>
       </Card>
 
       {/* Recent Clicks */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Clicks</CardTitle>
-          <CardDescription>Latest property page visits with detailed information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {metrics.recentClicks.map((click) => {
-              const source = click.source || 'direct';
-              const Icon = getSourceIcon(source);
-              const timeAgo = getTimeAgo(click.created_at);
-              return (
-                <div
-                  key={click.id}
-                  className="border rounded-lg p-4 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <Icon className={`w-5 h-5 mt-0.5 ${getSourceColor(source)}`} />
-
-                      {/* Time Badge */}
-                      <Badge className={`${timeAgo.color} text-white text-xs`}>
-                        <Clock className="w-3 h-3 mr-1" />
-                        {timeAgo.text}
-                      </Badge>
-                      <div className="flex-1 min-w-0">
-                        {/* Property Address - DESTACADO */}
-                        {click.property_address && (
-                          <div className="mb-3 pb-2 border-b">
-                            <div className="font-semibold text-sm text-primary flex items-center gap-2">
-                              🏠 {click.property_address}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Contact Information - DESTACADO */}
-                        {(click.contact_name || click.contact_email || click.contact_phone) && (
-                          <div className="mb-3 pb-2 border-b bg-blue-50 dark:bg-blue-950 px-3 py-2 rounded-lg">
-                            <div className="font-medium text-sm mb-1">👤 Contact Info:</div>
-                            <div className="flex flex-wrap gap-3 text-xs">
-                              {click.contact_name && (
-                                <span className="font-medium">
-                                  {click.contact_name}
-                                </span>
-                              )}
-                              {click.contact_email && (
-                                <a href={`mailto:${click.contact_email}`} className="text-blue-600 hover:underline">
-                                  ✉️ {click.contact_email}
-                                </a>
-                              )}
-                              {click.contact_phone && (
-                                <a href={`tel:${click.contact_phone}`} className="text-green-600 hover:underline">
-                                  📞 {click.contact_phone}
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Badges Row */}
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <Badge variant="default" className="capitalize text-xs">
-                            {source}
-                          </Badge>
-                          <Badge variant="secondary" className="capitalize text-xs">
-                            {click.event_type || 'page_view'}
-                          </Badge>
-                          {click.device_type && (
-                            <Badge variant="outline" className="text-xs">
-                              {click.device_type === 'mobile' ? '📱' : click.device_type === 'tablet' ? '📱' : '💻'} {click.device_type}
-                            </Badge>
-                          )}
-                        </div>
-
-                        {/* Referrer URL - if available */}
-                        {click.referrer && (
-                          <div className="mb-2 text-xs">
-                            <span className="font-medium text-muted-foreground">🔗 Link: </span>
-                            <a
-                              href={click.referrer}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline break-all"
-                            >
-                              {click.referrer}
-                            </a>
-                          </div>
-                        )}
-
-                        {/* Location & Time Info */}
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                          {(click.city || click.country) && (
-                            <span>
-                              📍 {click.city || 'Unknown'}, {click.country || 'Unknown'}
-                            </span>
-                          )}
-                          {click.ip_address && (
-                            <span>
-                              🌐 {click.ip_address}
-                            </span>
-                          )}
-                          <span>
-                            🕐 {new Date(click.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {metrics.recentClicks.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                No recent clicks
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <RecentClicksList clicks={metrics.recentClicks} />
     </div>
   );
 };
