@@ -45,7 +45,7 @@ export const AdminHeader = ({
           <FullDatabaseExport />
           <ApprovedPropertiesExport filters={exportFilters} />
           <DesignModeToggle isMinimal={isMinimal} onToggle={onToggleDesignMode} />
-          <HeaderActionsMenu onBulkImport={onBulkImport} onGeminiSettings={onGeminiSettings} onMarketingSettings={onMarketingSettings} />
+          <HeaderActionsMenu onBulkImport={onBulkImport} onMarketingSettings={onMarketingSettings} />
           <NotificationsPanel />
           <Button onClick={onLogout} variant="outline" size="sm" className="gap-2">
             <LogOut className="w-4 h-4" />
