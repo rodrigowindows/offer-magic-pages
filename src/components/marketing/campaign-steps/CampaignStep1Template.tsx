@@ -5,15 +5,25 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 import { Eye, CheckCircle, Target, MessageSquare, Mail, Phone } from 'lucide-react';
 import type { Channel } from '@/types/marketing.types';
+import type { CampaignTemplate } from '@/types/campaign.types';
+import type { CampaignProperty } from '@/hooks/useCampaignContacts';
+
+const SAMPLE_PROPERTY: CampaignProperty = {
+  id: 'sample', address: '123 Main St', city: 'Orlando', state: 'FL',
+  zip_code: '32801', matched_first_name: 'John', matched_last_name: 'Doe',
+  estimated_value: 350000, cash_offer_amount: 245000,
+  property_image_url: 'https://via.placeholder.com/600x300.png?text=Sample+Property+Photo',
+  slug: 'sample-property',
+};
 
 interface Props {
   selectedChannel: Channel;
   setSelectedChannel: (c: Channel) => void;
   selectedTemplateId: string;
   setSelectedTemplateId: (id: string) => void;
-  selectedTemplate: any;
-  getTemplatesByChannel: (c: Channel) => any[];
-  generateTemplateContent: (template: any, prop: any, trackingId?: string) => { content: string; subject: string };
+  selectedTemplate?: CampaignTemplate;
+  getTemplatesByChannel: (c: Channel) => CampaignTemplate[];
+  generateTemplateContent: (template: CampaignTemplate, prop: CampaignProperty, trackingId?: string) => { content: string; subject: string };
 }
 
 export function CampaignStep1Template({
@@ -22,14 +32,6 @@ export function CampaignStep1Template({
   selectedTemplate, getTemplatesByChannel,
   generateTemplateContent,
 }: Props) {
-  const sampleProp = {
-    id: 'sample', address: '123 Main St', city: 'Orlando', state: 'FL',
-    zip_code: '32801', matched_first_name: 'John', matched_last_name: 'Doe',
-    estimated_value: 350000, cash_offer_amount: 245000,
-    property_image_url: 'https://via.placeholder.com/600x300.png?text=Sample+Property+Photo',
-    slug: 'sample-property',
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -102,7 +104,7 @@ export function CampaignStep1Template({
                     <div className="prose prose-sm max-w-none">
                       {selectedChannel === 'email' ? (
                         <iframe
-                          srcDoc={generateTemplateContent(selectedTemplate, sampleProp as any, 'preview').content}
+                          srcDoc={generateTemplateContent(selectedTemplate, SAMPLE_PROPERTY, 'preview').content}
                           className="w-full border-0 rounded"
                           style={{ height: '300px', minHeight: '200px' }}
                           title="Email Template Preview"
@@ -112,7 +114,7 @@ export function CampaignStep1Template({
                         />
                       ) : (
                         <div className="text-sm whitespace-pre-wrap">
-                          {generateTemplateContent(selectedTemplate, sampleProp as any, 'preview').content}
+                          {generateTemplateContent(selectedTemplate, SAMPLE_PROPERTY, 'preview').content}
                         </div>
                       )}
                     </div>
@@ -120,19 +122,19 @@ export function CampaignStep1Template({
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="p-3 border rounded-lg">
                       <div className="text-muted-foreground mb-1">Channel</div>
-                      <div className="font-medium capitalize">{selectedTemplate?.channel}</div>
+                      <div className="font-medium capitalize">{selectedTemplate.channel}</div>
                     </div>
                     <div className="p-3 border rounded-lg">
                       <div className="text-muted-foreground mb-1">Type</div>
-                      <div className="font-medium">{selectedTemplate?.is_default ? 'Default' : 'Custom'}</div>
+                      <div className="font-medium">{selectedTemplate.is_default ? 'Default' : 'Custom'}</div>
                     </div>
-                    {selectedChannel === 'sms' && selectedTemplate?.body && (
+                    {selectedChannel === 'sms' && selectedTemplate.body && (
                       <div className="p-3 border rounded-lg col-span-2">
                         <div className="text-muted-foreground mb-1">Character Count</div>
                         <div className="font-medium">
                           {selectedTemplate.body.length} chars
                           {selectedTemplate.body.length > 160 && (
-                            <span className="text-yellow-600 ml-2">(~{Math.ceil(selectedTemplate.body.length / 160)} SMS)</span>
+                            <span className="text-warning ml-2">(~{Math.ceil(selectedTemplate.body.length / 160)} SMS)</span>
                           )}
                         </div>
                       </div>

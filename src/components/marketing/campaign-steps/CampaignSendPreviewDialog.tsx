@@ -9,13 +9,26 @@ import { Send, Loader2 } from 'lucide-react';
 import type { ProgressStats } from '@/hooks/useCampaignSender';
 import type { CampaignProperty } from '@/hooks/useCampaignContacts';
 import type { Channel } from '@/types/marketing.types';
+import type { CampaignTemplate } from '@/types/campaign.types';
+import { useMemo } from 'react';
+
+const SMS_DELAY_OPTIONS = [
+  ['500', '500ms (rápido)'],
+  ['1000', '1 segundo'],
+  ['2000', '2 segundos'],
+  ['5000', '5 segundos'],
+  ['10000', '10 segundos'],
+  ['15000', '15 segundos'],
+  ['30000', '30 segundos'],
+  ['60000', '1 minuto'],
+] as const;
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedProps: CampaignProperty[];
   selectedChannel: Channel;
-  selectedTemplate: any;
+  selectedTemplate?: CampaignTemplate;
   smsDelay: number;
   setSmsDelay: (d: number) => void;
   sending: boolean;
@@ -31,8 +44,10 @@ export function CampaignSendPreviewDialog({
   smsDelay, setSmsDelay, sending, progressStats,
   getAllPhones, getAllEmails, renderTemplatePreview, onConfirmSend,
 }: Props) {
-  const totalContacts = selectedProps.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : getAllPhones(p).length), 0);
-  const validContacts = selectedProps.filter(p => selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0).length;
+  const { totalContacts, validContacts } = useMemo(() => ({
+    totalContacts: selectedProps.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : getAllPhones(p).length), 0),
+    validContacts: selectedProps.filter(p => selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0).length,
+  }), [selectedProps, selectedChannel, getAllPhones, getAllEmails]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -50,13 +65,13 @@ export function CampaignSendPreviewDialog({
                 <div><Label className="text-sm font-medium">Template</Label><p className="text-sm text-muted-foreground">{selectedTemplate?.name}</p></div>
                 <div><Label className="text-sm font-medium">Canal</Label><p className="text-sm text-muted-foreground">{selectedChannel.toUpperCase()}</p></div>
                 {selectedChannel === 'sms' && (
-                  <div className="col-span-2 mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="col-span-2 mt-4 p-4 bg-warning/10 rounded-lg border border-warning/30">
                     <Label className="text-sm font-medium flex items-center gap-2">⏱️ Delay entre envios de SMS</Label>
                     <p className="text-xs text-muted-foreground mb-2">Tempo de espera entre cada mensagem SMS</p>
                     <Select value={smsDelay.toString()} onValueChange={(v) => setSmsDelay(parseInt(v))}>
                       <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {[['500', '500ms (rápido)'], ['1000', '1 segundo'], ['2000', '2 segundos'], ['5000', '5 segundos'], ['10000', '10 segundos'], ['15000', '15 segundos'], ['30000', '30 segundos'], ['60000', '1 minuto']].map(([v, l]) => (
+                        {SMS_DELAY_OPTIONS.map(([v, l]) => (
                           <SelectItem key={v} value={v}>{l}</SelectItem>
                         ))}
                       </SelectContent>
@@ -65,9 +80,9 @@ export function CampaignSendPreviewDialog({
                 )}
               </div>
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center"><div className="text-2xl font-bold text-blue-600">{selectedProps.length}</div><div className="text-sm text-muted-foreground">Propriedades</div></div>
-                <div className="text-center"><div className="text-2xl font-bold text-green-600">{validContacts}</div><div className="text-sm text-muted-foreground">Contatos Válidos</div></div>
-                <div className="text-center"><div className="text-2xl font-bold text-purple-600">{totalContacts}</div><div className="text-sm text-muted-foreground">Mensagens</div></div>
+                <div className="text-center"><div className="text-2xl font-bold text-primary">{selectedProps.length}</div><div className="text-sm text-muted-foreground">Propriedades</div></div>
+                <div className="text-center"><div className="text-2xl font-bold text-success">{validContacts}</div><div className="text-sm text-muted-foreground">Contatos Válidos</div></div>
+                <div className="text-center"><div className="text-2xl font-bold text-accent">{totalContacts}</div><div className="text-sm text-muted-foreground">Mensagens</div></div>
               </div>
             </CardContent>
           </Card>
@@ -126,7 +141,7 @@ export function CampaignSendPreviewDialog({
 
         <DialogFooter className="flex gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Cancelar</Button>
-          <Button onClick={onConfirmSend} disabled={sending} className="min-w-32 bg-green-600 hover:bg-green-700">
+          <Button onClick={onConfirmSend} disabled={sending} className="min-w-32 bg-success hover:bg-success/90 text-success-foreground">
             {sending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Enviando...</> : <><Send className="mr-2 h-4 w-4" /> Confirmar Envio</>}
           </Button>
         </DialogFooter>
