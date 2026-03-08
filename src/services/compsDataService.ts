@@ -165,7 +165,7 @@ export class CompsDataService {
           source: comp.source || data.source // Preserve individual source or use global
         }));
 
-        console.log(`📍 First comp coordinates:`, compsWithSource[0]?.latitude, compsWithSource[0]?.longitude);
+        
         return compsWithSource.slice(0, limit);
       }
 

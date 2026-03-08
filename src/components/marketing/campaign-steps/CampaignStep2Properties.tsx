@@ -8,51 +8,31 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { CheckCircle, Users, Target, Search, X, Phone, Mail, DollarSign, Filter } from 'lucide-react';
 import { BatchSelector } from '@/components/process/BatchSelector';
-import { PHONE_COLUMNS, type CampaignProperty } from '@/hooks/useCampaignContacts';
+import { PHONE_COLUMNS, type CampaignProperty, getAllEmails } from '@/hooks/useCampaignContacts';
+import type { CampaignFiltersReturn } from '@/hooks/useCampaignFilters';
 import type { Channel } from '@/types/marketing.types';
 
 interface Props {
   loading: boolean;
   properties: CampaignProperty[];
-  selectedIds: string[];
-  setSelectedIds: (ids: string[]) => void;
+  filters: CampaignFiltersReturn;
   selectedChannel: Channel;
-  selectedBatch: string;
-  setSelectedBatch: (b: string) => void;
-  searchTerm: string;
-  setSearchTerm: (s: string) => void;
-  filterStatus: string;
-  setFilterStatus: (s: string) => void;
-  hasSkiptracePhoneFilter: boolean;
-  setHasSkiptracePhoneFilter: (b: boolean) => void;
-  hasSkiptraceEmailFilter: boolean;
-  setHasSkiptraceEmailFilter: (b: boolean) => void;
-  phoneFieldFilter: string[];
-  setPhoneFieldFilter: (f: string[]) => void;
-  setSelectedPhoneColumn: (c: string) => void;
-  showAdvancedFilters: boolean;
-  setShowAdvancedFilters: (b: boolean) => void;
-  activeFilters: { id: string; label: string }[];
-  setActiveFilters: (f: { id: string; label: string }[]) => void;
-  countWithSkiptracePhones: number;
-  countWithSkiptraceEmails: number;
-  phoneFieldCounts: Record<string, number>;
-  getFilteredProperties: () => CampaignProperty[];
-  getAllPhones: (p: CampaignProperty) => string[];
-  getAllEmails: (p: CampaignProperty) => string[];
-  toggleSelection: (id: string) => void;
-  selectedProps: CampaignProperty[];
 }
 
-export function CampaignStep2Properties({
-  loading, properties, selectedIds, setSelectedIds, selectedChannel,
-  selectedBatch, setSelectedBatch, searchTerm, setSearchTerm,
-  filterStatus, setFilterStatus, hasSkiptracePhoneFilter, setHasSkiptracePhoneFilter,
-  hasSkiptraceEmailFilter, setHasSkiptraceEmailFilter, phoneFieldFilter, setPhoneFieldFilter,
-  setSelectedPhoneColumn, showAdvancedFilters, setShowAdvancedFilters,
-  activeFilters, setActiveFilters, countWithSkiptracePhones, countWithSkiptraceEmails,
-  phoneFieldCounts, getFilteredProperties, getAllPhones, getAllEmails, toggleSelection, selectedProps,
-}: Props) {
+export function CampaignStep2Properties({ loading, properties, filters, selectedChannel }: Props) {
+  const {
+    selectedIds, setSelectedIds, searchTerm, setSearchTerm,
+    filterStatus, setFilterStatus, selectedBatch, setSelectedBatch,
+    hasSkiptracePhoneFilter, setHasSkiptracePhoneFilter,
+    hasSkiptraceEmailFilter, setHasSkiptraceEmailFilter,
+    phoneFieldFilter, setPhoneFieldFilter, setSelectedPhoneColumn,
+    showAdvancedFilters, setShowAdvancedFilters,
+    activeFilters, setActiveFilters,
+    countWithSkiptracePhones, countWithSkiptraceEmails,
+    phoneFieldCounts, selectedProps,
+    getAllPhones, getFilteredProperties, toggleSelection,
+  } = filters;
+
   const filteredProperties = getFilteredProperties();
 
   return (
@@ -102,7 +82,7 @@ export function CampaignStep2Properties({
               const isSelected = phoneFieldFilter.includes(key);
               return (
                 <Button key={key} variant={isSelected ? 'default' : 'outline'} size="sm"
-                  className={`text-xs h-7 px-2 ${isSelected ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+                  className={`text-xs h-7 px-2 ${isSelected ? 'bg-secondary hover:bg-secondary/90' : ''}`}
                   onClick={() => {
                     const newFilter = isSelected ? phoneFieldFilter.filter(f => f !== key) : [...phoneFieldFilter, key];
                     setPhoneFieldFilter(newFilter);
@@ -160,7 +140,7 @@ export function CampaignStep2Properties({
                   <Button variant="outline" size="sm" onClick={() => setSelectedIds(filteredProperties.map(p => p.id))} className="hover:bg-primary/10 hover:border-primary">
                     <CheckCircle className="w-3 h-3 mr-1" /> Select All ({filteredProperties.length})
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedIds([])} className="hover:bg-red-50 hover:border-red-300 hover:text-red-600" disabled={selectedIds.length === 0}>Clear</Button>
+                  <Button variant="outline" size="sm" onClick={() => setSelectedIds([])} className="hover:bg-destructive/10 hover:border-destructive hover:text-destructive" disabled={selectedIds.length === 0}>Clear</Button>
                 </div>
               </div>
             </CardHeader>
@@ -193,7 +173,7 @@ export function CampaignStep2Properties({
                               </div>
                             )}
                             {property.cash_offer_amount && (
-                              <div className="flex items-center gap-2 text-green-600 font-semibold">
+                              <div className="flex items-center gap-2 text-success font-semibold">
                                 <DollarSign className="w-3 h-3 flex-shrink-0" />
                                 <span className="text-xs">{property.cash_offer_amount.toLocaleString()}</span>
                               </div>

@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
 import { Shield, MessageSquare, Mail, Phone, Users, Eye, Code, AlertCircle } from 'lucide-react';
 import { dedupeContacts, extractTaggedContacts, type CampaignProperty } from '@/hooks/useCampaignContacts';
 import type { Channel } from '@/types/marketing.types';
+import type { CampaignTemplate } from '@/types/campaign.types';
 
 interface Props {
   selectedProps: CampaignProperty[];
   selectedChannel: Channel;
-  selectedTemplate: any;
+  selectedTemplate?: CampaignTemplate;
   propsWithPhone: number;
   propsWithEmail: number;
   getAllPhones: (p: CampaignProperty) => string[];
@@ -26,8 +26,7 @@ export function CampaignStep4Preview({
   const [previewRenderLimit, setPreviewRenderLimit] = useState(20);
   const [showHtmlCode, setShowHtmlCode] = useState(false);
 
-  const getCampaignStats = () => {
-    const approvedProps = selectedProps.filter(p => p.approval_status === 'approved');
+  const stats = useMemo(() => {
     const propsWithPhones = selectedProps.filter(p => getAllPhones(p).length > 0);
     const propsWithEmails = selectedProps.filter(p => getAllEmails(p).length > 0);
     const taggedPhoneContacts = selectedProps.reduce((sum, p) => {
@@ -40,7 +39,7 @@ export function CampaignStep4Preview({
     }, 0);
     return {
       totalProperties: selectedProps.length,
-      approvedProperties: approvedProps.length,
+      approvedProperties: selectedProps.filter(p => p.approval_status === 'approved').length,
       propertiesWithPhones: propsWithPhones.length,
       propertiesWithEmails: propsWithEmails.length,
       totalPhoneContacts: propsWithPhones.reduce((sum, p) => sum + getAllPhones(p).length, 0),
@@ -48,12 +47,12 @@ export function CampaignStep4Preview({
       taggedPhoneContacts,
       taggedEmailContacts,
     };
-  };
+  }, [selectedProps, getAllPhones, getAllEmails]);
 
-  const stats = getCampaignStats();
-  const totalContacts = selectedProps.reduce((total, prop) => {
-    return total + (selectedChannel === 'email' ? getAllEmails(prop).length : getAllPhones(prop).length);
-  }, 0);
+  const totalContacts = useMemo(
+    () => selectedProps.reduce((total, prop) => total + (selectedChannel === 'email' ? getAllEmails(prop).length : getAllPhones(prop).length), 0),
+    [selectedProps, selectedChannel, getAllPhones, getAllEmails]
+  );
 
   return (
     <div className="space-y-6">
@@ -92,7 +91,7 @@ export function CampaignStep4Preview({
             <div className="space-y-4">
               <div className="flex justify-between"><span className="text-muted-foreground">Template:</span><span className="font-semibold">{selectedTemplate?.name}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Channels:</span><span className="font-semibold">{selectedChannel}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Expected Success:</span><span className="font-semibold text-green-600">15-25%</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Expected Success:</span><span className="font-semibold text-success">15-25%</span></div>
             </div>
           </CardContent>
         </Card>
@@ -111,9 +110,9 @@ export function CampaignStep4Preview({
           {selectedProps.length > 0 && selectedTemplate ? (
             <div className="space-y-6">
               {selectedProps.length > previewRenderLimit && (
-                <Alert className="border-amber-300 bg-amber-50">
-                  <AlertCircle className="w-4 h-4 text-amber-700" />
-                  <AlertDescription className="text-amber-900">Rendering limited to {previewRenderLimit} previews.</AlertDescription>
+                <Alert className="border-warning bg-warning/10">
+                  <AlertCircle className="w-4 h-4 text-warning" />
+                  <AlertDescription className="text-warning">Rendering limited to {previewRenderLimit} previews.</AlertDescription>
                 </Alert>
               )}
               {selectedProps.slice(0, previewRenderLimit).map((property, index) => {
@@ -121,41 +120,41 @@ export function CampaignStep4Preview({
                 const bodyPreview = renderTemplatePreview(property);
                 const subjectPreview = selectedChannel === 'email' ? renderTemplatePreview(property, 'subject') : '';
                 return (
-                  <div key={property.id || index} className="border-2 border-gray-200 rounded-lg p-4 bg-gradient-to-br from-white to-gray-50">
-                    <div className="flex items-start justify-between mb-4 pb-3 border-b-2 border-gray-200">
+                  <div key={property.id || index} className="border-2 border-border rounded-lg p-4 bg-gradient-to-br from-card to-muted/20">
+                    <div className="flex items-start justify-between mb-4 pb-3 border-b-2 border-border">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">{index + 1}</div>
-                          <h4 className="font-bold text-base text-gray-900">{property.address || 'N/A'}</h4>
-                          {contacts.length > 1 && <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">{contacts.length} contacts</span>}
+                          <div className="bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">{index + 1}</div>
+                          <h4 className="font-bold text-base text-foreground">{property.address || 'N/A'}</h4>
+                          {contacts.length > 1 && <span className="bg-success/10 text-success text-xs font-semibold px-2 py-1 rounded-full">{contacts.length} contacts</span>}
                         </div>
-                        <div className="text-sm text-gray-600 ml-8">{property.city}, {property.state} {property.zip_code}</div>
+                        <div className="text-sm text-muted-foreground ml-8">{property.city}, {property.state} {property.zip_code}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-green-600">${property.cash_offer_amount?.toLocaleString() || '0'}</div>
-                        <div className="text-xs text-gray-500">Cash Offer</div>
+                        <div className="text-lg font-bold text-success">${property.cash_offer_amount?.toLocaleString() || '0'}</div>
+                        <div className="text-xs text-muted-foreground">Cash Offer</div>
                       </div>
                     </div>
                     {selectedChannel === 'sms' && (
-                      <div className="border rounded-lg p-4 bg-white">
-                        <div className="flex items-center gap-2 mb-2"><MessageSquare className="w-4 h-4 text-blue-600" /><span className="font-medium">SMS Message</span></div>
-                        <div className="bg-gray-50 p-3 rounded border text-sm">{bodyPreview}</div>
+                      <div className="border rounded-lg p-4 bg-card">
+                        <div className="flex items-center gap-2 mb-2"><MessageSquare className="w-4 h-4 text-primary" /><span className="font-medium">SMS Message</span></div>
+                        <div className="bg-muted p-3 rounded border text-sm">{bodyPreview}</div>
                         <div className="text-xs text-muted-foreground mt-2">~{bodyPreview.length} characters</div>
                       </div>
                     )}
                     {selectedChannel === 'email' && (
-                      <div className="border rounded-lg p-4 bg-white">
+                      <div className="border rounded-lg p-4 bg-card">
                         <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-blue-600" /><span className="font-medium">Email Message</span></div>
+                          <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-primary" /><span className="font-medium">Email Message</span></div>
                           <Button variant="outline" size="sm" onClick={() => setShowHtmlCode(!showHtmlCode)} className="gap-2">
                             {showHtmlCode ? <><Eye className="w-4 h-4" /> Show Preview</> : <><Code className="w-4 h-4" /> Show HTML</>}
                           </Button>
                         </div>
-                        <div className="mb-3 p-2 bg-blue-50 rounded border border-blue-200">
-                          <span className="text-xs text-blue-600 font-medium">Subject:</span>
-                          <div className="text-sm font-medium text-gray-900 mt-1">{subjectPreview}</div>
+                        <div className="mb-3 p-2 bg-primary/5 rounded border border-primary/20">
+                          <span className="text-xs text-primary font-medium">Subject:</span>
+                          <div className="text-sm font-medium text-foreground mt-1">{subjectPreview}</div>
                         </div>
-                        <div className="bg-white border rounded">
+                        <div className="bg-card border rounded">
                           {showHtmlCode ? (
                             <pre className="p-3 text-xs overflow-auto max-h-[400px] whitespace-pre-wrap font-mono">{bodyPreview}</pre>
                           ) : (
@@ -165,9 +164,9 @@ export function CampaignStep4Preview({
                       </div>
                     )}
                     {selectedChannel === 'call' && (
-                      <div className="border rounded-lg p-4 bg-white">
-                        <div className="flex items-center gap-2 mb-2"><Phone className="w-4 h-4 text-blue-600" /><span className="font-medium">Voicemail</span></div>
-                        <div className="bg-gray-50 p-3 rounded border text-sm">{bodyPreview}</div>
+                      <div className="border rounded-lg p-4 bg-card">
+                        <div className="flex items-center gap-2 mb-2"><Phone className="w-4 h-4 text-primary" /><span className="font-medium">Voicemail</span></div>
+                        <div className="bg-muted p-3 rounded border text-sm">{bodyPreview}</div>
                       </div>
                     )}
                   </div>
@@ -186,9 +185,9 @@ export function CampaignStep4Preview({
       </Card>
 
       {/* Validation */}
-      <Card className="border-green-200 dark:border-green-800">
+      <Card className="border-success/30">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-green-600" /> Campaign Summary & Validation</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2"><Shield className="w-5 h-5 text-success" /> Campaign Summary & Validation</CardTitle>
           <CardDescription>Final checklist before sending</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -204,7 +203,7 @@ export function CampaignStep4Preview({
               <h4 className="font-medium flex items-center gap-2"><Users className="w-4 h-4" /> Recipients</h4>
               <div className="pl-6 space-y-1 text-sm">
                 <div className="flex justify-between"><span>Properties:</span><span className="font-medium">{selectedProps.length}</span></div>
-                <div className="flex justify-between"><span>With contact:</span><span className="font-medium text-green-600">{selectedChannel === 'email' ? propsWithEmail : propsWithPhone}</span></div>
+                <div className="flex justify-between"><span>With contact:</span><span className="font-medium text-success">{selectedChannel === 'email' ? propsWithEmail : propsWithPhone}</span></div>
               </div>
             </div>
           </div>

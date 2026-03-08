@@ -3,13 +3,14 @@
  * Extracted from CampaignManager for modularity.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useMarketingStore } from '@/store/marketingStore';
 import { sendSMS, sendEmail, initiateCall, checkHealth } from '@/services/marketingService';
 import { supabase } from '@/integrations/supabase/client';
 import { getAllEmails, type CampaignProperty } from '@/hooks/useCampaignContacts';
 import type { Channel } from '@/types/marketing.types';
+import type { CampaignTemplate, SimulationResult, SystemHealthStatus, CampaignValidationIssue, ContactValidationStats } from '@/types/campaign.types';
 
 export interface ProgressStats {
   completed: number;
@@ -28,10 +29,10 @@ const INITIAL_PROGRESS: ProgressStats = {
 
 interface UseCampaignSenderOptions {
   selectedChannel: Channel;
-  selectedTemplate: any;
+  selectedTemplate: CampaignTemplate | undefined;
   smsDelay: number;
   getAllPhones: (prop: CampaignProperty) => string[];
-  generateTemplateContent: (template: any, prop: CampaignProperty, trackingId?: string) => { content: string; subject: string };
+  generateTemplateContent: (template: { body: string; subject?: string }, prop: CampaignProperty, trackingId?: string) => { content: string; subject: string };
 }
 
 export const useCampaignSender = ({
@@ -46,7 +47,7 @@ export const useCampaignSender = ({
   const [sending, setSending] = useState(false);
   const [progressStats, setProgressStats] = useState<ProgressStats>(INITIAL_PROGRESS);
 
-  const updateProgress = (completed: number, total: number, success: number, fail: number) => {
+  const updateProgress = useCallback((completed: number, total: number, success: number, fail: number) => {
     const remaining = total - completed;
     const baseTime = 0.5;
     const delaySeconds = selectedChannel === 'sms' ? smsDelay / 1000 : 0;
@@ -56,21 +57,21 @@ export const useCampaignSender = ({
       ? `${Math.round(estimatedSeconds / 60)}m`
       : `${estimatedSeconds}s`;
     setProgressStats({ completed, total, success, fail, successCount: success, failCount: fail, estimatedTimeRemaining });
-  };
+  }, [selectedChannel, smsDelay]);
 
-  const processPropertySend = async (prop: CampaignProperty, globalIndex: number) => {
+  const processPropertySend = useCallback(async (prop: CampaignProperty, globalIndex: number) => {
     try {
       const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
       const allPhones = getAllPhones(prop);
       const allEmails = getAllEmails(prop);
       let sent = false;
       let messagesSent = 0;
-      let lastError: any = null;
+      let lastError: unknown = null;
       const trackingId = crypto.randomUUID();
 
       if (selectedChannel === 'sms') {
         if (allPhones.length === 0) return { success: false, property: prop, error: 'No phone available', messagesSent: 0 };
-        const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
+        const { content } = generateTemplateContent(selectedTemplate!, prop, trackingId);
         for (let i = 0; i < allPhones.length; i++) {
           if (i > 0 && smsDelay > 0) await new Promise(r => setTimeout(r, smsDelay));
           try {
@@ -80,7 +81,7 @@ export const useCampaignSender = ({
               html_content: content, property_id: prop.id, recipient_phone: allPhones[i],
               recipient_name: prop.owner_name || 'Owner', property_address: fullAddress,
               sent_at: new Date().toISOString(),
-              metadata: { template_id: selectedTemplate.id, template_name: selectedTemplate.name, contact_index: i, total_contacts: allPhones.length, batch_index: globalIndex, sms_delay_ms: smsDelay },
+              metadata: { template_id: selectedTemplate!.id, template_name: selectedTemplate!.name, contact_index: i, total_contacts: allPhones.length, batch_index: globalIndex, sms_delay_ms: smsDelay },
             });
             messagesSent++;
             sent = true;
@@ -88,7 +89,7 @@ export const useCampaignSender = ({
         }
       } else if (selectedChannel === 'email') {
         if (allEmails.length === 0) return { success: false, property: prop, error: 'No email available', messagesSent: 0 };
-        const { content, subject } = generateTemplateContent(selectedTemplate, prop, trackingId);
+        const { content, subject } = generateTemplateContent(selectedTemplate!, prop, trackingId);
         for (const email of allEmails) {
           try {
             await sendEmail({ receiver_email: email, subject, message_body: content });
@@ -97,7 +98,7 @@ export const useCampaignSender = ({
               html_content: content, property_id: prop.id, recipient_email: email,
               recipient_name: prop.owner_name || 'Owner', property_address: fullAddress,
               sent_at: new Date().toISOString(),
-              metadata: { template_id: selectedTemplate.id, template_name: selectedTemplate.name, contact_index: allEmails.indexOf(email), total_contacts: allEmails.length, subject, batch_index: globalIndex },
+              metadata: { template_id: selectedTemplate!.id, template_name: selectedTemplate!.name, contact_index: allEmails.indexOf(email), total_contacts: allEmails.length, subject, batch_index: globalIndex },
             });
             messagesSent++;
             sent = true;
@@ -105,7 +106,7 @@ export const useCampaignSender = ({
         }
       } else if (selectedChannel === 'call') {
         if (allPhones.length === 0) return { success: false, property: prop, error: 'No phone available', messagesSent: 0 };
-        const { content } = generateTemplateContent(selectedTemplate, prop, trackingId);
+        const { content } = generateTemplateContent(selectedTemplate!, prop, trackingId);
         for (const phone of allPhones) {
           try {
             await initiateCall({
@@ -118,7 +119,7 @@ export const useCampaignSender = ({
               html_content: content, property_id: prop.id, recipient_phone: phone,
               recipient_name: prop.owner_name || 'Owner', property_address: fullAddress,
               sent_at: new Date().toISOString(),
-              metadata: { template_id: selectedTemplate.id, template_name: selectedTemplate.name, contact_index: allPhones.indexOf(phone), total_contacts: allPhones.length, batch_index: globalIndex },
+              metadata: { template_id: selectedTemplate!.id, template_name: selectedTemplate!.name, contact_index: allPhones.indexOf(phone), total_contacts: allPhones.length, batch_index: globalIndex },
             });
             messagesSent++;
             sent = true;
@@ -126,24 +127,24 @@ export const useCampaignSender = ({
         }
       }
       return { success: sent, property: prop, error: sent ? null : lastError, messagesSent };
-    } catch (error: any) {
+    } catch (error) {
       return { success: false, property: prop, error, messagesSent: 0 };
     }
-  };
+  }, [selectedChannel, selectedTemplate, smsDelay, getAllPhones, generateTemplateContent, settings.company]);
 
-  const performSystemHealthCheck = async () => {
-    const result = { api: false, database: false, services: [] as string[], warnings: [] as string[] };
+  const performSystemHealthCheck = useCallback(async (): Promise<SystemHealthStatus> => {
+    const result: SystemHealthStatus = { api: false, database: false, services: [], warnings: [] };
     try { await checkHealth(); result.api = true; result.services.push('API de comunicação'); } catch { result.warnings.push('API de comunicação indisponível'); }
     try {
       const { error } = await supabase.from('campaign_logs').select('count').limit(1);
       if (!error) { result.database = true; result.services.push('Banco de dados'); }
     } catch { result.warnings.push('Erro de conexão com banco de dados'); }
     return result;
-  };
+  }, []);
 
-  const validateContactsForChannel = (properties: CampaignProperty[], channel: Channel) => {
-    const errors: Array<{ type: 'error' | 'warning'; message: string }> = [];
-    const warnings: Array<{ type: 'error' | 'warning'; message: string }> = [];
+  const validateContactsForChannel = useCallback((properties: CampaignProperty[], channel: Channel): { errors: CampaignValidationIssue[]; warnings: CampaignValidationIssue[]; stats: ContactValidationStats } => {
+    const errors: CampaignValidationIssue[] = [];
+    const warnings: CampaignValidationIssue[] = [];
     let totalContacts = 0, propertiesWithContacts = 0, propertiesWithoutContacts = 0;
 
     properties.forEach(prop => {
@@ -165,10 +166,10 @@ export const useCampaignSender = ({
       warnings.push({ type: 'warning', message: `Algumas propriedades têm múltiplos contatos (${totalContacts} total). O sistema tentará todos sequencialmente.` });
     }
     return { errors, warnings, stats: { totalContacts, propertiesWithContacts, propertiesWithoutContacts } };
-  };
+  }, [getAllPhones]);
 
-  const validateTemplateContent = (template: any, channel: Channel) => {
-    const issues: Array<{ type: 'error' | 'warning'; message: string }> = [];
+  const validateTemplateContent = useCallback((template: CampaignTemplate | undefined, channel: Channel): CampaignValidationIssue[] => {
+    const issues: CampaignValidationIssue[] = [];
     if (!template) return issues;
     const body = template.body || '';
     ['name', 'address'].forEach(v => {
@@ -178,10 +179,10 @@ export const useCampaignSender = ({
       issues.push({ type: 'warning', message: `SMS muito longo (${body.length} chars). Pode ser dividido em múltiplas mensagens.` });
     }
     return issues;
-  };
+  }, []);
 
-  const validateCampaignReadiness = (selectedProps: CampaignProperty[]) => {
-    const issues: Array<{ type: 'error' | 'warning'; message: string; action?: string }> = [];
+  const validateCampaignReadiness = useCallback((selectedProps: CampaignProperty[]): CampaignValidationIssue[] => {
+    const issues: CampaignValidationIssue[] = [];
     if (selectedProps.length === 0) issues.push({ type: 'error', message: 'Nenhuma propriedade selecionada' });
     if (!selectedTemplate) issues.push({ type: 'error', message: 'Nenhum template selecionado' });
     const cv = validateContactsForChannel(selectedProps, selectedChannel);
@@ -189,10 +190,10 @@ export const useCampaignSender = ({
     if (selectedProps.length > 50) issues.push({ type: 'warning', message: `${selectedProps.length} propriedades selecionadas. Considere dividir em campanhas menores.` });
     issues.push(...validateTemplateContent(selectedTemplate, selectedChannel));
     return issues;
-  };
+  }, [selectedTemplate, selectedChannel, validateContactsForChannel, validateTemplateContent]);
 
-  const simulateCampaignSend = (selectedProps: CampaignProperty[]) => {
-    const sim = { total: selectedProps.length, wouldSend: 0, wouldFail: 0, contactBreakdown: [] as any[], estimatedCost: 0, estimatedTime: 0 };
+  const simulateCampaignSend = useCallback((selectedProps: CampaignProperty[]): SimulationResult => {
+    const sim: SimulationResult = { total: selectedProps.length, wouldSend: 0, wouldFail: 0, contactBreakdown: [], estimatedCost: 0, estimatedTime: 0 };
     selectedProps.forEach(prop => {
       const phones = getAllPhones(prop);
       const emails = getAllEmails(prop);
@@ -203,22 +204,21 @@ export const useCampaignSender = ({
     });
     sim.estimatedTime = Math.ceil(selectedProps.length / 5);
     return sim;
-  };
+  }, [selectedChannel, getAllPhones]);
 
-  const executeCampaignSend = async (selectedProps: CampaignProperty[], onComplete: () => void) => {
+  const executeCampaignSend = useCallback(async (selectedProps: CampaignProperty[], onComplete: () => void) => {
     setSending(true);
     let successCount = 0, failCount = 0, totalMessagesSent = 0, completedCount = 0;
-    const failedProperties: any[] = [];
     const batchSize = 5;
     updateProgress(0, selectedProps.length, 0, 0);
 
     for (let batchStart = 0; batchStart < selectedProps.length; batchStart += batchSize) {
       const batch = selectedProps.slice(batchStart, Math.min(batchStart + batchSize, selectedProps.length));
       const results = await Promise.allSettled(batch.map((prop, i) => processPropertySend(prop, batchStart + i)));
-      results.forEach((result, i) => {
+      results.forEach((result) => {
         completedCount++;
         if (result.status === 'fulfilled' && result.value.success) { successCount++; totalMessagesSent += result.value.messagesSent || 1; }
-        else { failCount++; failedProperties.push(result.status === 'fulfilled' ? result.value.property : selectedProps[batchStart + i]); }
+        else { failCount++; }
         updateProgress(completedCount, selectedProps.length, successCount, failCount);
       });
       if (batchStart + batchSize < selectedProps.length) await new Promise(r => setTimeout(r, 1000));
@@ -232,7 +232,7 @@ export const useCampaignSender = ({
     if (failCount > 0) setTimeout(() => toast({ title: '💡 Dica', description: `${failCount} envios falharam. Selecione novamente para tentar.` }), 2000);
     setProgressStats(INITIAL_PROGRESS);
     onComplete();
-  };
+  }, [processPropertySend, updateProgress, toast]);
 
   return {
     sending, progressStats,

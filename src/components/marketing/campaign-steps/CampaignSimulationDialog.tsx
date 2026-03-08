@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Eye, CheckCircle, AlertCircle, Activity, BarChart3 } from 'lucide-react';
+import type { SimulationResult, SystemHealthStatus } from '@/types/campaign.types';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  simulationResults: any;
-  healthStatus: any;
+  simulationResults: SimulationResult | null;
+  healthStatus: SystemHealthStatus | null;
 }
 
 export function CampaignSimulationDialog({ open, onOpenChange, simulationResults, healthStatus }: Props) {
@@ -28,11 +29,11 @@ export function CampaignSimulationDialog({ open, onOpenChange, simulationResults
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
-                  {healthStatus.api ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                  {healthStatus.api ? <CheckCircle className="w-4 h-4 text-success" /> : <AlertCircle className="w-4 h-4 text-destructive" />}
                   <span className="text-sm">API de Comunicação</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {healthStatus.database ? <CheckCircle className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                  {healthStatus.database ? <CheckCircle className="w-4 h-4 text-success" /> : <AlertCircle className="w-4 h-4 text-destructive" />}
                   <span className="text-sm">Banco de Dados</span>
                 </div>
               </div>
@@ -43,9 +44,9 @@ export function CampaignSimulationDialog({ open, onOpenChange, simulationResults
             <CardHeader><CardTitle className="text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Resultados da Simulação</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg"><div className="text-2xl font-bold text-blue-600">{simulationResults.total}</div><div className="text-sm text-blue-700">Total</div></div>
-                <div className="text-center p-4 bg-green-50 rounded-lg"><div className="text-2xl font-bold text-green-600">{simulationResults.wouldSend}</div><div className="text-sm text-green-700">Seriam Enviados</div></div>
-                <div className="text-center p-4 bg-red-50 rounded-lg"><div className="text-2xl font-bold text-red-600">{simulationResults.wouldFail}</div><div className="text-sm text-red-700">Sem Contato</div></div>
+                <div className="text-center p-4 bg-primary/5 rounded-lg"><div className="text-2xl font-bold text-primary">{simulationResults.total}</div><div className="text-sm text-primary/80">Total</div></div>
+                <div className="text-center p-4 bg-success/5 rounded-lg"><div className="text-2xl font-bold text-success">{simulationResults.wouldSend}</div><div className="text-sm text-success/80">Seriam Enviados</div></div>
+                <div className="text-center p-4 bg-destructive/5 rounded-lg"><div className="text-2xl font-bold text-destructive">{simulationResults.wouldFail}</div><div className="text-sm text-destructive/80">Sem Contato</div></div>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Custo Estimado:</span>
@@ -63,7 +64,7 @@ export function CampaignSimulationDialog({ open, onOpenChange, simulationResults
               <CardHeader><CardTitle className="text-lg">Detalhamento por Propriedade</CardTitle></CardHeader>
               <CardContent>
                 <div className="max-h-60 overflow-y-auto space-y-2">
-                  {simulationResults.contactBreakdown.slice(0, 20).map((item: any, idx: number) => (
+                  {simulationResults.contactBreakdown.slice(0, 20).map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between p-2 border rounded text-sm">
                       <span className="truncate flex-1">{item.property}</span>
                       <div className="flex gap-1">
