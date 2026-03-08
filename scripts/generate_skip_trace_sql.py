@@ -80,6 +80,33 @@ def process_row(row):
     # Build SET clauses
     sets = []
 
+    # Matched name and result code
+    if first_name:
+        sets.append(f"matched_first_name = {sql_str(first_name)}")
+    if last_name:
+        sets.append(f"matched_last_name = {sql_str(last_name)}")
+    if result_code:
+        sets.append(f"resultcode = {sql_str(result_code)}")
+
+    # Input fields
+    input_first = val(row, 'Input First Name')
+    input_last = val(row, 'Input Last Name')
+    if input_first:
+        sets.append(f"input_first_name = {sql_str(input_first)}")
+    if input_last:
+        sets.append(f"input_last_name = {sql_str(input_last)}")
+    if address:
+        sets.append(f"input_property_address = {sql_str(address)}")
+    input_city = val(row, 'Input Property City')
+    if input_city:
+        sets.append(f"input_property_city = {sql_str(input_city)}")
+    input_state = val(row, 'Input Property State')
+    if input_state:
+        sets.append(f"input_property_state = {sql_str(input_state)}")
+    input_zip = val(row, 'Input Property Zip')
+    if input_zip:
+        sets.append(f"input_property_zip = {sql_str(input_zip)}")
+
     # Owner
     if first_name and last_name:
         sets.append(f"owner_name = {sql_str(f'{first_name} {last_name}')}")
