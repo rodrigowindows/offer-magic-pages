@@ -4,6 +4,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { handleAIResponseError, withAILoading } from '@/lib/aiErrorHandler';
 
 export interface AIValuationResult {
   suggested_arv: number;
@@ -29,26 +30,17 @@ export const useAIValuation = () => {
       return null;
     }
 
-    setLoading(true);
-    try {
+    return withAILoading(setLoading, 'AI Valuation', toast, async () => {
       const { data, error } = await supabase.functions.invoke('ai-comps-valuation', {
         body: { property, comps },
       });
 
       if (error) throw error;
-      if (data?.error) {
-        toast({ title: 'Erro', description: data.error, variant: 'destructive' });
-        return null;
-      }
+      if (handleAIResponseError(data?.error, { toast, context: 'AI Valuation' })) return null;
 
       setResult(data as AIValuationResult);
       return data as AIValuationResult;
-    } catch (err: any) {
-      toast({ title: 'Erro AI Valuation', description: err.message, variant: 'destructive' });
-      return null;
-    } finally {
-      setLoading(false);
-    }
+    });
   }, [toast]);
 
   return { analyzeComps, loading, result };
