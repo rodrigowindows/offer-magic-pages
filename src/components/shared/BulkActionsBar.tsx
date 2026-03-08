@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, QrCode, Trash2, FileText, Sparkles, Rocket, Play, CheckCircle2 } from "lucide-react";
+import { X, QrCode, Trash2, FileText, Sparkles, Rocket, Play, CheckCircle2, Brain } from "lucide-react";
 import { LeadStatusSelect } from "../lead/LeadStatusSelect";
 import { LeadStatus } from "../lead/LeadStatusBadge";
+import { AILeadSummary } from "../ai/AILeadSummary";
 import { useState } from "react";
 
 interface BulkActionsBarProps {
   selectedCount: number;
+  selectedPropertyIds?: string[];
   onClearSelection: () => void;
   onBulkStatusChange: (status: LeadStatus) => void;
   onBulkDelete: () => void;
@@ -21,6 +23,7 @@ interface BulkActionsBarProps {
 
 export const BulkActionsBar = ({
   selectedCount,
+  selectedPropertyIds = [],
   onClearSelection,
   onBulkStatusChange,
   onBulkDelete,
@@ -101,6 +104,10 @@ export const BulkActionsBar = ({
           <Sparkles className="h-4 w-4" />
           AI Suggestions
         </Button>
+
+        {selectedPropertyIds.length > 0 && (
+          <AILeadSummary propertyIds={selectedPropertyIds} />
+        )}
 
         <div className="h-6 w-px bg-border" />
 

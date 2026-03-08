@@ -61,6 +61,7 @@ import { CompsComparison } from './CompsComparison';
 import { CompsApiSettings } from '@/components/shared/CompsApiSettings';
 import { ManualCompsManager } from '@/components/shared/ManualCompsManager';
 import { AdjustmentCalculator } from '@/components/offer/AdjustmentCalculator';
+import { AIValuationPanel } from '@/components/ai/AIValuationPanel';
 
 // Services
 import { CompsDataService } from '@/services/compsDataService';
@@ -2407,6 +2408,32 @@ export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
             <SmartInsights
               insights={smartInsights}
               property={selectedProperty}
+            />
+          )}
+
+          {/* AI Valuation Panel */}
+          {selectedProperty && filteredComparables.length > 0 && (
+            <AIValuationPanel
+              property={{
+                address: selectedProperty.address,
+                city: selectedProperty.city || '',
+                state: selectedProperty.state || '',
+                zip_code: selectedProperty.zip_code || '',
+                square_feet: selectedProperty.square_feet,
+                bedrooms: selectedProperty.bedrooms,
+                bathrooms: selectedProperty.bathrooms,
+                year_built: selectedProperty.year_built,
+                lot_size: selectedProperty.lot_size,
+                estimated_value: selectedProperty.estimated_value,
+              }}
+              comps={filteredComparables.map(c => ({
+                comp_data: {
+                  sale_price: c.salePrice || c.sale_price,
+                  square_feet: c.sqft || c.square_feet,
+                  address: c.address,
+                },
+                notes: c.notes,
+              }))}
             />
           )}
 
