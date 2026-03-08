@@ -26,8 +26,22 @@ export const useTemplates = () => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        await insertDefaultTemplates();
-        await loadTemplates();
+        // Try to insert defaults once, then reload (no recursion)
+        const inserted = await insertDefaultTemplates();
+        if (inserted) {
+          const { data: retryData, error: retryError } = await supabase
+            .from('templates')
+            .select('*')
+            .order('created_at', { ascending: true });
+          if (!retryError && retryData && retryData.length > 0) {
+            setTemplates(retryData.map(t => ({
+              ...t,
+              channel: t.channel as Channel,
+              created_at: new Date(t.created_at),
+              updated_at: new Date(t.updated_at),
+            })));
+          }
+        }
         return;
       }
 
@@ -41,7 +55,6 @@ export const useTemplates = () => {
       setTemplates(templatesWithDates);
     } catch (error) {
       console.error('Erro ao carregar templates:', error);
-      toast.error('Erro ao carregar templates');
     } finally {
       setIsLoading(false);
     }
