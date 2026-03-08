@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Target, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
