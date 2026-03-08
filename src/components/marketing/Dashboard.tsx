@@ -19,6 +19,8 @@ import { useMemo } from 'react';
 import { LeadScoringDashboard } from '../lead/LeadScoringDashboard';
 import { AutomatedSequences } from '../follow-up/AutomatedSequences';
 import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
+import { ConversionFunnel } from '@/components/analytics/ConversionFunnel';
+import { SmartFollowUpScheduler } from '@/components/automation/SmartFollowUpScheduler';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -115,6 +117,9 @@ export const Dashboard = () => {
         </Button>
       </div>
 
+      {/* Conversion Funnel */}
+      <ConversionFunnel />
+
       {/* Campaign Performance Dashboard - Main Analytics */}
       <CampaignPerformanceDashboard />
 
@@ -177,6 +182,9 @@ export const Dashboard = () => {
 
       {/* Lead Scoring & Analytics */}
       <LeadScoringDashboard />
+
+      {/* Smart Follow-Up Suggestions */}
+      <SmartFollowUpScheduler />
 
       {/* Automated Sequences */}
       <AutomatedSequences />
