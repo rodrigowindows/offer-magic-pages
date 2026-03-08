@@ -15,38 +15,59 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
+    // Verify caller is authenticated
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: claims, error: authError } = await authClient.auth.getClaims(
+      authHeader.replace('Bearer ', '')
+    );
+    if (authError || !claims?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Use service role client for the actual updates
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    const { updates } = await req.json();
+    const { sql_statements } = await req.json();
 
-    if (!updates || !Array.isArray(updates)) {
-      return new Response(JSON.stringify({ error: 'Missing updates array' }), {
+    if (!sql_statements || !Array.isArray(sql_statements)) {
+      return new Response(JSON.stringify({ error: 'Missing sql_statements array' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
+
+    // Only allow UPDATE statements on properties table
+    for (const stmt of sql_statements) {
+      const trimmed = stmt.trim().toUpperCase();
+      if (!trimmed.startsWith('UPDATE PROPERTIES SET')) {
+        return new Response(JSON.stringify({ error: 'Only UPDATE properties SET statements allowed' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
     }
 
     let successCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
 
-    for (const update of updates) {
-      const { id, ...data } = update;
-      if (!id) {
-        errorCount++;
-        errors.push('Missing id in update');
-        continue;
-      }
-
-      const { error } = await supabase
-        .from('properties')
-        .update(data)
-        .eq('id', id);
-
+    for (const stmt of sql_statements) {
+      const { error } = await supabase.rpc('execute_sql', { sql_query: stmt });
       if (error) {
         errorCount++;
-        errors.push(`${id}: ${error.message}`);
+        if (errors.length < 5) errors.push(error.message);
       } else {
         successCount++;
       }
@@ -56,8 +77,8 @@ Deno.serve(async (req) => {
       success: true,
       successCount,
       errorCount,
-      errors: errors.slice(0, 10),
-      total: updates.length
+      errors,
+      total: sql_statements.length
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
