@@ -1738,6 +1738,11 @@ export const CampaignManager = () => {
                                         {phones.length > 0 && (
                                           <div className="flex items-center gap-2 text-muted-foreground">
                                             <Phone className="w-3 h-3 flex-shrink-0" />
+                                            {phoneFieldFilter && (
+                                              <span className="text-xs font-semibold text-primary">
+                                                [{phoneFieldFilter.replace('_', ' ').replace('phone', 'Ph').replace('owner Ph', 'Owner')}]
+                                              </span>
+                                            )}
                                             <span className="truncate font-mono text-xs">
                                               {phones.slice(0, 2).join(', ')}
                                               {phones.length > 2 && ` +${phones.length - 2} more`}
