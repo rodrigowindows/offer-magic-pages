@@ -15,8 +15,8 @@ const makeTemplate = (overrides: Partial<SavedTemplate>): SavedTemplate => ({
   is_default: false,
   version: 1,
   edited_manually: false,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+  created_at: new Date(),
+  updated_at: new Date(),
   ...overrides,
 });
 
