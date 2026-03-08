@@ -60,7 +60,7 @@ export const useTemplates = () => {
     }
   }, []);
 
-  const insertDefaultTemplates = async () => {
+  const insertDefaultTemplates = async (): Promise<boolean> => {
     try {
       const templatesToInsert = DEFAULT_TEMPLATES.map(t => ({
         id: t.id,
@@ -78,8 +78,10 @@ export const useTemplates = () => {
       const { error } = await supabase.from('templates').insert(templatesToInsert);
       if (error) throw error;
       toast.success('Templates padrão carregados');
+      return true;
     } catch (error) {
       console.error('Erro ao inserir templates padrão:', error);
+      return false;
     }
   };
 
