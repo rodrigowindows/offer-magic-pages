@@ -72,29 +72,27 @@ export function CampaignStep2Properties({ loading, properties, filters, selected
           </Button>
         </div>
 
-        {/* Phone Field Multi-Select */}
-        {showAdvancedFilters && (
-          <div className="flex flex-wrap gap-1 p-2 bg-muted/30 rounded-lg border">
-            <span className="text-[10px] font-semibold text-muted-foreground mr-1 self-center">Phone Fields:</span>
-            {PHONE_COLUMNS.map(({ value: key, label }) => {
-              const isSelected = phoneFieldFilter.includes(key);
-              return (
-                <Button key={key} variant={isSelected ? 'default' : 'outline'} size="sm"
-                  className={`text-[10px] h-6 px-1.5 ${isSelected ? 'bg-secondary hover:bg-secondary/90' : ''}`}
-                  onClick={() => {
-                    const newFilter = isSelected ? phoneFieldFilter.filter(f => f !== key) : [...phoneFieldFilter, key];
-                    setPhoneFieldFilter(newFilter);
-                    if (newFilter.length > 0) { setHasSkiptracePhoneFilter(false); setSelectedPhoneColumn(newFilter[0]); }
-                  }}>
-                  {label} ({(phoneFieldCounts as Record<string, number>)[key] || 0})
-                </Button>
-              );
-            })}
-            {phoneFieldFilter.length > 0 && (
-              <Button variant="ghost" size="sm" className="text-[10px] h-6 px-1.5 text-destructive hover:text-destructive" onClick={() => setPhoneFieldFilter([])}>Clear</Button>
-            )}
-          </div>
-        )}
+        {/* Phone Field Multi-Select - Always visible */}
+        <div className="flex flex-wrap gap-1 p-2 bg-muted/30 rounded-lg border">
+          <span className="text-[10px] font-semibold text-muted-foreground mr-1 self-center">📞 Filter by Phone:</span>
+          {PHONE_COLUMNS.map(({ value: key, label }) => {
+            const isSelected = phoneFieldFilter.includes(key);
+            return (
+              <Button key={key} variant={isSelected ? 'default' : 'outline'} size="sm"
+                className={`text-[10px] h-6 px-1.5 ${isSelected ? 'bg-secondary hover:bg-secondary/90' : ''}`}
+                onClick={() => {
+                  const newFilter = isSelected ? phoneFieldFilter.filter(f => f !== key) : [...phoneFieldFilter, key];
+                  setPhoneFieldFilter(newFilter);
+                  if (newFilter.length > 0) { setHasSkiptracePhoneFilter(false); setSelectedPhoneColumn(newFilter[0]); }
+                }}>
+                {label} ({(phoneFieldCounts as Record<string, number>)[key] || 0})
+              </Button>
+            );
+          })}
+          {phoneFieldFilter.length > 0 && (
+            <Button variant="ghost" size="sm" className="text-[10px] h-6 px-1.5 text-destructive hover:text-destructive" onClick={() => setPhoneFieldFilter([])}>Clear</Button>
+          )}
+        </div>
 
         {/* Active Filters */}
         {activeFilters.length > 0 && (
