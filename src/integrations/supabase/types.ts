@@ -50,6 +50,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "ab_test_events_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       ab_tests: {
@@ -104,6 +111,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ab_tests_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -288,6 +302,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "campaign_logs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       campaign_sequences: {
@@ -434,6 +455,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "comps_analysis_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       email_campaigns: {
@@ -473,6 +501,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -546,6 +581,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "follow_up_reminders_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       manual_comps_links: {
@@ -593,6 +635,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "manual_comps_links_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -629,6 +678,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1899,6 +1955,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "property_analytics_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       property_leads: {
@@ -1970,6 +2033,13 @@ export type Database = {
             referencedRelation: "properties"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "property_leads_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       property_notes: {
@@ -2006,6 +2076,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_notes_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2047,6 +2124,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_offer_history_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2097,6 +2181,13 @@ export type Database = {
             columns: ["property_id"]
             isOneToOne: false
             referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_sequences_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties_public"
             referencedColumns: ["id"]
           },
           {
@@ -2217,7 +2308,81 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      properties_public: {
+        Row: {
+          address: string | null
+          bathrooms: number | null
+          bedrooms: number | null
+          cash_offer_amount: number | null
+          city: string | null
+          estimated_value: number | null
+          id: string | null
+          latitude: number | null
+          lead_status: string | null
+          longitude: number | null
+          lot_size: number | null
+          neighborhood: string | null
+          pool: boolean | null
+          property_image_url: string | null
+          property_type: string | null
+          slug: string | null
+          square_feet: number | null
+          state: string | null
+          status: string | null
+          year_built: number | null
+          zillow_url: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cash_offer_amount?: number | null
+          city?: string | null
+          estimated_value?: number | null
+          id?: string | null
+          latitude?: number | null
+          lead_status?: string | null
+          longitude?: number | null
+          lot_size?: number | null
+          neighborhood?: string | null
+          pool?: boolean | null
+          property_image_url?: string | null
+          property_type?: string | null
+          slug?: string | null
+          square_feet?: number | null
+          state?: string | null
+          status?: string | null
+          year_built?: number | null
+          zillow_url?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          cash_offer_amount?: number | null
+          city?: string | null
+          estimated_value?: number | null
+          id?: string | null
+          latitude?: number | null
+          lead_status?: string | null
+          longitude?: number | null
+          lot_size?: number | null
+          neighborhood?: string | null
+          pool?: boolean | null
+          property_image_url?: string | null
+          property_type?: string | null
+          slug?: string | null
+          square_feet?: number | null
+          state?: string | null
+          status?: string | null
+          year_built?: number | null
+          zillow_url?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_column_if_not_exists: {
@@ -2239,7 +2404,6 @@ export type Database = {
         Args: { p_column_name: string; p_table_name: string }
         Returns: boolean
       }
-      execute_sql: { Args: { sql_query: string }; Returns: undefined }
       get_table_columns: {
         Args: { p_table_name: string }
         Returns: {
