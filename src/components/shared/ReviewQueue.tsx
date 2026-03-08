@@ -86,7 +86,15 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             <XCircle className="h-2.5 w-2.5 text-red-500" />
             <span className="font-bold text-red-700 dark:text-red-400">{queue.dailyStats?.rejected_today || 0}</span>
           </div>
-          <SpeedTracker dailyStats={queue.dailyStats} />
+          <div className="flex items-center gap-2">
+            <SpeedTracker dailyStats={queue.dailyStats} />
+            {undo.canUndo && (
+              <Button variant="outline" size="sm" onClick={undo.undoLastAction} className="h-5 px-1.5 text-[10px] gap-1 text-amber-700 border-amber-300 hover:bg-amber-50">
+                <Undo2 className="h-2.5 w-2.5" />
+                Desfazer
+              </Button>
+            )}
+          </div>
         </div>
 
         <FilterBar
