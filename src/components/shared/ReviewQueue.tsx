@@ -38,22 +38,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     fetchCurrentComps: queue.fetchCurrentComps,
     onActionComplete: (propertyId, address, action, prevData) => {
       undo.recordAction(propertyId, address, action, prevData);
-      // Show toast with undo button
-      toast({
-        title: action === 'approved' ? '✅ Aprovado' : '❌ Rejeitado',
-        description: address,
-        action: (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => undo.undoLastAction()}
-            className="gap-1 text-xs"
-          >
-            <Undo2 className="h-3 w-3" />
-            Desfazer
-          </Button>
-        ),
-      });
     },
   });
 
