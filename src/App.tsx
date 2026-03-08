@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FeatureToggleProvider } from "@/contexts/FeatureToggleContext";
 import { UsageAnalyticsProvider } from "@/contexts/UsageAnalyticsContext";
+import { HelmetProvider } from "react-helmet-async";
 import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 
@@ -22,6 +23,7 @@ const FeaturesGuide = lazy(() => import("./components/shared/FeaturesGuide").the
 const queryClient = new QueryClient();
 
 const App = () => (
+  <HelmetProvider>
   <QueryClientProvider client={queryClient}>
     <UsageAnalyticsProvider>
       <FeatureToggleProvider>
@@ -50,6 +52,7 @@ const App = () => (
       </FeatureToggleProvider>
     </UsageAnalyticsProvider>
   </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
