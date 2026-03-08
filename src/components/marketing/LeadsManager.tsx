@@ -86,10 +86,10 @@ export const LeadsManager = () => {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      console.log('🔍 [LeadsManager] Starting to fetch leads...');
+      
 
       // 1. Fetch form submissions from property_leads
-      console.log('📝 [LeadsManager] Fetching form submissions...');
+      
       const { data: formLeads, error: formError } = await supabase
         .from('property_leads')
         .select(`
@@ -107,10 +107,10 @@ export const LeadsManager = () => {
         console.error('❌ [LeadsManager] Error fetching form leads:', formError);
         throw formError;
       }
-      console.log('✅ [LeadsManager] Form leads fetched:', formLeads?.length || 0);
+      
 
       // 2. Fetch clicks from campaign_logs (link_clicked = true)
-      console.log('🖱️ [LeadsManager] Fetching campaign clicks...');
+      
       const { data: campaignClicks, error: clickError } = await supabase
         .from('campaign_logs')
         .select(`
@@ -145,11 +145,11 @@ export const LeadsManager = () => {
       if (clickError) {
         console.error('❌ [LeadsManager] Error fetching campaign clicks:', clickError);
       } else {
-        console.log('✅ [LeadsManager] Campaign clicks fetched:', campaignClicks?.length || 0);
+        
       }
 
       // 3. Convert campaign clicks to Lead format
-      console.log('🔄 [LeadsManager] Converting clicks to leads...');
+      
       const clickLeads: Lead[] = (campaignClicks || [])
         .map(click => {
           const prop = click.properties as any;
@@ -212,12 +212,6 @@ export const LeadsManager = () => {
       setLeads(uniqueLeads);
       calculateStats(uniqueLeads);
 
-      console.log('📊 [LeadsManager] Final summary:', {
-        formLeads: formLeads?.length || 0,
-        campaignClickLeads: clickLeads.length,
-        totalBeforeDedupe: allLeads.length,
-        uniqueLeads: uniqueLeads.length
-      });
 
       toast({
         title: 'Leads carregados',

@@ -77,7 +77,7 @@ export const ClicksAnalytics = () => {
   const fetchClicksData = async () => {
     setLoading(true);
     try {
-      console.log('🔍 [ClicksAnalytics] Fetching clicks data...', { dateRange, sourceFilter });
+      
 
       // Calculate date filter
       let dateFilter: Date | null = null;
@@ -121,10 +121,6 @@ export const ClicksAnalytics = () => {
         throw error;
       }
 
-      console.log('✅ [ClicksAnalytics] Data fetched:', {
-        totalRecords: data?.length || 0,
-        sample: data?.[0]
-      });
 
       // Process metrics
       const clicks = data || [];
@@ -177,12 +173,6 @@ export const ClicksAnalytics = () => {
         };
       });
 
-      console.log('📊 [ClicksAnalytics] Final metrics:', {
-        total: clicks.length,
-        sourcesCount: Object.keys(bySource).length,
-        campaignsCount: Object.keys(byCampaign).length,
-        recentClicksCount: mappedClicks.slice(0, 20).length
-      });
 
       setMetrics({
         total: clicks.length,
