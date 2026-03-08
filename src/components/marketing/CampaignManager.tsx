@@ -138,6 +138,7 @@ export const CampaignManager = () => {
   const [activeFilters, setActiveFilters] = useState<{id: string; label: string}[]>([]);
   const [hasSkiptracePhoneFilter, setHasSkiptracePhoneFilter] = useState(false);
   const [hasSkiptraceEmailFilter, setHasSkiptraceEmailFilter] = useState(false);
+  const [phoneFieldFilter, setPhoneFieldFilter] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showHtmlCode, setShowHtmlCode] = useState(false);
   const [previewRenderLimit, setPreviewRenderLimit] = useState(20);
@@ -220,6 +221,18 @@ export const CampaignManager = () => {
   const countWithSkiptracePhones = properties.filter(hasSkiptracePhones).length;
   const countWithSkiptraceEmails = properties.filter(hasSkiptraceEmails).length;
 
+  // Count per phone field
+  const phoneFieldCounts = {
+    phone1: properties.filter(p => !!p.phone1).length,
+    phone2: properties.filter(p => !!p.phone2).length,
+    phone3: properties.filter(p => !!p.phone3).length,
+    phone4: properties.filter(p => !!p.phone4).length,
+    phone5: properties.filter(p => !!p.phone5).length,
+    phone6: properties.filter(p => !!p.phone6).length,
+    phone7: properties.filter(p => !!p.phone7).length,
+    owner_phone: properties.filter(p => !!p.owner_phone).length,
+  };
+
   // Get filtered properties
   const getFilteredProperties = () => {
     return properties.filter(p => {
@@ -233,6 +246,12 @@ export const CampaignManager = () => {
       
       // Skiptrace email filter
       if (hasSkiptraceEmailFilter && !hasSkiptraceEmails(p)) return false;
+
+      // Specific phone field filter
+      if (phoneFieldFilter) {
+        const value = (p as any)[phoneFieldFilter];
+        if (!value) return false;
+      }
       
       return matchesSearch;
     });
@@ -1508,7 +1527,7 @@ export const CampaignManager = () => {
                     <Button
                       variant={hasSkiptracePhoneFilter ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter)}
+                      onClick={() => { setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter); setPhoneFieldFilter(null); }}
                       className={hasSkiptracePhoneFilter ? 'bg-blue-600 hover:bg-blue-700' : ''}
                     >
                       <Phone className="w-3 h-3 mr-1" />
@@ -1523,6 +1542,33 @@ export const CampaignManager = () => {
                       <Mail className="w-3 h-3 mr-1" />
                       With Emails ({countWithSkiptraceEmails})
                     </Button>
+                  </div>
+
+                  {/* Filtros por campo de telefone específico */}
+                  <div className="flex gap-1.5 flex-wrap">
+                    {([
+                      { key: 'owner_phone', label: 'Owner Phone' },
+                      { key: 'phone1', label: 'Phone 1' },
+                      { key: 'phone2', label: 'Phone 2' },
+                      { key: 'phone3', label: 'Phone 3' },
+                      { key: 'phone4', label: 'Phone 4' },
+                      { key: 'phone5', label: 'Phone 5' },
+                      { key: 'phone6', label: 'Phone 6' },
+                      { key: 'phone7', label: 'Phone 7' },
+                    ] as const).map(({ key, label }) => (
+                      <Button
+                        key={key}
+                        variant={phoneFieldFilter === key ? 'default' : 'outline'}
+                        size="sm"
+                        className={`text-xs h-7 px-2 ${phoneFieldFilter === key ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+                        onClick={() => {
+                          setPhoneFieldFilter(phoneFieldFilter === key ? null : key);
+                          setHasSkiptracePhoneFilter(false);
+                        }}
+                      >
+                        {label} ({(phoneFieldCounts as any)[key]})
+                      </Button>
+                    ))}
                   </div>
 
                   {/* Filtros Ativos */}
