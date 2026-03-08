@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,13 @@ import {
 
 const ImportProperties = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const ip = useImportProperties();
+
+  // Detect if inside /process flow to navigate back correctly
+  const isInsideProcess = location.pathname.startsWith('/process');
+  const backPath = isInsideProcess ? '/process' : '/admin';
+  const backLabel = isInsideProcess ? 'Processo' : 'Voltar';
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -27,7 +33,7 @@ const ImportProperties = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/admin')}><ArrowLeft className="h-4 w-4 mr-2" />Voltar</Button>
+            <Button variant="ghost" onClick={() => navigate(backPath)}><ArrowLeft className="h-4 w-4 mr-2" />{backLabel}</Button>
             <div>
               <h1 className="text-2xl font-bold">Import Properties</h1>
               <p className="text-muted-foreground">Importe propriedades com imagens do seu computador</p>
