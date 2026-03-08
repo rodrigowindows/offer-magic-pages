@@ -4,6 +4,7 @@ import {
   Phone,
   Home,
   DollarSign,
+  MessageSquare,
 } from 'lucide-react';
 
 export interface ProcessStep {
@@ -55,5 +56,13 @@ export const PROCESS_STEPS: ProcessStep[] = [
     fullPath: '/process/mao',
     icon: DollarSign,
     description: 'Calcular oferta máxima (MAO)',
+  },
+  {
+    number: 6,
+    title: 'Respostas',
+    path: 'responses',
+    fullPath: '/process/responses',
+    icon: MessageSquare,
+    description: 'Dashboard de respostas e engajamento',
   },
 ];

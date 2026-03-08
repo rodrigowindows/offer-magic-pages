@@ -12,6 +12,9 @@ const SkipTrace = lazy(() => import('@/pages/SkipTrace'));
 const ManualCompsManager = lazy(() =>
   import('@/components/shared/ManualCompsManager').then(m => ({ default: m.ManualCompsManager }))
 );
+const ResponseDashboard = lazy(() =>
+  import('@/components/campaigns/ResponseDashboard').then(m => ({ default: m.ResponseDashboard }))
+);
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
@@ -59,6 +62,7 @@ export const ProcessApp = () => {
               <Route path="/contacts" element={<SkipTrace />} />
               <Route path="/comps" element={<ManualCompsManager />} />
               <Route path="/mao" element={<MAOCalculator />} />
+              <Route path="/responses" element={<ResponseDashboard />} />
               <Route path="*" element={<Navigate to="/process" replace />} />
             </Routes>
           </Suspense>
