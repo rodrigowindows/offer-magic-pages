@@ -499,8 +499,14 @@ export const CampaignManager = () => {
     const fromTags = dedupeContacts([...preferredPhones, ...manualPhones]);
     if (fromTags.length > 0) return fromTags;
 
-    const fallback = normalizeContactValue(prop[selectedPhoneColumn]);
-    return fallback ? [fallback] : [];
+    // Aggregate all skiptrace phone columns
+    const allPhones: string[] = [];
+    const phoneCols = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7'];
+    for (const col of phoneCols) {
+      const val = normalizeContactValue(prop[col]);
+      if (val) allPhones.push(val);
+    }
+    return dedupeContacts(allPhones);
   };
 
   const getAllEmails = (prop: CampaignProperty): string[] => {
@@ -508,8 +514,14 @@ export const CampaignManager = () => {
     const fromTags = dedupeContacts([...preferredEmails, ...manualEmails]);
     if (fromTags.length > 0) return fromTags;
 
-    const fallback = normalizeContactValue(prop[selectedEmailColumn]);
-    return fallback ? [fallback] : [];
+    // Aggregate all skiptrace email columns
+    const allEmails: string[] = [];
+    const emailCols = ['email1', 'email2'];
+    for (const col of emailCols) {
+      const val = normalizeContactValue(prop[col]);
+      if (val) allEmails.push(val);
+    }
+    return dedupeContacts(allEmails);
   };
 
   // Derived states for use across component (MUST be after helper functions)
