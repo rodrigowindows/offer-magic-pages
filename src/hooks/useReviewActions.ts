@@ -16,6 +16,12 @@ interface UseReviewActionsOptions {
   currentIndex: number;
   onAdvance: () => Promise<void>;
   fetchCurrentComps: (propertyId: string) => Promise<void>;
+  onActionComplete?: (
+    propertyId: string,
+    address: string,
+    action: 'approved' | 'rejected',
+    previousData: { status: string | null; offer: number | null; rejectionReason: string | null; rejectionNotes: string | null }
+  ) => void;
 }
 
 export const useReviewActions = ({
