@@ -280,13 +280,9 @@ const channelIcons = {
 };
 
 export const TemplateManager = () => {
-  console.log('🎨 [TemplateManager] COMPONENTE RENDERIZANDO');
-
   const { toast } = useToast();
 
-  console.log('🎨 [TemplateManager] Chamando useTemplates...');
   const hookResult = useTemplates();
-  console.log('🎨 [TemplateManager] Hook retornou:', hookResult);
 
   const {
     templates,
@@ -297,9 +293,6 @@ export const TemplateManager = () => {
     deleteTemplate,
     setAsDefault,
   } = hookResult;
-
-  console.log('🎨 [TemplateManager] templates:', templates);
-  console.log('🎨 [TemplateManager] templateStats:', templateStats);
 
   const [activeChannel, setActiveChannel] = useState<Channel>('email');
   const [editingTemplate, setEditingTemplate] = useState<SavedTemplate | null>(null);
@@ -453,15 +446,9 @@ export const TemplateManager = () => {
     setShowHtmlEditor(true);
   };
 
-  console.log('🎨 [TemplateManager] Obtendo channelTemplates para:', activeChannel);
   const channelTemplates = getTemplatesByChannel(activeChannel) || [];
-  console.log('📋 [TemplateManager] channelTemplates:', channelTemplates);
-  console.log('📋 [TemplateManager] channelTemplates.length:', channelTemplates?.length);
-
-  console.log('🎨 [TemplateManager] Iniciando RETURN (render JSX)...');
 
   try {
-    console.log('🎨 [TemplateManager] Dentro do try, antes do return');
     return (
     <div className="space-y-6">
       {/* Header */}
