@@ -231,6 +231,9 @@ export const CampaignManager = () => {
     phone6: properties.filter(p => !!p.phone6).length,
     phone7: properties.filter(p => !!p.phone7).length,
     owner_phone: properties.filter(p => !!p.owner_phone).length,
+    person2_phone1: properties.filter(p => !!p.person2_phone1).length,
+    person2_phone2: properties.filter(p => !!p.person2_phone2).length,
+    person3_phone1: properties.filter(p => !!p.person3_phone1).length,
   };
 
   // Get filtered properties
@@ -446,14 +449,19 @@ export const CampaignManager = () => {
     if (!allColumns.includes(phoneCol)) allColumns.push(phoneCol);
     if (!allColumns.includes(emailCol)) allColumns.push(emailCol);
     
-    // Always include skiptrace phone columns for filtering
-    const skiptracePhoneCols = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7'];
-    skiptracePhoneCols.forEach(col => {
+    // Always include ALL phone columns for filtering (including owner_phone and person phones)
+    const allPhoneCols = [
+      'owner_phone',
+      'phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7',
+      'person2_phone1', 'person2_phone2',
+      'person3_phone1',
+    ];
+    allPhoneCols.forEach(col => {
       if (!allColumns.includes(col)) allColumns.push(col);
     });
     
     // Always include skiptrace email columns for filtering
-    const skiptraceEmailCols = ['email1', 'email2'];
+    const skiptraceEmailCols = ['email1', 'email2', 'person2_email1', 'person2_email2', 'person3_email1', 'person3_email2'];
     skiptraceEmailCols.forEach(col => {
       if (!allColumns.includes(col)) allColumns.push(col);
     });
@@ -1733,6 +1741,11 @@ export const CampaignManager = () => {
                                         {phones.length > 0 && (
                                           <div className="flex items-center gap-2 text-muted-foreground">
                                             <Phone className="w-3 h-3 flex-shrink-0" />
+                                            {phoneFieldFilter && (
+                                              <span className="text-xs font-semibold text-primary">
+                                                [{phoneFieldFilter.replace('_', ' ').replace('phone', 'Ph').replace('owner Ph', 'Owner')}]
+                                              </span>
+                                            )}
                                             <span className="truncate font-mono text-xs">
                                               {phones.slice(0, 2).join(', ')}
                                               {phones.length > 2 && ` +${phones.length - 2} more`}
