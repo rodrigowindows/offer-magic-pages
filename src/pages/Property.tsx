@@ -14,12 +14,10 @@ interface PropertyData {
   property_image_url: string | null;
   estimated_value: number;
   cash_offer_amount: number;
-  min_offer_amount?: number;
-  max_offer_amount?: number;
   status: string;
-  owner_name: string | null;
   neighborhood: string | null;
   zillow_url: string | null;
+  owner_name?: string | null;
 }
 
 const Property = () => {
@@ -37,10 +35,9 @@ const Property = () => {
 
     const fetchProperty = async (propertySlug: string) => {
       const { data, error } = await supabase
-        .from("properties")
+        .from("properties_public")
         .select("*")
         .eq("slug", propertySlug)
-        .eq("status", "active")
         .maybeSingle();
 
       if (error) {
