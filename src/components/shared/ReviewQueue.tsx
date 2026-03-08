@@ -1,609 +1,138 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Target } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "./EmptyState";
 import { CompsModal } from "@/components/process/CompsModal";
 import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
 import { InlineCompsList } from "@/components/review/InlineCompsList";
-import type { QueueProperty, ApprovePhase, StatusFilter, DailyStats, StatusCounts } from "@/components/review/types";
-import { REJECTION_REASONS } from "@/components/review/constants";
-import { getVisualCategory, countByVisual } from "@/components/review/helpers";
-import { defaultOffer, formatCurrency } from "@/lib/utils";
-import { calculateCompsPricing } from "@/services/compsPricing";
-import type { SavedComp } from "@/hooks/useComps";
-
-const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning";
+import { useReviewQueue } from "@/hooks/useReviewQueue";
+import { useReviewActions } from "@/hooks/useReviewActions";
 
 interface ReviewQueueProps {
   selectedBatch?: string;
 }
 
 export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
-  const [properties, setProperties] = useState<QueueProperty[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
+  const queue = useReviewQueue(selectedBatch);
 
-  // Filters
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
-  const [visualFilter, setVisualFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusCounts, setStatusCounts] = useState<StatusCounts>({ pending: 0, approved: 0, rejected: 0 });
+  const advanceAfterAction = useCallback(async () => {
+    await queue.fetchProperties();
+    await queue.fetchDailyStats();
+    queue.fetchStatusCounts();
+  }, [queue.fetchProperties, queue.fetchDailyStats, queue.fetchStatusCounts]);
 
-  // Reject form
-  const [showRejectForm, setShowRejectForm] = useState(false);
-  const [selectedReason, setSelectedReason] = useState("");
-  const [rejectionNotes, setRejectionNotes] = useState("");
-
-  // Approve flow: null → 'choose' → 'comps' → 'offer'
-  const [approvePhase, setApprovePhase] = useState<ApprovePhase>(null);
-  const [pendingApproveProperty, setPendingApproveProperty] = useState<QueueProperty | null>(null);
-  const [compsModalProperty, setCompsModalProperty] = useState<QueueProperty | null>(null);
-  const [compsARV, setCompsARV] = useState<number | null>(null);
-  const [quickOfferAmount, setQuickOfferAmount] = useState("");
-  const [currentCompsCount, setCurrentCompsCount] = useState(0);
-  const [currentComps, setCurrentComps] = useState<SavedComp[]>([]);
-  const [decisionPhotos, setDecisionPhotos] = useState<File[]>([]);
-  const [approvalNotes, setApprovalNotes] = useState("");
-
-  const { user, userId, userName } = useCurrentUser();
-  const { toast } = useToast();
-
-  // Derived
-  const visualCounts = countByVisual(properties);
-  const searchFiltered = searchQuery.trim()
-    ? properties.filter(p => p.address.toLowerCase().includes(searchQuery.toLowerCase()))
-    : properties;
-  const filteredProperties = visualFilter === 'all'
-    ? searchFiltered
-    : searchFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
-  const currentProperty = filteredProperties[currentIndex];
-
-  // Average of 3 most recent comps' sale prices
-  const avgCompPrice = useMemo(() => {
-    if (currentComps.length === 0) return null;
-    const sorted = [...currentComps].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-    const recent3 = sorted.slice(0, 3);
-    const prices = recent3
-      .map(c => c.comp_data?.sale_price)
-      .filter((p): p is number => typeof p === 'number' && p > 0);
-    return prices.length > 0 ? Math.round(prices.reduce((s, p) => s + p, 0) / prices.length) : null;
-  }, [currentComps]);
-
-  // ── Data fetching ─────────────────────────────────────────────
-
-  useEffect(() => {
-    fetchProperties();
-    if (user) {
-      fetchDailyStats();
-      fetchStatusCounts();
-    }
-  }, [user, selectedBatch, statusFilter]);
-
-  // Real-time subscription: refresh when another user approves/rejects
-  useEffect(() => {
-    const channel = supabase
-      .channel('properties-approval-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'properties',
-        },
-        (payload: any) => {
-          if (payload.new?.approved_by && payload.new.approved_by !== userId) {
-            fetchProperties();
-            fetchStatusCounts();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [userId, selectedBatch, statusFilter]);
-
-  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery]);
-
-  useEffect(() => {
-    setShowRejectForm(false);
-    setSelectedReason("");
-    setRejectionNotes("");
-    setApprovePhase(null);
-    setPendingApproveProperty(null);
-    setQuickOfferAmount("");
-    setCompsARV(null);
-    setCurrentCompsCount(0);
-    setCurrentComps([]);
-    setDecisionPhotos([]);
-    setApprovalNotes("");
-  }, [currentIndex]);
-
-  // Fetch comps for current property
-  const fetchCurrentComps = useCallback(async (propertyId: string) => {
-    try {
-      const { data } = await supabase
-        .from('manual_comps_links' as any)
-        .select('id, url, source, comp_data, created_at')
-        .eq('property_id', propertyId)
-        .order('created_at', { ascending: false });
-      const comps = (data as unknown as SavedComp[]) || [];
-      setCurrentComps(comps);
-      setCurrentCompsCount(comps.length);
-    } catch {
-      setCurrentComps([]);
-      setCurrentCompsCount(0);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (currentProperty?.id) fetchCurrentComps(currentProperty.id);
-  }, [currentProperty?.id, fetchCurrentComps]);
-
-  const fetchProperties = async () => {
-    try {
-      setIsLoading(true);
-      let query = supabase
-        .from("properties")
-        .select(PROPERTY_FIELDS)
-        .order("created_at", { ascending: true })
-        .limit(500);
-
-      if (statusFilter === 'pending') {
-        query = query.or("approval_status.is.null,approval_status.eq.pending");
-      } else {
-        query = query.eq("approval_status", statusFilter);
-      }
-      if (selectedBatch && selectedBatch !== 'all') {
-        query = query.eq('import_batch', selectedBatch);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      setProperties((data as unknown as QueueProperty[]) || []);
-    } catch (error: any) {
-      toast({ title: "Erro ao carregar", description: error.message, variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchStatusCounts = async () => {
-    try {
-      const batchFilter = selectedBatch && selectedBatch !== 'all' ? selectedBatch : null;
-
-      let pQ = supabase.from("properties").select("*", { count: "exact", head: true })
-        .or("approval_status.is.null,approval_status.eq.pending");
-      let aQ = supabase.from("properties").select("*", { count: "exact", head: true })
-        .eq("approval_status", "approved");
-      let rQ = supabase.from("properties").select("*", { count: "exact", head: true })
-        .eq("approval_status", "rejected");
-
-      if (batchFilter) {
-        pQ = pQ.eq('import_batch', batchFilter);
-        aQ = aQ.eq('import_batch', batchFilter);
-        rQ = rQ.eq('import_batch', batchFilter);
-      }
-
-      const [pendingRes, approvedRes, rejectedRes] = await Promise.all([pQ, aQ, rQ]);
-      setStatusCounts({
-        pending: pendingRes.count || 0,
-        approved: approvedRes.count || 0,
-        rejected: rejectedRes.count || 0,
-      });
-    } catch (err) {
-      console.error('Error fetching status counts:', err);
-    }
-  };
-
-  const fetchDailyStats = async () => {
-    if (!user) return;
-    try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const { data: userReviews } = await supabase
-        .from("properties")
-        .select("approval_status")
-        .eq("approved_by", user.id)
-        .gte("approved_at", today.toISOString());
-
-      const approved = userReviews?.filter(p => p.approval_status === "approved").length || 0;
-      const rejected = userReviews?.filter(p => p.approval_status === "rejected").length || 0;
-      setDailyStats({
-        reviewed_today: approved + rejected,
-        approved_today: approved,
-        rejected_today: rejected,
-      });
-    } catch (error: any) {
-      console.error("Error fetching daily stats:", error);
-    }
-  };
-
-  // ── Navigation ────────────────────────────────────────────────
-
-  const handleNext = () => {
-    if (currentIndex < filteredProperties.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      toast({ title: "Fim da lista", description: "Você chegou ao final das propriedades filtradas." });
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
-  };
-
-  // ── Approve flow ──────────────────────────────────────────────
-
-  const resetActionState = () => {
-    setShowRejectForm(false);
-    setSelectedReason("");
-    setRejectionNotes("");
-    setQuickOfferAmount("");
-    setApprovePhase(null);
-    setPendingApproveProperty(null);
-    setCompsARV(null);
-    setDecisionPhotos([]);
-    setApprovalNotes("");
-  };
-
-  const uploadDecisionPhotos = async (propertyId: string, decision: string): Promise<string[]> => {
-    if (decisionPhotos.length === 0) return [];
-    const urls: string[] = [];
-    for (const file of decisionPhotos) {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const ts = Date.now();
-      const path = `decisions/${propertyId}/${decision}_${ts}_${Math.random().toString(36).slice(2, 6)}.${ext}`;
-      const { error } = await supabase.storage
-        .from('property-images')
-        .upload(path, file, { contentType: file.type });
-      if (!error) {
-        const { data: { publicUrl } } = supabase.storage
-          .from('property-images')
-          .getPublicUrl(path);
-        urls.push(publicUrl);
-      }
-    }
-    return urls;
-  };
-
-  const advanceAfterAction = async () => {
-    await fetchProperties();
-    await fetchDailyStats();
-    fetchStatusCounts();
-    resetActionState();
-  };
-
-  const handleStartApprove = () => {
-    if (!currentProperty) return;
-    setPendingApproveProperty(currentProperty);
-    setApprovePhase('choose');
-  };
-
-  const handleOpenComps = () => {
-    const target = pendingApproveProperty || currentProperty;
-    if (target) {
-      setCompsModalProperty(target);
-      if (pendingApproveProperty) {
-        setApprovePhase('comps');
-      }
-    }
-  };
-
-  const handleSkipComps = () => {
-    setCompsARV(null);
-    setApprovePhase('offer');
-    if (pendingApproveProperty?.estimated_value) {
-      setQuickOfferAmount(defaultOffer(pendingApproveProperty.estimated_value).toString());
-    }
-  };
-
-  const handleCompsModalClose = async () => {
-    const targetProperty = compsModalProperty;
-    setCompsModalProperty(null);
-
-    if (targetProperty?.id) {
-      fetchCurrentComps(targetProperty.id);
-    }
-
-    if (!pendingApproveProperty) {
-      setApprovePhase(null);
-      return;
-    }
-    try {
-      const { data: comps } = await supabase
-        .from('manual_comps_links' as any)
-        .select('comp_data')
-        .eq('property_id', pendingApproveProperty.id);
-
-      const validComps = (comps as any[] || []).filter(
-        (c: any) => c.comp_data?.sale_price && c.comp_data?.square_feet && c.comp_data.square_feet > 0
-      );
-
-      if (validComps.length > 0 && pendingApproveProperty.square_feet) {
-        const avgPricePerSqft = validComps.reduce(
-          (sum: number, c: any) => sum + (c.comp_data.sale_price / c.comp_data.square_feet), 0
-        ) / validComps.length;
-        const arv = Math.round(pendingApproveProperty.square_feet * avgPricePerSqft);
-        setCompsARV(arv);
-        setQuickOfferAmount(defaultOffer(arv).toString());
-      } else {
-        setCompsARV(null);
-        if (pendingApproveProperty.estimated_value) {
-          setQuickOfferAmount(defaultOffer(pendingApproveProperty.estimated_value).toString());
-        }
-      }
-    } catch {
-      setCompsARV(null);
-      if (pendingApproveProperty?.estimated_value) {
-        setQuickOfferAmount(defaultOffer(pendingApproveProperty.estimated_value).toString());
-      }
-    }
-    setApprovePhase('offer');
-  };
-
-  const handleConfirmOffer = async () => {
-    if (!userId || !userName || !pendingApproveProperty) return;
-    setIsProcessing(true);
-    try {
-      const photoUrls = await uploadDecisionPhotos(pendingApproveProperty.id, 'approved');
-
-      const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
-      const updateData: any = {
-        approval_status: "approved",
-        approved_by: userId,
-        approved_by_name: userName,
-        approved_at: new Date().toISOString(),
-        rejection_reason: null,
-        rejection_notes: approvalNotes.trim() || null,
-        updated_by: userId,
-        updated_by_name: userName,
-      };
-      if (offerValue && offerValue > 0) {
-        updateData.cash_offer_amount = offerValue;
-      }
-      if (photoUrls.length > 0) {
-        updateData.decision_photos = photoUrls;
-      }
-      const { error } = await supabase
-        .from("properties")
-        .update(updateData)
-        .eq("id", pendingApproveProperty.id);
-      if (error) throw error;
-
-      // Auto-save decision to property_notes
-      const noteParts: string[] = [`✅ APROVADO`];
-      if (offerValue) noteParts.push(`Oferta: ${formatCurrency(offerValue)}`);
-      if (approvalNotes.trim()) noteParts.push(approvalNotes.trim());
-      await supabase.from("property_notes").insert({
-        property_id: pendingApproveProperty.id,
-        note_text: noteParts.join(' — '),
-        image_urls: photoUrls.length > 0 ? photoUrls : null,
-      });
-
-      toast({
-        title: "Aprovado!",
-        description: `${pendingApproveProperty.address}${offerValue ? ` - Oferta: ${formatCurrency(offerValue)}` : ''}`,
-      });
-      await advanceAfterAction();
-    } catch (error: any) {
-      toast({ title: "Erro ao aprovar", description: error.message, variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleCancelApprove = () => resetActionState();
-
-  // ── Reject ────────────────────────────────────────────────────
-
-  const handleReject = async () => {
-    if (!userId || !userName || !currentProperty || !selectedReason) return;
-    setIsProcessing(true);
-    try {
-      const photoUrls = await uploadDecisionPhotos(currentProperty.id, 'rejected');
-
-      const updateData: any = {
-        approval_status: "rejected",
-        approved_by: userId,
-        approved_by_name: userName,
-        approved_at: new Date().toISOString(),
-        rejection_reason: selectedReason,
-        rejection_notes: rejectionNotes.trim() || null,
-        updated_by: userId,
-        updated_by_name: userName,
-      };
-      if (photoUrls.length > 0) {
-        updateData.decision_photos = photoUrls;
-      }
-      const { error } = await supabase
-        .from("properties")
-        .update(updateData)
-        .eq("id", currentProperty.id);
-      if (error) throw error;
-
-      // Auto-save decision to property_notes
-      const reasonLabel = REJECTION_REASONS.find(r => r.value === selectedReason)?.label;
-      const noteParts: string[] = [`❌ REJEITADO — ${reasonLabel}`];
-      if (rejectionNotes.trim()) noteParts.push(rejectionNotes.trim());
-      await supabase.from("property_notes").insert({
-        property_id: currentProperty.id,
-        note_text: noteParts.join(' — '),
-        image_urls: photoUrls.length > 0 ? photoUrls : null,
-      });
-
-      toast({ title: "Rejeitado", description: `${currentProperty.address} - ${reasonLabel}` });
-      await advanceAfterAction();
-    } catch (error: any) {
-      toast({ title: "Erro ao rejeitar", description: error.message, variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // ── Keyboard shortcuts ────────────────────────────────────────
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (isProcessing) return;
-
-      if (approvePhase === 'choose') {
-        switch (e.key) {
-          case 'c': case 'C': e.preventDefault(); handleOpenComps(); return;
-          case 'n': case 'N': case 'ArrowRight': e.preventDefault(); handleSkipComps(); return;
-          case 'Escape': e.preventDefault(); handleCancelApprove(); return;
-        }
-        return;
-      }
-      if (approvePhase === 'offer') {
-        switch (e.key) {
-          case 'Enter': e.preventDefault(); handleConfirmOffer(); return;
-          case 'Escape': e.preventDefault(); handleCancelApprove(); return;
-        }
-        return;
-      }
-      if (!currentProperty) return;
-
-      switch (e.key) {
-        case 'a': case 'A':
-          if (!showRejectForm) { e.preventDefault(); handleStartApprove(); }
-          break;
-        case 'r': case 'R':
-          if (!approvePhase) { e.preventDefault(); setShowRejectForm(true); }
-          break;
-        case 'ArrowRight':
-          if (!showRejectForm && !approvePhase) { e.preventDefault(); handleNext(); }
-          break;
-        case 'ArrowLeft':
-          if (!showRejectForm && !approvePhase) { e.preventDefault(); handlePrevious(); }
-          break;
-        case 'Escape':
-          if (showRejectForm) { e.preventDefault(); setShowRejectForm(false); setSelectedReason(""); setRejectionNotes(""); }
-          break;
-        case 'Enter':
-          if (showRejectForm && selectedReason) { e.preventDefault(); handleReject(); }
-          break;
-        default:
-          if (showRejectForm && e.key >= '1' && e.key <= '9') {
-            const index = parseInt(e.key) - 1;
-            if (index < REJECTION_REASONS.length) { e.preventDefault(); setSelectedReason(REJECTION_REASONS[index].value); }
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, properties.length, currentProperty, showRejectForm, selectedReason, isProcessing, approvePhase]);
+  const actions = useReviewActions({
+    currentProperty: queue.currentProperty,
+    currentIndex: queue.currentIndex,
+    onAdvance: advanceAfterAction,
+    fetchCurrentComps: queue.fetchCurrentComps,
+  });
 
   // ── Render ────────────────────────────────────────────────────
 
-  if (isLoading) {
+  if (queue.isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
 
-  if (properties.length === 0 && statusFilter === 'pending') {
+  if (queue.properties.length === 0 && queue.statusFilter === 'pending') {
     return (
       <EmptyState
         icon={CheckCircle}
         title="Fila Vazia!"
         description="Não há propriedades pendentes para revisar."
-        action={{ label: "Ver Aprovadas", onClick: () => setStatusFilter('approved') }}
+        action={{ label: "Ver Aprovadas", onClick: () => queue.setStatusFilter('approved') }}
       />
     );
   }
 
   return (
     <div className="flex flex-col h-full px-1 sm:px-0">
-      {/* TOP: Stats + Filters - ultra compact */}
+      {/* Stats + Filters */}
       <div className="shrink-0 space-y-1 mb-1">
-        {/* Stats inline + search */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 text-[11px] shrink-0">
             <Target className="h-3 w-3 text-blue-500" />
-            <span className="font-bold">{dailyStats?.reviewed_today || 0}</span>
+            <span className="font-bold">{queue.dailyStats?.reviewed_today || 0}</span>
             <span className="text-muted-foreground text-[10px]">hoje</span>
             <div className="w-px h-3 bg-border" />
             <CheckCircle className="h-2.5 w-2.5 text-green-500" />
-            <span className="font-bold text-green-700 dark:text-green-400">{dailyStats?.approved_today || 0}</span>
+            <span className="font-bold text-green-700 dark:text-green-400">{queue.dailyStats?.approved_today || 0}</span>
             <div className="w-px h-3 bg-border" />
             <XCircle className="h-2.5 w-2.5 text-red-500" />
-            <span className="font-bold text-red-700 dark:text-red-400">{dailyStats?.rejected_today || 0}</span>
+            <span className="font-bold text-red-700 dark:text-red-400">{queue.dailyStats?.rejected_today || 0}</span>
           </div>
         </div>
 
         <FilterBar
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          statusCounts={statusCounts}
-          visualFilter={visualFilter}
-          onVisualChange={setVisualFilter}
-          visualCounts={visualCounts}
-          totalProperties={properties.length}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          statusFilter={queue.statusFilter}
+          onStatusChange={queue.setStatusFilter}
+          statusCounts={queue.statusCounts}
+          visualFilter={queue.visualFilter}
+          onVisualChange={queue.setVisualFilter}
+          visualCounts={queue.visualCounts}
+          totalProperties={queue.properties.length}
+          searchQuery={queue.searchQuery}
+          onSearchChange={queue.setSearchQuery}
         />
       </div>
 
-      {/* MAIN: Property Card - fills remaining space */}
-      {currentProperty && (
+      {/* Property Card */}
+      {queue.currentProperty && (
         <Card className="flex-1 flex flex-col overflow-hidden min-h-0 bg-card">
           <CardContent className="flex flex-col flex-1 p-1 sm:p-1.5 space-y-1 min-h-0">
-            {/* Property Card - scrollable if needed */}
             <div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-lg">
-              <PropertyCard property={currentProperty} allProperties={properties} onScoreSaved={fetchProperties} avgCompPrice={avgCompPrice} />
-
-              {/* Inline comps - collapsed */}
-              {currentComps.length > 0 && (
-                <InlineCompsList comps={currentComps} onOpenComps={handleOpenComps} subjectSqft={currentProperty.square_feet} />
+              <PropertyCard
+                property={queue.currentProperty}
+                allProperties={queue.properties}
+                onScoreSaved={queue.fetchProperties}
+                avgCompPrice={queue.avgCompPrice}
+              />
+              {queue.currentComps.length > 0 && (
+                <InlineCompsList
+                  comps={queue.currentComps}
+                  onOpenComps={actions.handleOpenComps}
+                  subjectSqft={queue.currentProperty.square_feet}
+                />
               )}
             </div>
 
-            {/* ACTION AREA - always visible at bottom */}
             <div className="shrink-0">
               <ActionArea
-                statusFilter={statusFilter}
-                approvePhase={approvePhase}
-                isProcessing={isProcessing}
-                currentIndex={currentIndex}
-                totalFiltered={filteredProperties.length}
-                compsCount={currentCompsCount}
-                showRejectForm={showRejectForm}
-                selectedReason={selectedReason}
-                rejectionNotes={rejectionNotes}
-                quickOfferAmount={quickOfferAmount}
-                compsARV={compsARV}
-                pendingEstimatedValue={pendingApproveProperty?.estimated_value ?? null}
-                approvalNotes={approvalNotes}
-                onApprovalNotesChange={setApprovalNotes}
-                decisionPhotos={decisionPhotos}
-                onDecisionPhotosChange={setDecisionPhotos}
-                onStartApprove={handleStartApprove}
-                onOpenComps={handleOpenComps}
-                onSkipComps={handleSkipComps}
-                onCancelApprove={handleCancelApprove}
-                onConfirmOffer={handleConfirmOffer}
-                onShowRejectForm={() => setShowRejectForm(true)}
-                onHideRejectForm={() => { setShowRejectForm(false); setSelectedReason(""); setRejectionNotes(""); }}
-                onReject={handleReject}
-                onNext={handleNext}
-                onPrevious={handlePrevious}
-                onReasonChange={setSelectedReason}
-                onNotesChange={setRejectionNotes}
-                onOfferAmountChange={setQuickOfferAmount}
+                statusFilter={queue.statusFilter}
+                approvePhase={actions.approvePhase}
+                isProcessing={actions.isProcessing}
+                currentIndex={queue.currentIndex}
+                totalFiltered={queue.filteredProperties.length}
+                compsCount={queue.currentCompsCount}
+                showRejectForm={actions.showRejectForm}
+                selectedReason={actions.selectedReason}
+                rejectionNotes={actions.rejectionNotes}
+                quickOfferAmount={actions.quickOfferAmount}
+                compsARV={actions.compsARV}
+                pendingEstimatedValue={actions.pendingApproveProperty?.estimated_value ?? null}
+                approvalNotes={actions.approvalNotes}
+                onApprovalNotesChange={actions.setApprovalNotes}
+                decisionPhotos={actions.decisionPhotos}
+                onDecisionPhotosChange={actions.setDecisionPhotos}
+                onStartApprove={actions.handleStartApprove}
+                onOpenComps={actions.handleOpenComps}
+                onSkipComps={actions.handleSkipComps}
+                onCancelApprove={actions.handleCancelApprove}
+                onConfirmOffer={actions.handleConfirmOffer}
+                onShowRejectForm={() => actions.setShowRejectForm(true)}
+                onHideRejectForm={() => { actions.setShowRejectForm(false); actions.setSelectedReason(""); actions.setRejectionNotes(""); }}
+                onReject={actions.handleReject}
+                onNext={queue.handleNext}
+                onPrevious={queue.handlePrevious}
+                onReasonChange={actions.setSelectedReason}
+                onNotesChange={actions.setRejectionNotes}
+                onOfferAmountChange={actions.setQuickOfferAmount}
               />
             </div>
           </CardContent>
@@ -612,9 +141,9 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
       {/* Comps Modal */}
       <CompsModal
-        open={!!compsModalProperty}
-        onClose={handleCompsModalClose}
-        property={compsModalProperty}
+        open={!!actions.compsModalProperty}
+        onClose={actions.handleCompsModalClose}
+        property={actions.compsModalProperty}
       />
     </div>
   );
