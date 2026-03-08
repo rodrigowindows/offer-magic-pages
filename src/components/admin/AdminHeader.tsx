@@ -14,8 +14,7 @@ interface AdminHeaderProps {
   onToggleDesignMode: () => void;
   onLogout: () => void;
   onBulkImport: () => void;
-  onGeminiSettings: () => void;
-  onMarketingSettings: () => void;
+  onGeminiSettings?: () => void;
   exportFilters: {
     userId?: string;
     tags: string[];
