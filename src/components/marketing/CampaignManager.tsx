@@ -72,46 +72,21 @@ import type { Channel } from '@/types/marketing.types';
 import { generateDirectPropertyUrlBySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 import { BatchSelector } from '@/components/process/BatchSelector';
 import { formatCurrency } from '@/lib/utils';
-
-// Colunas de telefone disponíveis na tabela properties
-const PHONE_COLUMNS = [
-  { value: 'phone1', label: 'Phone 1 (Principal)' },
-  { value: 'phone2', label: 'Phone 2' },
-  { value: 'phone3', label: 'Phone 3' },
-  { value: 'phone4', label: 'Phone 4' },
-  { value: 'phone5', label: 'Phone 5' },
-  { value: 'phone6', label: 'Phone 6' },
-  { value: 'phone7', label: 'Phone 7' },
-  { value: 'owner_phone', label: 'Owner Phone' },
-  { value: 'person2_phone1', label: 'Person 2 - Phone 1' },
-  { value: 'person2_phone2', label: 'Person 2 - Phone 2' },
-  { value: 'person3_phone1', label: 'Person 3 - Phone 1' },
-];
-
-// Colunas de email disponíveis na tabela properties
-const EMAIL_COLUMNS = [
-  { value: 'email1', label: 'Email 1 (Principal)' },
-  { value: 'email2', label: 'Email 2' },
-  { value: 'person2_email1', label: 'Person 2 - Email 1' },
-  { value: 'person2_email2', label: 'Person 2 - Email 2' },
-  { value: 'person3_email1', label: 'Person 3 - Email 1' },
-  { value: 'person3_email2', label: 'Person 3 - Email 2' },
-];
-
-interface CampaignProperty {
-  id: string;
-  slug?: string;
-  address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  owner_name?: string;
-  cash_offer_amount?: number;
-  approval_status?: string;
-  tags?: string[];
-  // Dynamic columns
-  [key: string]: string | number | boolean | null | undefined | string[] | object;
-}
+import {
+  type CampaignProperty,
+  PHONE_COLUMNS,
+  EMAIL_COLUMNS,
+  normalizeContactValue,
+  dedupeContacts,
+  extractTaggedContacts,
+  hasSkiptracePhones,
+  hasSkiptraceEmails,
+  getAllPhones as getAllPhonesUtil,
+  getAllEmails,
+  getPhoneFieldCounts,
+  getSelectColumns,
+  createPropertySlug,
+} from '@/hooks/useCampaignContacts';
 
 export const CampaignManager = () => {
   const { toast } = useToast();
