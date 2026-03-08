@@ -231,6 +231,9 @@ export const CampaignManager = () => {
     phone6: properties.filter(p => !!p.phone6).length,
     phone7: properties.filter(p => !!p.phone7).length,
     owner_phone: properties.filter(p => !!p.owner_phone).length,
+    person2_phone1: properties.filter(p => !!p.person2_phone1).length,
+    person2_phone2: properties.filter(p => !!p.person2_phone2).length,
+    person3_phone1: properties.filter(p => !!p.person3_phone1).length,
   };
 
   // Get filtered properties
