@@ -35,10 +35,9 @@ const Property = () => {
 
     const fetchProperty = async (propertySlug: string) => {
       const { data, error } = await supabase
-        .from("properties")
+        .from("properties_public")
         .select("*")
         .eq("slug", propertySlug)
-        .eq("status", "active")
         .maybeSingle();
 
       if (error) {
