@@ -3,21 +3,23 @@
  * Extracted from CampaignManager for modularity.
  */
 
+import { useCallback } from 'react';
 import { useMarketingStore } from '@/store/marketingStore';
 import { generateDirectPropertyUrlBySlug, generateTrackedPropertyUrlBySlug } from '@/utils/urlUtils';
 import { formatCurrency } from '@/lib/utils';
 import { createPropertySlug, type CampaignProperty } from '@/hooks/useCampaignContacts';
 import type { Channel } from '@/types/marketing.types';
+import type { CampaignTemplate } from '@/types/campaign.types';
 
 export interface TemplateRendererOptions {
   selectedChannel: Channel;
-  selectedTemplate: { id: string; name: string; body: string; subject?: string; channel: string; is_default?: boolean } | null | undefined;
+  selectedTemplate: CampaignTemplate | null | undefined;
 }
 
 export const useTemplateRenderer = ({ selectedChannel, selectedTemplate }: TemplateRendererOptions) => {
   const settings = useMarketingStore((state) => state.settings);
 
-  const replaceVariables = (
+  const replaceVariables = useCallback((
     content: string,
     prop: CampaignProperty,
     extras: {
@@ -50,9 +52,9 @@ export const useTemplateRenderer = ({ selectedChannel, selectedTemplate }: Templ
     if (extras.trackingPixel) result = result.replace(/\{tracking_pixel\}/g, extras.trackingPixel);
     if (extras.unsubscribeUrl) result = result.replace(/\{unsubscribe_url\}/g, extras.unsubscribeUrl);
     return result;
-  };
+  }, [settings.company, selectedChannel]);
 
-  const buildExtras = (prop: CampaignProperty, trackingId?: string) => {
+  const buildExtras = useCallback((prop: CampaignProperty, trackingId?: string) => {
     const fullAddress = `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}`;
     const propertySlug = prop.slug || createPropertySlug(prop.address);
     const propertyUrl = generateDirectPropertyUrlBySlug(propertySlug, selectedChannel);
@@ -65,10 +67,10 @@ export const useTemplateRenderer = ({ selectedChannel, selectedTemplate }: Templ
     const unsubscribeUrl = `${window.location.origin}/unsubscribe?property=${prop.id}`;
 
     return { propertyUrl, qrCodeUrl, googleMapsImage, trackingPixel, unsubscribeUrl };
-  };
+  }, [selectedChannel]);
 
   /** Render template preview for display (no tracking) */
-  const renderTemplatePreview = (prop: CampaignProperty, type: 'body' | 'subject' = 'body'): string => {
+  const renderTemplatePreview = useCallback((prop: CampaignProperty, type: 'body' | 'subject' = 'body'): string => {
     if (!selectedTemplate) return 'Selecione um template';
 
     const extras = buildExtras(prop);
@@ -83,10 +85,10 @@ export const useTemplateRenderer = ({ selectedChannel, selectedTemplate }: Templ
     }
 
     return replaceVariables(selectedTemplate.body, prop, extras);
-  };
+  }, [selectedTemplate, buildExtras, replaceVariables]);
 
   /** Generate final template content for sending (with tracking) */
-  const generateTemplateContent = (
+  const generateTemplateContent = useCallback((
     template: { body: string; subject?: string },
     prop: CampaignProperty,
     trackingId?: string
@@ -95,7 +97,7 @@ export const useTemplateRenderer = ({ selectedChannel, selectedTemplate }: Templ
     const content = replaceVariables(template.body, prop, extras);
     const subject = template.subject?.replace(/\{address\}/g, prop.address) || `Cash Offer for ${prop.address}`;
     return { content, subject };
-  };
+  }, [buildExtras, replaceVariables]);
 
   return { renderTemplatePreview, generateTemplateContent };
 };
