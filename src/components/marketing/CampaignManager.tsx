@@ -1546,7 +1546,7 @@ export const CampaignManager = () => {
                     <Button
                       variant={hasSkiptracePhoneFilter ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => { setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter); setPhoneFieldFilter(null); }}
+                      onClick={() => { setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter); setPhoneFieldFilter([]); }}
                       className={hasSkiptracePhoneFilter ? 'bg-blue-600 hover:bg-blue-700' : ''}
                     >
                       <Phone className="w-3 h-3 mr-1" />
