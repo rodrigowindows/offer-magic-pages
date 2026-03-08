@@ -15,54 +15,78 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Use service role client
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    const { sql_statements } = await req.json();
+    const body = await req.json();
 
-    if (!sql_statements || !Array.isArray(sql_statements)) {
-      return new Response(JSON.stringify({ error: 'Missing sql_statements array' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    // Mode 1: Full SQL text
+    if (body.sql_text) {
+      const sql = body.sql_text as string;
+      
+      // Safety: only allow UPDATE statements
+      const statements = sql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+      for (const stmt of statements) {
+        const upper = stmt.replace(/^--[^\n]*\n/gm, '').trim().toUpperCase();
+        if (upper && !upper.startsWith('UPDATE PROPERTIES') && upper !== 'BEGIN' && upper !== 'COMMIT' && !upper.startsWith('--')) {
+          return new Response(JSON.stringify({ 
+            error: 'Only UPDATE properties statements, BEGIN, and COMMIT allowed',
+            rejected: stmt.substring(0, 80)
+          }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+      }
+
+      const { error } = await supabase.rpc('execute_sql', { sql_query: sql });
+      if (error) {
+        return new Response(JSON.stringify({ error: error.message }), {
+          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'SQL executed successfully',
+        statementsCount: statements.filter(s => s.toUpperCase().startsWith('UPDATE')).length
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Only allow UPDATE statements on properties table
-    for (const stmt of sql_statements) {
-      const trimmed = stmt.trim().toUpperCase();
-      if (!trimmed.startsWith('UPDATE PROPERTIES SET')) {
-        return new Response(JSON.stringify({ 
-          error: 'Only UPDATE properties SET statements allowed',
-          rejected: stmt.substring(0, 50)
-        }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+    // Mode 2: Array of individual statements
+    if (body.sql_statements && Array.isArray(body.sql_statements)) {
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      for (const stmt of body.sql_statements) {
+        const trimmed = stmt.trim().toUpperCase();
+        if (!trimmed.startsWith('UPDATE PROPERTIES SET')) {
+          errorCount++;
+          if (errors.length < 5) errors.push('Not an UPDATE statement');
+          continue;
+        }
+
+        const { error } = await supabase.rpc('execute_sql', { sql_query: stmt });
+        if (error) {
+          errorCount++;
+          if (errors.length < 5) errors.push(error.message);
+        } else {
+          successCount++;
+        }
       }
+
+      return new Response(JSON.stringify({
+        success: true, successCount, errorCount, errors, total: body.sql_statements.length
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    let successCount = 0;
-    let errorCount = 0;
-    const errors: string[] = [];
-
-    for (const stmt of sql_statements) {
-      const { error } = await supabase.rpc('execute_sql', { sql_query: stmt });
-      if (error) {
-        errorCount++;
-        if (errors.length < 5) errors.push(error.message);
-      } else {
-        successCount++;
-      }
-    }
-
-    return new Response(JSON.stringify({
-      success: true,
-      successCount,
-      errorCount,
-      errors,
-      total: sql_statements.length
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    return new Response(JSON.stringify({ error: 'Provide sql_text or sql_statements' }), {
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (err) {
