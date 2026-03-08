@@ -16,6 +16,12 @@ interface UseReviewActionsOptions {
   currentIndex: number;
   onAdvance: () => Promise<void>;
   fetchCurrentComps: (propertyId: string) => Promise<void>;
+  onActionComplete?: (
+    propertyId: string,
+    address: string,
+    action: 'approved' | 'rejected',
+    previousData: { status: string | null; offer: number | null; rejectionReason: string | null; rejectionNotes: string | null }
+  ) => void;
 }
 
 export const useReviewActions = ({
@@ -23,6 +29,7 @@ export const useReviewActions = ({
   currentIndex,
   onAdvance,
   fetchCurrentComps,
+  onActionComplete,
 }: UseReviewActionsOptions) => {
   const { userId, userName } = useCurrentUser();
   const { toast } = useToast();
@@ -185,6 +192,14 @@ export const useReviewActions = ({
         title: "Aprovado!",
         description: `${pendingApproveProperty.address}${offerValue ? ` - Oferta: ${formatCurrency(offerValue)}` : ''}`,
       });
+
+      onActionComplete?.(pendingApproveProperty.id, pendingApproveProperty.address, 'approved', {
+        status: pendingApproveProperty.approval_status || null,
+        offer: pendingApproveProperty.cash_offer_amount,
+        rejectionReason: pendingApproveProperty.rejection_reason || null,
+        rejectionNotes: pendingApproveProperty.rejection_notes || null,
+      });
+
       await onAdvance();
       resetActionState();
     } catch (error: any) {
@@ -232,6 +247,14 @@ export const useReviewActions = ({
       });
 
       toast({ title: "Rejeitado", description: `${currentProperty.address} - ${reasonLabel}` });
+
+      onActionComplete?.(currentProperty.id, currentProperty.address, 'rejected', {
+        status: currentProperty.approval_status || null,
+        offer: currentProperty.cash_offer_amount,
+        rejectionReason: currentProperty.rejection_reason || null,
+        rejectionNotes: currentProperty.rejection_notes || null,
+      });
+
       await onAdvance();
       resetActionState();
     } catch (error: any) {
