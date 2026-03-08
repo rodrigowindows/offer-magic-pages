@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Target, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,11 @@ import { ExportDecisions } from "@/components/review/ExportDecisions";
 import { PropertyComparison } from "@/components/review/PropertyComparison";
 import { BulkActions } from "@/components/review/BulkActions";
 import { InlineMAOCalculator } from "@/components/review/InlineMAOCalculator";
+import { SwipeOverlay } from "@/components/review/SwipeOverlay";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useReviewActions } from "@/hooks/useReviewActions";
 import { useUndoDecision } from "@/hooks/useUndoDecision";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 
 interface ReviewQueueProps {
@@ -25,6 +27,7 @@ interface ReviewQueueProps {
 
 export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const queue = useReviewQueue(selectedBatch);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const advanceAfterAction = useCallback(async () => {
     await queue.fetchProperties();
@@ -44,6 +47,34 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
     },
   });
 
+  // ── Keyboard shortcuts for navigation (←/→) ──
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (actions.approvePhase || actions.showRejectForm) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); queue.handlePrevious(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); queue.handleNext(); }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [queue.handleNext, queue.handlePrevious, actions.approvePhase, actions.showRejectForm]);
+
+  // ── Mobile swipe gestures ──
+  const swipeState = useSwipeGesture({
+    containerRef: cardRef as React.RefObject<HTMLElement>,
+    onSwipeRight: () => {
+      if (queue.statusFilter === 'pending' && !actions.approvePhase && !actions.showRejectForm) {
+        actions.handleStartApprove();
+      }
+    },
+    onSwipeLeft: () => {
+      if (queue.statusFilter === 'pending' && !actions.approvePhase && !actions.showRejectForm) {
+        actions.setShowRejectForm(true);
+      }
+    },
+    threshold: 80,
+  });
+
   // ── Prefetch next property's comps ──
   const nextProperty = queue.filteredProperties[queue.currentIndex + 1];
   useEffect(() => {
@@ -51,6 +82,16 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       queue.fetchCurrentComps(nextProperty.id).catch(() => {});
     }
   }, [nextProperty?.id]);
+
+  // ── Auto-score: trigger AI score for properties without one ──
+  useEffect(() => {
+    if (queue.currentProperty && queue.currentProperty.ai_score == null && queue.statusFilter === 'pending') {
+      // Trigger AI score automatically (fire-and-forget)
+      import('@/hooks/useAIScore').then(({ useAIScoreStatic }) => {
+        useAIScoreStatic(queue.currentProperty!).catch(() => {});
+      });
+    }
+  }, [queue.currentProperty?.id]);
 
   // ── Render ────────────────────────────────────────────────────
 
@@ -124,7 +165,14 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
       {/* Property Card */}
       {queue.currentProperty && (
-        <Card className="flex-1 flex flex-col overflow-hidden min-h-0 bg-card">
+        <Card ref={cardRef} className="relative flex-1 flex flex-col overflow-hidden min-h-0 bg-card">
+          {/* Swipe overlay for mobile */}
+          <SwipeOverlay
+            swiping={swipeState.swiping}
+            direction={swipeState.direction}
+            deltaX={swipeState.deltaX}
+          />
+
           <CardContent className="flex flex-col flex-1 p-1 sm:p-1.5 space-y-1 min-h-0">
             {/* Completeness badge + MAO */}
             <div className="flex items-center justify-between px-1">
