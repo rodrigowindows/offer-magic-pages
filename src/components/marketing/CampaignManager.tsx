@@ -221,6 +221,18 @@ export const CampaignManager = () => {
   const countWithSkiptracePhones = properties.filter(hasSkiptracePhones).length;
   const countWithSkiptraceEmails = properties.filter(hasSkiptraceEmails).length;
 
+  // Count per phone field
+  const phoneFieldCounts = {
+    phone1: properties.filter(p => !!p.phone1).length,
+    phone2: properties.filter(p => !!p.phone2).length,
+    phone3: properties.filter(p => !!p.phone3).length,
+    phone4: properties.filter(p => !!p.phone4).length,
+    phone5: properties.filter(p => !!p.phone5).length,
+    phone6: properties.filter(p => !!p.phone6).length,
+    phone7: properties.filter(p => !!p.phone7).length,
+    owner_phone: properties.filter(p => !!p.owner_phone).length,
+  };
+
   // Get filtered properties
   const getFilteredProperties = () => {
     return properties.filter(p => {
@@ -234,6 +246,12 @@ export const CampaignManager = () => {
       
       // Skiptrace email filter
       if (hasSkiptraceEmailFilter && !hasSkiptraceEmails(p)) return false;
+
+      // Specific phone field filter
+      if (phoneFieldFilter) {
+        const value = (p as any)[phoneFieldFilter];
+        if (!value) return false;
+      }
       
       return matchesSearch;
     });
