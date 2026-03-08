@@ -13,7 +13,7 @@ import { CompletenessIndicator } from "@/components/review/CompletenessIndicator
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useReviewActions } from "@/hooks/useReviewActions";
 import { useUndoDecision } from "@/hooks/useUndoDecision";
-import { useToast } from "@/hooks/use-toast";
+
 
 interface ReviewQueueProps {
   selectedBatch?: string;
