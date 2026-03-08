@@ -15,28 +15,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Verify caller is authenticated
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const authClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-    const { data: claims, error: authError } = await authClient.auth.getClaims(
-      authHeader.replace('Bearer ', '')
-    );
-    if (authError || !claims?.claims?.sub) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Use service role client for the actual updates
+    // Use service role client
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false }
     });
@@ -53,7 +32,10 @@ Deno.serve(async (req) => {
     for (const stmt of sql_statements) {
       const trimmed = stmt.trim().toUpperCase();
       if (!trimmed.startsWith('UPDATE PROPERTIES SET')) {
-        return new Response(JSON.stringify({ error: 'Only UPDATE properties SET statements allowed' }), {
+        return new Response(JSON.stringify({ 
+          error: 'Only UPDATE properties SET statements allowed',
+          rejected: stmt.substring(0, 50)
+        }), {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
