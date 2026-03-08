@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
 import { BulkActionsBar } from "@/components/shared/BulkActionsBar";
 import { BulkImportDialog } from "@/components/import-data/BulkImportDialog";
-import { GeminiAPIKeyDialog } from "@/components/shared/GeminiAPIKeyDialog";
 import { FeatureTogglePanel } from "@/components/ab-testing/FeatureTogglePanel";
 import { MainNavigation } from "@/components/shared/MainNavigation";
 import { ReviewQueue } from "@/components/shared/ReviewQueue";
@@ -172,7 +171,7 @@ const Admin = () => {
         <AdminHeader
           title={headerTitle} totalCount={admin.properties.length} isMinimal={isMinimal}
           onToggleDesignMode={toggleDesignMode} onLogout={handleLogout}
-          onBulkImport={() => dialogs.setIsBulkImportDialogOpen(true)} onGeminiSettings={() => dialogs.setIsGeminiAPIKeyDialogOpen(true)}
+          onBulkImport={() => dialogs.setIsBulkImportDialogOpen(true)}
           onMarketingSettings={() => dialogs.setIsMarketingSettingsOpen(true)}
           exportFilters={{ userId: admin.filters.filterUserId || undefined, tags: admin.filters.selectedTags, searchQuery: admin.filters.searchQuery, batch: admin.filters.advancedFilters.importBatch?.length === 1 ? admin.filters.advancedFilters.importBatch[0] : undefined }}
         />
@@ -257,7 +256,6 @@ const Admin = () => {
           />
 
           <BulkImportDialog open={dialogs.isBulkImportDialogOpen} onOpenChange={dialogs.setIsBulkImportDialogOpen} onImportComplete={admin.fetchProperties} />
-          <GeminiAPIKeyDialog open={dialogs.isGeminiAPIKeyDialogOpen} onOpenChange={dialogs.setIsGeminiAPIKeyDialogOpen} />
         </main>
 
         <BulkActionsBar

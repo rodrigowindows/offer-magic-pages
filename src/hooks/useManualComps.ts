@@ -125,7 +125,7 @@ export function useManualComps(
       if (!user) { setSavedLinks([]); return; }
 
       const { data, error } = await supabase
-        .from('manual_comps_links' as any)
+        .from('manual_comps_links')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -207,7 +207,7 @@ export function useManualComps(
       if (!user) { toast({ title: '⚠️ Não autenticado', variant: 'destructive' }); return; }
 
       const { error } = await supabase
-        .from('manual_comps_links' as any)
+        .from('manual_comps_links')
         .insert([{
           property_address: resolveAddress(),
           property_id: form.selectedPropertyId && form.selectedPropertyId !== 'manual' ? form.selectedPropertyId : null,
@@ -246,7 +246,7 @@ export function useManualComps(
       if (!user) { toast({ title: '⚠️ Não autenticado', variant: 'destructive' }); return; }
 
       const { error } = await supabase
-        .from('manual_comps_links' as any)
+        .from('manual_comps_links')
         .update({ url: form.compsUrl.trim(), notes: form.notes.trim() || null, comp_data: compData })
         .eq('id', form.editingLinkId)
         .eq('user_id', user.id);
@@ -288,7 +288,7 @@ export function useManualComps(
   // Delete link
   const handleDelete = useCallback(async (id: string) => {
     try {
-      const { error } = await supabase.from('manual_comps_links' as any).delete().eq('id', id);
+      const { error } = await supabase.from('manual_comps_links').delete().eq('id', id);
       if (error) throw error;
       toast({ title: '🗑️ Link removido' });
       loadLinks();

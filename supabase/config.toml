@@ -41,3 +41,36 @@ verify_jwt = false
 
 [functions.bulk-update]
 verify_jwt = false
+
+[functions.ai-comps-valuation]
+verify_jwt = false
+
+[functions.ai-generate-message]
+verify_jwt = false
+
+[functions.ai-score-property]
+verify_jwt = false
+
+[functions.backup-database]
+verify_jwt = true
+
+[functions.capture-lead]
+verify_jwt = false
+
+[functions.geocode]
+verify_jwt = false
+
+[functions.get-mapbox-token]
+verify_jwt = false
+
+[functions.process-scheduled-campaigns]
+verify_jwt = true
+
+[functions.process-scheduled-followups]
+verify_jwt = true
+
+[functions.scrape-listing]
+verify_jwt = false
+
+[functions.track-button-click]
+verify_jwt = false

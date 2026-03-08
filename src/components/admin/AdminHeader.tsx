@@ -14,8 +14,8 @@ interface AdminHeaderProps {
   onToggleDesignMode: () => void;
   onLogout: () => void;
   onBulkImport: () => void;
-  onGeminiSettings: () => void;
-  onMarketingSettings: () => void;
+  onGeminiSettings?: () => void;
+  onMarketingSettings?: () => void;
   exportFilters: {
     userId?: string;
     tags: string[];
@@ -31,22 +31,21 @@ export const AdminHeader = ({
   onToggleDesignMode,
   onLogout,
   onBulkImport,
-  onGeminiSettings,
   onMarketingSettings,
   exportFilters,
 }: AdminHeaderProps) => (
-  <header className="border-b bg-white shadow-sm">
+  <header className="border-b bg-card shadow-sm">
     <div className="container mx-auto px-3 sm:px-6 py-3 sm:py-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <h1 className="text-lg sm:text-2xl font-semibold text-gray-900 tracking-tight truncate">{title}</h1>
+          <h1 className="text-lg sm:text-2xl font-semibold text-foreground tracking-tight truncate">{title}</h1>
           <Badge variant="secondary" className="text-xs font-medium">{totalCount} total</Badge>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <FullDatabaseExport />
           <ApprovedPropertiesExport filters={exportFilters} />
           <DesignModeToggle isMinimal={isMinimal} onToggle={onToggleDesignMode} />
-          <HeaderActionsMenu onBulkImport={onBulkImport} onGeminiSettings={onGeminiSettings} onMarketingSettings={onMarketingSettings} />
+          <HeaderActionsMenu onBulkImport={onBulkImport} onMarketingSettings={onMarketingSettings} />
           <NotificationsPanel />
           <Button onClick={onLogout} variant="outline" size="sm" className="gap-2">
             <LogOut className="w-4 h-4" />

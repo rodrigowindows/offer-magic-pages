@@ -10,13 +10,12 @@ import {
 
 interface HeaderActionsMenuProps {
   onBulkImport: () => void;
-  onGeminiSettings: () => void;
+  onGeminiSettings?: () => void;
   onMarketingSettings: () => void;
 }
 
 export const HeaderActionsMenu = ({
   onBulkImport,
-  onGeminiSettings,
   onMarketingSettings,
 }: HeaderActionsMenuProps) => {
   return (
@@ -33,10 +32,6 @@ export const HeaderActionsMenu = ({
           Importação em Massa
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onGeminiSettings} className="gap-2">
-          <Settings className="h-4 w-4" />
-          Gemini AI Settings
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={onMarketingSettings} className="gap-2">
           <Rocket className="h-4 w-4" />
           Marketing API Settings

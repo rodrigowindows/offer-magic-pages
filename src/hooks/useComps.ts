@@ -46,7 +46,7 @@ export function useComps(property: CompProperty | null, enabled = true) {
     if (!property) return;
     setLoading(true);
     const { data, error } = await supabase
-      .from('manual_comps_links' as any)
+      .from('manual_comps_links')
       .select('id, url, source, comp_data, created_at')
       .eq('property_id', property.id)
       .order('created_at', { ascending: false });
@@ -77,13 +77,13 @@ export function useComps(property: CompProperty | null, enabled = true) {
       const addressStr = `${property.address}, ${property.city || ''}, ${property.state || ''} ${property.zip_code || ''}`;
 
       const { error } = await supabase
-        .from('manual_comps_links' as any)
+        .from('manual_comps_links')
         .insert([{
           property_address: addressStr,
           property_id: property.id,
           url: url.trim(),
           source: detectSource(url),
-          comp_data: compData,
+          comp_data: JSON.parse(JSON.stringify(compData)),
           user_id: user.id,
         }]);
 
@@ -95,8 +95,9 @@ export function useComps(property: CompProperty | null, enabled = true) {
       });
       await fetchComps();
       return true;
-    } catch (error: any) {
-      toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Erro ao salvar', description: message, variant: 'destructive' });
       return false;
     } finally {
       setSaving(false);
@@ -106,15 +107,16 @@ export function useComps(property: CompProperty | null, enabled = true) {
   const deleteComp = useCallback(async (compId: string) => {
     try {
       const { error } = await supabase
-        .from('manual_comps_links' as any)
+        .from('manual_comps_links')
         .delete()
         .eq('id', compId);
 
       if (error) throw error;
       setComps(prev => prev.filter(c => c.id !== compId));
       toast({ title: 'Comp removido' });
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Erro', description: message, variant: 'destructive' });
     }
   }, [toast]);
 

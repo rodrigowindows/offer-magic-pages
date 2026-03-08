@@ -28,7 +28,7 @@ export const useAdminDialogs = () => {
   const [isBatchPrintDialogOpen, setIsBatchPrintDialogOpen] = useState(false);
   const [isSequenceDialogOpen, setIsSequenceDialogOpen] = useState(false);
   const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
-  const [isGeminiAPIKeyDialogOpen, setIsGeminiAPIKeyDialogOpen] = useState(false);
+  // GeminiAPIKeyDialog removed - using Lovable AI gateway
   const [isBatchReviewOpen, setIsBatchReviewOpen] = useState(false);
 
   // Selected property states
@@ -61,7 +61,7 @@ export const useAdminDialogs = () => {
     isBatchPrintDialogOpen, setIsBatchPrintDialogOpen,
     isSequenceDialogOpen, setIsSequenceDialogOpen,
     isBulkImportDialogOpen, setIsBulkImportDialogOpen,
-    isGeminiAPIKeyDialogOpen, setIsGeminiAPIKeyDialogOpen,
+    
     isBatchReviewOpen, setIsBatchReviewOpen,
     // Selected properties
     selectedPropertyId, setSelectedPropertyId,
