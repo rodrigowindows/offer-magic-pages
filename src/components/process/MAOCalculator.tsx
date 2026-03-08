@@ -295,7 +295,7 @@ export const MAOCalculator = () => {
       <div className="flex items-center gap-2 sm:gap-3">
         <DollarSign className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" />
         <div>
-          <h1 className="text-lg sm:text-2xl font-bold">Passo 2: Oferta MAO</h1>
+          <h1 className="text-lg sm:text-2xl font-bold">Passo 5: Oferta MAO</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Calcular oferta máxima (ARV - Reforma - Comissão)
           </p>
