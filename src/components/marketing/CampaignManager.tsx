@@ -514,17 +514,18 @@ export const CampaignManager = () => {
 
   // Get phone/email from property based on selected column
   const getAllPhones = (prop: CampaignProperty): string[] => {
-    const { preferredPhones, manualPhones } = extractTaggedContacts(prop);
-    const fromTags = dedupeContacts([...preferredPhones, ...manualPhones]);
-    if (fromTags.length > 0) return fromTags;
-
-    // If a specific phone field filter is active, only return that field
+    // If a specific phone field filter is active, ALWAYS use only that field
     if (phoneFieldFilter) {
       const val = normalizeContactValue(prop[phoneFieldFilter]);
       return val ? [val] : [];
     }
 
-    // Otherwise aggregate all skiptrace phone columns
+    // Otherwise check tagged contacts first (preferred/manual phones)
+    const { preferredPhones, manualPhones } = extractTaggedContacts(prop);
+    const fromTags = dedupeContacts([...preferredPhones, ...manualPhones]);
+    if (fromTags.length > 0) return fromTags;
+
+    // Finally aggregate all skiptrace phone columns
     const allPhones: string[] = [];
     const phoneCols = ['owner_phone', 'phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7'];
     for (const col of phoneCols) {
