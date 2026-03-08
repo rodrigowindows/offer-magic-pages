@@ -23,6 +23,7 @@ interface BulkActionsBarProps {
 
 export const BulkActionsBar = ({
   selectedCount,
+  selectedPropertyIds = [],
   onClearSelection,
   onBulkStatusChange,
   onBulkDelete,
