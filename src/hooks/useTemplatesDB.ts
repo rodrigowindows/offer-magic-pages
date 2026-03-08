@@ -3,7 +3,7 @@
  * Substitui o localStorage por banco de dados
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { SavedTemplate, Channel } from '@/types/marketing.types';
@@ -67,47 +67,6 @@ export const useTemplates = () => {
       toast.success('Templates padrão carregados');
     } catch (error) {
       console.error('Erro ao inserir templates padrão:', error);
-    }
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const checkAndUpdateDefaultTemplates = async (currentTemplates: SavedTemplate[]) => {
-    let updatedCount = 0;
-    try {
-      for (const defaultTemplate of DEFAULT_TEMPLATES) {
-        const existingTemplate = currentTemplates.find(t => t.id === defaultTemplate.id);
-
-        if (existingTemplate && existingTemplate.is_default) {
-          if (existingTemplate.edited_manually) {
-            const codeVersion = defaultTemplate.version || 1;
-            const savedVersion = existingTemplate.version || 1;
-            if (codeVersion > savedVersion) {
-              await updateTemplate(existingTemplate.id, {
-                body: defaultTemplate.body, subject: defaultTemplate.subject,
-                name: defaultTemplate.name, version: codeVersion, edited_manually: false,
-              });
-              updatedCount++;
-            }
-          } else {
-            const contentChanged = existingTemplate.body !== defaultTemplate.body ||
-              existingTemplate.subject !== defaultTemplate.subject ||
-              existingTemplate.name !== defaultTemplate.name;
-            if (contentChanged) {
-              await updateTemplate(existingTemplate.id, {
-                body: defaultTemplate.body, subject: defaultTemplate.subject,
-                name: defaultTemplate.name, version: defaultTemplate.version || 1,
-              });
-              updatedCount++;
-            }
-          }
-        } else if (!existingTemplate) {
-          await addTemplate(defaultTemplate);
-          updatedCount++;
-        }
-      }
-      if (updatedCount > 0) toast.info(`${updatedCount} template(s) atualizados`);
-    } catch (error) {
-      console.error('Erro em checkAndUpdateDefaultTemplates:', error);
     }
   };
 
@@ -176,44 +135,25 @@ export const useTemplates = () => {
   };
 
   const getTemplatesByChannel = useCallback(
-    (channel: Channel): SavedTemplate[] => {
-      try {
-        return safeTemplates.filter(t => t.channel === channel);
-      } catch {
-        return [];
-      }
-    },
+    (channel: Channel): SavedTemplate[] => safeTemplates.filter(t => t.channel === channel),
     [safeTemplates]
   );
 
   const getDefaultTemplate = useCallback(
-    (channel: Channel): SavedTemplate | undefined => {
-      try {
-        return safeTemplates.find(t => t.channel === channel && t.is_default);
-      } catch {
-        return undefined;
-      }
-    },
+    (channel: Channel): SavedTemplate | undefined => safeTemplates.find(t => t.channel === channel && t.is_default),
     [safeTemplates]
   );
 
-  const templateStats = useMemo(() => {
-    try {
-      return {
-        total: safeTemplates.length,
-        bySMS: safeTemplates.filter(t => t?.channel === 'sms').length,
-        byEmail: safeTemplates.filter(t => t?.channel === 'email').length,
-        byCall: safeTemplates.filter(t => t?.channel === 'call').length,
-      };
-    } catch {
-      return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
-    }
-  }, [safeTemplates]);
+  const templateStats = useMemo(() => ({
+    total: safeTemplates.length,
+    bySMS: safeTemplates.filter(t => t?.channel === 'sms').length,
+    byEmail: safeTemplates.filter(t => t?.channel === 'email').length,
+    byCall: safeTemplates.filter(t => t?.channel === 'call').length,
+  }), [safeTemplates]);
 
   useEffect(() => {
     loadTemplates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadTemplates]);
 
   return {
     templates: safeTemplates,

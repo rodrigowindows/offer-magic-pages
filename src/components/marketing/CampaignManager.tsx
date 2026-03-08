@@ -22,13 +22,12 @@ import {
   CheckCircle,
   ArrowRight,
   ArrowLeft,
-  Sun,
-  Moon,
   AlertCircle,
   Target,
   Users,
   Eye,
   Send,
+  RefreshCw,
 } from 'lucide-react';
 import { checkHealth } from '@/services/marketingService';
 import { useMarketingStore } from '@/store/marketingStore';
@@ -53,6 +52,14 @@ import {
   CampaignSimulationDialog,
 } from './campaign-steps';
 
+const STEPS = [
+  { step: 1, title: 'Template', icon: Target },
+  { step: 2, title: 'Properties', icon: Users },
+  { step: 3, title: 'Configure', icon: Filter },
+  { step: 4, title: 'Preview', icon: Eye },
+  { step: 5, title: 'Send', icon: Send },
+] as const;
+
 export const CampaignManager = () => {
   const { toast } = useToast();
   const testMode = useMarketingStore((state) => state.settings.defaults.test_mode);
@@ -66,7 +73,6 @@ export const CampaignManager = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [showSendPreview, setShowSendPreview] = useState(false);
   const [smsDelay, setSmsDelay] = useState(1000);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   // Simulation
   const [simulating, setSimulating] = useState(false);
@@ -132,17 +138,18 @@ export const CampaignManager = () => {
       const { data, error } = await query;
       if (error) throw error;
       setProperties((data as unknown as CampaignProperty[]) || []);
-    } catch (error: any) {
-      toast({ title: 'Erro ao carregar propriedades', description: error.message, variant: 'destructive' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast({ title: 'Erro ao carregar propriedades', description: message, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   }, [filters.filterStatus, filters.selectedPhoneColumn, filters.selectedEmailColumn, filters.selectedBatch, toast]);
 
   // Navigation
-  const nextStep = useCallback(() => { if (currentStep < 5) setCurrentStep((currentStep + 1) as any); }, [currentStep]);
-  const prevStep = useCallback(() => { if (currentStep > 1) setCurrentStep((currentStep - 1) as any); }, [currentStep]);
-  const canProceedToNext = useCallback(() => {
+  const nextStep = useCallback(() => { if (currentStep < 5) setCurrentStep((currentStep + 1) as 1 | 2 | 3 | 4 | 5); }, [currentStep]);
+  const prevStep = useCallback(() => { if (currentStep > 1) setCurrentStep((currentStep - 1) as 1 | 2 | 3 | 4 | 5); }, [currentStep]);
+  const canProceedToNext = useMemo(() => {
     if (currentStep === 1) return selectedTemplateId !== '';
     if (currentStep === 2) return filters.selectedIds.length > 0;
     return true;
@@ -185,36 +192,19 @@ export const CampaignManager = () => {
     setSimulating(false);
   }, [filters.selectedProps, simulateCampaignSend, performSystemHealthCheck, toast]);
 
-  const steps = useMemo(() => [
-    { step: 1, title: 'Choose Template', icon: Target },
-    { step: 2, title: 'Select Properties', icon: Users },
-    { step: 3, title: 'Configure', icon: Filter },
-    { step: 4, title: 'Preview', icon: Eye },
-    { step: 5, title: 'Send Campaign', icon: Send },
-  ], []);
-
   return (
     <TooltipProvider>
-      <div className={`space-y-6 transition-colors duration-300 ${theme === 'dark' ? 'dark' : ''}`}>
+      <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold mb-2">🚀 Campaign Creator</h1>
-            <p className="text-muted-foreground">Create and launch marketing campaigns step by step</p>
+            <h1 className="text-2xl font-bold">🚀 Campaign Creator</h1>
+            <p className="text-sm text-muted-foreground">Create and launch marketing campaigns step by step</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={() => setTheme(t => (t === 'light' ? 'dark' : 'light'))}>
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Toggle {theme === 'dark' ? 'light' : 'dark'} mode</p></TooltipContent>
-            </Tooltip>
-            <Button variant="outline" onClick={fetchProperties} disabled={loading}>
-              {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Carregando...</> : <><Filter className="w-4 h-4 mr-2" /> Atualizar</>}
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={fetchProperties} disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            Refresh
+          </Button>
         </div>
 
         {testMode && (
@@ -228,23 +218,28 @@ export const CampaignManager = () => {
         <Card>
           <CardContent className="pt-6">
             {/* Step Indicator */}
-            <div className="flex items-center justify-between mb-8">
-              {steps.map(({ step, title, icon: Icon }, index) => (
+            <div className="flex items-center justify-between mb-6">
+              {STEPS.map(({ step, title, icon: Icon }, index) => (
                 <div key={step} className="flex items-center">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${currentStep >= step ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}>
-                    {currentStep > step ? <CheckCircle className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
-                  </div>
-                  <div className="ml-3">
-                    <div className={`text-sm font-medium ${currentStep >= step ? 'text-foreground' : 'text-muted-foreground'}`}>{step}</div>
-                    <div className={`text-xs ${currentStep >= step ? 'text-foreground' : 'text-muted-foreground'}`}>{title}</div>
-                  </div>
-                  {index < 4 && <ArrowRight className={`w-4 h-4 mx-4 ${currentStep > step ? 'text-primary' : 'text-muted-foreground/30'}`} />}
+                  <button
+                    onClick={() => step <= currentStep && setCurrentStep(step as 1 | 2 | 3 | 4 | 5)}
+                    disabled={step > currentStep}
+                    className={`flex items-center gap-2 transition-colors ${step <= currentStep ? 'cursor-pointer' : 'cursor-default opacity-50'}`}
+                  >
+                    <div className={`flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all ${currentStep >= step ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30 text-muted-foreground'}`}>
+                      {currentStep > step ? <CheckCircle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+                    </div>
+                    <div className="hidden sm:block">
+                      <div className={`text-xs font-medium ${currentStep >= step ? 'text-foreground' : 'text-muted-foreground'}`}>{title}</div>
+                    </div>
+                  </button>
+                  {index < 4 && <ArrowRight className={`w-4 h-4 mx-2 ${currentStep > step ? 'text-primary' : 'text-muted-foreground/30'}`} />}
                 </div>
               ))}
             </div>
 
             {/* Step Content */}
-            <div className="min-h-[600px]">
+            <div className="min-h-[500px]">
               {currentStep === 1 && (
                 <CampaignStep1Template
                   selectedChannel={selectedChannel}
@@ -299,20 +294,17 @@ export const CampaignManager = () => {
             </div>
 
             {/* Navigation */}
-            <div className="flex justify-between items-center pt-6 border-t">
-              <Button variant="outline" onClick={prevStep} disabled={currentStep === 1 || loading || sending} className="min-w-[100px]">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
+            <div className="flex justify-between items-center pt-4 border-t">
+              <Button variant="outline" size="sm" onClick={prevStep} disabled={currentStep === 1 || loading || sending}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Back
               </Button>
-              <div className="text-center">
-                <div className="text-sm text-muted-foreground mb-1">Passo {currentStep} de 5</div>
-                {loading && <div className="flex items-center gap-2 text-xs text-primary"><Loader2 className="w-3 h-3 animate-spin" /> Carregando...</div>}
-              </div>
+              <span className="text-xs text-muted-foreground">Step {currentStep}/5</span>
               {currentStep < 5 ? (
-                <Button onClick={nextStep} disabled={!canProceedToNext() || loading || sending} className="min-w-[100px]">
-                  {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Aguarde</> : <>Próximo <ArrowRight className="w-4 h-4 ml-2" /></>}
+                <Button size="sm" onClick={nextStep} disabled={!canProceedToNext || loading || sending}>
+                  Next <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               ) : (
-                <div className="min-w-[100px]" />
+                <div className="w-20" />
               )}
             </div>
           </CardContent>

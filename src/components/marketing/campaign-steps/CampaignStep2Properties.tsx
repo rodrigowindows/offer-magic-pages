@@ -29,154 +29,150 @@ export function CampaignStep2Properties({ loading, properties, filters, selected
     showAdvancedFilters, setShowAdvancedFilters,
     activeFilters, setActiveFilters,
     countWithSkiptracePhones, countWithSkiptraceEmails,
-    phoneFieldCounts, selectedProps,
-    getAllPhones, getFilteredProperties, toggleSelection,
+    phoneFieldCounts, selectedProps, filteredProperties,
+    getAllPhones, toggleSelection,
   } = filters;
 
-  const filteredProperties = getFilteredProperties();
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-semibold mb-2">🎯 Select Properties</h2>
-        <p className="text-muted-foreground">Choose the properties you want to target with your campaign</p>
+        <h2 className="text-lg font-semibold mb-1">🎯 Select Properties</h2>
+        <p className="text-sm text-muted-foreground">Choose the properties you want to target</p>
       </div>
 
       {/* Filters */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex flex-wrap gap-2 items-center">
           <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input placeholder="Buscar propriedades por endereço, nome ou cidade..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+            <Input placeholder="Search by address, name or city..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 h-9 text-sm" />
           </div>
           <Button variant="outline" size="sm" onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}>
-            <Filter className="w-4 h-4 mr-2" /> Filtros Avançados
+            <Filter className="w-3 h-3 mr-1" /> Filters
           </Button>
         </div>
 
         {/* Status Filters */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-1.5 flex-wrap">
           {['approved', 'pending', 'all'].map(status => (
-            <Button key={status} variant={filterStatus === status ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus(status)}>
-              {status === 'approved' ? '✅ Approved' : status === 'pending' ? '⏳ Pending' : '📋 All'} ({status === 'all' ? properties.length : properties.filter(p => p.approval_status === status).length})
+            <Button key={status} variant={filterStatus === status ? 'default' : 'outline'} size="sm" className="h-7 text-xs" onClick={() => setFilterStatus(status)}>
+              {status === 'approved' ? '✅ Approved' : status === 'pending' ? '⏳ Pending' : '📋 All'}
             </Button>
           ))}
         </div>
 
         {/* Skiptrace Filters */}
-        <div className="flex gap-2 flex-wrap">
-          <Button variant={hasSkiptracePhoneFilter ? 'default' : 'outline'} size="sm" onClick={() => { setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter); if (!hasSkiptracePhoneFilter) setPhoneFieldFilter([]); }}>
+        <div className="flex gap-1.5 flex-wrap">
+          <Button variant={hasSkiptracePhoneFilter ? 'default' : 'outline'} size="sm" className="h-7 text-xs" onClick={() => { setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter); if (!hasSkiptracePhoneFilter) setPhoneFieldFilter([]); }}>
             📱 Has Phone ({countWithSkiptracePhones})
           </Button>
-          <Button variant={hasSkiptraceEmailFilter ? 'default' : 'outline'} size="sm" onClick={() => setHasSkiptraceEmailFilter(!hasSkiptraceEmailFilter)}>
+          <Button variant={hasSkiptraceEmailFilter ? 'default' : 'outline'} size="sm" className="h-7 text-xs" onClick={() => setHasSkiptraceEmailFilter(!hasSkiptraceEmailFilter)}>
             ✉️ Has Email ({countWithSkiptraceEmails})
           </Button>
         </div>
 
         {/* Phone Field Multi-Select */}
         {showAdvancedFilters && (
-          <div className="flex flex-wrap gap-1 p-3 bg-muted/30 rounded-lg border">
-            <span className="text-xs font-semibold text-muted-foreground mr-2 self-center">Phone Fields:</span>
+          <div className="flex flex-wrap gap-1 p-2 bg-muted/30 rounded-lg border">
+            <span className="text-[10px] font-semibold text-muted-foreground mr-1 self-center">Phone Fields:</span>
             {PHONE_COLUMNS.map(({ value: key, label }) => {
               const isSelected = phoneFieldFilter.includes(key);
               return (
                 <Button key={key} variant={isSelected ? 'default' : 'outline'} size="sm"
-                  className={`text-xs h-7 px-2 ${isSelected ? 'bg-secondary hover:bg-secondary/90' : ''}`}
+                  className={`text-[10px] h-6 px-1.5 ${isSelected ? 'bg-secondary hover:bg-secondary/90' : ''}`}
                   onClick={() => {
                     const newFilter = isSelected ? phoneFieldFilter.filter(f => f !== key) : [...phoneFieldFilter, key];
                     setPhoneFieldFilter(newFilter);
                     if (newFilter.length > 0) { setHasSkiptracePhoneFilter(false); setSelectedPhoneColumn(newFilter[0]); }
                   }}>
-                  {label} ({(phoneFieldCounts as any)[key] || 0})
+                  {label} ({(phoneFieldCounts as Record<string, number>)[key] || 0})
                 </Button>
               );
             })}
             {phoneFieldFilter.length > 0 && (
-              <Button variant="ghost" size="sm" className="text-xs h-7 px-2 text-destructive hover:text-destructive" onClick={() => setPhoneFieldFilter([])}>Clear</Button>
+              <Button variant="ghost" size="sm" className="text-[10px] h-6 px-1.5 text-destructive hover:text-destructive" onClick={() => setPhoneFieldFilter([])}>Clear</Button>
             )}
           </div>
         )}
 
         {/* Active Filters */}
         {activeFilters.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {activeFilters.map(filter => (
-              <Badge key={filter.id} variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors" onClick={() => setActiveFilters(activeFilters.filter(f => f.id !== filter.id))}>
+              <Badge key={filter.id} variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors text-xs" onClick={() => setActiveFilters(activeFilters.filter(f => f.id !== filter.id))}>
                 {filter.label} ×
               </Badge>
             ))}
-            <Button variant="ghost" size="sm" onClick={() => setActiveFilters([])}><X className="w-3 h-3 mr-1" /> Limpar filtros</Button>
+            <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setActiveFilters([])}><X className="w-3 h-3 mr-1" /> Clear</Button>
           </div>
         )}
       </div>
 
       {/* Properties List */}
       {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card><CardHeader><Skeleton className="h-6 w-48" /><Skeleton className="h-4 w-32" /></CardHeader><CardContent><div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => (<div key={i} className="flex items-center space-x-3 p-3 border rounded-lg"><Skeleton className="h-10 w-10 rounded-full" /><div className="space-y-2 flex-1"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-3 w-1/2" /></div><Skeleton className="h-5 w-5" /></div>))}</div></CardContent></Card>
-          <Card><CardHeader><Skeleton className="h-6 w-32" /><Skeleton className="h-4 w-24" /></CardHeader><CardContent><Skeleton className="h-32 w-full" /></CardContent></Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card><CardContent className="pt-4"><div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => (<div key={i} className="flex items-center space-x-3 p-2 border rounded-lg"><Skeleton className="h-8 w-8 rounded-full" /><div className="space-y-1.5 flex-1"><Skeleton className="h-3 w-3/4" /><Skeleton className="h-2.5 w-1/2" /></div></div>))}</div></CardContent></Card>
+          <Card><CardContent className="pt-4"><Skeleton className="h-32 w-full" /></CardContent></Card>
         </div>
       ) : filteredProperties.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4"><Target className="w-12 h-12 text-muted-foreground" /></div>
-          <h3 className="text-lg font-semibold mb-2">{searchTerm ? 'Nenhuma propriedade encontrada' : 'Nenhuma propriedade disponível'}</h3>
-          <p className="text-muted-foreground mb-4">{searchTerm ? `Não encontramos propriedades para "${searchTerm}".` : `Não há propriedades com status "${filterStatus}".`}</p>
+        <div className="text-center py-8">
+          <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-3"><Target className="w-8 h-8 text-muted-foreground" /></div>
+          <h3 className="text-base font-semibold mb-1">{searchTerm ? 'No properties found' : 'No properties available'}</h3>
+          <p className="text-sm text-muted-foreground mb-3">{searchTerm ? `No results for "${searchTerm}".` : `No properties with status "${filterStatus}".`}</p>
           <div className="flex gap-2 justify-center">
-            {searchTerm && <Button variant="outline" onClick={() => setSearchTerm('')}>Limpar busca</Button>}
-            <Button onClick={() => setFilterStatus('all')}>Ver todas</Button>
+            {searchTerm && <Button variant="outline" size="sm" onClick={() => setSearchTerm('')}>Clear search</Button>}
+            <Button size="sm" onClick={() => setFilterStatus('all')}>View all</Button>
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="group hover:shadow-lg transition-all duration-300">
-            <CardHeader>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg group-hover:text-primary transition-colors">📋 Available Properties</CardTitle>
-                  <CardDescription>{filteredProperties.length} propriedades{searchTerm && ` para "${searchTerm}"`}</CardDescription>
+                  <CardTitle className="text-sm">📋 Available ({filteredProperties.length})</CardTitle>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setSelectedIds(filteredProperties.map(p => p.id))} className="hover:bg-primary/10 hover:border-primary">
-                    <CheckCircle className="w-3 h-3 mr-1" /> Select All ({filteredProperties.length})
+                <div className="flex items-center gap-1.5">
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedIds(filteredProperties.map(p => p.id))}>
+                    <CheckCircle className="w-3 h-3 mr-1" /> All
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedIds([])} className="hover:bg-destructive/10 hover:border-destructive hover:text-destructive" disabled={selectedIds.length === 0}>Clear</Button>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setSelectedIds([])} disabled={selectedIds.length === 0}>Clear</Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px] pr-4">
-                <div className="space-y-2">
+            <CardContent className="pt-0">
+              <ScrollArea className="h-[380px] pr-2">
+                <div className="space-y-1.5">
                   {filteredProperties.map((property) => {
                     const phones = getAllPhones(property);
                     const emails = getAllEmails(property);
                     return (
-                      <div key={property.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group" onClick={() => toggleSelection(property.id)}>
-                        <Avatar className="h-10 w-10 flex-shrink-0"><AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">{property.owner_name?.charAt(0) || property.address.charAt(0) || 'P'}</AvatarFallback></Avatar>
+                      <div key={property.id} className="flex items-center space-x-2 p-2 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group" onClick={() => toggleSelection(property.id)}>
+                        <Avatar className="h-8 w-8 flex-shrink-0"><AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">{property.owner_name?.charAt(0) || property.address.charAt(0) || 'P'}</AvatarFallback></Avatar>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium truncate group-hover:text-primary transition-colors">{property.address}</p>
-                            <Badge variant={property.approval_status === 'approved' ? 'default' : 'secondary'} className="text-xs flex-shrink-0">{property.approval_status}</Badge>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">{property.address}</p>
+                            <Badge variant={property.approval_status === 'approved' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1 flex-shrink-0">{property.approval_status}</Badge>
                           </div>
-                          <div className="space-y-1 text-sm">
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             {phones.length > 0 && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Phone className="w-3 h-3 flex-shrink-0" />
-                                {phoneFieldFilter.length > 0 && <span className="text-xs font-semibold text-primary">[{phoneFieldFilter.map(f => f.replace('_', ' ').replace('phone', 'Ph').replace('owner Ph', 'Owner')).join(', ')}]</span>}
-                                <span className="truncate font-mono text-xs">{phones.slice(0, 2).join(', ')}{phones.length > 2 && ` +${phones.length - 2} more`}</span>
-                              </div>
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {phones.length}
+                              </span>
                             )}
                             {emails.length > 0 && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Mail className="w-3 h-3 flex-shrink-0" />
-                                <span className="truncate font-mono text-xs">{emails.slice(0, 2).join(', ')}{emails.length > 2 && ` +${emails.length - 2} more`}</span>
-                              </div>
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3" />
+                                {emails.length}
+                              </span>
                             )}
                             {property.cash_offer_amount && (
-                              <div className="flex items-center gap-2 text-success font-semibold">
-                                <DollarSign className="w-3 h-3 flex-shrink-0" />
-                                <span className="text-xs">{property.cash_offer_amount.toLocaleString()}</span>
-                              </div>
+                              <span className="flex items-center gap-1 text-success font-medium">
+                                <DollarSign className="w-3 h-3" />
+                                {property.cash_offer_amount.toLocaleString()}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -190,25 +186,25 @@ export function CampaignStep2Properties({ loading, properties, filters, selected
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Selected Properties ({selectedIds.length})</CardTitle>
-              <CardDescription>Properties that will receive your campaign</CardDescription>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Selected ({selectedIds.length})</CardTitle>
+              <CardDescription className="text-xs">Properties that will receive your campaign</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {selectedIds.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">No properties selected</div>
+                <div className="text-center py-8 text-muted-foreground text-sm">No properties selected</div>
               ) : (
-                <ScrollArea className="h-[320px] pr-3">
-                  <div className="space-y-2">
+                <ScrollArea className="h-[320px] pr-2">
+                  <div className="space-y-1.5">
                     {selectedProps.map((property) => (
-                      <div key={property.id} className="p-3 border rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors">
+                      <div key={property.id} className="p-2 border rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors">
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-medium truncate">{property.address}</p>
-                            <p className="text-xs text-muted-foreground truncate">{property.city}, {property.state} {property.zip_code}</p>
+                            <p className="font-medium text-sm truncate">{property.address}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{property.city}, {property.state} {property.zip_code}</p>
                           </div>
-                          <Badge variant="outline" className="flex-shrink-0">
-                            {selectedChannel === 'email' ? `${getAllEmails(property).length} email(s)` : `${getAllPhones(property).length} phone(s)`}
+                          <Badge variant="outline" className="flex-shrink-0 text-[10px]">
+                            {selectedChannel === 'email' ? `${getAllEmails(property).length} email` : `${getAllPhones(property).length} ph`}
                           </Badge>
                         </div>
                       </div>
