@@ -31,6 +31,7 @@ export interface QueueProperty {
   origem: string | null;
   ai_score: number | null;
   ai_reasoning: string | null;
+  mao: number | null;
 }
 
 export type ApprovePhase = 'choose' | 'comps' | 'offer' | null;

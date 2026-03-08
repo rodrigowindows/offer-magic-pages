@@ -10,6 +10,10 @@ import { ActionArea } from "@/components/review/ActionArea";
 import { InlineCompsList } from "@/components/review/InlineCompsList";
 import { SpeedTracker } from "@/components/review/SpeedTracker";
 import { CompletenessIndicator } from "@/components/review/CompletenessIndicator";
+import { ExportDecisions } from "@/components/review/ExportDecisions";
+import { PropertyComparison } from "@/components/review/PropertyComparison";
+import { BulkActions } from "@/components/review/BulkActions";
+import { InlineMAOCalculator } from "@/components/review/InlineMAOCalculator";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useReviewActions } from "@/hooks/useReviewActions";
 import { useUndoDecision } from "@/hooks/useUndoDecision";
@@ -44,7 +48,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const nextProperty = queue.filteredProperties[queue.currentIndex + 1];
   useEffect(() => {
     if (nextProperty?.id) {
-      // Silently prefetch comps for next property
       queue.fetchCurrentComps(nextProperty.id).catch(() => {});
     }
   }, [nextProperty?.id]);
@@ -88,6 +91,15 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           </div>
           <div className="flex items-center gap-2">
             <SpeedTracker dailyStats={queue.dailyStats} />
+            <ExportDecisions />
+            <PropertyComparison
+              properties={queue.filteredProperties}
+              currentProperty={queue.currentProperty}
+            />
+            <BulkActions
+              properties={queue.filteredProperties}
+              onComplete={advanceAfterAction}
+            />
             {undo.canUndo && (
               <Button variant="outline" size="sm" onClick={undo.undoLastAction} className="h-5 px-1.5 text-[10px] gap-1 text-amber-700 border-amber-300 hover:bg-amber-50">
                 <Undo2 className="h-2.5 w-2.5" />
@@ -114,8 +126,13 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
       {queue.currentProperty && (
         <Card className="flex-1 flex flex-col overflow-hidden min-h-0 bg-card">
           <CardContent className="flex flex-col flex-1 p-1 sm:p-1.5 space-y-1 min-h-0">
-            {/* Completeness badge */}
-            <div className="flex items-center justify-end px-1">
+            {/* Completeness badge + MAO */}
+            <div className="flex items-center justify-between px-1">
+              <InlineMAOCalculator
+                property={queue.currentProperty}
+                compsARV={actions.compsARV}
+                onSaved={queue.fetchProperties}
+              />
               <CompletenessIndicator property={queue.currentProperty} />
             </div>
 
