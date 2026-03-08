@@ -259,7 +259,7 @@ const Admin = () => {
         </main>
 
         <BulkActionsBar
-          selectedCount={admin.selectedProperties.length} onClearSelection={() => admin.setSelectedProperties([])}
+          selectedCount={admin.selectedProperties.length} selectedPropertyIds={admin.selectedProperties} onClearSelection={() => admin.setSelectedProperties([])}
           onBulkStatusChange={admin.handleBulkStatusChange} onBulkDelete={admin.handleBulkDelete} onGenerateQRCodes={handleGenerateQRCodes}
           onPrintOffers={() => dialogs.setIsBatchPrintDialogOpen(true)} onStartCampaign={() => dialogs.setIsCampaignDialogOpen(true)}
           onAISuggestions={() => dialogs.setIsSuggestionsDialogOpen(true)} onStartSequence={() => dialogs.setIsSequenceDialogOpen(true)}
