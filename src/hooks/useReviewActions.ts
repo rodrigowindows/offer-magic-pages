@@ -247,6 +247,14 @@ export const useReviewActions = ({
       });
 
       toast({ title: "Rejeitado", description: `${currentProperty.address} - ${reasonLabel}` });
+
+      onActionComplete?.(currentProperty.id, currentProperty.address, 'rejected', {
+        status: currentProperty.approval_status || null,
+        offer: currentProperty.cash_offer_amount,
+        rejectionReason: currentProperty.rejection_reason || null,
+        rejectionNotes: currentProperty.rejection_notes || null,
+      });
+
       await onAdvance();
       resetActionState();
     } catch (error: any) {
