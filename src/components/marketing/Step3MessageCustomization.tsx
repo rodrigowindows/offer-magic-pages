@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { MessageSquare, Mail, Phone, Eye } from 'lucide-react';
+import { MessageSquare, Mail, Phone, Eye, Sparkles } from 'lucide-react';
+import { AIMessageGenerator } from '@/components/ai/AIMessageGenerator';
 import { generateMessagePreview } from '@/services/marketingService';
 import {
   DEFAULT_SMS_TEMPLATE,
