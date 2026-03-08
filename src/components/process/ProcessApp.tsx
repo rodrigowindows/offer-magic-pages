@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Code } from 'lucide-react';
+import { ChevronLeft, Code, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ReviewQueue } from '@/components/shared/ReviewQueue';
 import { BatchSelector } from './BatchSelector';
 import { ApiInfoPanel } from './ApiInfoPanel';
 import { StepperNav } from './StepperNav';
 import { MAOCalculator } from './MAOCalculator';
+import { AdminChat } from '@/components/ai/AdminChat';
 import { PROCESS_STEPS } from './processSteps';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { lazy, Suspense } from 'react';
