@@ -19,6 +19,8 @@ import { useMemo } from 'react';
 import { LeadScoringDashboard } from '../lead/LeadScoringDashboard';
 import { AutomatedSequences } from '../follow-up/AutomatedSequences';
 import { CampaignPerformanceDashboard } from './CampaignPerformanceDashboard';
+import { ConversionFunnel } from '@/components/analytics/ConversionFunnel';
+import { SmartFollowUpScheduler } from '@/components/automation/SmartFollowUpScheduler';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
