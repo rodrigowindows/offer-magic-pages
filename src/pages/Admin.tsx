@@ -8,6 +8,8 @@ import { BarChart3, Target, List, Rocket, Zap, Search } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
 import { BulkActionsBar } from "@/components/shared/BulkActionsBar";
+import { BulkImportDialog } from "@/components/import-data/BulkImportDialog";
+import { GeminiAPIKeyDialog } from "@/components/shared/GeminiAPIKeyDialog";
 import { FeatureTogglePanel } from "@/components/ab-testing/FeatureTogglePanel";
 import { MainNavigation } from "@/components/shared/MainNavigation";
 import { ReviewQueue } from "@/components/shared/ReviewQueue";
