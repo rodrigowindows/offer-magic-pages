@@ -14,12 +14,10 @@ interface PropertyData {
   property_image_url: string | null;
   estimated_value: number;
   cash_offer_amount: number;
-  min_offer_amount?: number;
-  max_offer_amount?: number;
   status: string;
-  owner_name: string | null;
   neighborhood: string | null;
   zillow_url: string | null;
+  owner_name?: string | null;
 }
 
 const Property = () => {
