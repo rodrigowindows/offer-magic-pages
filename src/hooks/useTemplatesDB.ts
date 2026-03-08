@@ -26,8 +26,22 @@ export const useTemplates = () => {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        await insertDefaultTemplates();
-        await loadTemplates();
+        // Try to insert defaults once, then reload (no recursion)
+        const inserted = await insertDefaultTemplates();
+        if (inserted) {
+          const { data: retryData, error: retryError } = await supabase
+            .from('templates')
+            .select('*')
+            .order('created_at', { ascending: true });
+          if (!retryError && retryData && retryData.length > 0) {
+            setTemplates(retryData.map(t => ({
+              ...t,
+              channel: t.channel as Channel,
+              created_at: new Date(t.created_at),
+              updated_at: new Date(t.updated_at),
+            })));
+          }
+        }
         return;
       }
 
@@ -41,13 +55,12 @@ export const useTemplates = () => {
       setTemplates(templatesWithDates);
     } catch (error) {
       console.error('Erro ao carregar templates:', error);
-      toast.error('Erro ao carregar templates');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const insertDefaultTemplates = async () => {
+  const insertDefaultTemplates = async (): Promise<boolean> => {
     try {
       const templatesToInsert = DEFAULT_TEMPLATES.map(t => ({
         id: t.id,
@@ -65,8 +78,10 @@ export const useTemplates = () => {
       const { error } = await supabase.from('templates').insert(templatesToInsert);
       if (error) throw error;
       toast.success('Templates padrão carregados');
+      return true;
     } catch (error) {
       console.error('Erro ao inserir templates padrão:', error);
+      return false;
     }
   };
 
