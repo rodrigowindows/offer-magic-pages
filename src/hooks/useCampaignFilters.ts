@@ -52,7 +52,8 @@ export const useCampaignFilters = (properties: CampaignProperty[]) => {
     [properties, selectedIds]
   );
 
-  const getFilteredProperties = useCallback(() => {
+  // Changed from useCallback to useMemo for automatic memoization
+  const filteredProperties = useMemo(() => {
     return properties.filter(p => {
       const matchesSearch =
         !searchTerm ||
@@ -61,7 +62,7 @@ export const useCampaignFilters = (properties: CampaignProperty[]) => {
         p.city.toLowerCase().includes(searchTerm.toLowerCase());
       if (hasSkiptracePhoneFilter && !hasSkiptracePhones(p)) return false;
       if (hasSkiptraceEmailFilter && !hasSkiptraceEmails(p)) return false;
-      if (phoneFieldFilter.length > 0 && !phoneFieldFilter.some(field => !!(p as any)[field])) return false;
+      if (phoneFieldFilter.length > 0 && !phoneFieldFilter.some(field => !!(p as Record<string, unknown>)[field])) return false;
       return matchesSearch;
     });
   }, [properties, searchTerm, hasSkiptracePhoneFilter, hasSkiptraceEmailFilter, phoneFieldFilter]);
@@ -97,9 +98,9 @@ export const useCampaignFilters = (properties: CampaignProperty[]) => {
     countWithSkiptraceEmails,
     phoneFieldCounts,
     selectedProps,
+    filteredProperties,
     // Functions
     getAllPhones,
-    getFilteredProperties,
     getContactStats,
     toggleSelection,
   };
