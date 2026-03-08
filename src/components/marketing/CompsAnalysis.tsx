@@ -231,15 +231,6 @@ export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
         }
       }
       
-      // Debug: log raw data
-      if (index === 0) {
-        console.log('🔍 Converting manual link:', {
-          id: link.id,
-          has_comp_data: !!link.comp_data,
-          comp_data_type: typeof link.comp_data,
-          comp_data: compData,
-        });
-      }
 
       // Usar comp_data se disponível (extrair valores de JSONB)
       const salePrice = Number(compData.sale_price || compData.salePrice) || 0;
@@ -249,16 +240,6 @@ export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
       const saleDate = compData.sale_date || compData.saleDate || link.created_at || new Date().toISOString();
       const pricePerSqft = squareFeet > 0 ? salePrice / squareFeet : 0;
       
-      // Debug: log converted values
-      if (index === 0) {
-        console.log('✅ Converted values:', {
-          salePrice,
-          squareFeet,
-          pricePerSqft,
-          bedrooms,
-          bathrooms,
-        });
-      }
 
       return {
         id: link.id || `manual-${index}`,
@@ -891,7 +872,7 @@ export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
 
       if (error) throw error;
       setManualComps(data || []);
-      console.log('✅ Loaded all manual comps:', data?.length || 0);
+      
     } catch (error) {
       console.error('Error loading all manual comps:', error);
       setManualComps([]);
@@ -1298,14 +1279,13 @@ export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
       const getComparablesForProperty = async (property: Property, forceRefresh = false) => {
         // Skip all caches if forceRefresh is true
         if (forceRefresh) {
-          console.log('🔄 Force refresh enabled, skipping all caches for:', property.address);
         } else {
           // 1️⃣ Check MEMORY cache first (fastest)
           const cacheKey = `${property.id}-${compsFilters.maxDistance || 3}`;
           const cached = compsCache[cacheKey];
 
           if (cached) {
-            console.log('✅ Using MEMORY cache for export:', property.address);
+            
             // Also fetch manual comps even when using memory cache
             let manualCompsForProperty: ComparableProperty[] = [];
             try {
@@ -1317,7 +1297,6 @@ export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
 
               if (manualLinks && manualLinks.length > 0) {
                 manualCompsForProperty = convertManualLinksToComparables(manualLinks);
-                console.log(`✅ Found ${manualCompsForProperty.length} manual comps for cached export:`, property.address);
               }
             } catch (manualError) {
               console.warn('⚠️ Error fetching manual comps for cached export:', manualError);
