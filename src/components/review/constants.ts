@@ -55,7 +55,8 @@ export const DETAIL_FIELDS: DetailField[] = [
       return null;
     },
   },
-  { key: 'ai_score', label: 'AI Score', category: 'decisao', defaultVisible: true,
+  // ai_score with recommendation label (replaces simple format above)
+  { key: 'ai_score_rec', label: 'AI Recomendação', category: 'decisao', defaultVisible: false,
     format: (p) => {
       if (p.ai_score == null) return null;
       const rec = p.ai_score >= 70 ? 'BUY' : p.ai_score >= 50 ? 'HOLD' : 'PASS';
