@@ -21,7 +21,6 @@ interface ReviewQueueProps {
 
 export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   const queue = useReviewQueue(selectedBatch);
-  const { toast } = useToast();
 
   const advanceAfterAction = useCallback(async () => {
     await queue.fetchProperties();
