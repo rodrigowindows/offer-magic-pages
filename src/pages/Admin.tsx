@@ -18,29 +18,17 @@ import { z } from "zod";
 import { LeadStatusBadge } from "@/components/lead/LeadStatusBadge";
 import { LeadStatusSelect } from "@/components/lead/LeadStatusSelect";
 import { BulkActionsBar } from "@/components/shared/BulkActionsBar";
-import { CashOfferDialog } from "@/components/offer/CashOfferDialog";
-import { EmailCampaignDialog } from "@/components/campaign/EmailCampaignDialog";
 import { EmailCampaignStats } from "@/components/campaign/EmailCampaignStats";
-import { LeadSuggestionsDialog } from "@/components/lead/LeadSuggestionsDialog";
 import { KanbanBoard } from "@/components/shared/KanbanBoard";
 import { CampaignAnalytics } from "@/components/campaign/CampaignAnalytics";
 import { CampaignExport } from "@/components/campaign/CampaignExport";
 import { FollowUpManager } from "@/components/follow-up/FollowUpManager";
 import { FeatureTogglePanel } from "@/components/ab-testing/FeatureTogglePanel";
 import { ResponseTimeAnalytics } from "@/components/dashboard/ResponseTimeAnalytics";
-import { CampaignTemplatesDialog } from "@/components/campaign/CampaignTemplatesDialog";
-import { CampaignPreviewDialog } from "@/components/campaign/CampaignPreviewDialog";
 import { AdminDashboardOverview } from "@/components/dashboard/AdminDashboardOverview";
-import { BatchOfferPrintDialog } from "@/components/offer/BatchOfferPrintDialog";
 import { ChannelAnalytics } from "@/components/dashboard/ChannelAnalytics";
 import { SequenceManager } from "@/components/follow-up/SequenceManager";
-import { StartSequenceDialog } from "@/components/follow-up/StartSequenceDialog";
-import { PropertyImageUpload } from "@/components/property/PropertyImageUpload";
-import { PropertyTagsManager } from "@/components/property/PropertyTagsManager";
-import { PropertyApprovalDialog } from "@/components/property/PropertyApprovalDialog";
 import { PropertyImageDisplay } from "@/components/property/PropertyImageDisplay";
-import { AirbnbEligibilityChecker } from "@/components/shared/AirbnbEligibilityChecker";
-import { PropertyComparison } from "@/components/property/PropertyComparison";
 import { BulkImportDialog } from "@/components/import-data/BulkImportDialog";
 import { GeminiAPIKeyDialog } from "@/components/shared/GeminiAPIKeyDialog";
 import { PropertyCardSkeleton } from "@/components/property/PropertyCardSkeleton";
@@ -61,10 +49,8 @@ import { DashboardQuickActions } from "@/components/dashboard/DashboardQuickActi
 import { formatCurrency } from "@/lib/utils";
 import type { LeadStatus } from "@/components/lead/LeadStatusBadge";
 
-// Extracted components
 import { AdminHeader } from "@/components/admin/AdminHeader";
-import { PropertyEditDialog } from "@/components/admin/PropertyEditDialog";
-import { PropertyNotesDialog } from "@/components/admin/PropertyNotesDialog";
+import { AdminDialogsContainer } from "@/components/admin/AdminDialogsContainer";
 import { useAdminProperties, type AdminProperty } from "@/hooks/useAdminProperties";
 
 const propertySchema = z.object({
@@ -89,8 +75,6 @@ const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isMinimal, toggleDesignMode } = useDesignMode();
-
-  // Use extracted hook for property management
   const admin = useAdminProperties();
 
   // Dialog states
@@ -103,7 +87,6 @@ const Admin = () => {
   const [formData, setFormData] = useState({ address: "", city: "Miami", state: "FL", zipCode: "", estimatedValue: "", cashOfferAmount: "", propertyImageUrl: "" });
   const [noteFormData, setNoteFormData] = useState({ noteText: "", followUpDate: "" });
 
-  // More dialog states
   const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
   const [selectedPropertyForOffer, setSelectedPropertyForOffer] = useState<AdminProperty | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
@@ -117,36 +100,21 @@ const Admin = () => {
   const [isBulkImportDialogOpen, setIsBulkImportDialogOpen] = useState(false);
   const [isGeminiAPIKeyDialogOpen, setIsGeminiAPIKeyDialogOpen] = useState(false);
 
-  // Property-specific dialog states
   const [selectedPropertyForImage, setSelectedPropertyForImage] = useState<string | null>(null);
   const [selectedPropertyForTags, setSelectedPropertyForTags] = useState<string | null>(null);
   const [selectedPropertyForApproval, setSelectedPropertyForApproval] = useState<string | null>(null);
   const [selectedPropertyForAirbnb, setSelectedPropertyForAirbnb] = useState<string | null>(null);
   const [selectedPropertyForComparison, setSelectedPropertyForComparison] = useState<string | null>(null);
 
-  // UI states
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('cards');
   const [isBatchReviewOpen, setIsBatchReviewOpen] = useState(false);
   const [showFiltersSidebar, setShowFiltersSidebar] = useState(true);
 
-  // Auth check
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) navigate("/auth");
-  };
+  useState(() => { supabase.auth.getSession().then(({ data: { session } }) => { if (!session) navigate("/auth"); }); });
 
-  useState(() => { checkAuth(); });
+  const handleLogout = async () => { await supabase.auth.signOut(); navigate("/auth"); };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
-  };
-
-  const openEditDialog = (property: AdminProperty) => {
-    setSelectedPropertyId(property.id);
-    setEditFormData(property);
-    setIsEditDialogOpen(true);
-  };
+  const openEditDialog = (property: AdminProperty) => { setSelectedPropertyId(property.id); setEditFormData(property); setIsEditDialogOpen(true); };
 
   const handleUpdateProperty = async () => {
     if (!selectedPropertyId) return;
@@ -155,7 +123,6 @@ const Admin = () => {
       const { error } = await supabase.from("properties").update({
         address: editFormData.address, city: editFormData.city, state: editFormData.state, zip_code: editFormData.zip_code,
         estimated_value: editFormData.estimated_value, cash_offer_amount: editFormData.cash_offer_amount,
-        min_offer_amount: (editFormData as any).min_offer_amount || null, max_offer_amount: (editFormData as any).max_offer_amount || null,
         property_image_url: editFormData.property_image_url, owner_address: editFormData.owner_address,
         owner_name: editFormData.owner_name, owner_phone: editFormData.owner_phone, answer_flag: editFormData.answer_flag,
         dnc_flag: editFormData.dnc_flag, neighborhood: editFormData.neighborhood, origem: editFormData.origem,
@@ -196,19 +163,11 @@ const Admin = () => {
     } finally { admin.setIsLoading(false); }
   };
 
-  const copyPropertyLink = (slug: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/property/${slug}`);
-    toast({ title: "Copied!" });
-  };
-
-  const openQRGenerator = (slug: string) => {
-    const url = encodeURIComponent(`${window.location.origin}/property/${slug}`);
-    window.open(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${url}`, '_blank');
-  };
+  const copyPropertyLink = (slug: string) => { navigator.clipboard.writeText(`${window.location.origin}/property/${slug}`); toast({ title: "Copied!" }); };
+  const openQRGenerator = (slug: string) => { window.open(`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/property/${slug}`)}`, '_blank'); };
 
   const openNotesDialog = async (propertyId: string) => {
-    setSelectedPropertyId(propertyId);
-    setIsNotesDialogOpen(true);
+    setSelectedPropertyId(propertyId); setIsNotesDialogOpen(true);
     const { data } = await supabase.from("property_notes").select("*").eq("property_id", propertyId).order("created_at", { ascending: false });
     setPropertyNotes(data || []);
   };
@@ -217,15 +176,8 @@ const Admin = () => {
     e.preventDefault();
     if (!selectedPropertyId || !noteFormData.noteText.trim()) return;
     admin.setIsLoading(true);
-    const { error } = await supabase.from("property_notes").insert({
-      property_id: selectedPropertyId, note_text: noteFormData.noteText, follow_up_date: noteFormData.followUpDate || null,
-    });
-    if (!error) {
-      toast({ title: "Note added" });
-      setNoteFormData({ noteText: "", followUpDate: "" });
-      const { data } = await supabase.from("property_notes").select("*").eq("property_id", selectedPropertyId).order("created_at", { ascending: false });
-      setPropertyNotes(data || []);
-    }
+    const { error } = await supabase.from("property_notes").insert({ property_id: selectedPropertyId, note_text: noteFormData.noteText, follow_up_date: noteFormData.followUpDate || null });
+    if (!error) { toast({ title: "Note added" }); setNoteFormData({ noteText: "", followUpDate: "" }); const { data } = await supabase.from("property_notes").select("*").eq("property_id", selectedPropertyId).order("created_at", { ascending: false }); setPropertyNotes(data || []); }
     admin.setIsLoading(false);
   };
 
@@ -233,10 +185,7 @@ const Admin = () => {
     const selectedProps = admin.properties.filter(p => admin.selectedProperties.includes(p.id));
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`<html><head><title>QR Codes</title><style>body{font-family:Arial;padding:20px}.qr-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px}.qr-item{border:2px solid #ddd;padding:15px;text-align:center;break-inside:avoid}.qr-item img{max-width:100%}@media print{.qr-container{grid-template-columns:repeat(2,1fr)}}</style></head><body><h1>QR Codes for ${selectedProps.length} Properties</h1><button onclick="window.print()">Print</button><div class="qr-container">${selectedProps.map(p => {
-        const qr = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/property/${p.slug}`)}`;
-        return `<div class="qr-item"><img src="${qr}"/><h3>${p.address}</h3><p>${p.city}, ${p.state} ${p.zip_code}</p><p><strong>Cash Offer:</strong> ${formatCurrency(p.cash_offer_amount)}</p></div>`;
-      }).join('')}</div></body></html>`);
+      printWindow.document.write(`<html><head><title>QR Codes</title><style>body{font-family:Arial;padding:20px}.qr-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:20px}.qr-item{border:2px solid #ddd;padding:15px;text-align:center;break-inside:avoid}@media print{.qr-container{grid-template-columns:repeat(2,1fr)}}</style></head><body><h1>QR Codes</h1><button onclick="window.print()">Print</button><div class="qr-container">${selectedProps.map(p => `<div class="qr-item"><img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(`${window.location.origin}/property/${p.slug}`)}"/><h3>${p.address}</h3><p>${p.city}, ${p.state} ${p.zip_code}</p><p><strong>Cash Offer:</strong> ${formatCurrency(p.cash_offer_amount)}</p></div>`).join('')}</div></body></html>`);
       printWindow.document.close();
     }
   };
@@ -244,11 +193,9 @@ const Admin = () => {
   const handleStartApprovedCampaign = () => {
     const approvedIds = admin.properties.filter(p => p.approval_status === 'approved').map(p => p.id);
     if (approvedIds.length === 0) { toast({ title: "No Approved Properties", variant: "destructive" }); return; }
-    admin.setSelectedProperties(approvedIds);
-    setIsCampaignDialogOpen(true);
+    admin.setSelectedProperties(approvedIds); setIsCampaignDialogOpen(true);
   };
 
-  // Active filter chips
   const activeFilters = useMemo(() => {
     const chips: any[] = [];
     const f = admin.filters;
@@ -286,20 +233,11 @@ const Admin = () => {
       <MainNavigation />
       <div className="min-h-screen bg-gray-50">
         <AdminHeader
-          title={headerTitle}
-          totalCount={admin.properties.length}
-          isMinimal={isMinimal}
-          onToggleDesignMode={toggleDesignMode}
-          onLogout={handleLogout}
-          onBulkImport={() => setIsBulkImportDialogOpen(true)}
-          onGeminiSettings={() => setIsGeminiAPIKeyDialogOpen(true)}
+          title={headerTitle} totalCount={admin.properties.length} isMinimal={isMinimal}
+          onToggleDesignMode={toggleDesignMode} onLogout={handleLogout}
+          onBulkImport={() => setIsBulkImportDialogOpen(true)} onGeminiSettings={() => setIsGeminiAPIKeyDialogOpen(true)}
           onMarketingSettings={() => setIsMarketingSettingsOpen(true)}
-          exportFilters={{
-            userId: admin.filters.filterUserId || undefined,
-            tags: admin.filters.selectedTags,
-            searchQuery: admin.filters.searchQuery,
-            batch: admin.filters.advancedFilters.importBatch?.length === 1 ? admin.filters.advancedFilters.importBatch[0] : undefined,
-          }}
+          exportFilters={{ userId: admin.filters.filterUserId || undefined, tags: admin.filters.selectedTags, searchQuery: admin.filters.searchQuery, batch: admin.filters.advancedFilters.importBatch?.length === 1 ? admin.filters.advancedFilters.importBatch[0] : undefined }}
         />
 
         <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
@@ -313,42 +251,33 @@ const Admin = () => {
               <TabsTrigger value="features" className="flex items-center gap-1 text-xs sm:text-sm"><Zap className="h-3 w-3 sm:h-4 sm:w-4" /><span className="hidden sm:inline">Feature Toggles</span><span className="sm:hidden">Toggles</span></TabsTrigger>
             </TabsList>
 
-            {/* Dashboard Tab */}
+            {/* Dashboard */}
             <TabsContent value="dashboard" className="space-y-6">
               <MetricsDashboard properties={admin.properties} />
               <DashboardQuickActions
-                onStartReview={() => { const t = document.querySelector('[value="review"]') as HTMLElement; t?.click(); }}
-                onAddProperty={() => setIsAddDialogOpen(true)}
-                onExportData={() => {}}
-                onStartCampaign={() => setIsCampaignDialogOpen(true)}
-                onStartApprovedCampaign={handleStartApprovedCampaign}
+                onStartReview={() => { (document.querySelector('[value="review"]') as HTMLElement)?.click(); }}
+                onAddProperty={() => setIsAddDialogOpen(true)} onExportData={() => {}}
+                onStartCampaign={() => setIsCampaignDialogOpen(true)} onStartApprovedCampaign={handleStartApprovedCampaign}
                 pendingCount={admin.statusCounts.pending}
               />
-              <AdminDashboardOverview />
-              <TeamActivityDashboard />
+              <AdminDashboardOverview /><TeamActivityDashboard />
               <div className="max-w-md"><TeamReportExporter /></div>
               <FollowUpManager />
             </TabsContent>
 
-            {/* Review Queue Tab */}
             <TabsContent value="review" className="space-y-6"><ReviewQueue /></TabsContent>
 
-            {/* Properties Tab */}
+            {/* Properties */}
             <TabsContent value="properties" className="space-y-6">
               <UnifiedPropertyFilters
-                selectedStatus={admin.filters.filterStatus}
-                onStatusChange={s => admin.updateFilter('filterStatus', s as LeadStatus | 'all')}
-                statusCounts={admin.leadStatusCounts}
-                approvalStatus={admin.filters.approvalStatus}
+                selectedStatus={admin.filters.filterStatus} onStatusChange={s => admin.updateFilter('filterStatus', s as LeadStatus | 'all')}
+                statusCounts={admin.leadStatusCounts} approvalStatus={admin.filters.approvalStatus}
                 onApprovalStatusChange={s => admin.updateFilter('approvalStatus', s)}
                 approvalCounts={admin.statusCounts}
                 onUserFilter={(uid, uname) => { admin.updateFilter('filterUserId', uid); admin.updateFilter('filterUserName', uname); }}
-                currentUserId={admin.filters.filterUserId}
-                currentUserName={admin.filters.filterUserName}
-                selectedTags={admin.filters.selectedTags}
-                onTagsChange={t => admin.updateFilter('selectedTags', t)}
-                advancedFilters={admin.filters.advancedFilters}
-                onAdvancedFiltersChange={f => admin.updateFilter('advancedFilters', f)}
+                currentUserId={admin.filters.filterUserId} currentUserName={admin.filters.filterUserName}
+                selectedTags={admin.filters.selectedTags} onTagsChange={t => admin.updateFilter('selectedTags', t)}
+                advancedFilters={admin.filters.advancedFilters} onAdvancedFiltersChange={f => admin.updateFilter('advancedFilters', f)}
                 onClearAll={() => { admin.updateFilter('filterStatus', 'all'); admin.updateFilter('approvalStatus', 'all'); admin.updateFilter('filterUserId', null); admin.updateFilter('filterUserName', null); admin.updateFilter('selectedTags', []); admin.updateFilter('advancedFilters', {}); }}
               />
               <div className="max-w-2xl">
@@ -468,10 +397,10 @@ const Admin = () => {
                                   </TableCell>
                                   <TableCell>
                                     <div className="flex flex-wrap gap-2">
-                                      {['sms_sent', 'email_sent', 'letter_sent', 'card_sent', 'phone_call_made', 'meeting_scheduled'].map(field => (
+                                      {['sms_sent','email_sent','letter_sent','card_sent','phone_call_made','meeting_scheduled'].map(field => (
                                         <div key={field} className="flex items-center space-x-1">
                                           <Checkbox checked={(property as any)[field]} onCheckedChange={c => admin.updatePropertyCommunication(property.id, field, c as boolean)} />
-                                          <Label className="text-xs cursor-pointer">{field.replace('_sent', '').replace('_made', '').replace('_scheduled', '').replace('_', ' ')}</Label>
+                                          <Label className="text-xs cursor-pointer">{field.replace('_sent','').replace('_made','').replace('_scheduled','').replace('_',' ')}</Label>
                                         </div>
                                       ))}
                                     </div>
@@ -499,7 +428,7 @@ const Admin = () => {
               </Tabs>
             </TabsContent>
 
-            {/* Campaigns Tab */}
+            {/* Campaigns */}
             <TabsContent value="campaigns" className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold text-foreground">Campaign Management</h2>
@@ -513,9 +442,8 @@ const Admin = () => {
               <div><h3 className="text-xl font-semibold mb-4">Email Campaigns</h3><EmailCampaignStats /></div>
             </TabsContent>
 
-            {/* Analytics Tab */}
             <TabsContent value="analytics" className="space-y-6">
-              <div><h2 className="text-2xl font-semibold mb-4">Campaign Performance</h2><p className="text-muted-foreground">Campaign metrics dashboard is being updated.</p></div>
+              <div><h2 className="text-2xl font-semibold mb-4">Campaign Performance</h2></div>
               <ChannelAnalytics />
               <div><h2 className="text-2xl font-semibold mb-4">A/B Test Results</h2><div className="bg-card rounded-lg border border-border p-6"><ABTestAnalytics /></div></div>
             </TabsContent>
@@ -523,23 +451,30 @@ const Admin = () => {
             <TabsContent value="features"><FeatureTogglePanel /></TabsContent>
           </Tabs>
 
-          {/* Dialogs */}
-          <PropertyNotesDialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen} propertyId={selectedPropertyId} notes={propertyNotes} noteFormData={noteFormData} onNoteFormChange={setNoteFormData} onSubmit={handleNoteSubmit} isLoading={admin.isLoading} />
-          <PropertyEditDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} editFormData={editFormData} onEditFormChange={setEditFormData} onSave={handleUpdateProperty} isLoading={admin.isLoading} />
-          <CashOfferDialog property={selectedPropertyForOffer} open={isOfferDialogOpen} onOpenChange={setIsOfferDialogOpen} />
-          <EmailCampaignDialog properties={admin.properties.filter(p => admin.selectedProperties.includes(p.id))} open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen} onOpenSettings={() => setIsMarketingSettingsOpen(true)} onSuccess={() => { admin.fetchProperties(); admin.setSelectedProperties([]); }} />
-          <LeadSuggestionsDialog open={isSuggestionsDialogOpen} onOpenChange={setIsSuggestionsDialogOpen} propertyIds={admin.selectedProperties} onRefresh={admin.fetchProperties} />
-          <CampaignTemplatesDialog open={isTemplatesDialogOpen} onOpenChange={setIsTemplatesDialogOpen} />
-          <CampaignPreviewDialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen} propertyIds={admin.selectedProperties} onConfirm={() => setIsCampaignDialogOpen(true)} />
-          <BatchOfferPrintDialog properties={admin.properties.filter(p => admin.selectedProperties.includes(p.id))} open={isBatchPrintDialogOpen} onOpenChange={setIsBatchPrintDialogOpen} />
-          <StartSequenceDialog open={isSequenceDialogOpen} onOpenChange={setIsSequenceDialogOpen} selectedProperties={admin.properties.filter(p => admin.selectedProperties.includes(p.id)).map(p => ({ id: p.id, address: p.address, city: p.city }))} />
-
-          {/* Property-specific dialogs */}
-          {selectedPropertyForImage && (() => { const p = admin.properties.find(x => x.id === selectedPropertyForImage); return p ? <Dialog open onOpenChange={o => !o && setSelectedPropertyForImage(null)}><DialogContent><DialogHeader><DialogTitle>Upload Image</DialogTitle></DialogHeader><PropertyImageUpload propertyId={p.id} propertySlug={p.slug} currentImageUrl={p.property_image_url} onImageUploaded={() => { admin.fetchProperties(); setSelectedPropertyForImage(null); }} /></DialogContent></Dialog> : null; })()}
-          {selectedPropertyForTags && (() => { const p = admin.properties.find(x => x.id === selectedPropertyForTags); return p ? <Dialog open onOpenChange={o => !o && setSelectedPropertyForTags(null)}><DialogContent className="sm:max-w-[600px]"><DialogHeader><DialogTitle>Manage Tags</DialogTitle></DialogHeader><PropertyTagsManager propertyId={p.id} currentTags={(p as any).tags || []} onTagsUpdated={() => { admin.fetchProperties(); setSelectedPropertyForTags(null); }} /></DialogContent></Dialog> : null; })()}
-          {(() => { const p = selectedPropertyForApproval ? admin.properties.find(x => x.id === selectedPropertyForApproval) : null; return <PropertyApprovalDialog propertyId={selectedPropertyForApproval || ""} propertyAddress={p?.address || ""} currentStatus={p?.approval_status || "pending"} open={!!selectedPropertyForApproval} onOpenChange={o => { if (!o) setSelectedPropertyForApproval(null); }} onStatusChange={() => { admin.fetchProperties(); setSelectedPropertyForApproval(null); }} />; })()}
-          {(() => { const p = selectedPropertyForAirbnb ? admin.properties.find(x => x.id === selectedPropertyForAirbnb) : null; return <AirbnbEligibilityChecker propertyId={selectedPropertyForAirbnb || ""} propertyAddress={p?.address || ""} city={p?.city || ""} state={p?.state || ""} currentEligible={p?.airbnb_eligible} currentRegulations={p?.airbnb_regulations} currentNotes={p?.airbnb_notes} lastCheckDate={p?.airbnb_check_date} open={!!selectedPropertyForAirbnb} onOpenChange={o => { if (!o) setSelectedPropertyForAirbnb(null); }} onCheckComplete={() => { admin.fetchProperties(); setSelectedPropertyForAirbnb(null); }} />; })()}
-          {selectedPropertyForComparison && (() => { const p = admin.properties.find(x => x.id === selectedPropertyForComparison); return p ? <PropertyComparison propertyId={p.id} address={p.address} city={p.city} state={p.state} zipCode={p.zip_code} estimatedValue={p.estimated_value} cashOfferAmount={p.cash_offer_amount} onClose={() => setSelectedPropertyForComparison(null)} /> : null; })()}
+          {/* All dialogs */}
+          <AdminDialogsContainer
+            properties={admin.properties} selectedProperties={admin.selectedProperties}
+            setSelectedProperties={admin.setSelectedProperties} fetchProperties={admin.fetchProperties} isLoading={admin.isLoading}
+            isNotesDialogOpen={isNotesDialogOpen} setIsNotesDialogOpen={setIsNotesDialogOpen}
+            selectedPropertyId={selectedPropertyId} propertyNotes={propertyNotes}
+            noteFormData={noteFormData} setNoteFormData={setNoteFormData} onNoteSubmit={handleNoteSubmit}
+            isEditDialogOpen={isEditDialogOpen} setIsEditDialogOpen={setIsEditDialogOpen}
+            editFormData={editFormData} setEditFormData={setEditFormData} onSaveEdit={handleUpdateProperty}
+            isOfferDialogOpen={isOfferDialogOpen} setIsOfferDialogOpen={setIsOfferDialogOpen} selectedPropertyForOffer={selectedPropertyForOffer}
+            isEmailDialogOpen={isEmailDialogOpen} setIsEmailDialogOpen={setIsEmailDialogOpen}
+            isSuggestionsDialogOpen={isSuggestionsDialogOpen} setIsSuggestionsDialogOpen={setIsSuggestionsDialogOpen}
+            isMarketingSettingsOpen={isMarketingSettingsOpen} setIsMarketingSettingsOpen={setIsMarketingSettingsOpen}
+            isCampaignDialogOpen={isCampaignDialogOpen} setIsCampaignDialogOpen={setIsCampaignDialogOpen}
+            isTemplatesDialogOpen={isTemplatesDialogOpen} setIsTemplatesDialogOpen={setIsTemplatesDialogOpen}
+            isPreviewDialogOpen={isPreviewDialogOpen} setIsPreviewDialogOpen={setIsPreviewDialogOpen}
+            isBatchPrintDialogOpen={isBatchPrintDialogOpen} setIsBatchPrintDialogOpen={setIsBatchPrintDialogOpen}
+            isSequenceDialogOpen={isSequenceDialogOpen} setIsSequenceDialogOpen={setIsSequenceDialogOpen}
+            selectedPropertyForImage={selectedPropertyForImage} setSelectedPropertyForImage={setSelectedPropertyForImage}
+            selectedPropertyForTags={selectedPropertyForTags} setSelectedPropertyForTags={setSelectedPropertyForTags}
+            selectedPropertyForApproval={selectedPropertyForApproval} setSelectedPropertyForApproval={setSelectedPropertyForApproval}
+            selectedPropertyForAirbnb={selectedPropertyForAirbnb} setSelectedPropertyForAirbnb={setSelectedPropertyForAirbnb}
+            selectedPropertyForComparison={selectedPropertyForComparison} setSelectedPropertyForComparison={setSelectedPropertyForComparison}
+          />
 
           <BulkImportDialog open={isBulkImportDialogOpen} onOpenChange={setIsBulkImportDialogOpen} onImportComplete={admin.fetchProperties} />
           <GeminiAPIKeyDialog open={isGeminiAPIKeyDialogOpen} onOpenChange={setIsGeminiAPIKeyDialogOpen} />
