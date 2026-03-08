@@ -59,6 +59,18 @@ export const ProcessApp = () => {
             {PROCESS_STEPS[currentStepIndex]?.title || 'Processo'}
           </h1>
           <div className="ml-auto flex items-center gap-1">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Assistente IA">
+                  <Bot className="h-3.5 w-3.5 text-primary" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[350px] p-0">
+                <div className="h-full pt-8">
+                  <AdminChat />
+                </div>
+              </SheetContent>
+            </Sheet>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="API para Web Agent">
@@ -89,6 +101,19 @@ export const ProcessApp = () => {
             <StepperNav currentIndex={currentStepIndex} />
           </div>
           <div className="flex items-center gap-1.5">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">
+                  <Bot className="h-3 w-3 text-primary" />
+                  Chat IA
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[400px] p-0">
+                <div className="h-full pt-8">
+                  <AdminChat />
+                </div>
+              </SheetContent>
+            </Sheet>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">
