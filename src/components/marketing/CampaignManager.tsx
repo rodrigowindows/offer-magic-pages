@@ -1527,7 +1527,7 @@ export const CampaignManager = () => {
                     <Button
                       variant={hasSkiptracePhoneFilter ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter)}
+                      onClick={() => { setHasSkiptracePhoneFilter(!hasSkiptracePhoneFilter); setPhoneFieldFilter(null); }}
                       className={hasSkiptracePhoneFilter ? 'bg-blue-600 hover:bg-blue-700' : ''}
                     >
                       <Phone className="w-3 h-3 mr-1" />
@@ -1542,6 +1542,33 @@ export const CampaignManager = () => {
                       <Mail className="w-3 h-3 mr-1" />
                       With Emails ({countWithSkiptraceEmails})
                     </Button>
+                  </div>
+
+                  {/* Filtros por campo de telefone específico */}
+                  <div className="flex gap-1.5 flex-wrap">
+                    {([
+                      { key: 'owner_phone', label: 'Owner Phone' },
+                      { key: 'phone1', label: 'Phone 1' },
+                      { key: 'phone2', label: 'Phone 2' },
+                      { key: 'phone3', label: 'Phone 3' },
+                      { key: 'phone4', label: 'Phone 4' },
+                      { key: 'phone5', label: 'Phone 5' },
+                      { key: 'phone6', label: 'Phone 6' },
+                      { key: 'phone7', label: 'Phone 7' },
+                    ] as const).map(({ key, label }) => (
+                      <Button
+                        key={key}
+                        variant={phoneFieldFilter === key ? 'default' : 'outline'}
+                        size="sm"
+                        className={`text-xs h-7 px-2 ${phoneFieldFilter === key ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+                        onClick={() => {
+                          setPhoneFieldFilter(phoneFieldFilter === key ? null : key);
+                          setHasSkiptracePhoneFilter(false);
+                        }}
+                      >
+                        {label} ({(phoneFieldCounts as any)[key]})
+                      </Button>
+                    ))}
                   </div>
 
                   {/* Filtros Ativos */}
