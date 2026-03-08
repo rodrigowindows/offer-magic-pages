@@ -64,28 +64,26 @@ const Index = () => {
     try {
       const validated = leadFormSchema.parse(formData);
 
-      const { data: existing } = await supabase
-        .from("properties")
-        .select("id")
-        .ilike("address", `%${validated.address}%`)
-        .limit(1);
+      // Use edge function for secure server-side insert (bypasses RLS)
+      const { data, error } = await supabase.functions.invoke("capture-lead", {
+        body: {
+          name: validated.name,
+          phone: validated.phone,
+          email: validated.email,
+          address: validated.address,
+          message: formData.message,
+        },
+      });
 
-      if (existing && existing.length > 0) {
+      if (error) throw error;
+
+      if (data?.error === 'duplicate') {
         toast({ title: "⚠️ We Already Have Your Request", description: "We found a previous request with this address. We'll be in touch soon!", variant: "destructive" });
         setIsSubmitting(false);
         return;
       }
 
-      const slug = validated.address.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      const { error } = await supabase.from("properties").insert([{
-        owner_name: formData.name,
-        owner_phone: formData.phone,
-        address: formData.address,
-        slug, zip_code: "00000", estimated_value: 0, cash_offer_amount: 0,
-        status: "active", lead_status: "new",
-      }]);
-
-      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({ title: "✅ Request Received!", description: "We'll contact you within 24 hours with a cash offer." });
       setFormData({ name: "", email: "", phone: "", address: "", message: "" });
