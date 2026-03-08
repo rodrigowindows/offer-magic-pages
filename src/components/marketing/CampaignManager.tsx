@@ -1562,8 +1562,13 @@ export const CampaignManager = () => {
                         size="sm"
                         className={`text-xs h-7 px-2 ${phoneFieldFilter === key ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
                         onClick={() => {
-                          setPhoneFieldFilter(phoneFieldFilter === key ? null : key);
+                          const newVal = phoneFieldFilter === key ? null : key;
+                          setPhoneFieldFilter(newVal);
                           setHasSkiptracePhoneFilter(false);
+                          // Sync phone column for sending
+                          if (newVal) {
+                            setSelectedPhoneColumn(newVal);
+                          }
                         }}
                       >
                         {label} ({(phoneFieldCounts as any)[key]})
