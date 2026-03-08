@@ -83,7 +83,7 @@ export function useComps(property: CompProperty | null, enabled = true) {
           property_id: property.id,
           url: url.trim(),
           source: detectSource(url),
-          comp_data: compData,
+          comp_data: compData as unknown as Record<string, unknown>,
           user_id: user.id,
         }]);
 
