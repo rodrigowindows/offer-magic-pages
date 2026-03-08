@@ -61,6 +61,7 @@ import { CompsComparison } from './CompsComparison';
 import { CompsApiSettings } from '@/components/shared/CompsApiSettings';
 import { ManualCompsManager } from '@/components/shared/ManualCompsManager';
 import { AdjustmentCalculator } from '@/components/offer/AdjustmentCalculator';
+import { AIValuationPanel } from '@/components/ai/AIValuationPanel';
 
 // Services
 import { CompsDataService } from '@/services/compsDataService';

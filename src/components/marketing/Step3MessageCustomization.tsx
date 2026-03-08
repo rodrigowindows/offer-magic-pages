@@ -207,6 +207,30 @@ export function Step3MessageCustomization() {
                   </>
                 )}
 
+                {/* AI Message Generator for Email */}
+                <div className="border-t pt-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Sparkles className="h-3.5 w-3.5 text-violet-600" />
+                    <span className="text-xs font-semibold text-violet-700">Gerar com IA</span>
+                  </div>
+                  <AIMessageGenerator
+                    property={{
+                      owner_name: recipientInfo.name || 'Property Owner',
+                      address: recipientInfo.address || 'Property Address',
+                      city: '',
+                      state: '',
+                      estimated_value: 0,
+                      cash_offer_amount: 0,
+                    }}
+                    channel="email"
+                    onApplyMessage={(body, subject) => {
+                      store.setCustomMessage('emailBody', body);
+                      if (subject) store.setCustomMessage('emailSubject', subject);
+                      setEmailMode('custom');
+                    }}
+                  />
+                </div>
+
                 <Alert>
                   <Eye className="h-4 w-4" />
                   <AlertDescription>
