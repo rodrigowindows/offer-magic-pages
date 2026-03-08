@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -252,15 +252,18 @@ const Index = () => {
 };
 
 /** Reusable form field with label, error, and optional icon */
-const FormField = ({ label, error, icon, children }: { label: string; error?: string; icon?: React.ReactNode; children: React.ReactNode }) => (
-  <div>
-    <label className="text-sm font-medium text-foreground mb-1 block">{label} *</label>
-    <div className={icon ? "relative" : undefined}>
-      {icon}
-      {children}
+const FormField = forwardRef<HTMLDivElement, { label: string; error?: string; icon?: React.ReactNode; children: React.ReactNode }>(
+  ({ label, error, icon, children }, ref) => (
+    <div ref={ref}>
+      <label className="text-sm font-medium text-foreground mb-1 block">{label} *</label>
+      <div className={icon ? "relative" : undefined}>
+        {icon}
+        {children}
+      </div>
+      {error && <p className="text-xs text-destructive mt-1" role="alert">{error}</p>}
     </div>
-    {error && <p className="text-xs text-destructive mt-1" role="alert">{error}</p>}
-  </div>
+  )
 );
+FormField.displayName = "FormField";
 
 export default Index;
