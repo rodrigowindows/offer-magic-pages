@@ -13,7 +13,7 @@ const ManualCompsManager = lazy(() =>
   import('@/components/shared/ManualCompsManager').then(m => ({ default: m.ManualCompsManager }))
 );
 const ResponseDashboard = lazy(() =>
-  import('@/components/campaigns/ResponseDashboard').then(m => ({ default: m.ResponseDashboard }))
+  import('@/components/campaign/ResponseDashboard').then(m => ({ default: m.ResponseDashboard }))
 );
 
 const LoadingSpinner = () => (
