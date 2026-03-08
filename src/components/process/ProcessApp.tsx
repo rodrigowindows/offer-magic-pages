@@ -1,17 +1,40 @@
-import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { ReviewQueue } from '@/components/shared/ReviewQueue';
 import { BatchSelector } from './BatchSelector';
 import { ApiInfoPanel } from './ApiInfoPanel';
+import { StepperNav } from './StepperNav';
+import { MAOCalculator } from './MAOCalculator';
+import { PROCESS_STEPS } from './processSteps';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { lazy, Suspense } from 'react';
+
+const ImportProperties = lazy(() => import('@/pages/ImportProperties'));
+const SkipTrace = lazy(() => import('@/pages/SkipTrace'));
+const ManualCompsManager = lazy(() =>
+  import('@/components/shared/ManualCompsManager').then(m => ({ default: m.ManualCompsManager }))
+);
+
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+  </div>
+);
 
 export const ProcessApp = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedBatch, setSelectedBatch] = useState<string>('all');
   const { user, loading } = useCurrentUser();
+
+  const currentStepIndex = useMemo(() => {
+    const path = location.pathname.replace('/process', '').replace(/^\//, '');
+    const idx = PROCESS_STEPS.findIndex(s => s.path === path);
+    return idx >= 0 ? idx : 1; // default to Análise (index 1)
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -19,14 +42,7 @@ export const ProcessApp = () => {
     }
   }, [user, loading, navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
+  if (loading) return <LoadingSpinner />;
   if (!user) return null;
 
   return (
@@ -37,7 +53,9 @@ export const ProcessApp = () => {
           <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="shrink-0 h-7 w-7 p-0">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-sm font-semibold truncate">Análise</h1>
+          <h1 className="text-sm font-semibold truncate">
+            {PROCESS_STEPS[currentStepIndex]?.title || 'Processo'}
+          </h1>
           <div className="ml-auto flex items-center gap-1">
             <Dialog>
               <DialogTrigger asChild>
@@ -52,6 +70,10 @@ export const ProcessApp = () => {
             <BatchSelector value={selectedBatch} onChange={setSelectedBatch} />
           </div>
         </div>
+        {/* Mobile stepper */}
+        <div className="px-2 py-1 overflow-x-auto">
+          <StepperNav currentIndex={currentStepIndex} compact />
+        </div>
       </header>
 
       {/* Desktop header */}
@@ -61,8 +83,10 @@ export const ProcessApp = () => {
             <ChevronLeft className="h-4 w-4" />
             <span className="text-sm">Menu</span>
           </Button>
-          <h1 className="text-base font-semibold truncate">Análise de Propriedades</h1>
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="flex-1 flex justify-center">
+            <StepperNav currentIndex={currentStepIndex} />
+          </div>
+          <div className="flex items-center gap-1.5">
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs">
@@ -79,13 +103,19 @@ export const ProcessApp = () => {
         </div>
       </header>
 
-      {/* Content - fills remaining height */}
+      {/* Content */}
       <main className="flex-1 flex flex-col container mx-auto py-1 min-h-0">
-        <div className="flex-1 min-h-0">
-          <Routes>
-            <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
-            <Route path="*" element={<Navigate to="/process" replace />} />
-          </Routes>
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
+              <Route path="/import" element={<ImportProperties />} />
+              <Route path="/contacts" element={<SkipTrace />} />
+              <Route path="/comps" element={<ManualCompsManager />} />
+              <Route path="/mao" element={<MAOCalculator />} />
+              <Route path="*" element={<Navigate to="/process" replace />} />
+            </Routes>
+          </Suspense>
         </div>
       </main>
     </div>
