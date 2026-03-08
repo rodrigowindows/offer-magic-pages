@@ -138,6 +138,7 @@ export const CampaignManager = () => {
   const [activeFilters, setActiveFilters] = useState<{id: string; label: string}[]>([]);
   const [hasSkiptracePhoneFilter, setHasSkiptracePhoneFilter] = useState(false);
   const [hasSkiptraceEmailFilter, setHasSkiptraceEmailFilter] = useState(false);
+  const [phoneFieldFilter, setPhoneFieldFilter] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showHtmlCode, setShowHtmlCode] = useState(false);
   const [previewRenderLimit, setPreviewRenderLimit] = useState(20);
