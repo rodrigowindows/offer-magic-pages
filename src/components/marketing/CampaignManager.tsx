@@ -499,8 +499,13 @@ export const CampaignManager = () => {
     const fromTags = dedupeContacts([...preferredPhones, ...manualPhones]);
     if (fromTags.length > 0) return fromTags;
 
-    const fallback = normalizeContactValue(prop[selectedPhoneColumn]);
-    return fallback ? [fallback] : [];
+    // Only use phone1 and phone2 for campaigns
+    const phones: string[] = [];
+    const p1 = normalizeContactValue(prop.phone1);
+    const p2 = normalizeContactValue(prop.phone2);
+    if (p1) phones.push(p1);
+    if (p2) phones.push(p2);
+    return dedupeContacts(phones);
   };
 
   const getAllEmails = (prop: CampaignProperty): string[] => {
