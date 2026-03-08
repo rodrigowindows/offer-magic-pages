@@ -518,9 +518,15 @@ export const CampaignManager = () => {
     const fromTags = dedupeContacts([...preferredPhones, ...manualPhones]);
     if (fromTags.length > 0) return fromTags;
 
-    // Aggregate all skiptrace phone columns
+    // If a specific phone field filter is active, only return that field
+    if (phoneFieldFilter) {
+      const val = normalizeContactValue(prop[phoneFieldFilter]);
+      return val ? [val] : [];
+    }
+
+    // Otherwise aggregate all skiptrace phone columns
     const allPhones: string[] = [];
-    const phoneCols = ['phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7'];
+    const phoneCols = ['owner_phone', 'phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7'];
     for (const col of phoneCols) {
       const val = normalizeContactValue(prop[col]);
       if (val) allPhones.push(val);
