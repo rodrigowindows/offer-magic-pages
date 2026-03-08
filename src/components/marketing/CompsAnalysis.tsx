@@ -2411,6 +2411,32 @@ export const CompsAnalysis = ({ selectedBatch }: CompsAnalysisProps = {}) => {
             />
           )}
 
+          {/* AI Valuation Panel */}
+          {selectedProperty && filteredComparables.length > 0 && (
+            <AIValuationPanel
+              property={{
+                address: selectedProperty.address,
+                city: selectedProperty.city || '',
+                state: selectedProperty.state || '',
+                zip_code: selectedProperty.zip_code || '',
+                square_feet: selectedProperty.square_feet,
+                bedrooms: selectedProperty.bedrooms,
+                bathrooms: selectedProperty.bathrooms,
+                year_built: selectedProperty.year_built,
+                lot_size: selectedProperty.lot_size,
+                estimated_value: selectedProperty.estimated_value,
+              }}
+              comps={filteredComparables.map(c => ({
+                comp_data: {
+                  sale_price: c.salePrice || c.sale_price,
+                  square_feet: c.sqft || c.square_feet,
+                  address: c.address,
+                },
+                notes: c.notes,
+              }))}
+            />
+          )}
+
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4">
