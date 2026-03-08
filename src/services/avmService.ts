@@ -194,7 +194,7 @@ export class AVMService {
       }
     };
 
-    console.log('📊 AVM CALCULATION COMPLETE:', breakdown);
+    
 
     return {
       estimatedValue,
@@ -270,11 +270,6 @@ export class AVMService {
     const estimatedBeds = Math.round(this.getMedian(beds));
     const estimatedBaths = Math.round(this.getMedian(baths) * 2) / 2; // Round to nearest 0.5
 
-    console.log(`📊 Estimated subject properties from ${validComps.length} comps:`, {
-      sqft: estimatedSqft,
-      beds: estimatedBeds,
-      baths: estimatedBaths
-    });
 
     return {
       sqft: estimatedSqft,
