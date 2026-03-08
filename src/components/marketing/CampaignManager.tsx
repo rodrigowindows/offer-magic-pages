@@ -316,92 +316,12 @@ export const CampaignManager = () => {
   // Column selection state
   const [selectedPhoneColumn, setSelectedPhoneColumn] = useState('phone1');
   const [selectedEmailColumn, setSelectedEmailColumn] = useState('email1');
-  const normalizeContactValue = (value: unknown): string | null => {
-    if (typeof value !== 'string') return null;
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
-  };
 
-  const dedupeContacts = (contacts: string[]): string[] => {
-    const unique = new Set<string>();
-    for (const contact of contacts) {
-      const normalized = normalizeContactValue(contact);
-      if (normalized) {
-        unique.add(normalized);
-      }
-    }
-    return [...unique];
-  };
+  // Wrapper for getAllPhones that passes the current filter
+  const getAllPhones = (prop: CampaignProperty): string[] => getAllPhonesUtil(prop, phoneFieldFilter);
 
-  const extractTaggedContacts = (prop: CampaignProperty) => {
-    const tags = Array.isArray(prop.tags) ? prop.tags : [];
-    const preferredPhones: string[] = [];
-    const manualPhones: string[] = [];
-    const preferredEmails: string[] = [];
-    const manualEmails: string[] = [];
-
-    for (const rawTag of tags) {
-      if (typeof rawTag !== 'string') continue;
-      const tag = rawTag.trim();
-      if (tag.startsWith('pref_phone:')) {
-        const value = normalizeContactValue(tag.replace('pref_phone:', ''));
-        if (value) preferredPhones.push(value);
-        continue;
-      }
-      if (tag.startsWith('manual_phone:')) {
-        const value = normalizeContactValue(tag.replace('manual_phone:', ''));
-        if (value) manualPhones.push(value);
-        continue;
-      }
-      if (tag.startsWith('pref_email:')) {
-        const value = normalizeContactValue(tag.replace('pref_email:', '').toLowerCase());
-        if (value) preferredEmails.push(value);
-        continue;
-      }
-      if (tag.startsWith('manual_email:')) {
-        const value = normalizeContactValue(tag.replace('manual_email:', '').toLowerCase());
-        if (value) manualEmails.push(value);
-      }
-    }
-
-    return {
-      preferredPhones: dedupeContacts(preferredPhones),
-      manualPhones: dedupeContacts(manualPhones),
-      preferredEmails: dedupeContacts(preferredEmails),
-      manualEmails: dedupeContacts(manualEmails),
-    };
-  };
-
-  // Build select columns based on selected phone/email columns
-  const getSelectColumns = () => {
-    const baseColumns = ['id', 'slug', 'address', 'city', 'state', 'zip_code', 'owner_name', 'cash_offer_amount', 'approval_status', 'tags', 'property_image_url', 'estimated_value'];
-    const phoneCol = selectedPhoneColumn;
-    const emailCol = selectedEmailColumn;
-    
-    // Add unique columns
-    const allColumns = [...baseColumns];
-    if (!allColumns.includes(phoneCol)) allColumns.push(phoneCol);
-    if (!allColumns.includes(emailCol)) allColumns.push(emailCol);
-    
-    // Always include ALL phone columns for filtering (including owner_phone and person phones)
-    const allPhoneCols = [
-      'owner_phone',
-      'phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7',
-      'person2_phone1', 'person2_phone2',
-      'person3_phone1',
-    ];
-    allPhoneCols.forEach(col => {
-      if (!allColumns.includes(col)) allColumns.push(col);
-    });
-    
-    // Always include skiptrace email columns for filtering
-    const skiptraceEmailCols = ['email1', 'email2', 'person2_email1', 'person2_email2', 'person3_email1', 'person3_email2'];
-    skiptraceEmailCols.forEach(col => {
-      if (!allColumns.includes(col)) allColumns.push(col);
-    });
-    
-    return allColumns.join(', ');
-  };
+  // Build select columns based on selected phone/email columns  
+  const getSelectColumnsStr = () => getSelectColumns(selectedPhoneColumn, selectedEmailColumn);
 
   // Fetch properties on mount and when columns/batch change
   useEffect(() => {
