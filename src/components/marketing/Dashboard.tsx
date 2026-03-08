@@ -117,6 +117,9 @@ export const Dashboard = () => {
         </Button>
       </div>
 
+      {/* Conversion Funnel */}
+      <ConversionFunnel />
+
       {/* Campaign Performance Dashboard - Main Analytics */}
       <CampaignPerformanceDashboard />
 
