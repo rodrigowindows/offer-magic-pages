@@ -128,47 +128,47 @@ const Index = () => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_50%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,hsl(var(--secondary)/0.06),transparent_50%)]" />
           
-          <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
+          <div className="container mx-auto px-4 py-10 md:py-24 relative z-10">
             <div className="max-w-6xl mx-auto">
-              <div className="grid lg:grid-cols-2 gap-12 items-center">
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                 {/* Left: Copy */}
-                <div className="space-y-6 animate-fade-in">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                <div className="space-y-4 md:space-y-6 animate-fade-in">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-xs font-semibold text-primary tracking-wide uppercase">Orlando's #1 Cash Buyers</span>
+                    <span className="text-[10px] sm:text-xs font-semibold text-primary tracking-wide uppercase">Orlando's #1 Cash Buyers</span>
                   </div>
 
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] tracking-tight">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground leading-[1.1] tracking-tight">
                     Sell Your Home
                     <span className="block text-primary">Fast for Cash</span>
                   </h1>
 
-                  <p className="text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
+                  <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
                     Get a fair, no-obligation cash offer in 24 hours. No repairs, no fees, close in as little as 7 days.
                   </p>
 
                   <div className="flex flex-col sm:flex-row gap-3">
                     <a
                       href="#get-offer"
-                      className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-lg shadow-primary/25 text-lg"
+                      className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl transition-all hover:scale-[1.02] hover:shadow-lg shadow-primary/25 text-base sm:text-lg"
                     >
                       Get My Cash Offer
                       <ArrowRight className="h-5 w-5" />
                     </a>
                     <a
                       href="tel:+17868828251"
-                      className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-border hover:border-primary/50 text-foreground font-semibold rounded-xl transition-all hover:bg-primary/5"
+                      className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 border-2 border-border hover:border-primary/50 text-foreground font-semibold rounded-xl transition-all hover:bg-primary/5"
                     >
                       <Phone className="h-5 w-5" />
                       (786) 882-8251
                     </a>
                   </div>
 
-                  {/* Social proof */}
-                  <div className="flex items-center gap-4 pt-2">
+                  {/* Social proof - hidden on very small screens to save space */}
+                  <div className="hidden sm:flex items-center gap-4 pt-2">
                     <div className="flex -space-x-2">
                       {[1,2,3,4].map(i => (
-                        <div key={i} className="w-10 h-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-bold text-muted-foreground">
+                        <div key={i} className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-[10px] md:text-xs font-bold text-muted-foreground">
                           {['MS','JC','RL','AK'][i-1]}
                         </div>
                       ))}
@@ -176,10 +176,10 @@ const Index = () => {
                     <div>
                       <div className="flex items-center gap-0.5">
                         {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                          <Star key={i} className="h-3.5 w-3.5 md:h-4 md:w-4 fill-amber-400 text-amber-400" />
                         ))}
                       </div>
-                      <p className="text-xs text-muted-foreground">500+ homeowners helped</p>
+                      <p className="text-[10px] md:text-xs text-muted-foreground">500+ homeowners helped</p>
                     </div>
                   </div>
                 </div>
@@ -240,11 +240,11 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-3 divide-x divide-border">
               {STATS.map(({ value, suffix, label }) => (
-                <div key={label} className="py-8 md:py-10 text-center">
-                  <div className="text-3xl md:text-5xl font-extrabold text-primary tracking-tight">
-                    {value}<span className="text-lg md:text-2xl font-bold ml-1">{suffix}</span>
+                <div key={label} className="py-5 sm:py-8 md:py-10 text-center px-1">
+                  <div className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-primary tracking-tight">
+                    {value}<span className="text-sm sm:text-lg md:text-2xl font-bold ml-0.5 sm:ml-1">{suffix}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">{label}</p>
+                  <p className="text-[10px] sm:text-sm text-muted-foreground mt-1 leading-tight">{label}</p>
                 </div>
               ))}
             </div>
@@ -331,25 +331,25 @@ const Index = () => {
         </section>
 
         {/* CTA Banner */}
-        <section className="py-16 bg-primary">
+        <section className="py-10 sm:py-16 bg-primary">
           <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-primary-foreground mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-primary-foreground mb-3 sm:mb-4">
               Ready to Sell Your Home?
             </h2>
-            <p className="text-lg text-primary-foreground/80 mb-8 max-w-lg mx-auto">
+            <p className="text-base sm:text-lg text-primary-foreground/80 mb-6 sm:mb-8 max-w-lg mx-auto">
               Get your free, no-obligation cash offer today. We respond within 24 hours.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <a
                 href="#get-offer"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-background text-foreground font-bold rounded-xl hover:bg-background/90 transition-all hover:scale-[1.02] text-lg shadow-xl"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 bg-background text-foreground font-bold rounded-xl hover:bg-background/90 transition-all hover:scale-[1.02] text-base sm:text-lg shadow-xl"
               >
                 <DollarSign className="h-5 w-5" />
                 Get My Cash Offer
               </a>
               <a
                 href="tel:+17868828251"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-primary-foreground/30 text-primary-foreground font-semibold rounded-xl hover:bg-primary-foreground/10 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 border-2 border-primary-foreground/30 text-primary-foreground font-semibold rounded-xl hover:bg-primary-foreground/10 transition-all"
               >
                 <Phone className="h-5 w-5" />
                 Call (786) 882-8251
