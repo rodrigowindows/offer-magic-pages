@@ -13,65 +13,40 @@ export const useTemplates = () => {
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Garantir que templates sempre seja um array válido
   const safeTemplates = Array.isArray(templates) ? templates : [];
 
-  // Carregar templates do Supabase
   const loadTemplates = useCallback(async () => {
-    console.log('🔄 loadTemplates: INICIO');
     setIsLoading(true);
     try {
-      console.log('🔄 loadTemplates: Buscando templates do Supabase...');
       const { data, error } = await supabase
         .from('templates')
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('❌ loadTemplates: Erro do Supabase:', error);
-        throw error;
-      }
-
-      console.log('✅ loadTemplates: Dados recebidos:', data?.length || 0, 'templates');
+      if (error) throw error;
 
       if (!data || data.length === 0) {
-        // Primeira vez - inserir templates padrão
-        console.log('📥 Primeira vez - inserindo templates padrão no banco');
         await insertDefaultTemplates();
-        console.log('✅ Templates padrão inseridos, recarregando...');
-        await loadTemplates(); // Recarregar após inserir
+        await loadTemplates();
         return;
       }
 
-      console.log('🔄 loadTemplates: Convertendo datas...');
-      // Converter datas de string para Date e garantir tipo Channel
-      const templatesWithDates: SavedTemplate[] = data.map(t => {
-        console.log('  - Processando template:', t.id, t.name);
-        return {
-          ...t,
-          channel: t.channel as Channel,
-          created_at: new Date(t.created_at),
-          updated_at: new Date(t.updated_at),
-        };
-      });
+      const templatesWithDates: SavedTemplate[] = data.map(t => ({
+        ...t,
+        channel: t.channel as Channel,
+        created_at: new Date(t.created_at),
+        updated_at: new Date(t.updated_at),
+      }));
 
-      console.log('✅ loadTemplates: Definindo templates no estado');
       setTemplates(templatesWithDates);
-
-      console.log('✅ loadTemplates: CONCLUÍDO');
-
-      // REMOVIDO checkAndUpdateDefaultTemplates para evitar loops infinitos
-      // Templates padrão serão inseridos apenas na primeira vez (data.length === 0)
     } catch (error) {
-      console.error('❌ Erro ao carregar templates:', error);
+      console.error('Erro ao carregar templates:', error);
       toast.error('Erro ao carregar templates');
     } finally {
-      console.log('🔄 loadTemplates: Finalizando (setIsLoading false)');
       setIsLoading(false);
     }
   }, []);
 
-  // Inserir templates padrão no banco
   const insertDefaultTemplates = async () => {
     try {
       const templatesToInsert = DEFAULT_TEMPLATES.map(t => ({
@@ -87,278 +62,158 @@ export const useTemplates = () => {
         updated_at: t.updated_at.toISOString(),
       }));
 
-      const { error } = await supabase
-        .from('templates')
-        .insert(templatesToInsert);
-
+      const { error } = await supabase.from('templates').insert(templatesToInsert);
       if (error) throw error;
-
       toast.success('Templates padrão carregados');
     } catch (error) {
-      console.error('❌ Erro ao inserir templates padrão:', error);
+      console.error('Erro ao inserir templates padrão:', error);
     }
   };
 
-  // Verificar e atualizar templates padrão
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const checkAndUpdateDefaultTemplates = async (currentTemplates: SavedTemplate[]) => {
-    console.log('🔍 checkAndUpdateDefaultTemplates: INICIO');
     let updatedCount = 0;
-
     try {
-      console.log('🔍 Verificando', DEFAULT_TEMPLATES.length, 'templates padrão...');
-
       for (const defaultTemplate of DEFAULT_TEMPLATES) {
-        console.log('  🔍 Verificando:', defaultTemplate.id, defaultTemplate.name);
         const existingTemplate = currentTemplates.find(t => t.id === defaultTemplate.id);
 
         if (existingTemplate && existingTemplate.is_default) {
-          // Se foi editado manualmente, só atualizar se versão for maior
           if (existingTemplate.edited_manually) {
             const codeVersion = defaultTemplate.version || 1;
             const savedVersion = existingTemplate.version || 1;
-
             if (codeVersion > savedVersion) {
-              console.log(`🔄 Nova versão disponível: ${defaultTemplate.name} (v${codeVersion})`);
-
               await updateTemplate(existingTemplate.id, {
-                body: defaultTemplate.body,
-                subject: defaultTemplate.subject,
-                name: defaultTemplate.name,
-                version: codeVersion,
-                edited_manually: false,
+                body: defaultTemplate.body, subject: defaultTemplate.subject,
+                name: defaultTemplate.name, version: codeVersion, edited_manually: false,
               });
               updatedCount++;
             }
           } else {
-            // Não editado manualmente, verificar se conteúdo mudou
             const contentChanged = existingTemplate.body !== defaultTemplate.body ||
-                                 existingTemplate.subject !== defaultTemplate.subject ||
-                                 existingTemplate.name !== defaultTemplate.name;
-
+              existingTemplate.subject !== defaultTemplate.subject ||
+              existingTemplate.name !== defaultTemplate.name;
             if (contentChanged) {
-              console.log(`🔄 Atualizando template: ${defaultTemplate.name}`);
-
               await updateTemplate(existingTemplate.id, {
-                body: defaultTemplate.body,
-                subject: defaultTemplate.subject,
-                name: defaultTemplate.name,
-                version: defaultTemplate.version || 1,
+                body: defaultTemplate.body, subject: defaultTemplate.subject,
+                name: defaultTemplate.name, version: defaultTemplate.version || 1,
               });
               updatedCount++;
             }
           }
         } else if (!existingTemplate) {
-          // Template padrão não existe, adicionar
-          console.log(`➕ Adicionando template faltante: ${defaultTemplate.name}`);
           await addTemplate(defaultTemplate);
           updatedCount++;
         }
       }
-
-      if (updatedCount > 0) {
-        console.log(`✅ ${updatedCount} template(s) atualizados`);
-        toast.info(`${updatedCount} template(s) atualizados`);
-        // NÃO recarregar aqui - evita loop infinito
-        // O loadTemplates já foi chamado pelas funções updateTemplate/addTemplate
-      }
-
-      console.log('✅ checkAndUpdateDefaultTemplates: CONCLUÍDO');
+      if (updatedCount > 0) toast.info(`${updatedCount} template(s) atualizados`);
     } catch (error) {
-      console.error('❌ checkAndUpdateDefaultTemplates: ERRO:', error);
+      console.error('Erro em checkAndUpdateDefaultTemplates:', error);
     }
   };
 
-  // Adicionar template
   const addTemplate = async (template: SavedTemplate) => {
     try {
-      const { error} = await supabase
-        .from('templates')
-        .insert({
-          id: template.id,
-          name: template.name,
-          channel: template.channel,
-          subject: template.subject,
-          body: template.body,
-          is_default: template.is_default,
-          version: template.version || 1,
-          edited_manually: template.edited_manually || false,
-        });
-
+      const { error } = await supabase.from('templates').insert({
+        id: template.id, name: template.name, channel: template.channel,
+        subject: template.subject, body: template.body, is_default: template.is_default,
+        version: template.version || 1, edited_manually: template.edited_manually || false,
+      });
       if (error) throw error;
-
       await loadTemplates();
       toast.success('Template criado com sucesso');
     } catch (error) {
-      console.error('❌ Erro ao adicionar template:', error);
+      console.error('Erro ao adicionar template:', error);
       toast.error('Erro ao criar template');
     }
   };
 
-  // Atualizar template
   const updateTemplate = async (id: string, updates: Partial<SavedTemplate>) => {
     try {
       const template = templates.find(t => t.id === id);
-
-      // Se é template padrão sendo editado manualmente, marcar flag
       if (template?.is_default && !Object.prototype.hasOwnProperty.call(updates, 'edited_manually')) {
         updates.edited_manually = true;
-        console.log(`📝 Marcando template como editado manualmente: ${template.name}`);
       }
 
-      // Preparar updates para o banco (converter datas para string se necessário)
       const dbUpdates: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(updates)) {
-        if (value instanceof Date) {
-          dbUpdates[key] = value.toISOString();
-        } else {
-          dbUpdates[key] = value;
-        }
+        dbUpdates[key] = value instanceof Date ? value.toISOString() : value;
       }
 
-      const { error } = await supabase
-        .from('templates')
-        .update(dbUpdates)
-        .eq('id', id);
-
+      const { error } = await supabase.from('templates').update(dbUpdates).eq('id', id);
       if (error) throw error;
-
       await loadTemplates();
       toast.success('Template atualizado');
     } catch (error) {
-      console.error('❌ Erro ao atualizar template:', error);
+      console.error('Erro ao atualizar template:', error);
       toast.error('Erro ao atualizar template');
     }
   };
 
-  // Deletar template
   const deleteTemplate = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('templates')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('templates').delete().eq('id', id);
       if (error) throw error;
-
       await loadTemplates();
       toast.success('Template deletado');
     } catch (error) {
-      console.error('❌ Erro ao deletar template:', error);
+      console.error('Erro ao deletar template:', error);
       toast.error('Erro ao deletar template');
     }
   };
 
-  // Definir como padrão
   const setAsDefault = async (id: string, channel: Channel) => {
     try {
-      // Desmarcar outros templates padrão do mesmo canal
-      const { error: unsetError } = await supabase
-        .from('templates')
-        .update({ is_default: false })
-        .eq('channel', channel)
-        .eq('is_default', true)
-        .neq('id', id);
-
+      const { error: unsetError } = await supabase.from('templates').update({ is_default: false }).eq('channel', channel).eq('is_default', true).neq('id', id);
       if (unsetError) throw unsetError;
-
-      // Marcar este como padrão
-      const { error: setError } = await supabase
-        .from('templates')
-        .update({ is_default: true })
-        .eq('id', id);
-
+      const { error: setError } = await supabase.from('templates').update({ is_default: true }).eq('id', id);
       if (setError) throw setError;
-
       await loadTemplates();
       toast.success('Template padrão atualizado');
     } catch (error) {
-      console.error('❌ Erro ao definir template padrão:', error);
+      console.error('Erro ao definir template padrão:', error);
       toast.error('Erro ao atualizar template padrão');
     }
   };
 
-  // Obter templates por canal
   const getTemplatesByChannel = useCallback(
     (channel: Channel): SavedTemplate[] => {
-      console.log(`🔍 [getTemplatesByChannel] Buscando templates do canal: ${channel}`);
-      console.log(`🔍 [getTemplatesByChannel] safeTemplates:`, safeTemplates);
       try {
-        const filtered = safeTemplates.filter(t => t.channel === channel);
-        console.log(`✅ [getTemplatesByChannel] Encontrados ${filtered.length} templates`);
-        return filtered;
-      } catch (error) {
-        console.error(`❌ [getTemplatesByChannel] ERRO:`, error);
+        return safeTemplates.filter(t => t.channel === channel);
+      } catch {
         return [];
       }
     },
     [safeTemplates]
   );
 
-  // Obter template padrão por canal
   const getDefaultTemplate = useCallback(
     (channel: Channel): SavedTemplate | undefined => {
-      console.log(`🔍 [getDefaultTemplate] Buscando template padrão do canal: ${channel}`);
       try {
-        const defaultTemplate = safeTemplates.find(t => t.channel === channel && t.is_default);
-        console.log(`✅ [getDefaultTemplate] Resultado:`, defaultTemplate?.name || 'nenhum');
-        return defaultTemplate;
-      } catch (error) {
-        console.error(`❌ [getDefaultTemplate] ERRO:`, error);
+        return safeTemplates.find(t => t.channel === channel && t.is_default);
+      } catch {
         return undefined;
       }
     },
     [safeTemplates]
   );
 
-  // Calcular estatísticas dos templates
   const templateStats = useMemo(() => {
-    console.log('📊 [templateStats] INICIO');
-    console.log('📊 [templateStats] safeTemplates:', safeTemplates);
-    console.log('📊 [templateStats] safeTemplates.length:', safeTemplates.length);
-
     try {
-      console.log('📊 [templateStats] Filtrando SMS...');
-      const bySMS = safeTemplates.filter(t => {
-        console.log('  - Checando template:', t?.id, 'channel:', t?.channel);
-        return t?.channel === 'sms';
-      }).length;
-      console.log('📊 [templateStats] SMS count:', bySMS);
-
-      console.log('📊 [templateStats] Filtrando Email...');
-      const byEmail = safeTemplates.filter(t => t?.channel === 'email').length;
-      console.log('📊 [templateStats] Email count:', byEmail);
-
-      console.log('📊 [templateStats] Filtrando Call...');
-      const byCall = safeTemplates.filter(t => t?.channel === 'call').length;
-      console.log('📊 [templateStats] Call count:', byCall);
-
-      const stats = {
+      return {
         total: safeTemplates.length,
-        bySMS,
-        byEmail,
-        byCall,
+        bySMS: safeTemplates.filter(t => t?.channel === 'sms').length,
+        byEmail: safeTemplates.filter(t => t?.channel === 'email').length,
+        byCall: safeTemplates.filter(t => t?.channel === 'call').length,
       };
-      console.log('✅ [templateStats] Stats calculado:', stats);
-      return stats;
-    } catch (error) {
-      console.error('❌ [templateStats] ERRO ao calcular stats:', error);
+    } catch {
       return { total: 0, bySMS: 0, byEmail: 0, byCall: 0 };
     }
   }, [safeTemplates]);
 
-  // Carregar templates ao montar
   useEffect(() => {
-    console.log('🚀 [useTemplates] useEffect MONTANDO - chamando loadTemplates');
     loadTemplates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  console.log('🔄 [useTemplates] RENDER - retornando hook com:', {
-    templatesCount: safeTemplates?.length,
-    isLoading,
-    templateStats,
-  });
 
   return {
     templates: safeTemplates,

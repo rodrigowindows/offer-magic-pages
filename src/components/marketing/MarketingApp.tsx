@@ -17,7 +17,7 @@ import { History } from './History';
 import { Settings } from './Settings';
 import { TestModeToggle } from './TestModeToggle';
 import McpTester from './McpTester';
-import CampaignManager from './CampaignManager';
+import { CampaignManager } from './CampaignManager';
 // Note: PredictiveAnalyticsDashboard and IntelligentFollowUps removed - need database tables
 import { AdvancedWebhookManager } from './AdvancedWebhookManager';
 import { AutomatedABTesting } from './AutomatedABTesting';
