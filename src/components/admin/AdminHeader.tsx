@@ -15,6 +15,7 @@ interface AdminHeaderProps {
   onLogout: () => void;
   onBulkImport: () => void;
   onGeminiSettings?: () => void;
+  onMarketingSettings?: () => void;
   exportFilters: {
     userId?: string;
     tags: string[];
@@ -30,7 +31,6 @@ export const AdminHeader = ({
   onToggleDesignMode,
   onLogout,
   onBulkImport,
-  onGeminiSettings,
   onMarketingSettings,
   exportFilters,
 }: AdminHeaderProps) => (
