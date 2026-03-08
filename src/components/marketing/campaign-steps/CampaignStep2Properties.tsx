@@ -154,7 +154,7 @@ export function CampaignStep2Properties({ loading, properties, filters, selected
                             <Badge variant={property.approval_status === 'approved' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1 flex-shrink-0">{property.approval_status}</Badge>
                           </div>
                           {property.cash_offer_amount && (
-                            <div className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+                            <div className="flex items-center gap-1 text-xs font-medium text-primary">
                               <DollarSign className="w-3 h-3" />
                               {property.cash_offer_amount.toLocaleString()}
                             </div>
@@ -162,7 +162,7 @@ export function CampaignStep2Properties({ loading, properties, filters, selected
                           {phones.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-0.5">
                               {phones.map((ph, i) => (
-                                <Badge key={i} variant="outline" className="text-[9px] h-4 px-1 font-mono bg-blue-50 text-blue-700 border-blue-200">
+                                <Badge key={i} variant="outline" className="text-[9px] h-4 px-1 font-mono bg-accent text-accent-foreground border-border">
                                   <Phone className="w-2.5 h-2.5 mr-0.5" />{ph}
                                 </Badge>
                               ))}
@@ -171,7 +171,7 @@ export function CampaignStep2Properties({ loading, properties, filters, selected
                           {emails.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-0.5">
                               {emails.map((em, i) => (
-                                <Badge key={i} variant="outline" className="text-[9px] h-4 px-1 font-mono bg-purple-50 text-purple-700 border-purple-200">
+                                <Badge key={i} variant="outline" className="text-[9px] h-4 px-1 font-mono bg-secondary text-secondary-foreground border-border">
                                   <Mail className="w-2.5 h-2.5 mr-0.5" />{em}
                                 </Badge>
                               ))}
