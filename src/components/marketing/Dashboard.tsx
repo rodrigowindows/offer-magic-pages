@@ -183,6 +183,9 @@ export const Dashboard = () => {
       {/* Lead Scoring & Analytics */}
       <LeadScoringDashboard />
 
+      {/* Smart Follow-Up Suggestions */}
+      <SmartFollowUpScheduler />
+
       {/* Automated Sequences */}
       <AutomatedSequences />
     </div>
