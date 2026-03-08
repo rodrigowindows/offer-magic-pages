@@ -138,7 +138,7 @@ export const CampaignManager = () => {
   const [activeFilters, setActiveFilters] = useState<{id: string; label: string}[]>([]);
   const [hasSkiptracePhoneFilter, setHasSkiptracePhoneFilter] = useState(false);
   const [hasSkiptraceEmailFilter, setHasSkiptraceEmailFilter] = useState(false);
-  const [phoneFieldFilter, setPhoneFieldFilter] = useState<string | null>(null);
+  const [phoneFieldFilter, setPhoneFieldFilter] = useState<string[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showHtmlCode, setShowHtmlCode] = useState(false);
   const [previewRenderLimit, setPreviewRenderLimit] = useState(20);
@@ -250,10 +250,10 @@ export const CampaignManager = () => {
       // Skiptrace email filter
       if (hasSkiptraceEmailFilter && !hasSkiptraceEmails(p)) return false;
 
-      // Specific phone field filter
-      if (phoneFieldFilter) {
-        const value = (p as any)[phoneFieldFilter];
-        if (!value) return false;
+      // Specific phone field filter (multi-select: property must have at least one of the selected fields)
+      if (phoneFieldFilter.length > 0) {
+        const hasAny = phoneFieldFilter.some(field => !!(p as any)[field]);
+        if (!hasAny) return false;
       }
       
       return matchesSearch;
@@ -522,10 +522,14 @@ export const CampaignManager = () => {
 
   // Get phone/email from property based on selected column
   const getAllPhones = (prop: CampaignProperty): string[] => {
-    // If a specific phone field filter is active, ALWAYS use only that field
-    if (phoneFieldFilter) {
-      const val = normalizeContactValue(prop[phoneFieldFilter]);
-      return val ? [val] : [];
+    // If specific phone field filters are active, use only those fields
+    if (phoneFieldFilter.length > 0) {
+      const phones: string[] = [];
+      for (const field of phoneFieldFilter) {
+        const val = normalizeContactValue(prop[field]);
+        if (val) phones.push(val);
+      }
+      return dedupeContacts(phones);
     }
 
     // Otherwise check tagged contacts first (preferred/manual phones)
@@ -1559,8 +1563,8 @@ export const CampaignManager = () => {
                     </Button>
                   </div>
 
-                  {/* Filtros por campo de telefone específico */}
-                  <div className="flex gap-1.5 flex-wrap">
+                  {/* Filtros por campo de telefone específico - Multi-select */}
+                  <div className="flex gap-1.5 flex-wrap items-center">
                     {([
                       { key: 'owner_phone', label: 'Owner Phone' },
                       { key: 'phone1', label: 'Phone 1' },
@@ -1570,25 +1574,42 @@ export const CampaignManager = () => {
                       { key: 'phone5', label: 'Phone 5' },
                       { key: 'phone6', label: 'Phone 6' },
                       { key: 'phone7', label: 'Phone 7' },
-                    ] as const).map(({ key, label }) => (
+                      { key: 'person2_phone1', label: 'P2 Phone 1' },
+                      { key: 'person2_phone2', label: 'P2 Phone 2' },
+                      { key: 'person3_phone1', label: 'P3 Phone 1' },
+                    ] as const).map(({ key, label }) => {
+                      const isSelected = phoneFieldFilter.includes(key);
+                      return (
+                        <Button
+                          key={key}
+                          variant={isSelected ? 'default' : 'outline'}
+                          size="sm"
+                          className={`text-xs h-7 px-2 ${isSelected ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
+                          onClick={() => {
+                            const newFilter = isSelected 
+                              ? phoneFieldFilter.filter(f => f !== key)
+                              : [...phoneFieldFilter, key];
+                            setPhoneFieldFilter(newFilter);
+                            if (newFilter.length > 0) {
+                              setHasSkiptracePhoneFilter(false);
+                              setSelectedPhoneColumn(newFilter[0]);
+                            }
+                          }}
+                        >
+                          {label} ({(phoneFieldCounts as any)[key] || 0})
+                        </Button>
+                      );
+                    })}
+                    {phoneFieldFilter.length > 0 && (
                       <Button
-                        key={key}
-                        variant={phoneFieldFilter === key ? 'default' : 'outline'}
+                        variant="ghost"
                         size="sm"
-                        className={`text-xs h-7 px-2 ${phoneFieldFilter === key ? 'bg-teal-600 hover:bg-teal-700' : ''}`}
-                        onClick={() => {
-                          const newVal = phoneFieldFilter === key ? null : key;
-                          setPhoneFieldFilter(newVal);
-                          setHasSkiptracePhoneFilter(false);
-                          // Sync phone column for sending
-                          if (newVal) {
-                            setSelectedPhoneColumn(newVal);
-                          }
-                        }}
+                        className="text-xs h-7 px-2 text-destructive hover:text-destructive"
+                        onClick={() => setPhoneFieldFilter([])}
                       >
-                        {label} ({(phoneFieldCounts as any)[key]})
+                        Clear
                       </Button>
-                    ))}
+                    )}
                   </div>
 
                   {/* Filtros Ativos */}
@@ -1741,9 +1762,9 @@ export const CampaignManager = () => {
                                         {phones.length > 0 && (
                                           <div className="flex items-center gap-2 text-muted-foreground">
                                             <Phone className="w-3 h-3 flex-shrink-0" />
-                                            {phoneFieldFilter && (
+                                            {phoneFieldFilter.length > 0 && (
                                               <span className="text-xs font-semibold text-primary">
-                                                [{phoneFieldFilter.replace('_', ' ').replace('phone', 'Ph').replace('owner Ph', 'Owner')}]
+                                                [{phoneFieldFilter.map(f => f.replace('_', ' ').replace('phone', 'Ph').replace('owner Ph', 'Owner')).join(', ')}]
                                               </span>
                                             )}
                                             <span className="truncate font-mono text-xs">
