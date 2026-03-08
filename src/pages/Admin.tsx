@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { z } from "zod";
 import { BulkActionsBar } from "@/components/shared/BulkActionsBar";
 import { BulkImportDialog } from "@/components/import-data/BulkImportDialog";
-import { GeminiAPIKeyDialog } from "@/components/shared/GeminiAPIKeyDialog";
 import { FeatureTogglePanel } from "@/components/ab-testing/FeatureTogglePanel";
 import { MainNavigation } from "@/components/shared/MainNavigation";
 import { ReviewQueue } from "@/components/shared/ReviewQueue";
@@ -257,7 +256,6 @@ const Admin = () => {
           />
 
           <BulkImportDialog open={dialogs.isBulkImportDialogOpen} onOpenChange={dialogs.setIsBulkImportDialogOpen} onImportComplete={admin.fetchProperties} />
-          <GeminiAPIKeyDialog open={dialogs.isGeminiAPIKeyDialogOpen} onOpenChange={dialogs.setIsGeminiAPIKeyDialogOpen} />
         </main>
 
         <BulkActionsBar
