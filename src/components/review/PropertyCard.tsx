@@ -12,6 +12,7 @@ import {
 import { PropertyNotesPanel } from '../property/PropertyNotesPanel';
 import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import { ScoresTable } from './ScoresTable';
+import { AIScoreButton } from '../ai/AIScoreButton';
 import type { QueueProperty } from './types';
 import { REJECTION_REASONS, TAG_COLORS } from './constants';
 import { parseTags, getPreDenialSuggestions } from './helpers';
@@ -114,7 +115,8 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
                   ))}
                 </div>
               )}
-              {/* External Links - compact icons */}
+              {/* AI Score + External Links */}
+              <AIScoreButton property={property} onScoreUpdate={onScoreSaved ? () => onScoreSaved() : undefined} />
               <div className="flex flex-wrap gap-1" data-section="external-links">
                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(property.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full text-[10px] font-semibold hover:bg-blue-100">
                   <MapPin className="w-2.5 h-2.5" />Maps
