@@ -29,6 +29,7 @@ export const useReviewActions = ({
   currentIndex,
   onAdvance,
   fetchCurrentComps,
+  onActionComplete,
 }: UseReviewActionsOptions) => {
   const { userId, userName } = useCurrentUser();
   const { toast } = useToast();
