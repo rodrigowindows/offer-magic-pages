@@ -168,7 +168,7 @@ const Admin = () => {
   return (
     <>
       <MainNavigation />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <AdminHeader
           title={headerTitle} totalCount={admin.properties.length} isMinimal={isMinimal}
           onToggleDesignMode={toggleDesignMode} onLogout={handleLogout}
