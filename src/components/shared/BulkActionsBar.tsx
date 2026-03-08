@@ -105,6 +105,10 @@ export const BulkActionsBar = ({
           AI Suggestions
         </Button>
 
+        {selectedPropertyIds.length > 0 && (
+          <AILeadSummary propertyIds={selectedPropertyIds} />
+        )}
+
         <div className="h-6 w-px bg-border" />
 
         <Button
