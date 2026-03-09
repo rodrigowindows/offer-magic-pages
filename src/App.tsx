@@ -25,6 +25,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <HelmetProvider>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
   <QueryClientProvider client={queryClient}>
     <UsageAnalyticsProvider>
       <FeatureToggleProvider>
@@ -53,6 +54,7 @@ const App = () => (
       </FeatureToggleProvider>
     </UsageAnalyticsProvider>
   </QueryClientProvider>
+  </ThemeProvider>
   </HelmetProvider>
 );
 
