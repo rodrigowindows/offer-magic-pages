@@ -590,6 +590,42 @@ export type Database = {
           },
         ]
       }
+      follow_up_rules: {
+        Row: {
+          action: string
+          channel: string
+          created_at: string
+          delay_hours: number
+          enabled: boolean
+          id: string
+          name: string
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          action?: string
+          channel?: string
+          created_at?: string
+          delay_hours?: number
+          enabled?: boolean
+          id?: string
+          name: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          channel?: string
+          created_at?: string
+          delay_hours?: number
+          enabled?: boolean
+          id?: string
+          name?: string
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       manual_comps_links: {
         Row: {
           comp_data: Json | null
