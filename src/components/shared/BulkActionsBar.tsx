@@ -109,7 +109,12 @@ export const BulkActionsBar = ({
         </Button>
 
         {selectedPropertyIds.length > 0 && (
-          <AILeadSummary propertyIds={selectedPropertyIds} />
+          <>
+            <AILeadSummary propertyIds={selectedPropertyIds} />
+            <AIFollowupRecommender propertyIds={selectedPropertyIds} />
+            <AIClosingPrediction propertyIds={selectedPropertyIds} />
+            <AISentimentAnalysis />
+          </>
         )}
 
         <div className="h-6 w-px bg-border" />
