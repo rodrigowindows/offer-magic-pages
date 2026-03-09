@@ -42,6 +42,8 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NotificationCenter } from './NotificationCenter';
+import { KeyboardShortcutHint } from './KeyboardShortcutHint';
 
 interface NavigationItem {
   title: string;
@@ -160,6 +162,8 @@ export const MainNavigation = () => {
               MyLocalInvest
             </div>
 
+            <KeyboardShortcutHint />
+
             {/* Navigation Menu */}
             <NavigationMenu>
               <NavigationMenuList>
@@ -180,21 +184,24 @@ export const MainNavigation = () => {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
 
-                {/* Auth */}
+                {/* Auth & Notifications */}
                 <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={() => navigate('/auth')}
-                      className={cn(
-                        'h-10 px-4',
-                        isActive('/auth') && 'bg-accent'
-                      )}
-                    >
-                      <UserCircle className="w-4 h-4 mr-2" />
-                      Sign In
-                    </Button>
-                  </NavigationMenuLink>
+                  <div className="flex items-center gap-1">
+                    <NotificationCenter />
+                    <NavigationMenuLink asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={() => navigate('/auth')}
+                        className={cn(
+                          'h-10 px-4',
+                          isActive('/auth') && 'bg-accent'
+                        )}
+                      >
+                        <UserCircle className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Button>
+                    </NavigationMenuLink>
+                  </div>
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
@@ -312,7 +319,7 @@ const MobileMenuSection = ({
       <h3
         className={cn(
           'mb-2 text-sm font-semibold text-muted-foreground',
-          highlight && 'text-orange-600'
+          highlight && 'text-primary'
         )}
       >
         {title}

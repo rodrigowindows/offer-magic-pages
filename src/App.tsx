@@ -8,6 +8,7 @@ import { UsageAnalyticsProvider } from "@/contexts/UsageAnalyticsContext";
 import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
+import { CommandPalette } from "@/components/shared/CommandPalette";
 import Index from "./pages/Index";
 
 // Lazy load non-critical routes
@@ -33,6 +34,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <CommandPalette />
             <Suspense fallback={<div className="min-h-screen" />}>
               <Routes>
                 <Route path="/" element={<Index />} />

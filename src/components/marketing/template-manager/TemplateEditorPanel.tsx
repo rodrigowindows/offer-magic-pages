@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Code, Eye, FileText, Save, X } from 'lucide-react';
 import type { Channel } from '@/types/marketing.types';
 import type { TemplateFormData } from './types';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 import { TEMPLATE_VARIABLES } from './types';
 import { HTML_TEMPLATES, type HtmlTemplateKey } from './htmlTemplates';
 import { generatePropertyUrl, generateQrCodeUrl, generateTrackingPixel, generateUnsubscribeUrl } from './urlHelpers';
@@ -141,7 +142,7 @@ export function TemplateEditorPanel({
                   <div
                     className="border rounded-lg overflow-hidden"
                     dangerouslySetInnerHTML={{
-                      __html: formData.body
+                      __html: sanitizeHtml(formData.body
                         .replace(/{name}/g, 'João Silva')
                         .replace(/{address}/g, '123 Main Street')
                         .replace(/{city}/g, 'Orlando')
@@ -154,7 +155,7 @@ export function TemplateEditorPanel({
                         .replace(/{qr_code_url}/g, generateQrCodeUrl('sample-property-id', formData.channel))
                         .replace(/{source_channel}/g, formData.channel.toUpperCase())
                         .replace(/{tracking_pixel}/g, generateTrackingPixel('sample-property-id', formData.channel))
-                        .replace(/{unsubscribe_url}/g, generateUnsubscribeUrl('sample-property-id')),
+                        .replace(/{unsubscribe_url}/g, generateUnsubscribeUrl('sample-property-id'))),
                     }}
                   />
                 </DialogContent>

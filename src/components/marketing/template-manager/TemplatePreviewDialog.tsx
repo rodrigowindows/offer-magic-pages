@@ -10,6 +10,7 @@ import { Eye, Plus, Mail, MessageSquare, Phone, AlertCircle, Check } from 'lucid
 import type { SavedTemplate } from '@/types/marketing.types';
 import { validateTemplate, getTemplateScoreColor, getTemplateScoreLabel } from '@/utils/templateValidator';
 import { generatePropertyUrl, generateQrCodeUrl, generateTrackingPixel, generateUnsubscribeUrl, replaceTemplateVariables } from './urlHelpers';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 interface Props {
   template: SavedTemplate | null;
@@ -60,7 +61,7 @@ export function TemplatePreviewDialog({ template, onClose, onUseTemplate }: Prop
             <Label className="text-sm font-medium">{template.channel === 'email' ? 'Conteúdo:' : 'Mensagem:'}</Label>
             <div className="border rounded-lg p-4 bg-white min-h-[200px]">
               {isHtml ? (
-                <div dangerouslySetInnerHTML={{ __html: replaceTemplateVariables(template.body, template.channel) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(replaceTemplateVariables(template.body, template.channel)) }} />
               ) : (
                 <pre className="whitespace-pre-wrap font-sans text-sm">
                   {replaceTemplateVariables(template.body || 'No content available', template.channel)}
