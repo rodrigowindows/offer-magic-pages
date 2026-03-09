@@ -6,6 +6,7 @@ import { TeamReportExporter } from "@/components/dashboard/TeamReportExporter";
 import { FollowUpManager } from "@/components/follow-up/FollowUpManager";
 import { FollowUpAutomationRules } from "@/components/follow-up/FollowUpAutomationRules";
 import { AIDailyDigest } from "@/components/ai/AIDailyDigest";
+import { IntegrationsPanel } from "@/components/integrations/IntegrationsPanel";
 import type { AdminProperty } from "@/hooks/useAdminProperties";
 
 interface Props {
@@ -43,6 +44,7 @@ export const AdminDashboardTab = ({
       <FollowUpAutomationRules />
       <TeamActivityDashboard />
     </div>
+    <IntegrationsPanel />
     <div className="max-w-md"><TeamReportExporter /></div>
     <FollowUpManager />
   </div>
