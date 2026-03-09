@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { FeatureToggleProvider } from "@/contexts/FeatureToggleContext";
 import { UsageAnalyticsProvider } from "@/contexts/UsageAnalyticsContext";
 import { HelmetProvider } from "react-helmet-async";
+import { ThemeProvider } from "next-themes";
 import { lazy, Suspense } from "react";
 import Index from "./pages/Index";
 
