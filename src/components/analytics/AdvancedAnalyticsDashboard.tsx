@@ -4,10 +4,11 @@ import { ConversionFunnel } from "./ConversionFunnel";
 import { LeadTrendChart } from "./LeadTrendChart";
 import { ROITracker } from "./ROITracker";
 import { LeadStatusHeatmap } from "./LeadStatusHeatmap";
+import { CampaignPerformanceSummary } from "./CampaignPerformanceSummary";
 import { ChannelAnalytics } from "@/components/dashboard/ChannelAnalytics";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResponseTimeAnalytics } from "@/components/dashboard/ResponseTimeAnalytics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Filter, TrendingUp, Grid3X3 } from "lucide-react";
+import { BarChart3, Filter, TrendingUp, Grid3X3, Megaphone, Clock } from "lucide-react";
 
 export const AdvancedAnalyticsDashboard = () => {
   const { data: properties, isLoading } = useQuery({
@@ -25,10 +26,10 @@ export const AdvancedAnalyticsDashboard = () => {
     return (
       <div className="space-y-6">
         {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse border-0 shadow-lg">
-            <CardHeader><div className="h-5 bg-muted rounded w-48" /></CardHeader>
-            <CardContent><div className="h-64 bg-muted rounded" /></CardContent>
-          </Card>
+          <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-6">
+            <div className="h-5 bg-muted rounded w-48 mb-4" />
+            <div className="h-64 bg-muted rounded" />
+          </div>
         ))}
       </div>
     );
@@ -39,24 +40,30 @@ export const AdvancedAnalyticsDashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Advanced Analytics</h2>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Advanced Analytics</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Deep insights into your lead pipeline, campaign ROI, and conversion performance
         </p>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="overview" className="gap-1.5">
+        <TabsList className="bg-muted/50 p-1 h-auto flex-wrap gap-1">
+          <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm">
             <BarChart3 className="h-4 w-4" /> Overview
           </TabsTrigger>
-          <TabsTrigger value="funnel" className="gap-1.5">
+          <TabsTrigger value="funnel" className="gap-1.5 text-xs sm:text-sm">
             <Filter className="h-4 w-4" /> Funnel
           </TabsTrigger>
-          <TabsTrigger value="roi" className="gap-1.5">
+          <TabsTrigger value="campaigns" className="gap-1.5 text-xs sm:text-sm">
+            <Megaphone className="h-4 w-4" /> Campaigns
+          </TabsTrigger>
+          <TabsTrigger value="roi" className="gap-1.5 text-xs sm:text-sm">
             <TrendingUp className="h-4 w-4" /> ROI
           </TabsTrigger>
-          <TabsTrigger value="heatmap" className="gap-1.5">
+          <TabsTrigger value="response" className="gap-1.5 text-xs sm:text-sm">
+            <Clock className="h-4 w-4" /> Response Time
+          </TabsTrigger>
+          <TabsTrigger value="heatmap" className="gap-1.5 text-xs sm:text-sm">
             <Grid3X3 className="h-4 w-4" /> Heatmap
           </TabsTrigger>
         </TabsList>
@@ -67,16 +74,25 @@ export const AdvancedAnalyticsDashboard = () => {
             <ROITracker />
           </div>
           <LeadTrendChart properties={props} />
-          <ChannelAnalytics />
+          <CampaignPerformanceSummary />
         </TabsContent>
 
         <TabsContent value="funnel">
           <ConversionFunnel />
         </TabsContent>
 
+        <TabsContent value="campaigns" className="space-y-6">
+          <CampaignPerformanceSummary />
+          <ChannelAnalytics />
+        </TabsContent>
+
         <TabsContent value="roi" className="space-y-6">
           <ROITracker />
           <ChannelAnalytics />
+        </TabsContent>
+
+        <TabsContent value="response" className="space-y-6">
+          <ResponseTimeAnalytics />
         </TabsContent>
 
         <TabsContent value="heatmap">

@@ -4,6 +4,7 @@ import { AdminDashboardOverview } from "@/components/dashboard/AdminDashboardOve
 import { TeamActivityDashboard } from "@/components/dashboard/TeamActivityDashboard";
 import { TeamReportExporter } from "@/components/dashboard/TeamReportExporter";
 import { FollowUpManager } from "@/components/follow-up/FollowUpManager";
+import { FollowUpAutomationRules } from "@/components/follow-up/FollowUpAutomationRules";
 import { AIDailyDigest } from "@/components/ai/AIDailyDigest";
 import type { AdminProperty } from "@/hooks/useAdminProperties";
 
@@ -38,7 +39,10 @@ export const AdminDashboardTab = ({
       </div>
     </div>
     <AdminDashboardOverview />
-    <TeamActivityDashboard />
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <FollowUpAutomationRules />
+      <TeamActivityDashboard />
+    </div>
     <div className="max-w-md"><TeamReportExporter /></div>
     <FollowUpManager />
   </div>
