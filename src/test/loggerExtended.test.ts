@@ -26,24 +26,21 @@ describe("logger extended", () => {
   it("logger.avm uses [AVM] prefix", () => {
     logger.avm("valuation test");
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining("[AVM]"),
-      undefined
+      expect.stringContaining("[AVM]")
     );
   });
 
   it("logger.db uses [DB] prefix", () => {
     logger.db("query test");
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining("[DB]"),
-      undefined
+      expect.stringContaining("[DB]")
     );
   });
 
   it("logger.request includes requestId", () => {
     logger.request("req-123", "fetching data");
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining("req-123"),
-      undefined
+      expect.stringContaining("req-123")
     );
   });
 
