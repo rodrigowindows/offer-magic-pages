@@ -6,6 +6,7 @@ import { ApprovedPropertiesExport } from '@/components/shared/ApprovedProperties
 import { DesignModeToggle } from '@/components/ab-testing/DesignModeToggle';
 import { HeaderActionsMenu } from '@/components/shared/HeaderActionsMenu';
 import { NotificationsPanel } from '@/components/shared/NotificationsPanel';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface AdminHeaderProps {
   title: string;
@@ -45,6 +46,7 @@ export const AdminHeader = ({
           <FullDatabaseExport />
           <ApprovedPropertiesExport filters={exportFilters} />
           <DesignModeToggle isMinimal={isMinimal} onToggle={onToggleDesignMode} />
+          <ThemeToggle />
           <HeaderActionsMenu onBulkImport={onBulkImport} onMarketingSettings={onMarketingSettings} />
           <NotificationsPanel />
           <Button onClick={onLogout} variant="outline" size="sm" className="gap-2">
