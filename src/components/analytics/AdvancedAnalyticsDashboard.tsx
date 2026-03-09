@@ -7,7 +7,7 @@ import { LeadStatusHeatmap } from "./LeadStatusHeatmap";
 import { ChannelAnalytics } from "@/components/dashboard/ChannelAnalytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, Funnel, TrendingUp, Grid3X3 } from "lucide-react";
+import { BarChart3, Filter, TrendingUp, Grid3X3 } from "lucide-react";
 
 export const AdvancedAnalyticsDashboard = () => {
   const { data: properties, isLoading } = useQuery({
@@ -51,7 +51,7 @@ export const AdvancedAnalyticsDashboard = () => {
             <BarChart3 className="h-4 w-4" /> Overview
           </TabsTrigger>
           <TabsTrigger value="funnel" className="gap-1.5">
-            <Funnel className="h-4 w-4" /> Funnel
+            <Filter className="h-4 w-4" /> Funnel
           </TabsTrigger>
           <TabsTrigger value="roi" className="gap-1.5">
             <TrendingUp className="h-4 w-4" /> ROI
@@ -63,7 +63,7 @@ export const AdvancedAnalyticsDashboard = () => {
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
-            <ConversionFunnel properties={props} />
+            <ConversionFunnel />
             <ROITracker />
           </div>
           <LeadTrendChart properties={props} />
@@ -71,7 +71,7 @@ export const AdvancedAnalyticsDashboard = () => {
         </TabsContent>
 
         <TabsContent value="funnel">
-          <ConversionFunnel properties={props} />
+          <ConversionFunnel />
         </TabsContent>
 
         <TabsContent value="roi" className="space-y-6">
