@@ -74,3 +74,15 @@ verify_jwt = false
 
 [functions.track-button-click]
 verify_jwt = false
+
+[functions.ai-negotiator]
+verify_jwt = false
+
+[functions.ai-timing-detector]
+verify_jwt = false
+
+[functions.ai-deal-comparator]
+verify_jwt = false
+
+[functions.ai-auto-tagger]
+verify_jwt = false
