@@ -1,5 +1,6 @@
 /**
  * Hook to detect duplicate addresses during import.
+ * Uses local Levenshtein + optional AI-powered detection for fuzzy matches.
  */
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +11,7 @@ export interface DuplicateMatch {
   existingId: string;
   existingAddress: string;
   similarity: number; // 0-1
+  reason?: string; // AI-provided reason
 }
 
 const normalizeAddress = (addr: string): string => {
@@ -38,11 +40,7 @@ const similarityScore = (a: string, b: string): number => {
   const longer = a.length > b.length ? a : b;
   const shorter = a.length > b.length ? b : a;
   if (longer.length === 0) return 1;
-
-  // Simple containment check
   if (longer.includes(shorter)) return shorter.length / longer.length;
-
-  // Levenshtein-based
   const costs: number[] = [];
   for (let i = 0; i <= shorter.length; i++) {
     let lastValue = i;
@@ -66,12 +64,12 @@ export const useDuplicateDetection = () => {
   const [duplicates, setDuplicates] = useState<DuplicateMatch[]>([]);
   const [isChecking, setIsChecking] = useState(false);
 
-  const checkDuplicates = useCallback(async (addresses: { row: number; address: string }[]): Promise<DuplicateMatch[]> => {
+  const checkDuplicates = useCallback(async (addresses: { row: number; address: string; city?: string; state?: string; zip?: string }[]): Promise<DuplicateMatch[]> => {
     if (addresses.length === 0) return [];
     setIsChecking(true);
 
     try {
-      // Fetch existing addresses
+      // Local Levenshtein check first
       const { data } = await supabase
         .from('properties')
         .select('id, address')
@@ -91,7 +89,6 @@ export const useDuplicateDetection = () => {
 
       for (const importItem of addresses) {
         const normalized = normalizeAddress(importItem.address);
-
         for (const existing of existingNormalized) {
           const sim = similarityScore(normalized, existing.normalized);
           if (sim >= 0.85) {
@@ -106,7 +103,39 @@ export const useDuplicateDetection = () => {
         }
       }
 
-      // Sort by similarity desc
+      // AI-enhanced detection for borderline cases (0.6-0.85 similarity)
+      const borderline = addresses.filter(importItem => {
+        const normalized = normalizeAddress(importItem.address);
+        return existingNormalized.some(e => {
+          const sim = similarityScore(normalized, e.normalized);
+          return sim >= 0.6 && sim < 0.85;
+        });
+      });
+
+      if (borderline.length > 0 && borderline.length <= 50) {
+        try {
+          const { data: aiResult } = await supabase.functions.invoke('ai-duplicate-detector', {
+            body: { addresses: borderline.map(a => ({ address: a.address, city: a.city, state: a.state, zip: a.zip })) },
+          });
+          if (aiResult?.duplicates) {
+            for (const dup of aiResult.duplicates) {
+              if (!matches.some(m => m.importRow === borderline[dup.import_index]?.row && m.existingId === dup.existing_id)) {
+                matches.push({
+                  importRow: borderline[dup.import_index]?.row || 0,
+                  importAddress: dup.import_address,
+                  existingId: dup.existing_id,
+                  existingAddress: dup.existing_address,
+                  similarity: dup.confidence,
+                  reason: dup.reason,
+                });
+              }
+            }
+          }
+        } catch (aiErr) {
+          console.warn('AI duplicate detection fallback:', aiErr);
+        }
+      }
+
       matches.sort((a, b) => b.similarity - a.similarity);
       setDuplicates(matches);
       return matches;

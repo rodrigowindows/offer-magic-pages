@@ -4,6 +4,9 @@ import { X, QrCode, Trash2, FileText, Sparkles, Rocket, Play, CheckCircle2, Brai
 import { LeadStatusSelect } from "../lead/LeadStatusSelect";
 import { LeadStatus } from "../lead/LeadStatusBadge";
 import { AILeadSummary } from "../ai/AILeadSummary";
+import { AIFollowupRecommender } from "../ai/AIFollowupRecommender";
+import { AIClosingPrediction } from "../ai/AIClosingPrediction";
+import { AISentimentAnalysis } from "../ai/AISentimentAnalysis";
 import { useState } from "react";
 
 interface BulkActionsBarProps {
@@ -106,7 +109,12 @@ export const BulkActionsBar = ({
         </Button>
 
         {selectedPropertyIds.length > 0 && (
-          <AILeadSummary propertyIds={selectedPropertyIds} />
+          <>
+            <AILeadSummary propertyIds={selectedPropertyIds} />
+            <AIFollowupRecommender propertyIds={selectedPropertyIds} />
+            <AIClosingPrediction propertyIds={selectedPropertyIds} />
+            <AISentimentAnalysis />
+          </>
         )}
 
         <div className="h-6 w-px bg-border" />
