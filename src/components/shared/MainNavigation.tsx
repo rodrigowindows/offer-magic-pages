@@ -42,6 +42,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NotificationCenter } from './NotificationCenter';
 
 interface NavigationItem {
   title: string;
@@ -180,21 +181,24 @@ export const MainNavigation = () => {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
 
-                {/* Auth */}
+                {/* Auth & Notifications */}
                 <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={() => navigate('/auth')}
-                      className={cn(
-                        'h-10 px-4',
-                        isActive('/auth') && 'bg-accent'
-                      )}
-                    >
-                      <UserCircle className="w-4 h-4 mr-2" />
-                      Sign In
-                    </Button>
-                  </NavigationMenuLink>
+                  <div className="flex items-center gap-1">
+                    <NotificationCenter />
+                    <NavigationMenuLink asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={() => navigate('/auth')}
+                        className={cn(
+                          'h-10 px-4',
+                          isActive('/auth') && 'bg-accent'
+                        )}
+                      >
+                        <UserCircle className="w-4 h-4 mr-2" />
+                        Sign In
+                      </Button>
+                    </NavigationMenuLink>
+                  </div>
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
