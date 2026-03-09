@@ -15,8 +15,8 @@ describe('replaceVariables', () => {
     expect(replaceVariables('{name} is {name}', { name: 'John' })).toBe('John is John');
   });
 
-  it('replaces missing variable with empty string', () => {
-    expect(replaceVariables('Hello {name}!', {})).toBe('Hello !');
+  it('keeps unreferenced variables when key not in object', () => {
+    expect(replaceVariables('Hello {name}!', {})).toBe('Hello {name}!');
   });
 
   it('leaves unmatched brackets intact', () => {
