@@ -4,6 +4,7 @@ import { AdminDashboardOverview } from "@/components/dashboard/AdminDashboardOve
 import { TeamActivityDashboard } from "@/components/dashboard/TeamActivityDashboard";
 import { TeamReportExporter } from "@/components/dashboard/TeamReportExporter";
 import { FollowUpManager } from "@/components/follow-up/FollowUpManager";
+import { AIDailyDigest } from "@/components/ai/AIDailyDigest";
 import type { AdminProperty } from "@/hooks/useAdminProperties";
 
 interface Props {
@@ -21,14 +22,21 @@ export const AdminDashboardTab = ({
 }: Props) => (
   <div className="space-y-6">
     <MetricsDashboard properties={properties} />
-    <DashboardQuickActions
-      onStartReview={onStartReview}
-      onAddProperty={onAddProperty}
-      onExportData={() => {}}
-      onStartCampaign={onStartCampaign}
-      onStartApprovedCampaign={onStartApprovedCampaign}
-      pendingCount={pendingCount}
-    />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2">
+        <DashboardQuickActions
+          onStartReview={onStartReview}
+          onAddProperty={onAddProperty}
+          onExportData={() => {}}
+          onStartCampaign={onStartCampaign}
+          onStartApprovedCampaign={onStartApprovedCampaign}
+          pendingCount={pendingCount}
+        />
+      </div>
+      <div>
+        <AIDailyDigest />
+      </div>
+    </div>
     <AdminDashboardOverview />
     <TeamActivityDashboard />
     <div className="max-w-md"><TeamReportExporter /></div>
