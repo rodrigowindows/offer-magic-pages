@@ -319,7 +319,7 @@ const MobileMenuSection = ({
       <h3
         className={cn(
           'mb-2 text-sm font-semibold text-muted-foreground',
-          highlight && 'text-orange-600'
+          highlight && 'text-primary'
         )}
       >
         {title}
