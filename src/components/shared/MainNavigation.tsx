@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NotificationCenter } from './NotificationCenter';
+import { KeyboardShortcutHint } from './KeyboardShortcutHint';
 
 interface NavigationItem {
   title: string;
@@ -160,6 +161,8 @@ export const MainNavigation = () => {
             >
               MyLocalInvest
             </div>
+
+            <KeyboardShortcutHint />
 
             {/* Navigation Menu */}
             <NavigationMenu>
