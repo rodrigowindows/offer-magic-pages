@@ -122,6 +122,11 @@ export const getAllPhones = (prop: CampaignProperty, phoneFieldFilter: string[])
       const val = normalizeContactValue(prop[field]);
       if (val) phones.push(val);
     }
+    // If no phones found in selected columns, fall back to tagged phones
+    if (phones.length === 0) {
+      const { preferredPhones, manualPhones } = extractTaggedContacts(prop);
+      phones.push(...preferredPhones, ...manualPhones);
+    }
     return dedupeContacts(phones);
   }
 
