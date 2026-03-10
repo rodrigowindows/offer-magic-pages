@@ -129,6 +129,15 @@ export function CampaignStep4Preview({
                           {contacts.length > 1 && <span className="bg-success/10 text-success text-xs font-semibold px-2 py-1 rounded-full">{contacts.length} contacts</span>}
                         </div>
                         <div className="text-sm text-muted-foreground ml-8">{property.city}, {property.state} {property.zip_code}</div>
+                        {contacts.length > 0 && (
+                          <div className="flex flex-wrap gap-1 ml-8 mt-1">
+                            {contacts.map((c, ci) => (
+                              <span key={ci} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                {selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />} {c}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <div className="text-lg font-bold text-success">${property.cash_offer_amount?.toLocaleString() || '0'}</div>
