@@ -266,6 +266,9 @@ export const CampaignManager = () => {
                   propsWithPhone={contactStats.propsWithPhone}
                   propsWithEmail={contactStats.propsWithEmail}
                   selectedTemplate={selectedTemplate}
+                  selectedProps={filters.selectedProps}
+                  getAllPhones={filters.getAllPhones}
+                  getAllEmails={getAllEmails}
                 />
               )}
               {currentStep === 4 && (

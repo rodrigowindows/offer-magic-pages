@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Target, MessageSquare, Mail, Phone, Users } from 'lucide-react';
 import type { Channel } from '@/types/marketing.types';
 import type { CampaignTemplate } from '@/types/campaign.types';
+import type { CampaignProperty } from '@/hooks/useCampaignContacts';
 
 interface Props {
   selectedIds: string[];
@@ -9,9 +10,12 @@ interface Props {
   propsWithPhone: number;
   propsWithEmail: number;
   selectedTemplate?: CampaignTemplate;
+  selectedProps?: CampaignProperty[];
+  getAllPhones?: (p: CampaignProperty) => string[];
+  getAllEmails?: (p: CampaignProperty) => string[];
 }
 
-export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPhone, propsWithEmail, selectedTemplate }: Props) {
+export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPhone, propsWithEmail, selectedTemplate, selectedProps, getAllPhones, getAllEmails }: Props) {
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -65,6 +69,38 @@ export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPh
           <CardContent className="p-6">
             <h3 className="font-semibold mb-2">Template: {selectedTemplate.name}</h3>
             <p className="text-sm text-muted-foreground">Channel: {selectedChannel.toUpperCase()}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedProps && selectedProps.length > 0 && (getAllPhones || getAllEmails) && (
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              {selectedChannel === 'email' ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+              Contacts per Property
+            </h3>
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {selectedProps.map((prop) => {
+                const contacts = selectedChannel === 'email'
+                  ? (getAllEmails ? getAllEmails(prop) : [])
+                  : (getAllPhones ? getAllPhones(prop) : []);
+                return (
+                  <div key={prop.id} className="flex items-center justify-between p-2 border rounded text-sm">
+                    <div className="font-medium truncate max-w-[40%]">{prop.address}</div>
+                    <div className="flex flex-wrap gap-1 justify-end">
+                      {contacts.length > 0 ? contacts.map((c, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          {selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />} {c}
+                        </span>
+                      )) : (
+                        <span className="text-xs text-muted-foreground">No contact</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
