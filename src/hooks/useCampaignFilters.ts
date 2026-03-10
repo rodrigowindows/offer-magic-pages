@@ -62,7 +62,14 @@ export const useCampaignFilters = (properties: CampaignProperty[]) => {
         p.city.toLowerCase().includes(searchTerm.toLowerCase());
       if (hasSkiptracePhoneFilter && !hasSkiptracePhones(p)) return false;
       if (hasSkiptraceEmailFilter && !hasSkiptraceEmails(p)) return false;
-      if (phoneFieldFilter.length > 0 && !phoneFieldFilter.some(field => !!(p as Record<string, unknown>)[field])) return false;
+      if (phoneFieldFilter.length > 0) {
+        // Check if property has phone in any selected column OR in tags (pref_phone/manual_phone)
+        const hasInColumns = phoneFieldFilter.some(field => !!(p as Record<string, unknown>)[field]);
+        const hasInTags = Array.isArray(p.tags) && p.tags.some(
+          t => typeof t === 'string' && (t.startsWith('pref_phone:') || t.startsWith('manual_phone:'))
+        );
+        if (!hasInColumns && !hasInTags) return false;
+      }
       return matchesSearch;
     });
   }, [properties, searchTerm, hasSkiptracePhoneFilter, hasSkiptraceEmailFilter, phoneFieldFilter]);
