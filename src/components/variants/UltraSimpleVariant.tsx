@@ -234,7 +234,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                 >
                   Accept This Offer
                 </Button>
-                <div className="flex gap-3 justify-center">
+                <div className="flex flex-wrap gap-3 justify-center">
                   <Button
                     onClick={handleQuestions}
                     variant="outline"
@@ -242,6 +242,16 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                   >
                     <Mail className="mr-2 h-5 w-5" />
                     I Have Questions
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    asChild
+                  >
+                    <a href="tel:+17868828251">
+                      <Phone className="mr-2 h-5 w-5" />
+                      Call Us
+                    </a>
                   </Button>
                   <Button variant="outline" size="lg" onClick={handleDownloadPDF} disabled={isDownloading}>
                     {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
