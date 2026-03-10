@@ -1,5 +1,9 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Target, MessageSquare, Mail, Phone, Users } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Target, MessageSquare, Mail, Phone, Users, Plus, X, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import type { Channel } from '@/types/marketing.types';
 import type { CampaignTemplate } from '@/types/campaign.types';
 import type { CampaignProperty } from '@/hooks/useCampaignContacts';
@@ -13,9 +17,62 @@ interface Props {
   selectedProps?: CampaignProperty[];
   getAllPhones?: (p: CampaignProperty) => string[];
   getAllEmails?: (p: CampaignProperty) => string[];
+  onContactAdded?: () => void;
 }
 
-export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPhone, propsWithEmail, selectedTemplate, selectedProps, getAllPhones, getAllEmails }: Props) {
+export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPhone, propsWithEmail, selectedTemplate, selectedProps, getAllPhones, getAllEmails, onContactAdded }: Props) {
+  const [addingForId, setAddingForId] = useState<string | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleAddManualPhone = async (prop: CampaignProperty) => {
+    const value = inputValue.trim();
+    if (!value || !prop.id) return;
+
+    setSaving(true);
+    try {
+      const existingTags = Array.isArray(prop.tags) ? prop.tags.filter((t): t is string => typeof t === 'string') : [];
+      const tag = `manual_phone:${value}`;
+      if (existingTags.includes(tag)) {
+        setInputValue('');
+        setAddingForId(null);
+        return;
+      }
+      const newTags = [...existingTags, tag];
+      const { error } = await supabase.from('properties').update({ tags: newTags }).eq('id', prop.id);
+      if (error) throw error;
+
+      // Update in-memory tags so UI refreshes immediately
+      (prop as any).tags = newTags;
+      setInputValue('');
+      setAddingForId(null);
+      onContactAdded?.();
+    } catch (err) {
+      console.error('Error adding manual phone:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveManualPhone = async (prop: CampaignProperty, phone: string) => {
+    if (!prop.id) return;
+    setSaving(true);
+    try {
+      const existingTags = Array.isArray(prop.tags) ? prop.tags.filter((t): t is string => typeof t === 'string') : [];
+      const newTags = existingTags.filter(t => t !== `manual_phone:${phone}`);
+      const { error } = await supabase.from('properties').update({ tags: newTags }).eq('id', prop.id);
+      if (error) throw error;
+      (prop as any).tags = newTags;
+      onContactAdded?.();
+    } catch (err) {
+      console.error('Error removing manual phone:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const showManualInput = selectedChannel === 'sms' || selectedChannel === 'call';
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -79,24 +136,68 @@ export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPh
             <h3 className="font-semibold mb-4 flex items-center gap-2">
               {selectedChannel === 'email' ? <Mail className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
               Contacts per Property
+              {showManualInput && <span className="text-xs font-normal text-muted-foreground ml-2">Click + to add manual phone</span>}
             </h3>
-            <div className="max-h-64 overflow-y-auto space-y-2">
+            <div className="max-h-80 overflow-y-auto space-y-2">
               {selectedProps.map((prop) => {
                 const contacts = selectedChannel === 'email'
                   ? (getAllEmails ? getAllEmails(prop) : [])
                   : (getAllPhones ? getAllPhones(prop) : []);
+                const manualPhones = Array.isArray(prop.tags)
+                  ? prop.tags.filter((t): t is string => typeof t === 'string' && t.startsWith('manual_phone:')).map(t => t.replace('manual_phone:', ''))
+                  : [];
+                const isAdding = addingForId === prop.id;
+
                 return (
-                  <div key={prop.id} className="flex items-center justify-between p-2 border rounded text-sm">
-                    <div className="font-medium truncate max-w-[40%]">{prop.address}</div>
-                    <div className="flex flex-wrap gap-1 justify-end">
-                      {contacts.length > 0 ? contacts.map((c, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          {selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />} {c}
-                        </span>
-                      )) : (
-                        <span className="text-xs text-muted-foreground">No contact</span>
-                      )}
+                  <div key={prop.id} className="p-2 border rounded text-sm space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium truncate max-w-[40%]">{prop.address}</div>
+                      <div className="flex flex-wrap gap-1 items-center justify-end">
+                        {contacts.length > 0 ? contacts.map((c, i) => {
+                          const isManual = manualPhones.includes(c);
+                          return (
+                            <span key={i} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${isManual ? 'bg-warning/15 text-warning-foreground border border-warning/30' : 'bg-primary/10 text-primary'}`}>
+                              {selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />} {c}
+                              {isManual && (
+                                <button onClick={() => handleRemoveManualPhone(prop, c)} className="ml-0.5 hover:text-destructive" disabled={saving}>
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                            </span>
+                          );
+                        }) : (
+                          <span className="text-xs text-muted-foreground">No contact</span>
+                        )}
+                        {showManualInput && !isAdding && (
+                          <button
+                            onClick={() => { setAddingForId(prop.id); setInputValue(''); }}
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                            title="Add manual phone"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    {isAdding && (
+                      <div className="flex items-center gap-2 ml-4">
+                        <Input
+                          placeholder="(555) 123-4567"
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleAddManualPhone(prop); if (e.key === 'Escape') setAddingForId(null); }}
+                          className="h-7 text-xs w-40"
+                          autoFocus
+                          disabled={saving}
+                        />
+                        <Button size="sm" variant="default" className="h-7 text-xs px-2" onClick={() => handleAddManualPhone(prop)} disabled={saving || !inputValue.trim()}>
+                          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Add'}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs px-2" onClick={() => setAddingForId(null)} disabled={saving}>
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
               })}

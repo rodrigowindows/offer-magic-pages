@@ -269,6 +269,7 @@ export const CampaignManager = () => {
                   selectedProps={filters.selectedProps}
                   getAllPhones={filters.getAllPhones}
                   getAllEmails={getAllEmails}
+                  onContactAdded={() => setProperties([...properties])}
                 />
               )}
               {currentStep === 4 && (
