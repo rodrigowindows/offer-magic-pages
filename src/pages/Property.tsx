@@ -42,16 +42,32 @@ const Property = () => {
     }
 
     const fetchProperty = async (propertySlug: string) => {
-      const { data, error } = await supabase
-        .from("properties_public")
-        .select("*")
-        .eq("slug", propertySlug)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase.functions.invoke("get-public-property", {
+          body: null,
+          method: "GET",
+        });
 
-      if (error) {
+        // Use fetch directly since .invoke doesn't support query params well
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-public-property?slug=${encodeURIComponent(propertySlug)}`,
+          {
+            headers: {
+              "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.error("Error fetching property:", response.statusText);
+          setLoading(false);
+          return;
+        }
+
+        const result = await response.json();
+        setProperty(result.property);
+      } catch (error) {
         console.error("Error fetching property:", error);
-      } else {
-        setProperty(data);
       }
 
       setLoading(false);
