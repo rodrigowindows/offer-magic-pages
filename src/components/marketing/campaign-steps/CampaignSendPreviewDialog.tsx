@@ -12,7 +12,7 @@ import type { Channel } from '@/types/marketing.types';
 import type { CampaignTemplate } from '@/types/campaign.types';
 import { useMemo } from 'react';
 
-const SMS_DELAY_OPTIONS = [
+const SEND_DELAY_OPTIONS = [
   ['500', '500ms (rápido)'],
   ['1000', '1 segundo'],
   ['2000', '2 segundos'],
@@ -64,14 +64,14 @@ export function CampaignSendPreviewDialog({
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-sm font-medium">Template</Label><p className="text-sm text-muted-foreground">{selectedTemplate?.name}</p></div>
                 <div><Label className="text-sm font-medium">Canal</Label><p className="text-sm text-muted-foreground">{selectedChannel.toUpperCase()}</p></div>
-                {selectedChannel === 'sms' && (
+                {(selectedChannel === 'sms' || selectedChannel === 'call') && (
                   <div className="col-span-2 mt-4 p-4 bg-warning/10 rounded-lg border border-warning/30">
-                    <Label className="text-sm font-medium flex items-center gap-2">⏱️ Delay entre envios de SMS</Label>
-                    <p className="text-xs text-muted-foreground mb-2">Tempo de espera entre cada mensagem SMS</p>
+                    <Label className="text-sm font-medium flex items-center gap-2">⏱️ Delay entre envios de {selectedChannel === 'sms' ? 'SMS' : 'Chamadas'}</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Tempo de espera entre cada {selectedChannel === 'sms' ? 'mensagem' : 'chamada'} para evitar bloqueio</p>
                     <Select value={smsDelay.toString()} onValueChange={(v) => setSmsDelay(parseInt(v))}>
                       <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {SMS_DELAY_OPTIONS.map(([v, l]) => (
+                        {SEND_DELAY_OPTIONS.map(([v, l]) => (
                           <SelectItem key={v} value={v}>{l}</SelectItem>
                         ))}
                       </SelectContent>

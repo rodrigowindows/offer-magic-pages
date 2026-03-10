@@ -50,7 +50,7 @@ export const useCampaignSender = ({
   const updateProgress = useCallback((completed: number, total: number, success: number, fail: number) => {
     const remaining = total - completed;
     const baseTime = 0.5;
-    const delaySeconds = selectedChannel === 'sms' ? smsDelay / 1000 : 0;
+    const delaySeconds = (selectedChannel === 'sms' || selectedChannel === 'call') ? smsDelay / 1000 : 0;
     const avgTime = baseTime + delaySeconds;
     const estimatedSeconds = Math.round(remaining * avgTime);
     const estimatedTimeRemaining = estimatedSeconds > 60
@@ -107,7 +107,9 @@ export const useCampaignSender = ({
       } else if (selectedChannel === 'call') {
         if (allPhones.length === 0) return { success: false, property: prop, error: 'No phone available', messagesSent: 0 };
         const { content } = generateTemplateContent(selectedTemplate!, prop, trackingId);
-        for (const phone of allPhones) {
+        for (let i = 0; i < allPhones.length; i++) {
+          const phone = allPhones[i];
+          if (i > 0 && smsDelay > 0) await new Promise(r => setTimeout(r, smsDelay));
           try {
             await initiateCall({
               name: prop.owner_name || 'Owner', address: fullAddress,
