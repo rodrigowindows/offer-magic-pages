@@ -107,7 +107,7 @@ export const ScoresTable = ({ property, onScoreSaved, avgCompPrice }: ScoresTabl
           </div>
         </div>
         {/* Q/B + Ano + Tipo - compact row */}
-        <div className="flex items-center px-2 py-0.5 gap-3">
+        <div className="flex items-center px-2 py-0.5 gap-3 flex-wrap">
           <div>
             <span className="text-muted-foreground font-medium">Q/B: </span>
             <span className="font-bold">{property.bedrooms || '—'}/{property.bathrooms || '—'}</span>
@@ -121,6 +121,29 @@ export const ScoresTable = ({ property, onScoreSaved, avgCompPrice }: ScoresTabl
             <span className="font-bold">{property.property_type || '—'}</span>
           </div>
         </div>
+        {/* Tax info row */}
+        {((property as any).total_tax_due || (property as any).years_delinquent || (property as any).taxable_value) && (
+          <div className="flex items-center px-2 py-0.5 gap-3 flex-wrap border-t border-border/50">
+            {(property as any).total_tax_due != null && (
+              <div>
+                <span className="text-muted-foreground font-medium">Tax Due: </span>
+                <span className="font-bold text-destructive">${Number((property as any).total_tax_due).toLocaleString()}</span>
+              </div>
+            )}
+            {(property as any).years_delinquent != null && (property as any).years_delinquent > 0 && (
+              <div>
+                <span className="text-muted-foreground font-medium">Delinquent: </span>
+                <span className="font-bold text-destructive">{(property as any).years_delinquent} yr{(property as any).years_delinquent > 1 ? 's' : ''}</span>
+              </div>
+            )}
+            {(property as any).taxable_value != null && (
+              <div>
+                <span className="text-muted-foreground font-medium">Taxable: </span>
+                <span className="font-bold">${Number((property as any).taxable_value).toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
