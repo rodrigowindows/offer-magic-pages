@@ -32,6 +32,9 @@ export interface QueueProperty {
   ai_score: number | null;
   ai_reasoning: string | null;
   mao: number | null;
+  total_tax_due: number | null;
+  years_delinquent: number | null;
+  taxable_value: number | null;
 }
 
 export type ApprovePhase = 'choose' | 'comps' | 'offer' | null;

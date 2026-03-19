@@ -11,7 +11,7 @@ import type { QueueProperty, StatusFilter, DailyStats, StatusCounts } from '@/co
 import type { SavedComp } from '@/hooks/useComps';
 import { getVisualCategory, countByVisual } from '@/components/review/helpers';
 
-const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning, mao";
+const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning, mao, total_tax_due, years_delinquent, taxable_value";
 
 export const useReviewQueue = (selectedBatch?: string) => {
   const [properties, setProperties] = useState<QueueProperty[]>([]);

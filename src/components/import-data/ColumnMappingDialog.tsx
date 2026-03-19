@@ -34,6 +34,9 @@ export const DATABASE_FIELDS = [
   { key: 'cash_offer_amount', label: 'Oferta Cash', required: false, group: 'financial' },
   { key: 'lead_score', label: 'Lead Score', required: false, group: 'financial' },
   { key: 'comparative_price', label: 'Preço Comparativo', required: false, group: 'financial' },
+  { key: 'total_tax_due', label: 'Tax Due', required: false, group: 'financial' },
+  { key: 'years_delinquent', label: 'Years Delinquent', required: false, group: 'financial' },
+  { key: 'taxable_value', label: 'Taxable Value', required: false, group: 'financial' },
   
   { key: 'origem', label: 'ID Único (Account Number)', required: false, group: 'system' },
   { key: 'property_image_url', label: 'URL da Imagem', required: false, group: 'system' },
