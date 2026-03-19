@@ -1220,12 +1220,15 @@ export type Database = {
           state: string
           status: string
           tags: string[] | null
+          taxable_value: number | null
+          total_tax_due: number | null
           updated_at: string
           updated_by: string | null
           updated_by_name: string | null
           wholesale_pct: number | null
           wholesale_value: number | null
           year_built: number | null
+          years_delinquent: number | null
           zillow_url: string | null
           zip_code: string
         }
@@ -1573,12 +1576,15 @@ export type Database = {
           state?: string
           status?: string
           tags?: string[] | null
+          taxable_value?: number | null
+          total_tax_due?: number | null
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string | null
           wholesale_pct?: number | null
           wholesale_value?: number | null
           year_built?: number | null
+          years_delinquent?: number | null
           zillow_url?: string | null
           zip_code: string
         }
@@ -1926,12 +1932,15 @@ export type Database = {
           state?: string
           status?: string
           tags?: string[] | null
+          taxable_value?: number | null
+          total_tax_due?: number | null
           updated_at?: string
           updated_by?: string | null
           updated_by_name?: string | null
           wholesale_pct?: number | null
           wholesale_value?: number | null
           year_built?: number | null
+          years_delinquent?: number | null
           zillow_url?: string | null
           zip_code?: string
         }
