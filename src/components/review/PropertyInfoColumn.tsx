@@ -29,6 +29,9 @@ export const PropertyInfoColumn = ({ property }: PropertyInfoColumnProps) => {
         <p className="text-xs text-muted-foreground font-medium">
           {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
         </p>
+        {property.neighborhood && (
+          <p className="text-[10px] text-muted-foreground italic">{property.neighborhood}</p>
+        )}
       </div>
 
       {/* Owner info */}

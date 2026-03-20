@@ -98,12 +98,26 @@ export const ScoresTable = ({ property, onScoreSaved, avgCompPrice }: ScoresTabl
             </div>
           </div>
         )}
-        {/* Sqft */}
+        {/* MAO */}
+        {property.mao != null && (
+          <div className="flex items-center px-2 py-0.5">
+            <span className="text-muted-foreground font-medium w-14 shrink-0">
+              <Tip text="MAO" tip="Maximum Allowable Offer — valor máximo que deve pagar" />
+            </span>
+            <div className="flex-1 font-bold text-sm text-blue-600" data-field="mao">
+              {formatCurrency(property.mao)}
+            </div>
+          </div>
+        )}
+        {/* Sqft + Lot */}
         <div className="flex items-center px-2 py-0.5">
           <span className="text-muted-foreground font-medium w-14 shrink-0">Sqft</span>
           <div className="flex-1 font-bold text-sm" data-field="sqft">
             {property.square_feet ? property.square_feet.toLocaleString() : '—'}
             {pricePsf && <span className="text-muted-foreground text-[10px] ml-1 font-normal">(${pricePsf}/sqft)</span>}
+            {property.lot_size != null && property.lot_size > 0 && (
+              <span className="text-muted-foreground text-[10px] ml-2 font-normal">Lote: {property.lot_size.toLocaleString()}</span>
+            )}
           </div>
         </div>
         {/* Q/B + Ano + Tipo - compact row */}

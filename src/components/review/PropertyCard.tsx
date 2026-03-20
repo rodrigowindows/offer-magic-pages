@@ -72,10 +72,10 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
 
       {activeTab === 'avaliacao' ? (
         <div className="p-1.5 sm:p-2">
-          <div className="grid grid-cols-1 md:grid-cols-[140px_1fr_1fr] gap-1.5 sm:gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-[180px_1fr_1fr] gap-1.5 sm:gap-2">
             {/* COL 1: Photo + Links */}
             <div className="space-y-1">
-              <div className="h-[110px] sm:h-[130px] overflow-hidden rounded-lg">
+              <div className="h-[140px] sm:h-[170px] overflow-hidden rounded-lg">
                 <PropertyImageDisplay imageUrl={property.property_image_url} address={property.address} />
               </div>
               {property.decision_photos && property.decision_photos.length > 0 && (
