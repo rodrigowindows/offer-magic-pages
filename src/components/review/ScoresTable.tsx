@@ -98,12 +98,26 @@ export const ScoresTable = ({ property, onScoreSaved, avgCompPrice }: ScoresTabl
             </div>
           </div>
         )}
-        {/* Sqft */}
+        {/* MAO */}
+        {property.mao != null && (
+          <div className="flex items-center px-2 py-0.5">
+            <span className="text-muted-foreground font-medium w-14 shrink-0">
+              <Tip text="MAO" tip="Maximum Allowable Offer — valor máximo que deve pagar" />
+            </span>
+            <div className="flex-1 font-bold text-sm text-blue-600" data-field="mao">
+              {formatCurrency(property.mao)}
+            </div>
+          </div>
+        )}
+        {/* Sqft + Lot */}
         <div className="flex items-center px-2 py-0.5">
           <span className="text-muted-foreground font-medium w-14 shrink-0">Sqft</span>
           <div className="flex-1 font-bold text-sm" data-field="sqft">
             {property.square_feet ? property.square_feet.toLocaleString() : '—'}
             {pricePsf && <span className="text-muted-foreground text-[10px] ml-1 font-normal">(${pricePsf}/sqft)</span>}
+            {property.lot_size != null && property.lot_size > 0 && (
+              <span className="text-muted-foreground text-[10px] ml-2 font-normal">Lote: {property.lot_size.toLocaleString()}</span>
+            )}
           </div>
         </div>
         {/* Q/B + Ano + Tipo - compact row */}
@@ -122,24 +136,24 @@ export const ScoresTable = ({ property, onScoreSaved, avgCompPrice }: ScoresTabl
           </div>
         </div>
         {/* Tax info row */}
-        {((property as any).total_tax_due || (property as any).years_delinquent || (property as any).taxable_value) && (
+        {(property.total_tax_due || property.years_delinquent || property.taxable_value) && (
           <div className="flex items-center px-2 py-0.5 gap-3 flex-wrap border-t border-border/50">
-            {(property as any).total_tax_due != null && (
+            {property.total_tax_due != null && (
               <div>
                 <span className="text-muted-foreground font-medium">Tax Due: </span>
-                <span className="font-bold text-destructive">${Number((property as any).total_tax_due).toLocaleString()}</span>
+                <span className="font-bold text-destructive">${Number(property.total_tax_due).toLocaleString()}</span>
               </div>
             )}
-            {(property as any).years_delinquent != null && (property as any).years_delinquent > 0 && (
+            {property.years_delinquent != null && property.years_delinquent > 0 && (
               <div>
                 <span className="text-muted-foreground font-medium">Delinquent: </span>
-                <span className="font-bold text-destructive">{(property as any).years_delinquent} yr{(property as any).years_delinquent > 1 ? 's' : ''}</span>
+                <span className="font-bold text-destructive">{property.years_delinquent} yr{property.years_delinquent > 1 ? 's' : ''}</span>
               </div>
             )}
-            {(property as any).taxable_value != null && (
+            {property.taxable_value != null && (
               <div>
                 <span className="text-muted-foreground font-medium">Taxable: </span>
-                <span className="font-bold">${Number((property as any).taxable_value).toLocaleString()}</span>
+                <span className="font-bold">${Number(property.taxable_value).toLocaleString()}</span>
               </div>
             )}
           </div>
