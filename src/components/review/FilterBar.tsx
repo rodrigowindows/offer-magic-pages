@@ -51,11 +51,12 @@ export const FilterBar = ({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar endereço..."
+          aria-label="Buscar endereço"
           className="w-full pl-7 pr-7 py-1 text-xs border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary/50"
           data-field="address-search"
         />
         {searchQuery && (
-          <button onClick={() => onSearchChange('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+          <button type="button" onClick={() => onSearchChange('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Limpar busca">
             <X className="h-3 w-3" />
           </button>
         )}

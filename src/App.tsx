@@ -21,6 +21,7 @@ const SkipTrace = lazy(() => import("./pages/SkipTrace"));
 const MarketingApp = lazy(() => import("./components/marketing/MarketingApp").then(m => ({ default: m.MarketingApp })));
 const ProcessApp = lazy(() => import("./components/process/ProcessApp").then(m => ({ default: m.ProcessApp })));
 const FeaturesGuide = lazy(() => import("./components/shared/FeaturesGuide").then(m => ({ default: m.FeaturesGuide })));
+const Privacy = lazy(() => import("./pages/Privacy"));
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="/skip-trace" element={<SkipTrace />} />
                 <Route path="/property/:slug" element={<Property />} />
                 <Route path="/features" element={<FeaturesGuide />} />
+                <Route path="/privacy" element={<Privacy />} />
                 {/* Marketing Communication System Routes */}
                 <Route path="/marketing/*" element={<MarketingApp />} />
                 <Route path="/process/*" element={<ProcessApp />} />

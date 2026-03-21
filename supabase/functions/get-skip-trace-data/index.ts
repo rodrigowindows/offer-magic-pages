@@ -276,12 +276,25 @@ serve(async (req) => {
       skip_trace_summary: buildSkipTraceSummary(property)
     }));
 
-    // Calculate summary statistics
+    // Calculate summary statistics from full dataset (not just paginated results)
+    // Run separate count queries for accurate totals
+    const { count: phonesCount } = await supabase.from('properties')
+      .select('id', { count: 'exact', head: true })
+      .or('phone1.not.is.null,phone2.not.is.null,phone3.not.is.null,phone4.not.is.null,phone5.not.is.null,phone6.not.is.null,phone7.not.is.null,owner_phone.not.is.null,person2_phone1.not.is.null,person3_phone1.not.is.null');
+
+    const { count: emailsCount } = await supabase.from('properties')
+      .select('id', { count: 'exact', head: true })
+      .or('email1.not.is.null,email2.not.is.null,person2_email1.not.is.null,person3_email1.not.is.null');
+
+    const { count: ownerInfoCount } = await supabase.from('properties')
+      .select('id', { count: 'exact', head: true })
+      .not('owner_name', 'is', null);
+
     const summary = {
       total_properties: count || 0,
-      properties_with_phones: transformedData.filter(p => p.skip_trace_summary.total_phones > 0).length,
-      properties_with_emails: transformedData.filter(p => p.skip_trace_summary.total_emails > 0).length,
-      properties_with_owner_info: transformedData.filter(p => p.skip_trace_summary.has_owner_info).length
+      properties_with_phones: phonesCount || 0,
+      properties_with_emails: emailsCount || 0,
+      properties_with_owner_info: ownerInfoCount || 0
     };
 
     const response = {

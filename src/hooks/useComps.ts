@@ -66,6 +66,21 @@ export function useComps(property: CompProperty | null, enabled = true) {
   const addComp = useCallback(async (url: string, compData: CompData) => {
     if (!property) return false;
 
+    // Check for duplicate address
+    if (compData.address) {
+      const normalizedNew = compData.address.trim().toLowerCase().replace(/\s+/g, ' ');
+      const duplicate = comps.find(c => {
+        const existingAddr = (c.comp_data?.address || '').trim().toLowerCase().replace(/\s+/g, ' ');
+        return existingAddr && existingAddr === normalizedNew;
+      });
+      if (duplicate) {
+        const confirmed = window.confirm(
+          `Já existe um comp com o endereço "${compData.address}".\nDeseja adicionar mesmo assim?`
+        );
+        if (!confirmed) return false;
+      }
+    }
+
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();

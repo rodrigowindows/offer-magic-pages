@@ -45,6 +45,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
       {/* Tabs */}
       <div className="flex border-b">
         <button
+          type="button"
           onClick={() => setActiveTab('avaliacao')}
           className={`flex-1 px-2 py-1 text-xs font-bold transition-colors ${
             activeTab === 'avaliacao'
@@ -55,6 +56,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
           Avaliação
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('notas')}
           className={`flex-1 px-2 py-1 text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
             activeTab === 'notas'
@@ -84,7 +86,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
                 <div className="flex gap-1 flex-wrap">
                   {property.decision_photos.map((url, i) => (
                     <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-8 h-8 rounded overflow-hidden border hover:ring-1 hover:ring-primary">
-                      <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                      <img src={url} alt={`Foto ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
                     </a>
                   ))}
                 </div>

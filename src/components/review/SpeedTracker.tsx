@@ -51,7 +51,7 @@ export const SpeedTracker = ({ dailyStats, dailyGoal: defaultGoal = 50 }: SpeedT
       )}
 
       {/* Daily goal progress */}
-      <button onClick={handleGoalClick} className="flex items-center gap-1 text-[10px] group" title="Clique para alterar meta">
+      <button type="button" onClick={handleGoalClick} className="flex items-center gap-1 text-[10px] group" title="Clique para alterar meta">
         {progressPct >= 100 ? (
           <Trophy className="h-3 w-3 text-amber-500" />
         ) : (

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { ReviewQueue } from '@/components/shared/ReviewQueue';
 import { MAOCalculator } from './MAOCalculator';
 import { ProcessHeader } from './ProcessHeader';
@@ -45,6 +46,10 @@ export const ProcessApp = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <Helmet>
+        <title>Análise - {selectedBatch !== 'all' ? selectedBatch : 'Todas'} | MyLocalInvest</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <ProcessHeader
         currentStepIndex={currentStepIndex}
         selectedBatch={selectedBatch}
