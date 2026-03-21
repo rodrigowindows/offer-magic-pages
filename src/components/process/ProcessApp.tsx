@@ -46,6 +46,10 @@ export const ProcessApp = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <Helmet>
+        <title>Análise - {selectedBatch !== 'all' ? selectedBatch : 'Todas'} | MyLocalInvest</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <ProcessHeader
         currentStepIndex={currentStepIndex}
         selectedBatch={selectedBatch}
