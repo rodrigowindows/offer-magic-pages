@@ -216,6 +216,36 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     });
   }
 
+  // 15. $/sqft do sistema muito abaixo do esperado para o zipcode
+  // Ex: 517 Owl Cir 32825 — sistema $128/sqft vs mercado real $257/sqft
+  // Ex: 1559 40th St 32839 — sistema $179/sqft vs comparáveis reais $207/sqft
+  // Benchmark: Orlando residential avg ~$150-250/sqft. If system < $80, flag it
+  if (prop.avg_price_per_sqft && prop.avg_price_per_sqft > 0 && prop.avg_price_per_sqft < 80 && !isLand) {
+    alerts.push({
+      code: 'psf_very_low',
+      message: `$/Sqft do sistema ($${prop.avg_price_per_sqft}) muito baixo — mercado Orlando é $150-250/sqft`,
+      severity: 'critical',
+    });
+  }
+
+  // 16. "Sem Margem Wholesale" alert tag already present in system
+  if (tags.includes('sem margem wholesale')) {
+    alerts.push({
+      code: 'tag_no_margin',
+      message: 'Sistema já alertou "Sem Margem Wholesale" — não deveria ter sido aprovada',
+      severity: 'critical',
+    });
+  }
+
+  // 17. CALL_NOW + DNC contradiction (ex: 1800 Palm, 3433 N Tanner)
+  if (tags.includes('call_now') && (tags.includes('dnc') || prop.dnc_flag === true)) {
+    alerts.push({
+      code: 'call_now_dnc_conflict',
+      message: 'Tags contraditórias: CALL_NOW + DNC — não pode ligar',
+      severity: 'critical',
+    });
+  }
+
   // ══════════════════════════════════════════════
   // ── MODERATE ALERTS ──
   // ══════════════════════════════════════════════
@@ -305,6 +335,9 @@ const BLOCKING_CODES = new Set([
   'address_no_number',
   'ghost_property',
   'no_visual',
+  'psf_very_low',
+  'tag_no_margin',
+  'call_now_dnc_conflict',
 ]);
 
 /**
