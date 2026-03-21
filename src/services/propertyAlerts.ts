@@ -335,6 +335,9 @@ const BLOCKING_CODES = new Set([
   'address_no_number',
   'ghost_property',
   'no_visual',
+  'psf_very_low',
+  'tag_no_margin',
+  'call_now_dnc_conflict',
 ]);
 
 /**
