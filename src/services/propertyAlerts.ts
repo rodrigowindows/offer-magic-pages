@@ -39,6 +39,12 @@ export interface PropertyAlertInput {
   deceased?: boolean | null;
   city?: string | null;
   zip_code?: string | null;
+  // Comps quality validation fields
+  comps_count?: number | null;
+  comps_zip_codes?: string[] | null; // ZIP codes dos comps salvos
+  comps_avg_sqft?: number | null;
+  comps_min_sqft?: number | null; // menor sqft entre comps (detecta sqft=1)
+  comps_property_types?: string[] | null; // tipos dos comps (land vs house)
 }
 
 export interface PropertyAlert {
@@ -246,7 +252,67 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     });
   }
 
-  // ══════════════════════════════════════════════
+  // 18. Comps com sqft = 1 (dados corrompidos — ex: 3433 N Tanner)
+  if (prop.comps_min_sqft !== null && prop.comps_min_sqft !== undefined && prop.comps_min_sqft <= 1) {
+    alerts.push({
+      code: 'comps_sqft_corrupted',
+      message: 'Comps com Sqft = 1 — dados corrompidos, $/sqft será absurdo',
+      severity: 'critical',
+    });
+  }
+
+  // 19. Comps de ZIP code diferente da propriedade (ex: 201 Clark 32751→34761, 1559 40th 32839→32819)
+  if (prop.zip_code && prop.comps_zip_codes && prop.comps_zip_codes.length > 0) {
+    const wrongZips = prop.comps_zip_codes.filter(z => z !== prop.zip_code);
+    if (wrongZips.length > 0) {
+      const uniqueWrong = [...new Set(wrongZips)];
+      alerts.push({
+        code: 'comps_wrong_zip',
+        message: `Comps de ZIP diferente: ${uniqueWrong.join(', ')} (propriedade: ${prop.zip_code})`,
+        severity: 'critical',
+      });
+    }
+  }
+
+  // 20. Terreno avaliado com comps de casas (ex: 710 Columbia, 1030 Herman, 8275 Lake Underhill)
+  if (isLand && prop.comps_property_types && prop.comps_property_types.length > 0) {
+    const houseComps = prop.comps_property_types.filter(t => {
+      const lower = (t || '').toLowerCase();
+      return !lower.includes('land') && !lower.includes('vacant') && lower.length > 0;
+    });
+    if (houseComps.length > 0) {
+      alerts.push({
+        code: 'land_with_house_comps',
+        message: `Terreno avaliado com ${houseComps.length} comps de CASAS — categorias incompatíveis`,
+        severity: 'critical',
+      });
+    }
+  }
+
+  // 21. Oferta padrão repetida ($48.800 em múltiplas propriedades diferentes)
+  // Detecta ofertas "redondas" suspeitamente padronizadas para preços muito diferentes
+  if (prop.cash_offer_amount === 48800) {
+    alerts.push({
+      code: 'standard_offer_suspect',
+      message: 'Oferta padrão $48,800 — mesmo valor usado em múltiplas propriedades diferentes',
+      severity: 'critical',
+    });
+  }
+
+  // 22. Desconto invertido: oferta > preço mas mostra desconto negativo (ex: 3433 N Tanner)
+  if (prop.cash_offer_amount > prop.estimated_value && prop.estimated_value > 5000) {
+    const pctAbove = Math.round(((prop.cash_offer_amount - prop.estimated_value) / prop.estimated_value) * 100);
+    alerts.push({
+      code: 'offer_above_estimated',
+      message: `Oferta ${pctAbove}% ACIMA do preço — desconto invertido ($${prop.cash_offer_amount.toLocaleString()} > $${prop.estimated_value.toLocaleString()})`,
+      severity: 'critical',
+    });
+  }
+
+  // 23. Comps genéricos sem endereço real (ex: "32805 Comp 1", "32703 Comp 2")
+  // This is detected when comps have no real address — flagged at comp save time
+
+
   // ── MODERATE ALERTS ──
   // ══════════════════════════════════════════════
 
@@ -338,6 +404,11 @@ const BLOCKING_CODES = new Set([
   'psf_very_low',
   'tag_no_margin',
   'call_now_dnc_conflict',
+  'comps_sqft_corrupted',
+  'comps_wrong_zip',
+  'land_with_house_comps',
+  'standard_offer_suspect',
+  'offer_above_estimated',
 ]);
 
 /**
