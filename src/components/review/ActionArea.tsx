@@ -114,6 +114,7 @@ export const ActionArea = ({
   currentIndex,
   totalFiltered,
   compsCount,
+  currentProperty,
   showRejectForm,
   selectedReason,
   rejectionNotes,
@@ -139,10 +140,62 @@ export const ActionArea = ({
   onOfferAmountChange,
 }: ActionAreaProps) => {
   const [showReDecide, setShowReDecide] = useState(false);
+  const [forceApproval, setForceApproval] = useState(false);
+
+  // Check for blocking alerts on current property
+  const blockingCheck = useMemo(() => {
+    if (!currentProperty) return { blocked: false, reasons: [] };
+    return hasBlockingAlerts(currentProperty);
+  }, [currentProperty]);
+
+  const criticalAlerts = useMemo(() => {
+    if (!currentProperty) return [];
+    return getCriticalAlerts(currentProperty);
+  }, [currentProperty]);
+
+  // Reset force approval when property changes
+  useEffect(() => {
+    setForceApproval(false);
+  }, [currentIndex]);
 
   useEffect(() => {
     setShowReDecide(false);
   }, [currentIndex]);
+
+  /** Alert banner shown when there are critical issues */
+  const AlertBanner = () => {
+    if (criticalAlerts.length === 0) return null;
+    return (
+      <div className="bg-red-50 border border-red-300 rounded-lg p-2 space-y-1">
+        <div className="flex items-center gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+          <span className="text-[11px] font-bold text-red-800">
+            ⛔ {criticalAlerts.length} alerta{criticalAlerts.length > 1 ? 's' : ''} crítico{criticalAlerts.length > 1 ? 's' : ''}
+          </span>
+        </div>
+        {criticalAlerts.map((a, i) => (
+          <p key={i} className="text-[10px] text-red-700 pl-5">• {a.message}</p>
+        ))}
+        {blockingCheck.blocked && !forceApproval && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full h-6 text-[10px] border-red-300 text-red-700 hover:bg-red-100 mt-1"
+            onClick={() => {
+              if (window.confirm('⚠️ Esta propriedade tem alertas críticos.\n\nDeseja forçar a aprovação mesmo assim?')) {
+                setForceApproval(true);
+              }
+            }}
+          >
+            🔓 Forçar Aprovação (ignorar alertas)
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+  const isBlocked = blockingCheck.blocked && !forceApproval;
 
   // Browsing approved/rejected - show nav + "Alterar Decisão"
   if (statusFilter !== 'pending' && !showReDecide) {
