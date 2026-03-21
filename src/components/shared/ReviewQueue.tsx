@@ -226,6 +226,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                   ai_score: queue.currentProperty.ai_score,
                   property_type: queue.currentProperty.property_type,
                   lot_size: queue.currentProperty.lot_size,
+                  dnc_flag: (queue.currentProperty as any).dnc_flag ?? null,
+                  deceased: (queue.currentProperty as any).deceased ?? null,
                 } : null}
                 showRejectForm={actions.showRejectForm}
                 selectedReason={actions.selectedReason}
