@@ -45,6 +45,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
       {/* Tabs */}
       <div className="flex border-b">
         <button
+          type="button"
           onClick={() => setActiveTab('avaliacao')}
           className={`flex-1 px-2 py-1 text-xs font-bold transition-colors ${
             activeTab === 'avaliacao'
