@@ -71,6 +71,7 @@ export const ProcessApp = () => {
               <Route path="/comps" element={<ManualCompsManager />} />
               <Route path="/mao" element={<MAOCalculator />} />
               <Route path="/responses" element={<ResponseDashboard />} />
+              <Route path="/quality" element={<QualityMonitor />} />
               <Route path="*" element={<Navigate to="/process" replace />} />
             </Routes>
           </Suspense>
