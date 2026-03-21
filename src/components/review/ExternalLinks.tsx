@@ -46,12 +46,12 @@ export const ExternalLinks = ({ address, zillowUrl }: ExternalLinksProps) => (
     {LINK_CONFIG.map(link => (
       <a
         key={link.key}
-        href={link.getUrl(address, 'zillowUrl' in link ? zillowUrl : undefined)}
+        href={link.getUrl(address, link.key === 'zillow' ? zillowUrl : undefined)}
         target="_blank"
         rel="noopener noreferrer"
         className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${link.className}`}
       >
-        {'icon' in link ? link.icon : <span className="font-bold">{link.prefix}</span>}
+        {'icon' in link ? link.icon : null}
         {link.label}
       </a>
     ))}
