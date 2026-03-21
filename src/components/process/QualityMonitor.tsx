@@ -9,41 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, AlertCircle, CheckCircle, BarChart3, Copy, Merge, Eye } from 'lucide-react';
+import { AlertTriangle, AlertCircle, CheckCircle, BarChart3, Eye } from 'lucide-react';
 import { toast } from 'sonner';
+import { analyzePropertyAlerts, type PropertyAlertInput, type PropertyAlert } from '@/services/propertyAlerts';
 
-interface PropertyAlert {
-  id: string;
-  address: string;
-  alerts: { message: string; severity: 'critical' | 'moderate' }[];
-  approval_status: string | null;
-}
-
-interface DuplicateGroup {
-  address: string;
-  count: number;
-  owner_name: string | null;
-  ids: string[];
-}
-
-interface PropertyRow {
-  id: string;
-  address: string;
+interface PropertyRow extends PropertyAlertInput {
   city: string | null;
   zip_code: string | null;
-  estimated_value: number;
-  cash_offer_amount: number;
-  arv: number | null;
-  mao: number | null;
-  square_feet: number | null;
-  avg_price_per_sqft: number | null;
-  approval_status: string | null;
-  owner_name: string | null;
-  tags: string[] | null;
-  bedrooms: number | null;
-  bathrooms: number | null;
-  year_built: number | null;
-  ai_score: number | null;
   batch_name: string | null;
 }
 
@@ -60,7 +32,7 @@ export const QualityMonitor = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('properties')
-      .select('id, address, city, zip_code, estimated_value, cash_offer_amount, arv, mao, square_feet, avg_price_per_sqft, approval_status, owner_name, tags, bedrooms, bathrooms, year_built, ai_score, batch_name')
+      .select('id, address, city, zip_code, estimated_value, cash_offer_amount, arv, mao, square_feet, avg_price_per_sqft, approval_status, owner_name, tags, bedrooms, bathrooms, year_built, ai_score, batch_name, property_type, lot_size')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -69,57 +41,12 @@ export const QualityMonitor = () => {
     setLoading(false);
   };
 
-  // Analyze each property for alerts
+  // Analyze each property for alerts using shared service
   const analyzedProperties = useMemo(() => {
-    return properties.map(prop => {
-      const alerts: { message: string; severity: 'critical' | 'moderate' }[] = [];
-
-      // Critical: offer above ARV
-      if (prop.arv && prop.cash_offer_amount > prop.arv) {
-        alerts.push({ message: `Oferta ($${prop.cash_offer_amount.toLocaleString()}) acima do ARV ($${prop.arv.toLocaleString()})`, severity: 'critical' });
-      }
-
-      // Critical: offer above estimated value
-      if (prop.cash_offer_amount > prop.estimated_value * 0.9) {
-        alerts.push({ message: `Oferta muito próxima do valor estimado (${Math.round(prop.cash_offer_amount / prop.estimated_value * 100)}%)`, severity: 'critical' });
-      }
-
-      // Critical: suspicious price (too low or too high)
-      if (prop.estimated_value < 5000) {
-        alerts.push({ message: `Valor estimado suspeitamente baixo: $${prop.estimated_value.toLocaleString()}`, severity: 'critical' });
-      }
-      if (prop.estimated_value > 2000000) {
-        alerts.push({ message: `Valor estimado muito alto: $${prop.estimated_value.toLocaleString()}`, severity: 'critical' });
-      }
-
-      // Critical: MAO higher than ARV
-      if (prop.mao && prop.arv && prop.mao > prop.arv) {
-        alerts.push({ message: `MAO ($${prop.mao.toLocaleString()}) maior que ARV ($${prop.arv.toLocaleString()})`, severity: 'critical' });
-      }
-
-      // Moderate: missing key data
-      if (!prop.square_feet) alerts.push({ message: 'Sqft não informado', severity: 'moderate' });
-      if (!prop.bedrooms) alerts.push({ message: 'Quartos não informados', severity: 'moderate' });
-      if (!prop.bathrooms) alerts.push({ message: 'Banheiros não informados', severity: 'moderate' });
-      if (!prop.year_built) alerts.push({ message: 'Ano construção não informado', severity: 'moderate' });
-      if (!prop.owner_name) alerts.push({ message: 'Nome do dono não informado', severity: 'moderate' });
-
-      // Moderate: no AI score
-      if (prop.ai_score === null || prop.ai_score === undefined) {
-        alerts.push({ message: 'Score IA não calculado', severity: 'moderate' });
-      }
-
-      // Moderate: contradictory tags
-      const tags = Array.isArray(prop.tags) ? prop.tags : [];
-      if (tags.includes('DNC') && prop.approval_status === 'approved') {
-        alerts.push({ message: 'Aprovada com tag DNC', severity: 'critical' });
-      }
-      if (tags.includes('Deceased') && prop.approval_status === 'approved') {
-        alerts.push({ message: 'Aprovada com tag Deceased', severity: 'critical' });
-      }
-
-      return { ...prop, alerts };
-    });
+    return properties.map(prop => ({
+      ...prop,
+      alerts: analyzePropertyAlerts(prop),
+    }));
   }, [properties]);
 
   // Stats
@@ -142,7 +69,7 @@ export const QualityMonitor = () => {
         existing.count++;
         existing.ids.push(p.id);
       } else {
-        addressMap.set(normalized, { count: 1, owner_name: p.owner_name, ids: [p.id] });
+        addressMap.set(normalized, { count: 1, owner_name: p.owner_name || null, ids: [p.id] });
       }
     });
     return Array.from(addressMap.entries())
@@ -395,7 +322,7 @@ export const QualityMonitor = () => {
                       </tr>
                     ))}
                     {duplicates.length === 0 && (
-                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">✅ Nenhuma duplicata encontrada</td></tr>
+                      <tr><td colSpan={4} className="p-8 text-center text-muted-foreground">Nenhuma duplicata encontrada</td></tr>
                     )}
                   </tbody>
                 </table>
