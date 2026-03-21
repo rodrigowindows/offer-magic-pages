@@ -5,6 +5,7 @@ import {
   Home,
   DollarSign,
   MessageSquare,
+  ShieldCheck,
 } from 'lucide-react';
 
 export interface ProcessStep {
@@ -64,5 +65,13 @@ export const PROCESS_STEPS: ProcessStep[] = [
     fullPath: '/process/responses',
     icon: MessageSquare,
     description: 'Dashboard de respostas e engajamento',
+  },
+  {
+    number: 7,
+    title: 'Qualidade',
+    path: 'quality',
+    fullPath: '/process/quality',
+    icon: ShieldCheck,
+    description: 'Monitorar qualidade dos dados e decisões',
   },
 ];

@@ -16,6 +16,9 @@ const ManualCompsManager = lazy(() =>
 const ResponseDashboard = lazy(() =>
   import('@/components/campaign/ResponseDashboard').then(m => ({ default: m.ResponseDashboard }))
 );
+const QualityMonitor = lazy(() =>
+  import('@/components/process/QualityMonitor').then(m => ({ default: m.QualityMonitor }))
+);
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
@@ -68,6 +71,7 @@ export const ProcessApp = () => {
               <Route path="/comps" element={<ManualCompsManager />} />
               <Route path="/mao" element={<MAOCalculator />} />
               <Route path="/responses" element={<ResponseDashboard />} />
+              <Route path="/quality" element={<QualityMonitor />} />
               <Route path="*" element={<Navigate to="/process" replace />} />
             </Routes>
           </Suspense>
