@@ -327,8 +327,8 @@ export const ActionArea = ({
 
           <DecisionPhotoUpload files={decisionPhotos} onChange={onDecisionPhotosChange} accent="red" />
 
-          <Button onClick={onReject} disabled={isProcessing || !selectedReason} data-action="confirm-reject" className="w-full h-9 bg-red-600 hover:bg-red-700 text-white font-bold gap-2 text-sm">
-            <XCircle className="h-4 w-4" />
+          <Button type="button" onClick={onReject} disabled={isProcessing || !selectedReason} data-action="confirm-reject" className="w-full h-9 bg-red-600 hover:bg-red-700 text-white font-bold gap-2 text-sm">
+            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
             {isProcessing ? "Rejeitando..." : "CONFIRMAR REJEIÇÃO"}
             <kbd className="hidden sm:inline ml-1 px-1 py-0.5 text-[10px] font-normal bg-red-800/40 rounded">Enter</kbd>
           </Button>
