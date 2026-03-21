@@ -267,9 +267,9 @@ export const ActionArea = ({
 
           <DecisionPhotoUpload files={decisionPhotos} onChange={onDecisionPhotosChange} accent="green" />
 
-          <Button onClick={onConfirmOffer} disabled={isProcessing} data-action="confirm-offer" className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
-            <ThumbsUp className="h-4 w-4" />
-            {isProcessing ? "..." : quickOfferAmount ? `APROVAR (${formatCurrency(Number(quickOfferAmount))})` : "APROVAR SEM OFERTA"}
+          <Button type="button" onClick={onConfirmOffer} disabled={isProcessing} data-action="confirm-offer" className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
+            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
+            {isProcessing ? "Aprovando..." : quickOfferAmount ? `APROVAR (${formatCurrency(Number(quickOfferAmount))})` : "APROVAR SEM OFERTA"}
             <kbd className="hidden sm:inline ml-1 px-1 py-0.5 text-[10px] font-normal bg-green-800/40 rounded">Enter</kbd>
           </Button>
         </div>
