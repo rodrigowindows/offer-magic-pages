@@ -161,7 +161,7 @@ export const QualityMonitor = () => {
           existing.totalPsf += p.avg_price_per_sqft;
           existing.count++;
         } else {
-          zipMap.set(p.zip_code, { totalPsf: p.avg_price_per_sqft, count: p.count || 1 });
+          zipMap.set(p.zip_code, { totalPsf: p.avg_price_per_sqft, count: 1 });
         }
       }
     });
