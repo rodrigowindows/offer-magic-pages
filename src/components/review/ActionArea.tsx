@@ -357,13 +357,13 @@ export const ActionArea = ({
 
       {/* Approve/Reject buttons */}
       <div className="flex gap-2">
-        <Button onClick={onStartApprove} disabled={isProcessing} data-action="approve" className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-base sm:text-lg font-bold gap-2">
-          <ThumbsUp className="h-5 w-5 sm:h-6 sm:w-6" />
-          {isProcessing ? "..." : "APROVAR"}
+        <Button type="button" onClick={onStartApprove} disabled={isProcessing} data-action="approve" className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-base sm:text-lg font-bold gap-2">
+          {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsUp className="h-5 w-5 sm:h-6 sm:w-6" />}
+          {isProcessing ? "Processando..." : "APROVAR"}
           <kbd className="hidden sm:inline ml-1 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">A</kbd>
         </Button>
-        <Button onClick={onShowRejectForm} disabled={isProcessing} data-action="reject" variant="outline" className="flex-1 h-12 sm:h-14 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-base sm:text-lg font-bold gap-2">
-          <ThumbsDown className="h-5 w-5 sm:h-6 sm:w-6" />
+        <Button type="button" onClick={onShowRejectForm} disabled={isProcessing} data-action="reject" variant="outline" className="flex-1 h-12 sm:h-14 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-base sm:text-lg font-bold gap-2">
+          {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsDown className="h-5 w-5 sm:h-6 sm:w-6" />}
           REJEITAR
           <kbd className="hidden sm:inline ml-1 px-1.5 py-0.5 text-xs font-normal bg-red-100 border-red-200 border rounded">R</kbd>
         </Button>
