@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,7 @@ import type { ApprovePhase, StatusFilter } from './types';
 import { REJECTION_REASONS } from './constants';
 import { formatCurrency } from '@/lib/utils';
 import { DecisionPhotoUpload } from './DecisionPhotoUpload';
+import { hasBlockingAlerts, getCriticalAlerts, type PropertyAlertInput } from '@/services/propertyAlerts';
 
 interface ActionAreaProps {
   statusFilter: StatusFilter;
@@ -28,6 +29,8 @@ interface ActionAreaProps {
   currentIndex: number;
   totalFiltered: number;
   compsCount: number;
+  // Current property for alert checking
+  currentProperty?: PropertyAlertInput | null;
   // Reject form state
   showRejectForm: boolean;
   selectedReason: string;
@@ -111,6 +114,7 @@ export const ActionArea = ({
   currentIndex,
   totalFiltered,
   compsCount,
+  currentProperty,
   showRejectForm,
   selectedReason,
   rejectionNotes,
@@ -136,10 +140,62 @@ export const ActionArea = ({
   onOfferAmountChange,
 }: ActionAreaProps) => {
   const [showReDecide, setShowReDecide] = useState(false);
+  const [forceApproval, setForceApproval] = useState(false);
+
+  // Check for blocking alerts on current property
+  const blockingCheck = useMemo(() => {
+    if (!currentProperty) return { blocked: false, reasons: [] };
+    return hasBlockingAlerts(currentProperty);
+  }, [currentProperty]);
+
+  const criticalAlerts = useMemo(() => {
+    if (!currentProperty) return [];
+    return getCriticalAlerts(currentProperty);
+  }, [currentProperty]);
+
+  // Reset force approval when property changes
+  useEffect(() => {
+    setForceApproval(false);
+  }, [currentIndex]);
 
   useEffect(() => {
     setShowReDecide(false);
   }, [currentIndex]);
+
+  /** Alert banner shown when there are critical issues */
+  const AlertBanner = () => {
+    if (criticalAlerts.length === 0) return null;
+    return (
+      <div className="bg-red-50 border border-red-300 rounded-lg p-2 space-y-1">
+        <div className="flex items-center gap-1.5">
+          <AlertCircle className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+          <span className="text-[11px] font-bold text-red-800">
+            ⛔ {criticalAlerts.length} alerta{criticalAlerts.length > 1 ? 's' : ''} crítico{criticalAlerts.length > 1 ? 's' : ''}
+          </span>
+        </div>
+        {criticalAlerts.map((a, i) => (
+          <p key={i} className="text-[10px] text-red-700 pl-5">• {a.message}</p>
+        ))}
+        {blockingCheck.blocked && !forceApproval && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full h-6 text-[10px] border-red-300 text-red-700 hover:bg-red-100 mt-1"
+            onClick={() => {
+              if (window.confirm('⚠️ Esta propriedade tem alertas críticos.\n\nDeseja forçar a aprovação mesmo assim?')) {
+                setForceApproval(true);
+              }
+            }}
+          >
+            🔓 Forçar Aprovação (ignorar alertas)
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+  const isBlocked = blockingCheck.blocked && !forceApproval;
 
   // Browsing approved/rejected - show nav + "Alterar Decisão"
   if (statusFilter !== 'pending' && !showReDecide) {
@@ -355,12 +411,25 @@ export const ActionArea = ({
       {/* Navigation bar */}
       <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} onOpenComps={onOpenComps} />
 
+      {/* Critical alerts banner */}
+      <AlertBanner />
+
       {/* Approve/Reject buttons */}
       <div className="flex gap-2">
-        <Button type="button" onClick={onStartApprove} disabled={isProcessing} data-action="approve" className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-base sm:text-lg font-bold gap-2">
+        <Button
+          type="button"
+          onClick={isBlocked ? undefined : onStartApprove}
+          disabled={isProcessing || isBlocked}
+          data-action="approve"
+          className={`flex-1 h-12 sm:h-14 text-base sm:text-lg font-bold gap-2 ${
+            isBlocked
+              ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white'
+              : 'bg-green-600 hover:bg-green-700 text-white'
+          }`}
+        >
           {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsUp className="h-5 w-5 sm:h-6 sm:w-6" />}
-          {isProcessing ? "Processando..." : "APROVAR"}
-          <kbd className="hidden sm:inline ml-1 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">A</kbd>
+          {isProcessing ? "Processando..." : isBlocked ? "BLOQUEADO" : "APROVAR"}
+          {!isBlocked && <kbd className="hidden sm:inline ml-1 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">A</kbd>}
         </Button>
         <Button type="button" onClick={onShowRejectForm} disabled={isProcessing} data-action="reject" variant="outline" className="flex-1 h-12 sm:h-14 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-base sm:text-lg font-bold gap-2">
           {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsDown className="h-5 w-5 sm:h-6 sm:w-6" />}

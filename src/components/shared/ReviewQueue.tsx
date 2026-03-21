@@ -208,6 +208,25 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 currentIndex={queue.currentIndex}
                 totalFiltered={queue.filteredProperties.length}
                 compsCount={queue.currentCompsCount}
+                currentProperty={queue.currentProperty ? {
+                  id: queue.currentProperty.id,
+                  address: queue.currentProperty.address,
+                  estimated_value: queue.currentProperty.estimated_value,
+                  cash_offer_amount: queue.currentProperty.cash_offer_amount,
+                  arv: (queue.currentProperty as any).arv ?? null,
+                  mao: queue.currentProperty.mao,
+                  square_feet: queue.currentProperty.square_feet,
+                  avg_price_per_sqft: (queue.currentProperty as any).avg_price_per_sqft ?? null,
+                  approval_status: queue.currentProperty.approval_status,
+                  owner_name: queue.currentProperty.owner_name,
+                  tags: Array.isArray(queue.currentProperty.tags) ? queue.currentProperty.tags : queue.currentProperty.tags ? [queue.currentProperty.tags] : null,
+                  bedrooms: queue.currentProperty.bedrooms,
+                  bathrooms: queue.currentProperty.bathrooms,
+                  year_built: queue.currentProperty.year_built,
+                  ai_score: queue.currentProperty.ai_score,
+                  property_type: queue.currentProperty.property_type,
+                  lot_size: queue.currentProperty.lot_size,
+                } : null}
                 showRejectForm={actions.showRejectForm}
                 selectedReason={actions.selectedReason}
                 rejectionNotes={actions.rejectionNotes}
