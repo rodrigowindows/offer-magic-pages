@@ -1,12 +1,13 @@
-import { useState, forwardRef } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Phone, Mail, MapPin, DollarSign, CheckCircle, Star, ArrowRight, Shield, Clock, Home } from "lucide-react";
+import { Phone, Mail, MapPin, DollarSign, CheckCircle, Star, ArrowRight, Shield, Clock, Home, Menu, X } from "lucide-react";
 import { z } from "zod";
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 
 const leadFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -38,6 +39,24 @@ const PROCESS_STEPS = [
   { step: "3", title: "Close & Get Paid", desc: "Pick your closing date and get paid" },
 ] as const;
 
+const TESTIMONIALS = [
+  {
+    quote: "They gave me a fair offer and closed in just 10 days. No hassle at all! I was facing foreclosure and they really saved me.",
+    name: "Maria S.",
+    location: "Orlando, FL",
+  },
+  {
+    quote: "After my father passed, I inherited a property I couldn't maintain. MyLocalInvest handled everything with compassion and professionalism. They made a difficult time so much easier.",
+    name: "Robert J.",
+    location: "Miami, FL",
+  },
+  {
+    quote: "I needed to relocate for a new job in two weeks. They gave me a cash offer the same day and we closed in 5 days. I couldn't believe how fast and smooth it was!",
+    name: "Ana L.",
+    location: "Kissimmee, FL",
+  },
+] as const;
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "RealEstateAgent",
@@ -47,6 +66,80 @@ const jsonLd = {
   telephone: "+1-786-882-8251",
   areaServed: { "@type": "City", name: "Orlando, FL" },
   priceRange: "$$",
+};
+
+/** Sticky Header */
+const StickyHeader = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  return (
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-background/95 backdrop-blur-md shadow-sm border-b border-border/50" : "bg-transparent"
+      }`}
+    >
+      <div className="container mx-auto px-4 flex items-center justify-between h-14 md:h-16">
+        <a href="/" className="font-extrabold text-lg md:text-xl text-foreground tracking-tight">
+          MyLocal<span className="text-primary">Invest</span>
+        </a>
+
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-4">
+          <a
+            href="tel:+17868828251"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+          >
+            <Phone className="h-4 w-4" />
+            (786) 882-8251
+          </a>
+          <a
+            href="#get-offer"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-lg transition-all hover:scale-[1.02] text-sm shadow-md shadow-primary/20"
+          >
+            Get My Cash Offer
+          </a>
+        </div>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          className="md:hidden p-2"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* Mobile dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-background border-t border-border px-4 py-4 space-y-3 shadow-lg">
+          <a
+            href="tel:+17868828251"
+            className="flex items-center gap-2 text-sm font-semibold text-foreground"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <Phone className="h-4 w-4" />
+            (786) 882-8251
+          </a>
+          <a
+            href="#get-offer"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-bold rounded-lg text-sm w-full"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            Get My Cash Offer
+          </a>
+        </div>
+      )}
+    </header>
+  );
 };
 
 const Index = () => {
@@ -113,6 +206,7 @@ const Index = () => {
         <title>Sell Your Orlando Home Fast for Cash | MyLocalInvest</title>
         <meta name="description" content="Get a fair, no-obligation cash offer for your Orlando property in 24 hours. No repairs, no fees, close in 7 days. MyLocalInvest — Orlando's trusted cash home buyers." />
         <link rel="canonical" href="https://offer.mylocalinvest.com/" />
+        <meta name="robots" content="index, follow" />
         <meta property="og:title" content="Sell Your Orlando Home Fast for Cash | MyLocalInvest" />
         <meta property="og:description" content="Get a fair cash offer in 24 hours. No repairs, no fees, close in 7 days." />
         <meta property="og:url" content="https://offer.mylocalinvest.com/" />
@@ -122,7 +216,9 @@ const Index = () => {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <main className="min-h-screen bg-background">
+      <StickyHeader />
+
+      <main className="min-h-screen bg-background pt-14 md:pt-16">
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_50%)]" />
@@ -164,7 +260,7 @@ const Index = () => {
                     </a>
                   </div>
 
-                  {/* Social proof - hidden on very small screens to save space */}
+                  {/* Social proof */}
                   <div className="hidden sm:flex items-center gap-4 pt-2">
                     <div className="flex -space-x-2">
                       {[1,2,3,4].map(i => (
@@ -186,9 +282,9 @@ const Index = () => {
 
                 {/* Right: Form */}
                 <div id="get-offer" className="animate-fade-in" style={{ animationDelay: '150ms' }}>
-                  <div className="bg-card rounded-2xl shadow-2xl shadow-primary/5 p-6 md:p-8 border border-border/50 backdrop-blur-sm">
-                    <div className="mb-6">
-                      <h2 className="text-2xl font-bold text-foreground mb-1">
+                  <div className="bg-card rounded-2xl shadow-2xl shadow-primary/5 p-5 sm:p-6 md:p-8 border border-border/50 backdrop-blur-sm">
+                    <div className="mb-5 sm:mb-6">
+                      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1">
                         Request Your Cash Offer
                       </h2>
                       <p className="text-sm text-muted-foreground">
@@ -197,25 +293,25 @@ const Index = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-3.5" noValidate>
-                      <FormField label="Your Name" error={errors.name}>
-                        <Input type="text" placeholder="John Smith" value={formData.name} onChange={handleChange("name")} className={`h-11 ${errors.name ? "border-destructive" : ""}`} required aria-invalid={!!errors.name} />
+                      <FormField label="Your Name" error={errors.name} htmlFor="field-name">
+                        <Input id="field-name" type="text" placeholder="John Smith" value={formData.name} onChange={handleChange("name")} className={`h-11 ${errors.name ? "border-destructive" : ""}`} required aria-invalid={!!errors.name} />
                       </FormField>
 
-                      <FormField label="Email" error={errors.email} icon={<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />}>
-                        <Input type="email" placeholder="john@example.com" className={`pl-10 h-11 ${errors.email ? "border-destructive" : ""}`} value={formData.email} onChange={handleChange("email")} required aria-invalid={!!errors.email} />
+                      <FormField label="Email" error={errors.email} htmlFor="field-email" icon={<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />}>
+                        <Input id="field-email" type="email" placeholder="john@example.com" className={`pl-10 h-11 ${errors.email ? "border-destructive" : ""}`} value={formData.email} onChange={handleChange("email")} required aria-invalid={!!errors.email} />
                       </FormField>
 
-                      <FormField label="Phone" error={errors.phone} icon={<Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />}>
-                        <Input type="tel" placeholder="(407) 555-0123" className={`pl-10 h-11 ${errors.phone ? "border-destructive" : ""}`} value={formData.phone} onChange={handleChange("phone")} required aria-invalid={!!errors.phone} />
+                      <FormField label="Phone" error={errors.phone} htmlFor="field-phone" icon={<Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />}>
+                        <Input id="field-phone" type="tel" placeholder="(407) 555-0123" className={`pl-10 h-11 ${errors.phone ? "border-destructive" : ""}`} value={formData.phone} onChange={handleChange("phone")} required aria-invalid={!!errors.phone} />
                       </FormField>
 
-                      <FormField label="Property Address" error={errors.address} icon={<MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />}>
-                        <Input type="text" placeholder="123 Main St, Orlando, FL 32801" className={`pl-10 h-11 ${errors.address ? "border-destructive" : ""}`} value={formData.address} onChange={handleChange("address")} required aria-invalid={!!errors.address} />
+                      <FormField label="Property Address" error={errors.address} htmlFor="field-address" icon={<MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />}>
+                        <Input id="field-address" type="text" placeholder="123 Main St, Orlando, FL 32801" className={`pl-10 h-11 ${errors.address ? "border-destructive" : ""}`} value={formData.address} onChange={handleChange("address")} required aria-invalid={!!errors.address} />
                       </FormField>
 
                       <div>
-                        <label className="text-sm font-medium text-foreground mb-1 block">Additional Information</label>
-                        <Textarea placeholder="Tell us about your situation..." rows={3} value={formData.message} onChange={handleChange("message")} />
+                        <label htmlFor="field-message" className="text-sm font-medium text-foreground mb-1 block">Additional Information</label>
+                        <Textarea id="field-message" placeholder="Tell us about your situation..." rows={3} value={formData.message} onChange={handleChange("message")} />
                       </div>
 
                       <Button type="submit" className="w-full h-12 text-lg font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all hover:scale-[1.01]" disabled={isSubmitting}>
@@ -252,22 +348,22 @@ const Index = () => {
         </section>
 
         {/* Benefits Grid */}
-        <section aria-label="Benefits" className="py-16 md:py-24">
+        <section aria-label="Benefits" className="py-12 sm:py-16 md:py-24">
           <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4">
+            <div className="max-w-3xl mx-auto text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground mb-3 sm:mb-4">
                 Why Homeowners Choose Us
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground">
                 We make selling your home simple, fast, and stress-free
               </p>
             </div>
 
-            <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {BENEFITS.map(({ title, desc, icon: Icon }) => (
                 <div
                   key={title}
-                  className="group p-6 rounded-2xl border border-border bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+                  className="group p-5 sm:p-6 rounded-2xl border border-border bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
                 >
                   <div className="flex items-start gap-4">
                     <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
@@ -285,18 +381,18 @@ const Index = () => {
         </section>
 
         {/* How It Works */}
-        <section aria-label="Process" className="py-16 md:py-24 bg-muted/30">
+        <section aria-label="Process" className="py-12 sm:py-16 md:py-24 bg-muted/30">
           <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-foreground mb-4">
+            <div className="max-w-3xl mx-auto text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground mb-3 sm:mb-4">
                 How It Works
               </h2>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-base sm:text-lg text-muted-foreground">
                 Three simple steps to sell your home
               </p>
             </div>
 
-            <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
+            <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
               {PROCESS_STEPS.map(({ step, title, desc }) => (
                 <div key={step} className="text-center">
                   <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground text-2xl font-extrabold flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
@@ -310,22 +406,31 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Testimonial */}
-        <section className="py-16 md:py-24">
+        {/* Testimonials */}
+        <section className="py-12 sm:py-16 md:py-24">
           <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto text-center">
-              <div className="flex items-center justify-center gap-1 mb-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-6 w-6 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-              <blockquote className="text-xl md:text-2xl text-foreground font-medium italic leading-relaxed mb-6">
-                "They gave me a fair offer and closed in just 10 days. No hassle at all! I was facing foreclosure and they really saved me."
-              </blockquote>
-              <div>
-                <p className="font-bold text-foreground">Maria S.</p>
-                <p className="text-sm text-muted-foreground">Orlando, FL</p>
-              </div>
+            <div className="max-w-3xl mx-auto text-center mb-8 sm:mb-12">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground mb-3">
+                What Homeowners Say
+              </h2>
+            </div>
+            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+              {TESTIMONIALS.map((t) => (
+                <div key={t.name} className="bg-card rounded-2xl border border-border p-6 flex flex-col">
+                  <div className="flex items-center gap-0.5 mb-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <blockquote className="text-foreground font-medium italic leading-relaxed flex-1 mb-4">
+                    "{t.quote}"
+                  </blockquote>
+                  <div>
+                    <p className="font-bold text-foreground">{t.name}</p>
+                    <p className="text-sm text-muted-foreground">{t.location}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -359,14 +464,55 @@ const Index = () => {
         </section>
 
         {/* Footer */}
-        <footer className="py-8 border-t border-border">
-          <div className="container mx-auto px-4 text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} MyLocalInvest. All rights reserved.
-            </p>
-            <a href="/auth" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Team Member? Sign in here
-            </a>
+        <footer className="py-10 sm:py-12 border-t border-border bg-muted/20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12">
+              {/* Brand */}
+              <div>
+                <p className="font-extrabold text-lg text-foreground mb-2">
+                  MyLocal<span className="text-primary">Invest</span>
+                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Orlando's trusted cash home buyers. We help homeowners sell their properties quickly with fair, no-obligation cash offers.
+                </p>
+              </div>
+
+              {/* Links */}
+              <div>
+                <p className="font-bold text-foreground mb-3">Links</p>
+                <ul className="space-y-2 text-sm">
+                  <li><Link to="/privacy" className="text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link></li>
+                  <li><a href="#get-offer" className="text-muted-foreground hover:text-foreground transition-colors">Get Your Offer</a></li>
+                  <li><Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">Team Login</Link></li>
+                </ul>
+              </div>
+
+              {/* Contact */}
+              <div>
+                <p className="font-bold text-foreground mb-3">Contact</p>
+                <ul className="space-y-2 text-sm">
+                  <li>
+                    <a href="tel:+17868828251" className="text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      (786) 882-8251
+                    </a>
+                  </li>
+                  <li className="text-muted-foreground inline-flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Orlando, FL
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="max-w-5xl mx-auto mt-8 pt-6 border-t border-border space-y-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong>Disclaimer:</strong> MyLocalInvest is not a licensed real estate broker. We are a real estate investment company that purchases properties directly from homeowners. We are not acting as your agent or representative. Any offer made is subject to our review and approval process. Results may vary.
+              </p>
+              <p className="text-xs text-muted-foreground text-center">
+                © {new Date().getFullYear()} MyLocalInvest. All rights reserved.
+              </p>
+            </div>
           </div>
         </footer>
       </main>
@@ -375,10 +521,10 @@ const Index = () => {
 };
 
 /** Reusable form field with label, error, and optional icon */
-const FormField = forwardRef<HTMLDivElement, { label: string; error?: string; icon?: React.ReactNode; children: React.ReactNode }>(
-  ({ label, error, icon, children }, ref) => (
+const FormField = forwardRef<HTMLDivElement, { label: string; error?: string; icon?: React.ReactNode; children: React.ReactNode; htmlFor?: string }>(
+  ({ label, error, icon, children, htmlFor }, ref) => (
     <div ref={ref}>
-      <label className="text-sm font-medium text-foreground mb-1 block">{label} *</label>
+      <label htmlFor={htmlFor} className="text-sm font-medium text-foreground mb-1 block">{label} *</label>
       <div className={icon ? "relative" : undefined}>
         {icon}
         {children}
