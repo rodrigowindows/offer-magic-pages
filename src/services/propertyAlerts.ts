@@ -404,6 +404,11 @@ const BLOCKING_CODES = new Set([
   'psf_very_low',
   'tag_no_margin',
   'call_now_dnc_conflict',
+  'comps_sqft_corrupted',
+  'comps_wrong_zip',
+  'land_with_house_comps',
+  'standard_offer_suspect',
+  'offer_above_estimated',
 ]);
 
 /**
