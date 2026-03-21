@@ -29,6 +29,8 @@ interface ActionAreaProps {
   currentIndex: number;
   totalFiltered: number;
   compsCount: number;
+  // Current property for alert checking
+  currentProperty?: PropertyAlertInput | null;
   // Reject form state
   showRejectForm: boolean;
   selectedReason: string;
