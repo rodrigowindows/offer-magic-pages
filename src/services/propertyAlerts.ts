@@ -1,6 +1,15 @@
 /**
  * propertyAlerts - Shared service for property data quality alerts
  * Used by QualityMonitor and approval blocking logic
+ * 
+ * Based on real-world audit of Orlando batch (Mar 2026):
+ * - 1800 Palm Ln: DNC + sem margem wholesale
+ * - 909 Ferndell Rd: oferta 115% ARV, $/sqft $103 vs Zillow $169
+ * - 201 Clark St: oferta 99% ARV, ARV $203k vs Zillow $326k
+ * - Duskin Ave: sem número, sem sqft, sem Q/B, sem ano
+ * - 18046 10th Ave: Deceased+DNC aprovada, preço $132
+ * - 5309 E Kaley: DNC aprovada, oferta 132% ARV
+ * - 4131 Ortisi Dr: sem sqft, sem margem wholesale
  */
 
 export interface PropertyAlertInput {
@@ -21,6 +30,15 @@ export interface PropertyAlertInput {
   ai_score?: number | null;
   property_type?: string | null;
   lot_size?: number | null;
+  // Extended fields for deeper analysis
+  wholesale_value?: number | null;
+  wholesale_pct?: number | null;
+  renovation_value?: number | null;
+  renovation_pct?: number | null;
+  dnc_flag?: boolean | null;
+  deceased?: boolean | null;
+  city?: string | null;
+  zip_code?: string | null;
 }
 
 export interface PropertyAlert {
@@ -49,22 +67,37 @@ export function isLandProperty(prop: PropertyAlertInput): boolean {
  */
 export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[] {
   const alerts: PropertyAlert[] = [];
-  const tags = Array.isArray(prop.tags) ? prop.tags : [];
+  const tags = Array.isArray(prop.tags) ? prop.tags.map(t => t.toLowerCase()) : [];
   const isLand = isLandProperty(prop);
 
+  // ══════════════════════════════════════════════
   // ── CRITICAL ALERTS ──
+  // ══════════════════════════════════════════════
 
-  // Offer > ARV (ex: 710 Columbia)
+  // 1. Offer > ARV (ex: 909 Ferndell 115% ARV, 5309 E Kaley 132% ARV)
   if (prop.arv && prop.arv > 0 && prop.cash_offer_amount > prop.arv) {
+    const pct = Math.round((prop.cash_offer_amount / prop.arv) * 100);
     alerts.push({
       code: 'offer_above_arv',
-      message: `Oferta ($${prop.cash_offer_amount.toLocaleString()}) acima do ARV ($${prop.arv.toLocaleString()})`,
+      message: `Oferta ($${prop.cash_offer_amount.toLocaleString()}) = ${pct}% do ARV ($${prop.arv.toLocaleString()}) — deve ser <70%`,
       severity: 'critical',
     });
   }
 
-  // Offer > Estimated Value (offer should always be below)
-  if (prop.cash_offer_amount > prop.estimated_value) {
+  // 2. Offer >= 85% of ARV (not profitable — ex: 201 Clark St 99% ARV)
+  if (prop.arv && prop.arv > 0 && prop.cash_offer_amount > 0) {
+    const arvPct = (prop.cash_offer_amount / prop.arv) * 100;
+    if (arvPct >= 85 && arvPct <= 100) {
+      alerts.push({
+        code: 'offer_too_close_arv',
+        message: `Oferta = ${Math.round(arvPct)}% do ARV — margem insuficiente (deve ser ≤70%)`,
+        severity: 'critical',
+      });
+    }
+  }
+
+  // 3. Offer > Estimated Value (offer should always be below)
+  if (prop.cash_offer_amount > prop.estimated_value && prop.estimated_value > 0) {
     alerts.push({
       code: 'offer_above_price',
       message: `Oferta ($${prop.cash_offer_amount.toLocaleString()}) ACIMA do preço ($${prop.estimated_value.toLocaleString()})`,
@@ -72,7 +105,7 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     });
   }
 
-  // Suspicious price: too low (ex: 1687 W Miller $3k)
+  // 4. Suspicious price: too low (ex: 18046 10th Ave $132, 1687 W Miller $3k)
   if (prop.estimated_value > 0 && prop.estimated_value < 5000) {
     alerts.push({
       code: 'price_too_low',
@@ -81,7 +114,7 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     });
   }
 
-  // Suspicious price: too high
+  // 5. Suspicious price: too high
   if (prop.estimated_value > 2000000) {
     alerts.push({
       code: 'price_too_high',
@@ -90,7 +123,7 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     });
   }
 
-  // MAO > ARV
+  // 6. MAO > ARV
   if (prop.mao && prop.arv && prop.mao > prop.arv) {
     alerts.push({
       code: 'mao_above_arv',
@@ -99,34 +132,36 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     });
   }
 
-  // Approved with DNC tag
-  if (tags.some(t => t.toLowerCase() === 'dnc') && prop.approval_status === 'approved') {
+  // 7. DNC tag or flag — should NOT be approved (ex: 1800 Palm, 5309 E Kaley, 18046 10th Ave)
+  const hasDnc = tags.includes('dnc') || tags.includes('call_soon') || prop.dnc_flag === true;
+  if (hasDnc && prop.approval_status === 'approved') {
     alerts.push({
       code: 'approved_dnc',
-      message: 'Aprovada com tag DNC',
+      message: 'Aprovada com DNC — não pode ligar para este número',
       severity: 'critical',
     });
   }
 
-  // Approved with Deceased tag
-  if (tags.some(t => t.toLowerCase() === 'deceased') && prop.approval_status === 'approved') {
+  // 8. Deceased tag or flag (ex: 18046 10th Ave)
+  const hasDeceased = tags.includes('deceased') || prop.deceased === true;
+  if (hasDeceased && prop.approval_status === 'approved') {
     alerts.push({
       code: 'approved_deceased',
-      message: 'Aprovada com tag Deceased',
+      message: 'Aprovada com Deceased — verificar herdeiros antes de aprovar',
       severity: 'critical',
     });
   }
 
-  // No Sqft AND not land — house needs sqft (ex: 710 Columbia shows 0 beds/0 baths)
+  // 9. No Sqft AND not land (ex: 909 Ferndell, 4131 Ortisi, Duskin Ave)
   if (!isLand && !prop.square_feet) {
     alerts.push({
       code: 'no_sqft_house',
-      message: 'Casa sem Sqft — impossível calcular $/sqft',
+      message: 'Casa sem Sqft — impossível calcular $/sqft corretamente',
       severity: 'critical',
     });
   }
 
-  // Large price discrepancy: offer is >10x the price or <1% of price
+  // 10. Extreme price/offer ratio (ex: 18046 10th Ave: preço $132, oferta $48k)
   if (prop.estimated_value > 0 && prop.cash_offer_amount > 0) {
     const ratio = prop.cash_offer_amount / prop.estimated_value;
     if (ratio > 10) {
@@ -138,7 +173,52 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     }
   }
 
+  // 11. No wholesale margin (ex: 1800 Palm, 4131 Ortisi — "Sem Margem Wholesale")
+  if (prop.arv && prop.arv > 0 && prop.cash_offer_amount > 0 && !isLand) {
+    const wholesaleMargin = prop.arv - prop.cash_offer_amount;
+    const marginPct = (wholesaleMargin / prop.arv) * 100;
+    if (marginPct < 15) {
+      alerts.push({
+        code: 'no_wholesale_margin',
+        message: `Margem wholesale apenas ${Math.round(marginPct)}% ($${wholesaleMargin.toLocaleString()}) — mínimo 15-30%`,
+        severity: 'critical',
+      });
+    }
+  }
+
+  // 12. Address has no street number (ex: Duskin Ave — "Endereço sem Número")
+  const addressClean = (prop.address || '').trim();
+  const startsWithNumber = /^\d/.test(addressClean);
+  if (!startsWithNumber && addressClean.length > 0) {
+    alerts.push({
+      code: 'address_no_number',
+      message: `Endereço sem número: "${addressClean}" — impossível localizar`,
+      severity: 'critical',
+    });
+  }
+
+  // 13. Missing ALL key data (no sqft + no beds + no baths + no year = ghost property)
+  // ex: Duskin Ave, 18046 10th Ave
+  if (!prop.square_feet && !prop.bedrooms && !prop.bathrooms && !prop.year_built && !isLand) {
+    alerts.push({
+      code: 'ghost_property',
+      message: 'Propriedade fantasma — sem Sqft, quartos, banheiros e ano',
+      severity: 'critical',
+    });
+  }
+
+  // 14. NO_VISUAL tag — property was approved without visual confirmation
+  if (tags.includes('no visual') || tags.includes('no_visual')) {
+    alerts.push({
+      code: 'no_visual',
+      message: 'Sem verificação visual — imagem indisponível',
+      severity: 'critical',
+    });
+  }
+
+  // ══════════════════════════════════════════════
   // ── MODERATE ALERTS ──
+  // ══════════════════════════════════════════════
 
   // Land without lot_size
   if (isLand && !prop.lot_size) {
@@ -163,6 +243,42 @@ export function analyzePropertyAlerts(prop: PropertyAlertInput): PropertyAlert[]
     alerts.push({ code: 'no_ai_score', message: 'Score IA não calculado', severity: 'moderate' });
   }
 
+  // Very low AI score but approved (ex: 18046 10th Ave AI:5, Duskin Ave AI:40)
+  if (prop.ai_score !== null && prop.ai_score !== undefined && prop.ai_score < 30 && prop.approval_status === 'approved') {
+    alerts.push({
+      code: 'low_ai_approved',
+      message: `AI Score muito baixo (${prop.ai_score}) mas aprovada — revisar decisão`,
+      severity: 'moderate',
+    });
+  }
+
+  // DNC tag present (even if not approved yet — flag for awareness)
+  if (hasDnc && prop.approval_status !== 'approved') {
+    alerts.push({
+      code: 'has_dnc',
+      message: 'DNC — Do Not Call ativo',
+      severity: 'moderate',
+    });
+  }
+
+  // Deceased present (even if not approved yet)
+  if (hasDeceased && prop.approval_status !== 'approved') {
+    alerts.push({
+      code: 'has_deceased',
+      message: 'Deceased — proprietário falecido',
+      severity: 'moderate',
+    });
+  }
+
+  // $/sqft seems too low vs market (if avg_price_per_sqft exists and is suspiciously low)
+  if (prop.avg_price_per_sqft && prop.avg_price_per_sqft > 0 && prop.avg_price_per_sqft < 50 && !isLand) {
+    alerts.push({
+      code: 'low_psf',
+      message: `$/Sqft muito baixo ($${prop.avg_price_per_sqft}) — verificar dados de comps`,
+      severity: 'moderate',
+    });
+  }
+
   return alerts;
 }
 
@@ -179,11 +295,16 @@ export function getCriticalAlerts(prop: PropertyAlertInput): PropertyAlert[] {
 const BLOCKING_CODES = new Set([
   'offer_above_arv',
   'offer_above_price',
+  'offer_too_close_arv',
   'price_too_low',
   'offer_price_ratio_extreme',
   'no_sqft_house',
   'approved_dnc',
   'approved_deceased',
+  'no_wholesale_margin',
+  'address_no_number',
+  'ghost_property',
+  'no_visual',
 ]);
 
 /**
