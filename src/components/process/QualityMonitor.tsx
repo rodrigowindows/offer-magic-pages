@@ -32,7 +32,7 @@ export const QualityMonitor = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('properties')
-      .select('id, address, city, zip_code, estimated_value, cash_offer_amount, arv, mao, square_feet, avg_price_per_sqft, approval_status, owner_name, tags, bedrooms, bathrooms, year_built, ai_score, batch_name, property_type, lot_size')
+      .select('id, address, city, zip_code, estimated_value, cash_offer_amount, arv, mao, square_feet, avg_price_per_sqft, approval_status, owner_name, tags, bedrooms, bathrooms, year_built, ai_score, batch_name, property_type, lot_size, wholesale_value, wholesale_pct, renovation_value, renovation_pct, dnc_flag, deceased')
       .order('created_at', { ascending: false });
 
     if (!error && data) {
