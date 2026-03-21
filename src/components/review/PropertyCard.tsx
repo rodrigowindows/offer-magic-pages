@@ -56,6 +56,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
           Avaliação
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('notas')}
           className={`flex-1 px-2 py-1 text-xs font-bold transition-colors flex items-center justify-center gap-1 ${
             activeTab === 'notas'
