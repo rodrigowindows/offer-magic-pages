@@ -75,7 +75,7 @@ export const InlineMAOCalculator = ({ property, compsARV, onSaved }: InlineMAOCa
         <span className="font-bold text-xs flex items-center gap-1">
           <Calculator className="h-3.5 w-3.5" /> MAO Calculator
         </span>
-        <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
+        <button type="button" onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
