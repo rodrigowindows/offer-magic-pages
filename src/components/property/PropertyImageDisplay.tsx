@@ -51,6 +51,7 @@ export const PropertyImageDisplay = ({
           key={imageUrl}
           src={imageUrl}
           alt={address}
+          loading="lazy"
           className={`w-full h-full object-cover rounded-lg transition-all duration-300 group-hover:scale-105 ${isImageLoading ? "opacity-0" : "opacity-100"}`}
           onLoad={() => setIsImageLoading(false)}
           onError={() => { setHasError(true); setIsImageLoading(false); }}
