@@ -45,6 +45,7 @@ const App = () => (
                 <Route path="/skip-trace" element={<SkipTrace />} />
                 <Route path="/property/:slug" element={<Property />} />
                 <Route path="/features" element={<FeaturesGuide />} />
+                <Route path="/privacy" element={<Privacy />} />
                 {/* Marketing Communication System Routes */}
                 <Route path="/marketing/*" element={<MarketingApp />} />
                 <Route path="/process/*" element={<ProcessApp />} />
