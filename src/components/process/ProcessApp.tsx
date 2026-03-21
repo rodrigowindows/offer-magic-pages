@@ -16,6 +16,9 @@ const ManualCompsManager = lazy(() =>
 const ResponseDashboard = lazy(() =>
   import('@/components/campaign/ResponseDashboard').then(m => ({ default: m.ResponseDashboard }))
 );
+const QualityMonitor = lazy(() =>
+  import('@/components/process/QualityMonitor').then(m => ({ default: m.QualityMonitor }))
+);
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
