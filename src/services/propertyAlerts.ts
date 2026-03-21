@@ -60,7 +60,7 @@ export function isLandProperty(prop: PropertyAlertInput): boolean {
   const tags = Array.isArray(prop.tags) ? prop.tags.map(t => t.toLowerCase()) : [];
   const type = (prop.property_type || '').toLowerCase();
   return (
-    tags.includes('land') ||
+    tags.some(t => t.includes('land')) ||
     tags.includes('vacant land') ||
     type.includes('land') ||
     type.includes('vacant') ||
