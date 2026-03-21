@@ -411,12 +411,25 @@ export const ActionArea = ({
       {/* Navigation bar */}
       <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} onOpenComps={onOpenComps} />
 
+      {/* Critical alerts banner */}
+      <AlertBanner />
+
       {/* Approve/Reject buttons */}
       <div className="flex gap-2">
-        <Button type="button" onClick={onStartApprove} disabled={isProcessing} data-action="approve" className="flex-1 h-12 sm:h-14 bg-green-600 hover:bg-green-700 text-white text-base sm:text-lg font-bold gap-2">
+        <Button
+          type="button"
+          onClick={isBlocked ? undefined : onStartApprove}
+          disabled={isProcessing || isBlocked}
+          data-action="approve"
+          className={`flex-1 h-12 sm:h-14 text-base sm:text-lg font-bold gap-2 ${
+            isBlocked
+              ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-white'
+              : 'bg-green-600 hover:bg-green-700 text-white'
+          }`}
+        >
           {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsUp className="h-5 w-5 sm:h-6 sm:w-6" />}
-          {isProcessing ? "Processando..." : "APROVAR"}
-          <kbd className="hidden sm:inline ml-1 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">A</kbd>
+          {isProcessing ? "Processando..." : isBlocked ? "BLOQUEADO" : "APROVAR"}
+          {!isBlocked && <kbd className="hidden sm:inline ml-1 px-1.5 py-0.5 text-xs font-normal bg-green-800/40 rounded">A</kbd>}
         </Button>
         <Button type="button" onClick={onShowRejectForm} disabled={isProcessing} data-action="reject" variant="outline" className="flex-1 h-12 sm:h-14 border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 text-base sm:text-lg font-bold gap-2">
           {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <ThumbsDown className="h-5 w-5 sm:h-6 sm:w-6" />}
