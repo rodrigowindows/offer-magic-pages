@@ -39,6 +39,12 @@ export interface PropertyAlertInput {
   deceased?: boolean | null;
   city?: string | null;
   zip_code?: string | null;
+  // Comps quality validation fields
+  comps_count?: number | null;
+  comps_zip_codes?: string[] | null; // ZIP codes dos comps salvos
+  comps_avg_sqft?: number | null;
+  comps_min_sqft?: number | null; // menor sqft entre comps (detecta sqft=1)
+  comps_property_types?: string[] | null; // tipos dos comps (land vs house)
 }
 
 export interface PropertyAlert {
