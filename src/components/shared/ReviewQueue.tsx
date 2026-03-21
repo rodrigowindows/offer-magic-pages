@@ -228,6 +228,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                   lot_size: queue.currentProperty.lot_size,
                   dnc_flag: (queue.currentProperty as any).dnc_flag ?? null,
                   deceased: (queue.currentProperty as any).deceased ?? null,
+                  wholesale_value: (queue.currentProperty as any).wholesale_value ?? null,
+                  wholesale_pct: (queue.currentProperty as any).wholesale_pct ?? null,
+                  renovation_value: (queue.currentProperty as any).renovation_value ?? null,
+                  renovation_pct: (queue.currentProperty as any).renovation_pct ?? null,
+                  city: queue.currentProperty.city ?? null,
+                  zip_code: (queue.currentProperty as any).zip_code ?? null,
                 } : null}
                 showRejectForm={actions.showRejectForm}
                 selectedReason={actions.selectedReason}
