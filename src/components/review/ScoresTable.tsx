@@ -42,135 +42,135 @@ export const ScoresTable = ({ property, onScoreSaved, avgCompPrice, expanded }: 
           </div>
         )}
 
-        {/* Grid layout for expanded view - 2 rows */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 gap-px bg-border">
+        {/* Compact grid layout - 2 rows with smaller cells */}
+        <div className="grid grid-cols-4 sm:grid-cols-6 gap-px bg-border">
           {/* AI Score */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">
-              <Tip text="AI Score" tip="70+ = COMPRAR, 50-69 = AVALIAR, <30 = FRACO" />
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">
+              <Tip text="AI" tip="70+ = COMPRAR, 50-69 = AVALIAR, <30 = FRACO" />
             </p>
-            <div className="flex items-center gap-1" data-field="ai-score">
-              <span className={`font-bold text-lg ${aiC.text}`}>{property.ai_score ?? '—'}</span>
+            <div className="flex items-center gap-0.5" data-field="ai-score">
+              <span className={`font-bold text-sm ${aiC.text}`}>{property.ai_score ?? '—'}</span>
               {property.ai_score != null && (
-                <Badge variant="outline" className={`text-[9px] ${aiC.text} ${aiC.bg} ${aiC.border}`}>{aiC.label}</Badge>
+                <Badge variant="outline" className={`text-[8px] px-0.5 ${aiC.text} ${aiC.bg} ${aiC.border}`}>{aiC.label}</Badge>
               )}
             </div>
           </div>
 
           {/* Lead */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">
               <Tip text="Lead" tip="230+ = ALTA, 150-229 = PADRÃO, <150 = BAIXA" />
             </p>
-            <div className="flex items-center gap-1" data-field="lead-score">
-              <span className={`font-bold text-lg ${ldC.text}`}>{property.lead_score ?? '—'}</span>
+            <div className="flex items-center gap-0.5" data-field="lead-score">
+              <span className={`font-bold text-sm ${ldC.text}`}>{property.lead_score ?? '—'}</span>
               {property.lead_score != null && (
-                <span className={`text-[10px] font-bold ${ldC.text}`}>{ldC.label}</span>
+                <span className={`text-[9px] font-bold ${ldC.text}`}>{ldC.label}</span>
               )}
             </div>
           </div>
 
           {/* Preço */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">Preço</p>
-            <p className="font-bold text-lg" data-field="price">
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Preço</p>
+            <p className="font-bold text-sm" data-field="price">
               {property.estimated_value ? formatCurrency(property.estimated_value) : '—'}
             </p>
           </div>
 
           {/* Oferta */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">Oferta</p>
-            <div className="flex items-center gap-1" data-field="offer">
-              <span className="font-bold text-lg">
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Oferta</p>
+            <div className="flex items-center gap-0.5" data-field="offer">
+              <span className="font-bold text-sm">
                 {property.cash_offer_amount ? formatCurrency(property.cash_offer_amount) : '—'}
               </span>
               {discountPct != null && (
-                <Badge variant={discountPct >= 35 ? 'default' : 'secondary'} className="text-[10px]">-{discountPct}%</Badge>
+                <Badge variant={discountPct >= 35 ? 'default' : 'secondary'} className="text-[8px] px-0.5">-{discountPct}%</Badge>
               )}
             </div>
           </div>
 
+          {/* Sqft */}
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Sqft</p>
+            <div data-field="sqft">
+              <span className="font-bold text-sm">{property.square_feet ? property.square_feet.toLocaleString() : '—'}</span>
+              {pricePsf && <span className="text-muted-foreground text-[9px] ml-0.5">${pricePsf}</span>}
+            </div>
+          </div>
+
+          {/* Q/B */}
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Q/B</p>
+            <p className="font-bold text-sm">{property.bedrooms || '—'}/{property.bathrooms || '—'}</p>
+          </div>
+
           {/* Avg Comps */}
           {avgCompPrice != null && avgCompPrice > 0 && (
-            <div className="bg-card px-3 py-2">
-              <p className="text-[10px] text-muted-foreground font-medium">
-                <Tip text="Comps Avg" tip="Média de preço dos 3 comps mais recentes" />
+            <div className="bg-card px-2 py-1">
+              <p className="text-[9px] text-muted-foreground font-medium">
+                <Tip text="Comps" tip="Média de preço dos 3 comps mais recentes" />
               </p>
-              <p className="font-bold text-lg" data-field="avg-comps">{formatCurrency(avgCompPrice)}</p>
+              <p className="font-bold text-sm" data-field="avg-comps">{formatCurrency(avgCompPrice)}</p>
             </div>
           )}
 
           {/* MAO */}
           {property.mao != null && (
-            <div className="bg-card px-3 py-2">
-              <p className="text-[10px] text-muted-foreground font-medium">
+            <div className="bg-card px-2 py-1">
+              <p className="text-[9px] text-muted-foreground font-medium">
                 <Tip text="MAO" tip="Maximum Allowable Offer — valor máximo que deve pagar" />
               </p>
-              <p className="font-bold text-lg text-blue-600" data-field="mao">{formatCurrency(property.mao)}</p>
+              <p className="font-bold text-sm text-blue-600" data-field="mao">{formatCurrency(property.mao)}</p>
             </div>
           )}
-
-          {/* Sqft */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">Sqft</p>
-            <div data-field="sqft">
-              <span className="font-bold text-lg">{property.square_feet ? property.square_feet.toLocaleString() : '—'}</span>
-              {pricePsf && <span className="text-muted-foreground text-xs ml-1">(${pricePsf}/sqft)</span>}
-            </div>
-          </div>
 
           {/* Lote */}
           {property.lot_size != null && property.lot_size > 0 && (
-            <div className="bg-card px-3 py-2">
-              <p className="text-[10px] text-muted-foreground font-medium">Lote</p>
-              <p className="font-bold text-lg">{property.lot_size.toLocaleString()}</p>
+            <div className="bg-card px-2 py-1">
+              <p className="text-[9px] text-muted-foreground font-medium">Lote</p>
+              <p className="font-bold text-sm">{property.lot_size.toLocaleString()}</p>
             </div>
           )}
 
-          {/* Q/B */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">Q/B</p>
-            <p className="font-bold text-lg">{property.bedrooms || '—'}/{property.bathrooms || '—'}</p>
-          </div>
-
           {/* Ano */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">Ano</p>
-            <p className="font-bold text-lg">{property.year_built || '—'}</p>
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Ano</p>
+            <p className="font-bold text-sm">{property.year_built || '—'}</p>
           </div>
 
           {/* Tipo */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">Tipo</p>
-            <p className="font-bold text-base">{property.property_type || '—'}</p>
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Tipo</p>
+            <p className="font-bold text-xs">{property.property_type || '—'}</p>
           </div>
 
           {/* Meu Score */}
-          <div className="bg-card px-3 py-2">
-            <p className="text-[10px] text-muted-foreground font-medium">Meu Score</p>
+          <div className="bg-card px-2 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Meu Score</p>
             <AIScoreInput propertyId={property.id} currentScore={property.ai_score} currentReasoning={property.ai_reasoning} onSaved={onScoreSaved} inline />
           </div>
         </div>
 
-        {/* Tax info row */}
+        {/* Tax info row - compact */}
         {(property.total_tax_due || property.years_delinquent || property.taxable_value) && (
-          <div className="flex items-center px-3 py-1.5 gap-3 flex-wrap border-t border-border/50 bg-card">
+          <div className="flex items-center px-2 py-1 gap-2 flex-wrap border-t border-border/50 bg-card text-xs">
             {property.total_tax_due != null && (
               <div>
-                <span className="text-muted-foreground font-medium text-xs">Tax Due: </span>
+                <span className="text-muted-foreground font-medium">Tax: </span>
                 <span className="font-bold text-destructive">${Number(property.total_tax_due).toLocaleString()}</span>
               </div>
             )}
             {property.years_delinquent != null && property.years_delinquent > 0 && (
               <div>
-                <span className="text-muted-foreground font-medium text-xs">Delinquent: </span>
-                <span className="font-bold text-destructive">{property.years_delinquent} yr{property.years_delinquent > 1 ? 's' : ''}</span>
+                <span className="text-muted-foreground font-medium">Del: </span>
+                <span className="font-bold text-destructive">{property.years_delinquent}yr</span>
               </div>
             )}
             {property.taxable_value != null && (
               <div>
-                <span className="text-muted-foreground font-medium text-xs">Taxable: </span>
+                <span className="text-muted-foreground font-medium">Taxable: </span>
                 <span className="font-bold">${Number(property.taxable_value).toLocaleString()}</span>
               </div>
             )}

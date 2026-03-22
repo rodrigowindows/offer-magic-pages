@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageSquare, BarChart3 } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { PropertyNotesPanel } from '../property/PropertyNotesPanel';
 import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import { ScoresTable } from './ScoresTable';
@@ -16,8 +15,6 @@ interface PropertyCardProps {
   allProperties: QueueProperty[];
   onScoreSaved?: () => void;
   avgCompPrice?: number | null;
-  onOpenComps?: () => void;
-  compsCount?: number;
 }
 
 const getStatusBackground = (status: string | null | undefined) => {
@@ -28,7 +25,7 @@ const getStatusBackground = (status: string | null | undefined) => {
   }
 };
 
-export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPrice, onOpenComps, compsCount }: PropertyCardProps) => {
+export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPrice }: PropertyCardProps) => {
   const [activeTab, setActiveTab] = useState<'avaliacao' | 'notas'>('avaliacao');
   const [noteCount, setNoteCount] = useState<number>(0);
 
@@ -76,51 +73,37 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
       </div>
 
       {activeTab === 'avaliacao' ? (
-        <div className="p-2 sm:p-3">
-          {/* 2-column layout: Photo | Data (merged info + scores) */}
-          <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-2 sm:gap-3">
-            {/* COL 1: Photo + AI Score button */}
-            <div className="space-y-1.5">
-              <div className="h-[280px] sm:h-[340px] overflow-hidden rounded-lg">
+        <div className="p-1.5 sm:p-2">
+          {/* Compact 2-column layout: Small photo | Data */}
+          <div className="grid grid-cols-1 md:grid-cols-[130px_1fr] gap-1.5 sm:gap-2">
+            {/* COL 1: Small photo + AI Score button */}
+            <div className="space-y-1">
+              <div className="h-[110px] overflow-hidden rounded-md">
                 <PropertyImageDisplay imageUrl={property.property_image_url} address={property.address} />
               </div>
               {property.decision_photos && property.decision_photos.length > 0 && (
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex gap-0.5 flex-wrap">
                   {property.decision_photos.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-12 h-12 rounded overflow-hidden border hover:ring-1 hover:ring-primary">
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-8 h-8 rounded overflow-hidden border hover:ring-1 hover:ring-primary">
                       <img src={url} alt={`Foto ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
                     </a>
                   ))}
                 </div>
               )}
               <AIScoreButton property={property} onScoreUpdate={onScoreSaved ? () => onScoreSaved() : undefined} />
-              {onOpenComps && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onOpenComps}
-                  className="w-full text-sm font-semibold gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  + Adicionar Comp
-                  {compsCount != null && compsCount > 0 && (
-                    <Badge variant="secondary" className="text-[10px] px-1 min-w-[18px] ml-1">{compsCount}</Badge>
-                  )}
-                </Button>
-              )}
             </div>
 
-            {/* COL 2: Merged Info + Scores - expanded */}
-            <div className="space-y-2 min-w-0">
-              {/* Address with external links inline */}
+            {/* COL 2: Address + Info + Scores - compact */}
+            <div className="space-y-1 min-w-0">
+              {/* Address + city + links - 2 lines max */}
               <div>
-                <div className="flex items-start gap-2">
-                  <h3 className="text-lg sm:text-xl font-extrabold leading-tight line-clamp-2 flex-1" data-field="address">
+                <div className="flex items-start gap-1.5">
+                  <h3 className="text-sm sm:text-base font-extrabold leading-tight line-clamp-1 flex-1" data-field="address">
                     {property.address}
                   </h3>
                   <ExternalLinks address={property.address} zillowUrl={property.zillow_url} compact />
                 </div>
-                <p className="text-sm text-muted-foreground font-medium">
+                <p className="text-xs text-muted-foreground font-medium">
                   {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
                   {property.neighborhood && <span className="italic ml-1">· {property.neighborhood}</span>}
                 </p>
@@ -129,7 +112,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
               {/* Owner + Tags row */}
               <PropertyInfoColumn property={property} hideAddress />
 
-              {/* Scores - now full width, more spacious */}
+              {/* Scores - compact expanded mode */}
               <ScoresTable property={property} onScoreSaved={onScoreSaved} avgCompPrice={avgCompPrice} expanded />
             </div>
           </div>

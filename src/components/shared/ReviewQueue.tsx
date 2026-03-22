@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Target, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "./EmptyState";
-import { CompsModal } from "@/components/process/CompsModal";
 import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
@@ -198,13 +197,11 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 allProperties={queue.properties}
                 onScoreSaved={queue.fetchProperties}
                 avgCompPrice={queue.avgCompPrice}
-                onOpenComps={actions.handleOpenComps}
-                compsCount={queue.currentComps.length}
               />
             </div>
 
-            {/* Inline comp form + saved comps list */}
-            <div className="shrink-0 space-y-1">
+            {/* Inline comp form + saved comps list - all inline, no modal */}
+            <div className="shrink-0 space-y-1" id="inline-comps-section">
               <InlineCompForm
                 property={{
                   id: queue.currentProperty.id,
@@ -219,8 +216,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
               {queue.currentComps.length > 0 && (
                 <InlineCompsList
                   comps={queue.currentComps}
-                  onOpenComps={actions.handleOpenComps}
                   subjectSqft={queue.currentProperty.square_feet}
+                  onDeleteComp={async (compId) => {
+                    const { supabase } = await import('@/integrations/supabase/client');
+                    await supabase.from('manual_comps_links').delete().eq('id', compId);
+                    queue.fetchCurrentComps(queue.currentProperty!.id);
+                  }}
                 />
               )}
             </div>
@@ -277,7 +278,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 decisionPhotos={actions.decisionPhotos}
                 onDecisionPhotosChange={actions.setDecisionPhotos}
                 onStartApprove={actions.handleStartApprove}
-                onOpenComps={actions.handleOpenComps}
                 onSkipComps={actions.handleSkipComps}
                 onCancelApprove={actions.handleCancelApprove}
                 onConfirmOffer={actions.handleConfirmOffer}
@@ -295,12 +295,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
         </Card>
       )}
 
-      {/* Comps Modal */}
-      <CompsModal
-        open={!!actions.compsModalProperty}
-        onClose={actions.handleCompsModalClose}
-        property={actions.compsModalProperty}
-      />
+      {/* CompsModal removed - all comp management is inline now */}
     </div>
   );
 };

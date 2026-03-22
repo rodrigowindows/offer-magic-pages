@@ -47,7 +47,6 @@ interface ActionAreaProps {
   onDecisionPhotosChange: (files: File[]) => void;
   // Callbacks
   onStartApprove: () => void;
-  onOpenComps: () => void;
   onSkipComps: () => void;
   onCancelApprove: () => void;
   onConfirmOffer: () => void;
@@ -61,9 +60,14 @@ interface ActionAreaProps {
   onOfferAmountChange: (amount: string) => void;
 }
 
-/** Small comps button shown persistently */
-const CompsButton = ({ onClick, count }: { onClick: () => void; count: number }) => (
-  <Button variant="outline" size="sm" onClick={onClick} className="gap-1 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 h-8">
+/** Small comps button - scrolls to inline form */
+const CompsButton = ({ count }: { count: number }) => (
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => document.getElementById('inline-comps-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+    className="gap-1 text-xs border-blue-300 text-blue-700 hover:bg-blue-50 h-8"
+  >
     <BarChart3 className="h-3 w-3" />
     Comps
     <Badge variant="secondary" className="text-[10px] px-1 min-w-[16px]">{count}</Badge>
@@ -71,13 +75,12 @@ const CompsButton = ({ onClick, count }: { onClick: () => void; count: number })
 );
 
 /** Navigation bar - always shown at top of action area */
-const NavBar = ({ currentIndex, totalFiltered, onPrevious, onNext, compsCount, onOpenComps }: {
+const NavBar = ({ currentIndex, totalFiltered, onPrevious, onNext, compsCount }: {
   currentIndex: number;
   totalFiltered: number;
   onPrevious: () => void;
   onNext: () => void;
   compsCount: number;
-  onOpenComps: () => void;
 }) => (
   <div className="flex items-center justify-between gap-2">
     <Button
@@ -90,7 +93,7 @@ const NavBar = ({ currentIndex, totalFiltered, onPrevious, onNext, compsCount, o
       Anterior
     </Button>
     <div className="flex items-center gap-2">
-      <CompsButton onClick={onOpenComps} count={compsCount} />
+      <CompsButton count={compsCount} />
       <span className="text-base sm:text-lg font-extrabold text-muted-foreground tabular-nums whitespace-nowrap">
         {currentIndex + 1} / {totalFiltered}
       </span>
@@ -126,7 +129,6 @@ export const ActionArea = ({
   decisionPhotos,
   onDecisionPhotosChange,
   onStartApprove,
-  onOpenComps,
   onSkipComps,
   onCancelApprove,
   onConfirmOffer,
@@ -201,7 +203,7 @@ export const ActionArea = ({
   if (statusFilter !== 'pending' && !showReDecide) {
     return (
       <div className="pt-2 border-t space-y-2">
-        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} onOpenComps={onOpenComps} />
+        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} />
         <Button
           variant="outline"
           onClick={() => setShowReDecide(true)}
@@ -218,7 +220,7 @@ export const ActionArea = ({
   if (approvePhase === 'choose') {
     return (
       <div className="pt-2 border-t space-y-2">
-        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} onOpenComps={onOpenComps} />
+        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} />
         <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-2 sm:p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -232,7 +234,14 @@ export const ActionArea = ({
             </Button>
           </div>
           <div className="flex gap-2">
-            <Button onClick={onOpenComps} className="flex-1 h-10 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold gap-2">
+            <Button onClick={() => {
+              document.getElementById('inline-comps-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Focus the URL input
+              setTimeout(() => {
+                const input = document.querySelector('[data-section="inline-comp-form"] input[type="url"]') as HTMLInputElement;
+                input?.focus();
+              }, 400);
+            }} className="flex-1 h-10 sm:h-12 bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold gap-2">
               <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
               COMPS
               <kbd className="hidden sm:inline ml-1 px-1 py-0.5 text-[10px] font-normal bg-blue-800/40 rounded">C</kbd>
@@ -255,7 +264,7 @@ export const ActionArea = ({
 
     return (
       <div className="pt-2 border-t space-y-2">
-        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} onOpenComps={onOpenComps} />
+        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} />
         <div className="bg-green-50 border-2 border-green-300 rounded-lg p-2 sm:p-3 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-green-800">
@@ -337,7 +346,7 @@ export const ActionArea = ({
   if (showRejectForm) {
     return (
       <div className="pt-2 border-t space-y-2">
-        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} onOpenComps={onOpenComps} />
+        <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} />
         <div className="bg-red-50 border border-red-200 rounded-lg p-2 sm:p-3 space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-red-800">Motivo da Rejeição</p>
@@ -409,7 +418,7 @@ export const ActionArea = ({
       )}
 
       {/* Navigation bar */}
-      <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} onOpenComps={onOpenComps} />
+      <NavBar currentIndex={currentIndex} totalFiltered={totalFiltered} onPrevious={onPrevious} onNext={onNext} compsCount={compsCount} />
 
       {/* Critical alerts banner */}
       <AlertBanner />
