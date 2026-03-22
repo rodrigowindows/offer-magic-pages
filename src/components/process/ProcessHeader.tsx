@@ -39,6 +39,9 @@ const HeaderActions = ({ selectedBatch, onBatchChange }: Pick<ProcessHeaderProps
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Informações da API</DialogTitle>
+        </DialogHeader>
         <ApiInfoPanel embedded />
       </DialogContent>
     </Dialog>
