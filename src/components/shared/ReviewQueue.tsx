@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, XCircle, Target, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useReviewActions } from "@/hooks/useReviewActions";
 import { useUndoDecision } from "@/hooks/useUndoDecision";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { extractCompsQualityMetadata } from "@/utils/compsQualityExtractor";
 
 
 interface ReviewQueueProps {
@@ -36,6 +37,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   }, [queue.fetchProperties, queue.fetchDailyStats, queue.fetchStatusCounts]);
 
   const undo = useUndoDecision(advanceAfterAction);
+
+  // Extract comps quality metadata for property alerts validation
+  const compsQuality = useMemo(
+    () => extractCompsQualityMetadata(queue.currentComps || []),
+    [queue.currentComps],
+  );
 
   const actions = useReviewActions({
     currentProperty: queue.currentProperty,
@@ -234,6 +241,12 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                   renovation_pct: (queue.currentProperty as any).renovation_pct ?? null,
                   city: queue.currentProperty.city ?? null,
                   zip_code: (queue.currentProperty as any).zip_code ?? null,
+                  // Comps quality fields derived from saved comps
+                  comps_count: compsQuality.comps_count,
+                  comps_zip_codes: compsQuality.comps_zip_codes,
+                  comps_min_sqft: compsQuality.comps_min_sqft,
+                  comps_avg_sqft: compsQuality.comps_avg_sqft,
+                  comps_property_types: compsQuality.comps_property_types,
                 } : null}
                 showRejectForm={actions.showRejectForm}
                 selectedReason={actions.selectedReason}
