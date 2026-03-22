@@ -55,6 +55,7 @@ interface ApprovedProperty {
   arv: number | null;
   mao: number | null;
   avg_price_per_sqft: number | null;
+  property_type: string | null;
 }
 
 interface CompDataLocal {
