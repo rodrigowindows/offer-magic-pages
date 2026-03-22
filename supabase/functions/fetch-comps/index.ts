@@ -1162,17 +1162,43 @@ serve(async (req) => {
     let sortedComps: ComparableData[] = [];
     let addressNotFound = false;
     let noResultsFound = false;
+    const zipWarnings: string[] = [];
 
     if (comps && comps.length > 0) {
       const compsBeforeFilters = comps.length;
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Processando comps: ${compsBeforeFilters} comps antes de filtros`);
-      
+
       const filteredComps = addDistanceAndFilterByRadius(comps, latitude, longitude, radius);
       const compsAfterDistanceFilter = filteredComps.length;
       if (filteredComps.length > 0) {
         comps = filteredComps;
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Após filtro de distância: ${compsAfterDistanceFilter} comps (removidos: ${compsBeforeFilters - compsAfterDistanceFilter})`);
       }
+
+      // ── ZIP Code Validation ──
+      // Prefer comps from same ZIP code. Only use other-ZIP comps if insufficient same-ZIP comps.
+      if (extractedZipCode) {
+        const sameZip = comps.filter(c => c.zipCode === extractedZipCode);
+        const otherZip = comps.filter(c => c.zipCode && c.zipCode !== extractedZipCode);
+
+        if (otherZip.length > 0) {
+          const otherZipCodes = [...new Set(otherZip.map(c => c.zipCode))];
+          console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ ZIP MISMATCH: ${otherZip.length} comps from different ZIPs: ${otherZipCodes.join(', ')} (subject: ${extractedZipCode})`);
+          zipWarnings.push(`${otherZip.length} comps from ZIP ${otherZipCodes.join(', ')} (subject: ${extractedZipCode})`);
+        }
+
+        // If we have at least 3 same-ZIP comps, use only those
+        if (sameZip.length >= 3) {
+          console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ✅ Using ${sameZip.length} same-ZIP comps (filtered out ${otherZip.length} from other ZIPs)`);
+          comps = sameZip;
+        } else if (sameZip.length > 0) {
+          // Prioritize same-ZIP comps but include others to reach minimum
+          console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] ⚠️ Only ${sameZip.length} same-ZIP comps, including ${otherZip.length} from nearby ZIPs`);
+          comps = [...sameZip, ...otherZip];
+        }
+        // If 0 same-ZIP comps, keep all (better than nothing, but warn)
+      }
+      const compsAfterZipFilter = comps.length;
 
       const uniqueComps = Array.from(
         new Map(comps.map(c => [`${c.address}-${c.salePrice}`, c])).values()
@@ -1184,7 +1210,7 @@ serve(async (req) => {
         .filter(c => c.salePrice > 10000)
         .sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime())
         .slice(0, 10);
-      
+
       const compsAfterPriceFilter = sortedComps.length;
       console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Após filtro de preço e ordenação: ${compsAfterPriceFilter} comps finais`);
 
@@ -1193,6 +1219,7 @@ serve(async (req) => {
         const compsSummary = sortedComps.slice(0, 3).map((c, i) => ({
           index: i + 1,
           address: c.address,
+          zipCode: c.zipCode,
           price: c.salePrice,
           distance: c.distance,
           sqft: c.sqft
@@ -1200,8 +1227,8 @@ serve(async (req) => {
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📋 Primeiros comps processados:`, compsSummary);
         console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 🗺️ First comp coordinates:`, sortedComps[0]?.latitude, sortedComps[0]?.longitude);
       }
-      
-      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Resumo processamento: ${compsBeforeFilters} → ${compsAfterDistanceFilter} → ${compsAfterDeduplication} → ${compsAfterPriceFilter} comps finais`);
+
+      console.log(`[${new Date().toISOString()}] [REQUEST-${requestId}] 📊 Resumo processamento: ${compsBeforeFilters} → ${compsAfterDistanceFilter} → ZIP:${compsAfterZipFilter} → ${compsAfterDeduplication} → ${compsAfterPriceFilter} comps finais`);
     } else {
       noResultsFound = true;
       addressNotFound = true;
@@ -1254,7 +1281,8 @@ serve(async (req) => {
       },
       testedSources,
       apiErrors,
-      processingMetrics
+      processingMetrics,
+      zipWarnings: zipWarnings.length > 0 ? zipWarnings : undefined,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

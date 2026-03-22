@@ -17,6 +17,8 @@ export interface CompData {
   bathrooms?: number;
   sale_date?: string;
   address?: string;
+  zip_code?: string;
+  property_type?: string;
 }
 
 export interface SavedComp {
