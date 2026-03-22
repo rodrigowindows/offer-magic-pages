@@ -6,9 +6,11 @@ import { PropertyStatusBanner } from './PropertyStatusBanner';
 
 interface PropertyInfoColumnProps {
   property: QueueProperty;
+  /** When true, hides the address block (rendered separately in parent) */
+  hideAddress?: boolean;
 }
 
-export const PropertyInfoColumn = ({ property }: PropertyInfoColumnProps) => {
+export const PropertyInfoColumn = ({ property, hideAddress }: PropertyInfoColumnProps) => {
   const tagList = parseTags(property.tags);
 
   // Hide action tags on rejected properties
@@ -21,45 +23,48 @@ export const PropertyInfoColumn = ({ property }: PropertyInfoColumnProps) => {
 
   return (
     <div className="flex flex-col gap-2 min-w-0">
-      {/* Address */}
-      <div>
-        <h3 className="text-base sm:text-lg font-extrabold leading-tight line-clamp-2" data-field="address">
-          {property.address}
-        </h3>
-        <p className="text-sm text-muted-foreground font-medium">
-          {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
-        </p>
-        {property.neighborhood && (
-          <p className="text-xs text-muted-foreground italic">{property.neighborhood}</p>
-        )}
-      </div>
-
-      {/* Owner info */}
-      {property.owner_name && (
-        <p className="text-sm text-muted-foreground" data-field="owner-name">
-          <span className="font-semibold">Dono:</span> {property.owner_name}
-        </p>
-      )}
-      {property.owner_phone && (
-        <p className="text-sm text-muted-foreground">
-          <span className="font-semibold">Tel:</span> {property.owner_phone}
-        </p>
-      )}
-
-      {/* Tags */}
-      {filteredTags.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {filteredTags.map(tag => (
-            <Badge
-              key={tag}
-              variant="outline"
-              className={`text-[10px] font-semibold ${TAG_COLORS[tag] || 'bg-gray-50 text-gray-600 border-gray-300'}`}
-            >
-              {tag.replace(/^\d+-/, '').replace(/_/g, ' ')}
-            </Badge>
-          ))}
+      {/* Address - only show when not hidden */}
+      {!hideAddress && (
+        <div>
+          <h3 className="text-base sm:text-lg font-extrabold leading-tight line-clamp-2" data-field="address">
+            {property.address}
+          </h3>
+          <p className="text-sm text-muted-foreground font-medium">
+            {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
+          </p>
+          {property.neighborhood && (
+            <p className="text-xs text-muted-foreground italic">{property.neighborhood}</p>
+          )}
         </div>
       )}
+
+      {/* Owner + Tags in a compact row */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {property.owner_name && (
+          <p className="text-sm text-muted-foreground" data-field="owner-name">
+            <span className="font-semibold">Dono:</span> {property.owner_name}
+          </p>
+        )}
+        {property.owner_phone && (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold">Tel:</span> {property.owner_phone}
+          </p>
+        )}
+        {/* Tags inline */}
+        {filteredTags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {filteredTags.map(tag => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={`text-[10px] font-semibold ${TAG_COLORS[tag] || 'bg-gray-50 text-gray-600 border-gray-300'}`}
+              >
+                {tag.replace(/^\d+-/, '').replace(/_/g, ' ')}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Pre-denial warnings */}
       {suggestions.length > 0 && (

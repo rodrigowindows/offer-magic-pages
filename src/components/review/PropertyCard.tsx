@@ -77,12 +77,11 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
 
       {activeTab === 'avaliacao' ? (
         <div className="p-2 sm:p-3">
-          <div className="grid grid-cols-1 md:grid-cols-[320px_1fr_1fr] gap-2 sm:gap-3">
-            {/* COL 1: Photo + Links */}
+          {/* 2-column layout: Photo | Data (merged info + scores) */}
+          <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-2 sm:gap-3">
+            {/* COL 1: Photo + AI Score button */}
             <div className="space-y-1.5">
-
-              <div className="h-[260px] sm:h-[320px] overflow-hidden rounded-lg">
-
+              <div className="h-[280px] sm:h-[340px] overflow-hidden rounded-lg">
                 <PropertyImageDisplay imageUrl={property.property_image_url} address={property.address} />
               </div>
               {property.decision_photos && property.decision_photos.length > 0 && (
@@ -109,15 +108,29 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
                   )}
                 </Button>
               )}
-              <ExternalLinks address={property.address} zillowUrl={property.zillow_url} />
             </div>
 
-            {/* COL 2: Info */}
-            <PropertyInfoColumn property={property} />
+            {/* COL 2: Merged Info + Scores - expanded */}
+            <div className="space-y-2 min-w-0">
+              {/* Address with external links inline */}
+              <div>
+                <div className="flex items-start gap-2">
+                  <h3 className="text-lg sm:text-xl font-extrabold leading-tight line-clamp-2 flex-1" data-field="address">
+                    {property.address}
+                  </h3>
+                  <ExternalLinks address={property.address} zillowUrl={property.zillow_url} compact />
+                </div>
+                <p className="text-sm text-muted-foreground font-medium">
+                  {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
+                  {property.neighborhood && <span className="italic ml-1">· {property.neighborhood}</span>}
+                </p>
+              </div>
 
-            {/* COL 3: Scores */}
-            <div>
-              <ScoresTable property={property} onScoreSaved={onScoreSaved} avgCompPrice={avgCompPrice} />
+              {/* Owner + Tags row */}
+              <PropertyInfoColumn property={property} hideAddress />
+
+              {/* Scores - now full width, more spacious */}
+              <ScoresTable property={property} onScoreSaved={onScoreSaved} avgCompPrice={avgCompPrice} expanded />
             </div>
           </div>
         </div>

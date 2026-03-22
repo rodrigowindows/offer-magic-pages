@@ -8,6 +8,7 @@ import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
 import { InlineCompsList } from "@/components/review/InlineCompsList";
+import { InlineCompForm } from "@/components/review/InlineCompForm";
 import { SpeedTracker } from "@/components/review/SpeedTracker";
 import { CompletenessIndicator } from "@/components/review/CompletenessIndicator";
 import { ExportDecisions } from "@/components/review/ExportDecisions";
@@ -202,15 +203,27 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
               />
             </div>
 
-            {queue.currentComps.length > 0 && (
-              <div className="shrink-0">
+            {/* Inline comp form + saved comps list */}
+            <div className="shrink-0 space-y-1">
+              <InlineCompForm
+                property={{
+                  id: queue.currentProperty.id,
+                  address: queue.currentProperty.address,
+                  city: queue.currentProperty.city ?? null,
+                  state: queue.currentProperty.state ?? null,
+                  zip_code: (queue.currentProperty as any).zip_code ?? null,
+                  square_feet: queue.currentProperty.square_feet ?? null,
+                }}
+                onCompAdded={() => queue.fetchCurrentComps(queue.currentProperty!.id)}
+              />
+              {queue.currentComps.length > 0 && (
                 <InlineCompsList
                   comps={queue.currentComps}
                   onOpenComps={actions.handleOpenComps}
                   subjectSqft={queue.currentProperty.square_feet}
                 />
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="shrink-0">
               <ActionArea
