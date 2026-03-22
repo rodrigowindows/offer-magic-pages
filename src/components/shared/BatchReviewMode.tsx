@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -163,6 +163,7 @@ export const BatchReviewMode = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogTitle className="sr-only">Revisão em Lote</DialogTitle>
         {/* Header */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">

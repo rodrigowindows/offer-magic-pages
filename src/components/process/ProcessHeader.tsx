@@ -1,6 +1,6 @@
 import { ChevronLeft, Code, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { AdminChat } from '@/components/ai/AdminChat';
 import { BatchSelector } from './BatchSelector';
@@ -39,6 +39,9 @@ const HeaderActions = ({ selectedBatch, onBatchChange }: Pick<ProcessHeaderProps
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Informações da API</DialogTitle>
+        </DialogHeader>
         <ApiInfoPanel embedded />
       </DialogContent>
     </Dialog>
