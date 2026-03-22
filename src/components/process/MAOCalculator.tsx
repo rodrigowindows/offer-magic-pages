@@ -31,6 +31,7 @@ import {
   AlertCircle,
   RefreshCw,
   Copy,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface ApprovedProperty {
@@ -56,15 +57,23 @@ interface ApprovedProperty {
   avg_price_per_sqft: number | null;
 }
 
-interface CompData {
+interface CompDataLocal {
   sale_price?: number;
   square_feet?: number;
+  address?: string;
+  zip_code?: string;
+  property_type?: string;
 }
 
 interface ManualComp {
   id: string;
   property_id: string | null;
-  comp_data: CompData | null;
+  comp_data: CompDataLocal | null;
+}
+
+interface CompsWarning {
+  message: string;
+  severity: 'critical' | 'warning';
 }
 
 type RenovationType = 'light' | 'medium' | 'heavy' | 'custom';
@@ -101,6 +110,7 @@ export const MAOCalculator = () => {
   const [wholesalePct, setWholesalePct] = useState<string>('10');
   const [wholesaleValue, setWholesaleValue] = useState<string>('');
   const [compsCount, setCompsCount] = useState(0);
+  const [compsWarnings, setCompsWarnings] = useState<CompsWarning[]>([]);
 
   const selectedProperty = properties.find(p => p.id === selectedPropertyId);
 
@@ -122,7 +132,7 @@ export const MAOCalculator = () => {
     setLoading(false);
   };
 
-  // Fetch comps for selected property
+  // Fetch comps for selected property + validate quality
   const fetchCompsData = async (propertyId: string) => {
     const { data, error } = await supabase
       .from('manual_comps_links')
@@ -150,6 +160,84 @@ export const MAOCalculator = () => {
     } else {
       setAvgPricePerSqft(0);
     }
+
+    // ── Comps Quality Validation ──
+    const prop = properties.find(p => p.id === propertyId);
+    const warnings: CompsWarning[] = [];
+
+    if (prop && validComps.length > 0) {
+      const propZip = prop.zip_code;
+
+      // 1. Check ZIP code mismatches
+      if (propZip) {
+        const compZips: string[] = [];
+        for (const c of validComps) {
+          const cd = c.comp_data;
+          if (cd?.zip_code) {
+            compZips.push(cd.zip_code);
+          } else if (cd?.address) {
+            const zipMatch = cd.address.match(/\b(\d{5})(?:-\d{4})?\b/);
+            if (zipMatch) compZips.push(zipMatch[1]);
+          }
+        }
+        const wrongZips = compZips.filter(z => z !== propZip);
+        if (wrongZips.length > 0) {
+          const unique = [...new Set(wrongZips)];
+          warnings.push({
+            severity: 'critical',
+            message: `${wrongZips.length} comp(s) de ZIP diferente: ${unique.join(', ')} (propriedade: ${propZip})`,
+          });
+        }
+      }
+
+      // 2. Check for sqft = 1 (corrupted data)
+      const minSqft = Math.min(...validComps.map(c => c.comp_data!.square_feet!));
+      if (minSqft <= 1) {
+        warnings.push({
+          severity: 'critical',
+          message: `Comp com Sqft = ${minSqft} — dados corrompidos, $/sqft será absurdo`,
+        });
+      }
+
+      // 3. Check land with house comps
+      const propType = (prop.property_type || '').toLowerCase();
+      const tags: string[] = []; // No tags available here, but check property_type
+      const isLand = propType.includes('land') || propType.includes('vacant');
+      if (isLand) {
+        const houseComps = validComps.filter(c => {
+          const t = (c.comp_data?.property_type || '').toLowerCase();
+          return t && !t.includes('land') && !t.includes('vacant');
+        });
+        if (houseComps.length > 0) {
+          warnings.push({
+            severity: 'critical',
+            message: `Terreno avaliado com ${houseComps.length} comp(s) de CASAS — categorias incompatíveis`,
+          });
+        }
+      }
+
+      // 4. Check for duplicate comps (same address appearing in different properties)
+      const compAddresses = validComps
+        .map(c => c.comp_data?.address?.trim().toLowerCase())
+        .filter(Boolean);
+      const uniqueAddresses = new Set(compAddresses);
+      if (compAddresses.length > 0 && uniqueAddresses.size < compAddresses.length) {
+        warnings.push({
+          severity: 'warning',
+          message: 'Comps duplicados detectados — mesmo endereço repetido',
+        });
+      }
+
+      // 5. Check if no sqft on property
+      if (!prop.square_feet) {
+        warnings.push({
+          severity: 'critical',
+          message: 'Propriedade sem Sqft — impossível calcular ARV corretamente',
+        });
+      }
+    }
+
+    setCompsWarnings(warnings);
   };
 
   useEffect(() => {
@@ -645,15 +733,43 @@ export const MAOCalculator = () => {
                   </div>
                 </div>
 
+                {/* Comps Quality Warnings */}
+                {compsWarnings.length > 0 && (
+                  <div className="space-y-1.5 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
+                      <span className="text-xs font-bold text-red-800">
+                        {compsWarnings.length} problema{compsWarnings.length > 1 ? 's' : ''} nos comps
+                      </span>
+                    </div>
+                    {compsWarnings.map((w, i) => (
+                      <p key={i} className={`text-[10px] pl-5.5 ${w.severity === 'critical' ? 'text-red-700 font-medium' : 'text-amber-700'}`}>
+                        {w.severity === 'critical' ? '⛔' : '⚠️'} {w.message}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
                 {/* Save Button */}
                 <div className="flex gap-2 pt-2">
                   <Button
-                    onClick={handleSave}
+                    onClick={() => {
+                      const hasCritical = compsWarnings.some(w => w.severity === 'critical');
+                      if (hasCritical) {
+                        const confirmed = window.confirm(
+                          '⛔ ATENÇÃO: Os comps desta propriedade têm problemas críticos:\n\n' +
+                          compsWarnings.filter(w => w.severity === 'critical').map(w => `• ${w.message}`).join('\n') +
+                          '\n\nDeseja salvar o MAO mesmo assim?'
+                        );
+                        if (!confirmed) return;
+                      }
+                      handleSave();
+                    }}
                     disabled={saving}
-                    className="flex-1 gap-2"
+                    className={`flex-1 gap-2 ${compsWarnings.some(w => w.severity === 'critical') ? 'bg-red-600 hover:bg-red-700' : ''}`}
                   >
                     <Save className="h-4 w-4" />
-                    {saving ? 'Salvando...' : 'Salvar MAO'}
+                    {saving ? 'Salvando...' : compsWarnings.some(w => w.severity === 'critical') ? '⚠️ Salvar MAO (com alertas)' : 'Salvar MAO'}
                   </Button>
                 </div>
               </CardContent>

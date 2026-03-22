@@ -135,6 +135,23 @@ export const CompsModal = ({ open, onClose, property }: CompsModalProps) => {
       return;
     }
 
+    // ZIP code mismatch warning
+    if (property?.zip_code && draft.address) {
+      const compZipMatch = draft.address.match(/\b(\d{5})(?:-\d{4})?\b/);
+      if (compZipMatch && compZipMatch[1] !== property.zip_code) {
+        const confirmed = window.confirm(
+          `⚠️ ZIP CODE DIFERENTE!\n\nComp: ZIP ${compZipMatch[1]}\nPropriedade: ZIP ${property.zip_code}\n\nComps de ZIP codes diferentes podem distorcer o ARV.\nDeseja adicionar mesmo assim?`
+        );
+        if (!confirmed) return;
+      }
+    }
+
+    // Sqft = 1 warning
+    if (sqftNum <= 1) {
+      toast({ title: 'Sqft inválido', description: 'Sqft deve ser maior que 1', variant: 'destructive' });
+      return;
+    }
+
     const compData: CompData = {
       sale_price: priceNum,
       square_feet: sqftNum,
