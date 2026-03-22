@@ -197,6 +197,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 allProperties={queue.properties}
                 onScoreSaved={queue.fetchProperties}
                 avgCompPrice={queue.avgCompPrice}
+                onOpenComps={actions.handleOpenComps}
+                compsCount={queue.currentComps.length}
               />
             </div>
 

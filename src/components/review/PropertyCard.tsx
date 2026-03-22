@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, BarChart3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { PropertyNotesPanel } from '../property/PropertyNotesPanel';
 import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import { ScoresTable } from './ScoresTable';
@@ -15,6 +16,8 @@ interface PropertyCardProps {
   allProperties: QueueProperty[];
   onScoreSaved?: () => void;
   avgCompPrice?: number | null;
+  onOpenComps?: () => void;
+  compsCount?: number;
 }
 
 const getStatusBackground = (status: string | null | undefined) => {
@@ -25,7 +28,7 @@ const getStatusBackground = (status: string | null | undefined) => {
   }
 };
 
-export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPrice }: PropertyCardProps) => {
+export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPrice, onOpenComps, compsCount }: PropertyCardProps) => {
   const [activeTab, setActiveTab] = useState<'avaliacao' | 'notas'>('avaliacao');
   const [noteCount, setNoteCount] = useState<number>(0);
 
@@ -92,6 +95,20 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
                 </div>
               )}
               <AIScoreButton property={property} onScoreUpdate={onScoreSaved ? () => onScoreSaved() : undefined} />
+              {onOpenComps && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenComps}
+                  className="w-full text-sm font-semibold gap-1.5 border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  + Adicionar Comp
+                  {compsCount != null && compsCount > 0 && (
+                    <Badge variant="secondary" className="text-[10px] px-1 min-w-[18px] ml-1">{compsCount}</Badge>
+                  )}
+                </Button>
+              )}
               <ExternalLinks address={property.address} zillowUrl={property.zillow_url} />
             </div>
 
