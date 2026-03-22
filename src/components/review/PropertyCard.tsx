@@ -74,18 +74,18 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
 
       {activeTab === 'avaliacao' ? (
         <div className="p-2 sm:p-3">
-          <div className="grid grid-cols-1 md:grid-cols-[240px_1fr_1fr] gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-[320px_1fr_1fr] gap-2 sm:gap-3">
             {/* COL 1: Photo + Links */}
             <div className="space-y-1.5">
 
-              <div className="h-[200px] sm:h-[240px] overflow-hidden rounded-lg">
+              <div className="h-[260px] sm:h-[320px] overflow-hidden rounded-lg">
 
                 <PropertyImageDisplay imageUrl={property.property_image_url} address={property.address} />
               </div>
               {property.decision_photos && property.decision_photos.length > 0 && (
                 <div className="flex gap-1 flex-wrap">
                   {property.decision_photos.map((url, i) => (
-                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-8 h-8 rounded overflow-hidden border hover:ring-1 hover:ring-primary">
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block w-12 h-12 rounded overflow-hidden border hover:ring-1 hover:ring-primary">
                       <img src={url} alt={`Foto ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
                     </a>
                   ))}
