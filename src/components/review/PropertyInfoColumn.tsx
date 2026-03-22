@@ -20,28 +20,28 @@ export const PropertyInfoColumn = ({ property }: PropertyInfoColumnProps) => {
   const suggestions = getPreDenialSuggestions(property);
 
   return (
-    <div className="flex flex-col gap-1.5 min-w-0">
+    <div className="flex flex-col gap-2 min-w-0">
       {/* Address */}
       <div>
-        <h3 className="text-sm sm:text-base font-extrabold leading-tight line-clamp-2" data-field="address">
+        <h3 className="text-base sm:text-lg font-extrabold leading-tight line-clamp-2" data-field="address">
           {property.address}
         </h3>
-        <p className="text-xs text-muted-foreground font-medium">
+        <p className="text-sm text-muted-foreground font-medium">
           {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
         </p>
         {property.neighborhood && (
-          <p className="text-[10px] text-muted-foreground italic">{property.neighborhood}</p>
+          <p className="text-xs text-muted-foreground italic">{property.neighborhood}</p>
         )}
       </div>
 
       {/* Owner info */}
       {property.owner_name && (
-        <p className="text-xs text-muted-foreground" data-field="owner-name">
+        <p className="text-sm text-muted-foreground" data-field="owner-name">
           <span className="font-semibold">Dono:</span> {property.owner_name}
         </p>
       )}
       {property.owner_phone && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           <span className="font-semibold">Tel:</span> {property.owner_phone}
         </p>
       )}

@@ -198,14 +198,17 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 onScoreSaved={queue.fetchProperties}
                 avgCompPrice={queue.avgCompPrice}
               />
-              {queue.currentComps.length > 0 && (
+            </div>
+
+            {queue.currentComps.length > 0 && (
+              <div className="shrink-0">
                 <InlineCompsList
                   comps={queue.currentComps}
                   onOpenComps={actions.handleOpenComps}
                   subjectSqft={queue.currentProperty.square_feet}
                 />
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="shrink-0">
               <ActionArea
