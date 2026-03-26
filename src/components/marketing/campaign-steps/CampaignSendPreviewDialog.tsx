@@ -44,10 +44,14 @@ export function CampaignSendPreviewDialog({
   smsDelay, setSmsDelay, sending, progressStats,
   getAllPhones, getAllEmails, renderTemplatePreview, onConfirmSend,
 }: Props) {
-  const { totalContacts, validContacts } = useMemo(() => ({
-    totalContacts: selectedProps.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : getAllPhones(p).length), 0),
-    validContacts: selectedProps.filter(p => selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0).length,
-  }), [selectedProps, selectedChannel, getAllPhones, getAllEmails]);
+  const { totalContacts, validContacts, skippedContacts } = useMemo(() => {
+    const valid = selectedProps.filter(p => selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0);
+    return {
+      totalContacts: valid.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : getAllPhones(p).length), 0),
+      validContacts: valid.length,
+      skippedContacts: selectedProps.length - valid.length,
+    };
+  }, [selectedProps, selectedChannel, getAllPhones, getAllEmails]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,11 +83,19 @@ export function CampaignSendPreviewDialog({
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className={`grid ${skippedContacts > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-4`}>
                 <div className="text-center"><div className="text-2xl font-bold text-primary">{selectedProps.length}</div><div className="text-sm text-muted-foreground">Propriedades</div></div>
-                <div className="text-center"><div className="text-2xl font-bold text-success">{validContacts}</div><div className="text-sm text-muted-foreground">Contatos Válidos</div></div>
+                <div className="text-center"><div className="text-2xl font-bold text-success">{validContacts}</div><div className="text-sm text-muted-foreground">Com Contato</div></div>
+                {skippedContacts > 0 && (
+                  <div className="text-center"><div className="text-2xl font-bold text-destructive">{skippedContacts}</div><div className="text-sm text-muted-foreground">Sem {selectedChannel === 'email' ? 'Email' : 'Telefone'}</div></div>
+                )}
                 <div className="text-center"><div className="text-2xl font-bold text-accent">{totalContacts}</div><div className="text-sm text-muted-foreground">Mensagens</div></div>
               </div>
+              {skippedContacts > 0 && (
+                <div className="mt-3 p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm">
+                  <span className="font-medium">⚠️ {skippedContacts} propriedades serão puladas</span> — sem {selectedChannel === 'email' ? 'email' : 'telefone'} válido. O envio será feito apenas para as {validContacts} com contato disponível.
+                </div>
+              )}
             </CardContent>
           </Card>
 
