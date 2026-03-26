@@ -159,8 +159,10 @@ export const useCampaignSender = ({
       }
     });
 
-    if (propertiesWithoutContacts > 0) {
-      errors.push({ type: 'error', message: `${propertiesWithoutContacts} propriedades não têm ${channel === 'email' ? 'email' : 'telefone'} válido` });
+    if (propertiesWithContacts === 0 && propertiesWithoutContacts > 0) {
+      errors.push({ type: 'error', message: `Nenhuma propriedade tem ${channel === 'email' ? 'email' : 'telefone'} válido` });
+    } else if (propertiesWithoutContacts > 0) {
+      warnings.push({ type: 'warning', message: `${propertiesWithoutContacts} propriedades serão puladas automaticamente por não terem ${channel === 'email' ? 'email' : 'telefone'} válido` });
     }
     if (propertiesWithContacts > 0 && totalContacts > propertiesWithContacts * 2) {
       warnings.push({ type: 'warning', message: `Algumas propriedades têm múltiplos contatos (${totalContacts} total). O sistema tentará todos sequencialmente.` });
