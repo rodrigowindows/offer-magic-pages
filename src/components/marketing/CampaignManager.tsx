@@ -160,22 +160,35 @@ export const CampaignManager = () => {
     const issues = validateCampaignReadiness(filters.selectedProps);
     const errors = issues.filter(i => i.type === 'error');
     const warnings = issues.filter(i => i.type === 'warning');
-    if (errors.length > 0) { toast({ title: 'Campanha não pode ser enviada', description: errors.map(e => e.message).join('. '), variant: 'destructive', duration: 8000 }); return; }
-    if (warnings.length > 0 && !window.confirm(`⚠️ AVISOS\n\n${warnings.map(w => w.message).join('\n')}\n\nContinuar?`)) return;
+    console.log('[Campaign] Validation results:', { errors: errors.length, warnings: warnings.length, issues, totalProps: filters.selectedProps.length });
+    if (errors.length > 0) {
+      console.error('[Campaign] BLOCKED by errors:', errors);
+      toast({ title: 'Campanha não pode ser enviada', description: errors.map(e => e.message).join('. '), variant: 'destructive', duration: 8000 });
+      return;
+    }
+    if (warnings.length > 0) {
+      console.warn('[Campaign] Warnings (user will confirm):', warnings);
+      if (!window.confirm(`⚠️ AVISOS\n\n${warnings.map(w => w.message).join('\n')}\n\nContinuar?`)) return;
+    }
     try {
       const health = await performSystemHealthCheck();
+      console.log('[Campaign] Health check:', health);
       if (!health.api) { toast({ title: 'Sistema indisponível', description: 'API não está respondendo.', variant: 'destructive' }); return; }
-    } catch { toast({ title: 'Erro de conectividade', variant: 'destructive' }); return; }
+    } catch (e) { console.error('[Campaign] Health check failed:', e); toast({ title: 'Erro de conectividade', variant: 'destructive' }); return; }
     setShowSendPreview(true);
   }, [filters.selectedProps, validateCampaignReadiness, performSystemHealthCheck, toast]);
 
   const handleConfirmSendCampaign = useCallback(async () => {
     setShowSendPreview(false);
-    try { await checkHealth(); } catch { toast({ title: 'Serviço indisponível', variant: 'destructive' }); return; }
-    if (filters.selectedProps.length === 0 || !selectedTemplate) { toast({ title: 'Erro de validação', variant: 'destructive' }); return; }
-    if (filters.selectedProps.length > 100) { toast({ title: 'Máximo 100 propriedades por campanha', variant: 'destructive' }); return; }
-    const totalContacts = filters.selectedProps.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : filters.getAllPhones(p).length), 0);
-    const confirmed = window.confirm(`🚀 CONFIRMAR ENVIO\n\nTemplate: ${selectedTemplate.name}\nCanal: ${selectedChannel.toUpperCase()}\nPropriedades: ${filters.selectedProps.length}\nMensagens: ${totalContacts}\n\nContinuar?`);
+    console.log('[Campaign] Confirm send started', { props: filters.selectedProps.length, template: selectedTemplate?.name, channel: selectedChannel });
+    try { await checkHealth(); } catch (e) { console.error('[Campaign] Pre-send health check failed:', e); toast({ title: 'Serviço indisponível', variant: 'destructive' }); return; }
+    if (filters.selectedProps.length === 0 || !selectedTemplate) { console.error('[Campaign] Missing props or template'); toast({ title: 'Erro de validação', variant: 'destructive' }); return; }
+    if (filters.selectedProps.length > 100) { console.warn('[Campaign] Too many props:', filters.selectedProps.length); toast({ title: 'Máximo 100 propriedades por campanha', variant: 'destructive' }); return; }
+    const validForChannel = filters.selectedProps.filter(p => selectedChannel === 'email' ? getAllEmails(p).length > 0 : filters.getAllPhones(p).length > 0);
+    const skipped = filters.selectedProps.length - validForChannel.length;
+    const totalContacts = validForChannel.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : filters.getAllPhones(p).length), 0);
+    console.log('[Campaign] Contact summary:', { valid: validForChannel.length, skipped, totalContacts });
+    const confirmed = window.confirm(`🚀 CONFIRMAR ENVIO\n\nTemplate: ${selectedTemplate.name}\nCanal: ${selectedChannel.toUpperCase()}\nPropriedades: ${validForChannel.length} de ${filters.selectedProps.length}${skipped > 0 ? ` (${skipped} puladas)` : ''}\nMensagens: ${totalContacts}\n\nContinuar?`);
     if (!confirmed) return;
     await executeCampaignSend(filters.selectedProps, () => filters.setSelectedIds([]));
   }, [filters.selectedProps, filters.getAllPhones, filters.setSelectedIds, selectedTemplate, selectedChannel, executeCampaignSend, toast]);
