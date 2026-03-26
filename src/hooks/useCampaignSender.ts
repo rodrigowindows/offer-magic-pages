@@ -207,32 +207,49 @@ export const useCampaignSender = ({
   }, [selectedChannel, getAllPhones]);
 
   const executeCampaignSend = useCallback(async (selectedProps: CampaignProperty[], onComplete: () => void) => {
+    // Filter to only properties with valid contacts for the channel
+    const validProps = selectedProps.filter(prop => {
+      if (selectedChannel === 'email') return getAllEmails(prop).length > 0;
+      return getAllPhones(prop).length > 0;
+    });
+    const skippedCount = selectedProps.length - validProps.length;
+
+    if (validProps.length === 0) {
+      toast({ title: 'Nenhum contato válido', description: `Nenhuma propriedade tem ${selectedChannel === 'email' ? 'email' : 'telefone'} disponível.`, variant: 'destructive' });
+      return;
+    }
+
+    if (skippedCount > 0) {
+      toast({ title: `⏭️ ${skippedCount} propriedades puladas`, description: `Sem ${selectedChannel === 'email' ? 'email' : 'telefone'} válido. Enviando para ${validProps.length} propriedades.` });
+    }
+
     setSending(true);
     let successCount = 0, failCount = 0, totalMessagesSent = 0, completedCount = 0;
     const batchSize = 5;
-    updateProgress(0, selectedProps.length, 0, 0);
+    updateProgress(0, validProps.length, 0, 0);
 
-    for (let batchStart = 0; batchStart < selectedProps.length; batchStart += batchSize) {
-      const batch = selectedProps.slice(batchStart, Math.min(batchStart + batchSize, selectedProps.length));
+    for (let batchStart = 0; batchStart < validProps.length; batchStart += batchSize) {
+      const batch = validProps.slice(batchStart, Math.min(batchStart + batchSize, validProps.length));
       const results = await Promise.allSettled(batch.map((prop, i) => processPropertySend(prop, batchStart + i)));
       results.forEach((result) => {
         completedCount++;
         if (result.status === 'fulfilled' && result.value.success) { successCount++; totalMessagesSent += result.value.messagesSent || 1; }
         else { failCount++; }
-        updateProgress(completedCount, selectedProps.length, successCount, failCount);
+        updateProgress(completedCount, validProps.length, successCount, failCount);
       });
-      if (batchStart + batchSize < selectedProps.length) await new Promise(r => setTimeout(r, 1000));
+      if (batchStart + batchSize < validProps.length) await new Promise(r => setTimeout(r, 1000));
     }
 
     setSending(false);
     const totalSent = successCount + failCount;
     const successRate = totalSent > 0 ? Math.round((successCount / totalSent) * 100) : 0;
     const title = successRate === 100 ? '🏆 Campanha Perfeita!' : successRate >= 80 ? '✅ Campanha Concluída!' : '📊 Campanha Concluída';
-    toast({ title, description: `${totalMessagesSent} mensagens enviadas para ${successCount} propriedades${failCount > 0 ? `, ${failCount} falharam` : ''}. Taxa: ${successRate}%` });
+    const skippedMsg = skippedCount > 0 ? ` (${skippedCount} puladas sem contato)` : '';
+    toast({ title, description: `${totalMessagesSent} mensagens enviadas para ${successCount} propriedades${failCount > 0 ? `, ${failCount} falharam` : ''}${skippedMsg}. Taxa: ${successRate}%` });
     if (failCount > 0) setTimeout(() => toast({ title: '💡 Dica', description: `${failCount} envios falharam. Selecione novamente para tentar.` }), 2000);
     setProgressStats(INITIAL_PROGRESS);
     onComplete();
-  }, [processPropertySend, updateProgress, toast]);
+  }, [selectedChannel, getAllPhones, processPropertySend, updateProgress, toast]);
 
   return {
     sending, progressStats,

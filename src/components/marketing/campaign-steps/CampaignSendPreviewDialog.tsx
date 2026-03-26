@@ -44,10 +44,14 @@ export function CampaignSendPreviewDialog({
   smsDelay, setSmsDelay, sending, progressStats,
   getAllPhones, getAllEmails, renderTemplatePreview, onConfirmSend,
 }: Props) {
-  const { totalContacts, validContacts } = useMemo(() => ({
-    totalContacts: selectedProps.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : getAllPhones(p).length), 0),
-    validContacts: selectedProps.filter(p => selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0).length,
-  }), [selectedProps, selectedChannel, getAllPhones, getAllEmails]);
+  const { totalContacts, validContacts, skippedContacts } = useMemo(() => {
+    const valid = selectedProps.filter(p => selectedChannel === 'email' ? getAllEmails(p).length > 0 : getAllPhones(p).length > 0);
+    return {
+      totalContacts: valid.reduce((t, p) => t + (selectedChannel === 'email' ? getAllEmails(p).length : getAllPhones(p).length), 0),
+      validContacts: valid.length,
+      skippedContacts: selectedProps.length - valid.length,
+    };
+  }, [selectedProps, selectedChannel, getAllPhones, getAllEmails]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
