@@ -83,11 +83,19 @@ export function CampaignSendPreviewDialog({
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className={`grid ${skippedContacts > 0 ? 'grid-cols-4' : 'grid-cols-3'} gap-4`}>
                 <div className="text-center"><div className="text-2xl font-bold text-primary">{selectedProps.length}</div><div className="text-sm text-muted-foreground">Propriedades</div></div>
-                <div className="text-center"><div className="text-2xl font-bold text-success">{validContacts}</div><div className="text-sm text-muted-foreground">Contatos Válidos</div></div>
+                <div className="text-center"><div className="text-2xl font-bold text-success">{validContacts}</div><div className="text-sm text-muted-foreground">Com Contato</div></div>
+                {skippedContacts > 0 && (
+                  <div className="text-center"><div className="text-2xl font-bold text-destructive">{skippedContacts}</div><div className="text-sm text-muted-foreground">Sem {selectedChannel === 'email' ? 'Email' : 'Telefone'}</div></div>
+                )}
                 <div className="text-center"><div className="text-2xl font-bold text-accent">{totalContacts}</div><div className="text-sm text-muted-foreground">Mensagens</div></div>
               </div>
+              {skippedContacts > 0 && (
+                <div className="mt-3 p-3 bg-warning/10 border border-warning/30 rounded-lg text-sm">
+                  <span className="font-medium">⚠️ {skippedContacts} propriedades serão puladas</span> — sem {selectedChannel === 'email' ? 'email' : 'telefone'} válido. O envio será feito apenas para as {validContacts} com contato disponível.
+                </div>
+              )}
             </CardContent>
           </Card>
 
