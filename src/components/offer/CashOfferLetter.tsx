@@ -261,73 +261,69 @@ export const CashOfferLetter = ({
             width: 100% !important;
           }
 
-          /* ── B&W-friendly: header ── */
+          /* ── Ink-saver: header — white bg, black border ── */
           .letter-header {
-            background: #000 !important;
-            color: #fff !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+            background: #fff !important;
+            color: #000 !important;
+            border-bottom: 3px solid #000 !important;
           }
 
-          /* ── B&W-friendly: offer box ── */
+          /* ── Ink-saver: offer box ── */
           .letter-offer-box {
             background: #fff !important;
-            border: 3px solid #000 !important;
+            border: 2px solid #000 !important;
           }
 
-          /* ── B&W-friendly: urgency badge ── */
+          /* ── Ink-saver: urgency badge — thin black pill ── */
           .letter-urgency {
-            background: #000 !important;
-            color: #fff !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* ── B&W-friendly: trust badges ── */
-          .letter-trust-badge {
             background: #fff !important;
+            color: #000 !important;
             border: 1.5px solid #000 !important;
           }
 
-          /* ── B&W-friendly: testimonial ── */
-          .letter-testimonial {
-            background: #f5f5f5 !important;
-            border: 1px solid #999 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+          /* ── Ink-saver: trust badges ── */
+          .letter-trust-badge {
+            background: #fff !important;
+            border: 1px solid #666 !important;
           }
 
-          /* ── B&W-friendly: CTA section ── */
+          /* ── Ink-saver: testimonial ── */
+          .letter-testimonial {
+            background: #fff !important;
+            border: 1px solid #999 !important;
+          }
+
+          /* ── Ink-saver: CTA — white bg, thick black border ── */
           .letter-cta {
-            background: #000 !important;
-            color: #fff !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+            background: #fff !important;
+            color: #000 !important;
+            border: 3px solid #000 !important;
+          }
+          .letter-cta * {
+            color: #000 !important;
           }
           .letter-cta .letter-phone-box {
-            background: rgba(255,255,255,0.15) !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* ── QR code always crisp ── */
-          .letter-qr-box {
-            background: #fff !important;
+            background: #f0f0f0 !important;
             border: 2px solid #000 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
 
-          /* ── Icons and text all black ── */
-          .letter-offer-box *,
-          .letter-trust-badge * {
-            color: #000 !important;
-          }
-          .letter-cta * {
-            color: #fff !important;
+          /* ── QR code ── */
+          .letter-qr-box {
+            background: #fff !important;
+            border: 1px solid #000 !important;
           }
 
-          /* ── Stars ── */
+          /* ── All text/icons black ── */
+          .letter-header *,
+          .letter-offer-box *,
+          .letter-trust-badge *,
+          .letter-cta * {
+            color: #000 !important;
+          }
+
+          /* ── Stars — outline only ── */
           .letter-star {
             fill: #000 !important;
             color: #000 !important;
