@@ -282,6 +282,8 @@ export const CampaignManager = () => {
                   selectedProps={filters.selectedProps}
                   getAllPhones={filters.getAllPhones}
                   getAllEmails={getAllEmails}
+                  excludedPhones={filters.excludedPhones}
+                  setExcludedPhones={filters.setExcludedPhones}
                 />
               )}
               {currentStep === 4 && (

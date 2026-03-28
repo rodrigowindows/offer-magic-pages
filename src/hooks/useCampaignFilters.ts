@@ -26,10 +26,19 @@ export const useCampaignFilters = (properties: CampaignProperty[]) => {
   const [phoneFieldFilter, setPhoneFieldFilter] = useState<string[]>([]);
   const [selectedPhoneColumn, setSelectedPhoneColumn] = useState('phone1');
   const [selectedEmailColumn, setSelectedEmailColumn] = useState('email1');
+  const [excludedPhones, setExcludedPhones] = useState<string[]>([]);
+
+  /** Normalize a phone to digits-only for comparison */
+  const normalizePhone = useCallback((phone: string) => phone.replace(/\D/g, ''), []);
 
   const getAllPhones = useCallback(
-    (prop: CampaignProperty) => getAllPhonesUtil(prop, phoneFieldFilter),
-    [phoneFieldFilter]
+    (prop: CampaignProperty) => {
+      const phones = getAllPhonesUtil(prop, phoneFieldFilter);
+      if (excludedPhones.length === 0) return phones;
+      const excludedNormalized = new Set(excludedPhones.map(normalizePhone));
+      return phones.filter(p => !excludedNormalized.has(normalizePhone(p)));
+    },
+    [phoneFieldFilter, excludedPhones, normalizePhone]
   );
 
   const countWithSkiptracePhones = useMemo(
@@ -100,6 +109,7 @@ export const useCampaignFilters = (properties: CampaignProperty[]) => {
     phoneFieldFilter, setPhoneFieldFilter,
     selectedPhoneColumn, setSelectedPhoneColumn,
     selectedEmailColumn, setSelectedEmailColumn,
+    excludedPhones, setExcludedPhones,
     // Derived
     countWithSkiptracePhones,
     countWithSkiptraceEmails,

@@ -3,6 +3,7 @@ import { Target, MessageSquare, Mail, Phone, Users } from 'lucide-react';
 import type { Channel } from '@/types/marketing.types';
 import type { CampaignTemplate } from '@/types/campaign.types';
 import type { CampaignProperty } from '@/hooks/useCampaignContacts';
+import { ExcludePhonesList } from './ExcludePhonesList';
 
 interface Props {
   selectedIds: string[];
@@ -13,9 +14,11 @@ interface Props {
   selectedProps?: CampaignProperty[];
   getAllPhones?: (p: CampaignProperty) => string[];
   getAllEmails?: (p: CampaignProperty) => string[];
+  excludedPhones?: string[];
+  setExcludedPhones?: (phones: string[]) => void;
 }
 
-export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPhone, propsWithEmail, selectedTemplate, selectedProps, getAllPhones, getAllEmails }: Props) {
+export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPhone, propsWithEmail, selectedTemplate, selectedProps, getAllPhones, getAllEmails, excludedPhones, setExcludedPhones }: Props) {
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -63,6 +66,10 @@ export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPh
           </CardContent>
         </Card>
       </div>
+
+      {selectedChannel !== 'email' && excludedPhones && setExcludedPhones && (
+        <ExcludePhonesList excludedPhones={excludedPhones} setExcludedPhones={setExcludedPhones} />
+      )}
 
       {selectedTemplate && (
         <Card>
