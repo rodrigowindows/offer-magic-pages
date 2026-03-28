@@ -95,7 +95,10 @@ export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPh
                 const contacts = selectedChannel === 'email'
                   ? (getAllEmails ? getAllEmails(prop) : [])
                   : (getAllPhones ? getAllPhones(prop) : []);
-                const excludedSet = new Set((excludedPhones || []).map(normalizePhone));
+                // Build excluded set: split each entry on commas too (handles "123,456" stored as one entry)
+                const excludedSet = new Set(
+                  (excludedPhones || []).flatMap(p => p.split(/[,;]+/).map(s => normalizePhone(s.trim()))).filter(Boolean)
+                );
                 return (
                   <div key={prop.id} className="flex items-center justify-between p-2 border rounded text-sm">
                     <div className="font-medium truncate max-w-[40%]">{prop.address}</div>
