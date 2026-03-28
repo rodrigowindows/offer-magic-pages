@@ -267,7 +267,7 @@ export const useCampaignSender = ({
     if (failCount > 0) setTimeout(() => toast({ title: '💡 Dica', description: `${failCount} envios falharam. Selecione novamente para tentar.` }), 2000);
     setProgressStats(INITIAL_PROGRESS);
     onComplete();
-  }, [selectedChannel, getAllPhones, processPropertySend, updateProgress, toast]);
+  }, [selectedChannel, smsDelay, getAllPhones, getAllEmails, processPropertySend, updateProgress, toast]);
 
   return {
     sending, progressStats,
