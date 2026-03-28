@@ -208,7 +208,7 @@ export interface MarketingSettings {
 // ===== DEFAULTS =====
 
 export const DEFAULT_COMPANY_CONFIG: CompanyConfig = {
-  company_name: 'Miami Local Investors',
+  company_name: 'Florida Local Investors',
   contact_phone: '(786)882-8251',
   contact_phone_alt: '504-383-7989',
   from_phone_number: '7868828251',

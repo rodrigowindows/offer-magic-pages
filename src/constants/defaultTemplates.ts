@@ -104,7 +104,7 @@ export const DEFAULT_TEMPLATES: SavedTemplate[] = [
     <tr>
       <td style="padding: 20px 30px; background-color: #f8f9fa; text-align: center; border-top: 1px solid #eee;">
         <p style="margin: 0; color: #666; font-size: 14px; font-weight: bold;">{company_name}</p>
-        <p style="margin: 5px 0; color: #999; font-size: 12px;">Trusted Miami Investors Since 2015</p>
+        <p style="margin: 5px 0; color: #999; font-size: 12px;">Trusted Florida Investors Since 2015</p>
         <p style="margin: 10px 0 5px; color: #999; font-size: 11px;">
           <a href="{unsubscribe_url}" style="color: #999; text-decoration: underline;">Unsubscribe</a> |
           <a href="mailto:info@mylocalinvest.com" style="color: #999; text-decoration: underline;">Contact Us</a>
