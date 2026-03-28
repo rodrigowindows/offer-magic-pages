@@ -20,6 +20,8 @@ export interface ClickAnalytic {
   contact_name?: string | null;
   contact_email?: string | null;
   contact_phone?: string | null;
+  all_phones?: string[];
+  all_emails?: string[];
 }
 
 export interface ClickMetrics {
@@ -49,7 +51,7 @@ export function useClicksAnalytics(dateRange: '7' | '30' | '90' | 'all', sourceF
 
       let query = supabase
         .from('property_analytics')
-        .select(`*, properties (address, city, state, zip_code, owner_name, phone1, email1, matched_first_name, matched_last_name)`)
+        .select(`*, properties (address, city, state, zip_code, owner_name, owner_phone, phone1, phone2, phone3, phone4, phone5, phone6, phone7, email1, email2, person2_phone1, person2_phone2, person2_email1, person2_email2, person3_phone1, person3_email1, matched_first_name, matched_last_name, tags)`)
         .order('created_at', { ascending: false });
 
       if (dateFilter) query = query.gte('created_at', dateFilter.toISOString());
@@ -75,13 +77,55 @@ export function useClicksAnalytics(dateRange: '7' | '30' | '90' | 'all', sourceF
       const mappedClicks: ClickAnalytic[] = clicks.map((c) => {
         const prop = (c as any).properties;
         const contactName = prop?.owner_name || (prop?.matched_first_name && prop?.matched_last_name ? `${prop.matched_first_name} ${prop.matched_last_name}` : null);
+
+        // Collect all unique phones
+        const phoneCols = ['owner_phone', 'phone1', 'phone2', 'phone3', 'phone4', 'phone5', 'phone6', 'phone7', 'person2_phone1', 'person2_phone2', 'person3_phone1'];
+        const allPhones: string[] = [];
+        if (prop) {
+          for (const col of phoneCols) {
+            const val = prop[col];
+            if (typeof val === 'string' && val.trim() && !allPhones.includes(val.trim())) allPhones.push(val.trim());
+          }
+          // Tagged phones
+          if (Array.isArray(prop.tags)) {
+            for (const tag of prop.tags) {
+              if (typeof tag === 'string' && (tag.startsWith('pref_phone:') || tag.startsWith('manual_phone:'))) {
+                const phone = tag.replace(/^(pref_phone:|manual_phone:)/, '').trim();
+                if (phone && !allPhones.includes(phone)) allPhones.push(phone);
+              }
+            }
+          }
+        }
+
+        // Collect all unique emails
+        const emailCols = ['email1', 'email2', 'person2_email1', 'person2_email2', 'person3_email1'];
+        const allEmails: string[] = [];
+        if (prop) {
+          for (const col of emailCols) {
+            const val = prop[col];
+            if (typeof val === 'string' && val.trim() && !allEmails.includes(val.trim().toLowerCase())) allEmails.push(val.trim().toLowerCase());
+          }
+          if (Array.isArray(prop.tags)) {
+            for (const tag of prop.tags) {
+              if (typeof tag === 'string' && (tag.startsWith('pref_email:') || tag.startsWith('manual_email:'))) {
+                const email = tag.replace(/^(pref_email:|manual_email:)/, '').trim().toLowerCase();
+                if (email && !allEmails.includes(email)) allEmails.push(email);
+              }
+            }
+          }
+        }
+
         return {
           id: c.id, property_id: c.property_id, event_type: c.event_type,
           source: (c as any).source || 'direct', referrer: c.referrer, user_agent: c.user_agent,
           created_at: c.created_at || '', device_type: c.device_type, ip_address: c.ip_address,
           city: c.city, country: c.country,
           property_address: prop ? `${prop.address}, ${prop.city}, ${prop.state} ${prop.zip_code}` : null,
-          contact_name: contactName, contact_email: prop?.email1 || null, contact_phone: prop?.phone1 || null,
+          contact_name: contactName,
+          contact_phone: allPhones[0] || null,
+          contact_email: allEmails[0] || null,
+          all_phones: allPhones,
+          all_emails: allEmails,
         };
       });
 

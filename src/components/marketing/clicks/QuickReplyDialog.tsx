@@ -47,22 +47,28 @@ export function QuickReplyDialog({ open, onOpenChange, click }: Props) {
   const [subject, setSubject] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [selectedPhone, setSelectedPhone] = useState('');
+  const [selectedEmail, setSelectedEmail] = useState('');
 
   const smsTemplates = getTemplatesByChannel('sms');
   const emailTemplates = getTemplatesByChannel('email');
   const templates = channel === 'sms' ? smsTemplates : emailTemplates;
 
-  const hasPhone = !!click.contact_phone;
-  const hasEmail = !!click.contact_email;
+  const allPhones = click.all_phones?.length ? click.all_phones : click.contact_phone ? [click.contact_phone] : [];
+  const allEmails = click.all_emails?.length ? click.all_emails : click.contact_email ? [click.contact_email] : [];
+  const hasPhone = allPhones.length > 0;
+  const hasEmail = allEmails.length > 0;
 
-  // Auto-select available channel
+  // Auto-select available channel and default phone/email
   useEffect(() => {
     if (open) {
       setSent(false);
-      if (hasPhone) setChannel('sms');
-      else if (hasEmail) setChannel('email');
+      if (hasPhone) { setChannel('sms'); setSelectedPhone(allPhones[0]); }
+      else if (hasEmail) { setChannel('email'); setSelectedEmail(allEmails[0]); }
+      if (allPhones.length > 0) setSelectedPhone(allPhones[0]);
+      if (allEmails.length > 0) setSelectedEmail(allEmails[0]);
     }
-  }, [open, hasPhone, hasEmail]);
+  }, [open, hasPhone, hasEmail, allPhones, allEmails]);
 
   const applyTemplate = useCallback(
     (body: string, templateSubject?: string) => {
@@ -111,13 +117,16 @@ export function QuickReplyDialog({ open, onOpenChange, click }: Props) {
     try {
       const trackingId = crypto.randomUUID();
 
+      const targetPhone = selectedPhone || allPhones[0];
+      const targetEmail = selectedEmail || allEmails[0];
+
       if (channel === 'sms') {
-        if (!click.contact_phone) throw new Error('No phone number available');
-        await sendSMS({ phone_number: click.contact_phone, body: message });
+        if (!targetPhone) throw new Error('No phone number available');
+        await sendSMS({ phone_number: targetPhone, body: message });
       } else if (channel === 'email') {
-        if (!click.contact_email) throw new Error('No email available');
+        if (!targetEmail) throw new Error('No email available');
         await sendEmail({
-          receiver_email: click.contact_email,
+          receiver_email: targetEmail,
           subject: subject || 'Follow-up on your property',
           message_body: message,
         });
@@ -130,8 +139,8 @@ export function QuickReplyDialog({ open, onOpenChange, click }: Props) {
         campaign_type: 'manual',
         channel,
         status: 'sent',
-        recipient_phone: channel === 'sms' ? click.contact_phone : null,
-        recipient_email: channel === 'email' ? click.contact_email : null,
+        recipient_phone: channel === 'sms' ? targetPhone : null,
+        recipient_email: channel === 'email' ? targetEmail : null,
         recipient_name: click.contact_name,
         property_address: click.property_address,
         html_content: message,
@@ -140,14 +149,14 @@ export function QuickReplyDialog({ open, onOpenChange, click }: Props) {
       });
 
       setSent(true);
-      toast({ title: `${channel.toUpperCase()} sent!`, description: `Message sent to ${click.contact_name || click.contact_phone || click.contact_email}` });
+      toast({ title: `${channel.toUpperCase()} sent!`, description: `Message sent to ${click.contact_name || targetPhone || targetEmail}` });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Failed to send';
       toast({ title: 'Send failed', description: msg, variant: 'destructive' });
     } finally {
       setSending(false);
     }
-  }, [channel, message, subject, click, toast]);
+  }, [channel, message, subject, click, selectedPhone, selectedEmail, allPhones, allEmails, toast]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,29 +169,51 @@ export function QuickReplyDialog({ open, onOpenChange, click }: Props) {
         </DialogHeader>
 
         {/* Contact info */}
-        <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-sm">
-          {click.contact_name && (
-            <div className="flex items-center gap-2 font-medium">
-              <User className="w-3.5 h-3.5 text-muted-foreground" /> {click.contact_name}
-            </div>
-          )}
-          {click.property_address && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="w-3.5 h-3.5" /> {click.property_address}
-            </div>
-          )}
-          <div className="flex items-center gap-3">
-            {click.contact_phone && (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Phone className="w-3.5 h-3.5" /> {click.contact_phone}
+        <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm">
+          <div className="flex items-center gap-4">
+            {click.contact_name && (
+              <span className="flex items-center gap-1.5 font-medium">
+                <User className="w-3.5 h-3.5 text-muted-foreground" /> {click.contact_name}
               </span>
             )}
-            {click.contact_email && (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                <Mail className="w-3.5 h-3.5" /> {click.contact_email}
+            {click.property_address && (
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin className="w-3.5 h-3.5" /> {click.property_address}
               </span>
             )}
           </div>
+          {allPhones.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground font-medium">Phones ({allPhones.length})</div>
+              <div className="flex flex-wrap gap-1.5">
+                {allPhones.map((phone, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setSelectedPhone(phone); setChannel('sms'); }}
+                    className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors ${selectedPhone === phone && channel === 'sms' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-border'}`}
+                  >
+                    <Phone className="w-3 h-3" /> {phone}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {allEmails.length > 0 && (
+            <div className="space-y-1">
+              <div className="text-xs text-muted-foreground font-medium">Emails ({allEmails.length})</div>
+              <div className="flex flex-wrap gap-1.5">
+                {allEmails.map((email, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setSelectedEmail(email); setChannel('email'); }}
+                    className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border transition-colors ${selectedEmail === email && channel === 'email' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-border'}`}
+                  >
+                    <Mail className="w-3 h-3" /> {email}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Channel tabs */}
@@ -252,7 +283,7 @@ export function QuickReplyDialog({ open, onOpenChange, click }: Props) {
             <div className="text-center">
               <p className="font-semibold text-green-700">Message Sent!</p>
               <p className="text-sm text-muted-foreground">
-                {channel.toUpperCase()} delivered to {channel === 'sms' ? click.contact_phone : click.contact_email}
+                {channel.toUpperCase()} delivered to {channel === 'sms' ? (selectedPhone || allPhones[0]) : (selectedEmail || allEmails[0])}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => { setSent(false); }}>
