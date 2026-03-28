@@ -1,9 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Target, MessageSquare, Mail, Phone, Users } from 'lucide-react';
+import { Target, MessageSquare, Mail, Phone, Users, Ban } from 'lucide-react';
 import type { Channel } from '@/types/marketing.types';
 import type { CampaignTemplate } from '@/types/campaign.types';
 import type { CampaignProperty } from '@/hooks/useCampaignContacts';
 import { ExcludePhonesList } from './ExcludePhonesList';
+
+/** Normalize phone to digits only */
+const normalizePhone = (phone: string) => phone.replace(/\D/g, '');
 
 interface Props {
   selectedIds: string[];
@@ -92,15 +95,19 @@ export function CampaignStep3Summary({ selectedIds, selectedChannel, propsWithPh
                 const contacts = selectedChannel === 'email'
                   ? (getAllEmails ? getAllEmails(prop) : [])
                   : (getAllPhones ? getAllPhones(prop) : []);
+                const excludedSet = new Set((excludedPhones || []).map(normalizePhone));
                 return (
                   <div key={prop.id} className="flex items-center justify-between p-2 border rounded text-sm">
                     <div className="font-medium truncate max-w-[40%]">{prop.address}</div>
                     <div className="flex flex-wrap gap-1 justify-end">
-                      {contacts.length > 0 ? contacts.map((c, i) => (
-                        <span key={i} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          {selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />} {c}
-                        </span>
-                      )) : (
+                      {contacts.length > 0 ? contacts.map((c, i) => {
+                        const isExcluded = selectedChannel !== 'email' && excludedSet.has(normalizePhone(c));
+                        return (
+                          <span key={i} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${isExcluded ? 'bg-destructive/10 text-destructive line-through' : 'bg-primary/10 text-primary'}`}>
+                            {isExcluded ? <Ban className="w-3 h-3" /> : (selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />)} {c}
+                          </span>
+                        );
+                      }) : (
                         <span className="text-xs text-muted-foreground">No contact</span>
                       )}
                     </div>
