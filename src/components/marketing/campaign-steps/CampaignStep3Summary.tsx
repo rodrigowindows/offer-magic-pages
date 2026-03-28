@@ -1,9 +1,12 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Target, MessageSquare, Mail, Phone, Users } from 'lucide-react';
+import { Target, MessageSquare, Mail, Phone, Users, Ban } from 'lucide-react';
 import type { Channel } from '@/types/marketing.types';
 import type { CampaignTemplate } from '@/types/campaign.types';
 import type { CampaignProperty } from '@/hooks/useCampaignContacts';
 import { ExcludePhonesList } from './ExcludePhonesList';
+
+/** Normalize phone to digits only */
+const normalizePhone = (phone: string) => phone.replace(/\D/g, '');
 
 interface Props {
   selectedIds: string[];
