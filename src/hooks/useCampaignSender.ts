@@ -230,16 +230,32 @@ export const useCampaignSender = ({
     const batchSize = 5;
     updateProgress(0, validProps.length, 0, 0);
 
-    for (let batchStart = 0; batchStart < validProps.length; batchStart += batchSize) {
-      const batch = validProps.slice(batchStart, Math.min(batchStart + batchSize, validProps.length));
-      const results = await Promise.allSettled(batch.map((prop, i) => processPropertySend(prop, batchStart + i)));
-      results.forEach((result) => {
+    // SMS/Call: send sequentially with user-configured delay to avoid rate limits
+    // Email: send in parallel batches for speed
+    if (selectedChannel === 'sms' || selectedChannel === 'call') {
+      for (let i = 0; i < validProps.length; i++) {
+        if (i > 0 && smsDelay > 0) {
+          console.log(`[Campaign] Aguardando delay de ${smsDelay}ms antes do próximo envio...`);
+          await new Promise(r => setTimeout(r, smsDelay));
+        }
+        const result = await processPropertySend(validProps[i], i);
         completedCount++;
-        if (result.status === 'fulfilled' && result.value.success) { successCount++; totalMessagesSent += result.value.messagesSent || 1; }
+        if (result.success) { successCount++; totalMessagesSent += result.messagesSent || 1; }
         else { failCount++; }
         updateProgress(completedCount, validProps.length, successCount, failCount);
-      });
-      if (batchStart + batchSize < validProps.length) await new Promise(r => setTimeout(r, 1000));
+      }
+    } else {
+      for (let batchStart = 0; batchStart < validProps.length; batchStart += batchSize) {
+        const batch = validProps.slice(batchStart, Math.min(batchStart + batchSize, validProps.length));
+        const results = await Promise.allSettled(batch.map((prop, i) => processPropertySend(prop, batchStart + i)));
+        results.forEach((result) => {
+          completedCount++;
+          if (result.status === 'fulfilled' && result.value.success) { successCount++; totalMessagesSent += result.value.messagesSent || 1; }
+          else { failCount++; }
+          updateProgress(completedCount, validProps.length, successCount, failCount);
+        });
+        if (batchStart + batchSize < validProps.length) await new Promise(r => setTimeout(r, 500));
+      }
     }
 
     setSending(false);
@@ -251,7 +267,7 @@ export const useCampaignSender = ({
     if (failCount > 0) setTimeout(() => toast({ title: '💡 Dica', description: `${failCount} envios falharam. Selecione novamente para tentar.` }), 2000);
     setProgressStats(INITIAL_PROGRESS);
     onComplete();
-  }, [selectedChannel, getAllPhones, processPropertySend, updateProgress, toast]);
+  }, [selectedChannel, smsDelay, getAllPhones, getAllEmails, processPropertySend, updateProgress, toast]);
 
   return {
     sending, progressStats,
