@@ -296,6 +296,7 @@ export const CampaignManager = () => {
                   getAllPhones={filters.getAllPhones}
                   getAllEmails={getAllEmails}
                   renderTemplatePreview={renderTemplatePreview}
+                  excludedPhones={filters.excludedPhones}
                 />
               )}
               {currentStep === 5 && (
