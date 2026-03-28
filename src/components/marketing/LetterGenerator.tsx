@@ -502,8 +502,6 @@ export const LetterGenerator = () => {
               estimatedValue={previewProperty.estimated_value || 0}
               propertySlug={previewProperty.slug}
               ownerName={getOwnerName(previewProperty)}
-              phone={previewProperty.owner_phone}
-              email={previewProperty.email1}
               source="letter"
               language={language}
               offerConfig={{
@@ -532,8 +530,6 @@ export const LetterGenerator = () => {
                 estimatedValue={property.estimated_value || 0}
                 propertySlug={property.slug}
                 ownerName={getOwnerName(property)}
-                phone={property.owner_phone}
-                email={property.email1}
                 source="letter"
                 language={language}
                 offerConfig={{
