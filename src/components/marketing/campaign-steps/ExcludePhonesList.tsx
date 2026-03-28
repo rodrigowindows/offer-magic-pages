@@ -37,7 +37,18 @@ export function ExcludePhonesList({ excludedPhones, setExcludedPhones }: Props) 
   }, [excludedPhones, setExcludedPhones]);
 
   const handleAddSingle = useCallback(() => {
-    if (addPhone(singlePhone)) setSinglePhone('');
+    // Support comma/semicolon separated input
+    const parts = singlePhone.split(/[,;]+/).map(p => p.trim()).filter(p => normalize(p).length >= 7);
+    if (parts.length === 0) {
+      // Try as single number
+      if (addPhone(singlePhone)) setSinglePhone('');
+    } else {
+      let added = false;
+      for (const part of parts) {
+        if (addPhone(part)) added = true;
+      }
+      if (added) setSinglePhone('');
+    }
   }, [singlePhone, addPhone]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
