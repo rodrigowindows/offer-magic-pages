@@ -56,7 +56,7 @@ export const LetterGenerator = () => {
   const [language, setLanguage] = useState<'en' | 'es'>('en');
   const [loading, setLoading] = useState(false);
   const [previewProperty, setPreviewProperty] = useState<Property | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('approved');
   const [cityFilter, setCityFilter] = useState<string>('all');
   const [minOffer, setMinOffer] = useState<string>('');
   const [maxOffer, setMaxOffer] = useState<string>('');
@@ -66,7 +66,7 @@ export const LetterGenerator = () => {
   useEffect(() => {
     setSelectedProperties(new Set());
     fetchProperties();
-  }, [selectedBatch]);
+  }, [selectedBatch, statusFilter]);
 
   const fetchProperties = async () => {
     setLoading(true);
@@ -78,6 +78,10 @@ export const LetterGenerator = () => {
 
       if (selectedBatch && selectedBatch !== 'all') {
         query = query.eq('import_batch', selectedBatch);
+      }
+
+      if (statusFilter && statusFilter !== 'all') {
+        query = query.eq('approval_status', statusFilter);
       }
 
       const { data, error } = await query;
