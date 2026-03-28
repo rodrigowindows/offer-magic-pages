@@ -74,8 +74,7 @@ export const LetterGenerator = () => {
       let query = supabase
         .from('properties')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+        .order('created_at', { ascending: false });
 
       if (selectedBatch && selectedBatch !== 'all') {
         query = query.eq('import_batch', selectedBatch);
