@@ -140,11 +140,14 @@ export function CampaignStep4Preview({
                         <div className="text-sm text-muted-foreground ml-8">{property.city}, {property.state} {property.zip_code}</div>
                         {contacts.length > 0 && (
                           <div className="flex flex-wrap gap-1 ml-8 mt-1">
-                            {contacts.map((c, ci) => (
-                              <span key={ci} className="inline-flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                                {selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />} {c}
-                              </span>
-                            ))}
+                            {contacts.map((c, ci) => {
+                              const excluded = selectedChannel !== 'email' && isExcluded(c);
+                              return (
+                                <span key={ci} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${excluded ? 'bg-destructive/10 text-destructive line-through' : 'bg-primary/10 text-primary'}`}>
+                                  {excluded ? <Ban className="w-3 h-3" /> : (selectedChannel === 'email' ? <Mail className="w-3 h-3" /> : <Phone className="w-3 h-3" />)} {c}
+                                </span>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
