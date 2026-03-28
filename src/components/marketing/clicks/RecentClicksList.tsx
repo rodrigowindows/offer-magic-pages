@@ -65,8 +65,12 @@ export function RecentClicksList({ clicks }: Props) {
                             </div>
                             <div className="flex flex-wrap gap-3 text-xs">
                               {click.contact_name && <span className="font-medium">{click.contact_name}</span>}
-                              {click.contact_email && <a href={`mailto:${click.contact_email}`} className="text-primary hover:underline">✉️ {click.contact_email}</a>}
-                              {click.contact_phone && <a href={`tel:${click.contact_phone}`} className="text-primary hover:underline">📞 {click.contact_phone}</a>}
+                              {(click.all_emails && click.all_emails.length > 0 ? click.all_emails : click.contact_email ? [click.contact_email] : []).map((email, i) => (
+                                <a key={`e-${i}`} href={`mailto:${email}`} className="text-primary hover:underline">✉️ {email}</a>
+                              ))}
+                              {(click.all_phones && click.all_phones.length > 0 ? click.all_phones : click.contact_phone ? [click.contact_phone] : []).map((phone, i) => (
+                                <a key={`p-${i}`} href={`tel:${phone}`} className="text-primary hover:underline">📞 {phone}</a>
+                              ))}
                             </div>
                           </div>
                         )}
