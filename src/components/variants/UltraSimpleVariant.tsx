@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultOffer, formatCurrency } from "@/lib/utils";
-import { Check, Phone, Mail, Download, Loader2 } from "lucide-react";
+import { Check, Phone, MapPin, Download, Loader2, CalendarClock } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,16 +33,16 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     void trackABEvent(property.id, 'ultra-simple', 'offer_revealed');
   }, [property.id]);
 
-  const handleAccept = () => {
-    void trackABEvent(property.id, 'ultra-simple', 'clicked_accept');
-    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'accept' });
+  const handleScheduleCall = () => {
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_schedule_call');
+    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'schedule_call' });
     setFormType('accept');
     setShowContactForm(true);
   };
 
-  const handleQuestions = () => {
-    void trackABEvent(property.id, 'ultra-simple', 'clicked_questions');
-    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'questions' });
+  const handleScheduleVisit = () => {
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_schedule_visit');
+    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'schedule_visit' });
     setFormType('questions');
     setShowContactForm(true);
   };
@@ -165,7 +165,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
       });
 
       toast({
-        title: formType === 'accept' ? "Offer Accepted!" : "Question Received!",
+        title: "Received!",
         description: "We'll contact you shortly.",
       });
       setFormData({ name: '', email: '', phone: '' });
@@ -228,20 +228,21 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             {!showContactForm ? (
               <div className="space-y-3">
                 <Button
-                  onClick={handleAccept}
+                  onClick={handleScheduleCall}
                   size="lg"
                   className="w-full md:w-auto px-12 text-lg"
                 >
-                  Accept This Offer
+                  <CalendarClock className="mr-2 h-5 w-5" />
+                  Schedule a Call
                 </Button>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Button
-                    onClick={handleQuestions}
+                    onClick={handleScheduleVisit}
                     variant="outline"
                     size="lg"
                   >
-                    <Mail className="mr-2 h-5 w-5" />
-                    I Have Questions
+                    <MapPin className="mr-2 h-5 w-5" />
+                    Schedule a Visit to Improve the Price
                   </Button>
                   <Button
                     variant="outline"

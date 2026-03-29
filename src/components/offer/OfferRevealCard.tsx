@@ -150,7 +150,7 @@ export const OfferRevealCard = ({
           <div className="space-y-3 pt-4">
             <Button className="w-full text-lg py-6" size="lg">
               <Check className="mr-2 h-5 w-5" />
-              Accept This Offer
+              Schedule a Call
             </Button>
 
             <div className="grid grid-cols-2 gap-3">
