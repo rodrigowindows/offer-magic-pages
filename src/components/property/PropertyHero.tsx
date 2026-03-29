@@ -137,7 +137,7 @@ const PropertyHero = ({
             {/* CTA Buttons - Amazon-style stacked buttons */}
             <div className="space-y-3 pt-2">
               <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-lg shadow-sm transition-colors text-base">
-                Accept This Offer
+                Schedule a Call
               </button>
               <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-sm transition-colors text-sm">
                 I Have Questions

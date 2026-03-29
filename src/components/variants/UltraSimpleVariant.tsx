@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultOffer, formatCurrency } from "@/lib/utils";
-import { Check, Phone, Mail, Download, Loader2 } from "lucide-react";
+import { Check, Phone, Mail, Download, Loader2, CalendarClock } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,9 +33,9 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     void trackABEvent(property.id, 'ultra-simple', 'offer_revealed');
   }, [property.id]);
 
-  const handleAccept = () => {
-    void trackABEvent(property.id, 'ultra-simple', 'clicked_accept');
-    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'accept' });
+  const handleScheduleCall = () => {
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_schedule_call');
+    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'schedule_call' });
     setFormType('accept');
     setShowContactForm(true);
   };
@@ -228,11 +228,12 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             {!showContactForm ? (
               <div className="space-y-3">
                 <Button
-                  onClick={handleAccept}
+                  onClick={handleScheduleCall}
                   size="lg"
                   className="w-full md:w-auto px-12 text-lg"
                 >
-                  Accept This Offer
+                  <CalendarClock className="mr-2 h-5 w-5" />
+                  Schedule a Call
                 </Button>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Button
