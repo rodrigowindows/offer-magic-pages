@@ -106,10 +106,10 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
         referrer: document.referrer || 'direct',
       });
 
-      toast({ title: "PDF Downloaded!", description: "Your offer letter has been saved." });
+      toast({ title: "PDF Baixado!", description: "Sua carta de oferta foi salva." });
     } catch (error) {
       console.error('Error generating PDF:', error);
-      toast({ title: "Error", description: "Failed to generate PDF.", variant: "destructive" });
+      toast({ title: "Erro", description: "Falha ao gerar PDF.", variant: "destructive" });
     } finally {
       setIsDownloading(false);
     }
@@ -165,14 +165,14 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
       });
 
       toast({
-        title: formType === 'accept' ? "Offer Accepted!" : "Question Received!",
-        description: "We'll contact you shortly.",
+        title: "Recebido!",
+        description: "Vamos entrar em contato em breve.",
       });
       setFormData({ name: '', email: '', phone: '' });
       setShowContactForm(false);
     } catch (error) {
       console.error('Error submitting form:', error);
-      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
+      toast({ title: "Erro", description: "Algo deu errado. Tente novamente.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -190,7 +190,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             {/* Offer Amount - SHOWN IMMEDIATELY */}
             <div>
               <p className="text-lg text-muted-foreground mb-2">
-                {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
+                {offerType === 'range' ? 'Sua Faixa de Oferta' : 'Sua Oferta Justa em Dinheiro'}
               </p>
               <h1 className="text-5xl md:text-6xl font-bold text-primary">
                 {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || defaultOffer(property.estimated_value))}
@@ -200,7 +200,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
               </p>
               {offerType === 'range' && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Final offer determined after property inspection
+                  Oferta final determinada após inspeção do imóvel
                 </p>
               )}
             </div>
@@ -209,18 +209,18 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             <div className="grid md:grid-cols-3 gap-4 py-6">
               <div className="flex flex-col items-center gap-2">
                 <Check className="w-8 h-8 text-green-600" />
-                <p className="font-semibold">Close in 7-14 Days</p>
-                <p className="text-xs text-muted-foreground">Fast closing guaranteed</p>
+                <p className="font-semibold">Fechamento em 7-14 Dias</p>
+                <p className="text-xs text-muted-foreground">Fechamento rápido garantido</p>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <Check className="w-8 h-8 text-green-600" />
-                <p className="font-semibold">No Repairs Needed</p>
-                <p className="text-xs text-muted-foreground">We buy as-is</p>
+                <p className="font-semibold">Sem Reformas Necessárias</p>
+                <p className="text-xs text-muted-foreground">Compramos como está</p>
               </div>
               <div className="flex flex-col items-center gap-2">
                 <Check className="w-8 h-8 text-green-600" />
-                <p className="font-semibold">No Realtor Fees</p>
-                <p className="text-xs text-muted-foreground">Save thousands</p>
+                <p className="font-semibold">Sem Taxas de Corretor</p>
+                <p className="text-xs text-muted-foreground">Economize milhares</p>
               </div>
             </div>
 
@@ -264,7 +264,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
               /* Contact Form */
               <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4 text-left">
                 <div>
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Nome</Label>
                   <Input
                     id="name"
                     value={formData.name}
@@ -283,7 +283,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Phone</Label>
+                  <Label htmlFor="phone">Telefone</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -294,7 +294,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Phone className="mr-2 h-5 w-5" />}
-                  {isSubmitting ? 'Submitting...' : "Submit - We'll Call You"}
+                  {isSubmitting ? 'Enviando...' : "Enviar - Vamos te ligar"}
                 </Button>
               </form>
             )}
@@ -305,24 +305,24 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
       {/* FAQ Section */}
       <Card>
         <CardContent className="pt-6">
-          <h3 className="text-xl font-bold mb-4">Frequently Asked Questions</h3>
+          <h3 className="text-xl font-bold mb-4">Perguntas Frequentes</h3>
           <div className="space-y-4">
             <div>
-              <p className="font-semibold">Is this offer binding?</p>
+              <p className="font-semibold">Essa oferta é vinculante?</p>
               <p className="text-sm text-muted-foreground">
-                No, this is a no-obligation cash offer. You can accept or decline at any time.
+                Não, esta é uma oferta sem compromisso. Você pode aceitar ou recusar a qualquer momento.
               </p>
             </div>
             <div>
-              <p className="font-semibold">How fast can you close?</p>
+              <p className="font-semibold">Quão rápido vocês fecham?</p>
               <p className="text-sm text-muted-foreground">
-                We can close in as little as 7 days, or on your timeline.
+                Podemos fechar em até 7 dias, ou no seu prazo.
               </p>
             </div>
             <div>
-              <p className="font-semibold">Do I need to make repairs?</p>
+              <p className="font-semibold">Preciso fazer reformas?</p>
               <p className="text-sm text-muted-foreground">
-                No repairs needed. We buy houses in any condition.
+                Não precisa de reformas. Compramos casas em qualquer condição.
               </p>
             </div>
           </div>
