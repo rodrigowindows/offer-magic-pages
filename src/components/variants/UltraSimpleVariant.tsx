@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultOffer, formatCurrency } from "@/lib/utils";
-import { Check, Phone, Mail, Download, Loader2, CalendarClock } from "lucide-react";
+import { Check, Phone, MapPin, Download, Loader2, CalendarClock } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,9 +40,9 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     setShowContactForm(true);
   };
 
-  const handleQuestions = () => {
-    void trackABEvent(property.id, 'ultra-simple', 'clicked_questions');
-    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'questions' });
+  const handleScheduleVisit = () => {
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_schedule_visit');
+    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'schedule_visit' });
     setFormType('questions');
     setShowContactForm(true);
   };
@@ -233,16 +233,16 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                   className="w-full md:w-auto px-12 text-lg"
                 >
                   <CalendarClock className="mr-2 h-5 w-5" />
-                  Schedule a Call
+                  Vamos fazer um call
                 </Button>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Button
-                    onClick={handleQuestions}
+                    onClick={handleScheduleVisit}
                     variant="outline"
                     size="lg"
                   >
-                    <Mail className="mr-2 h-5 w-5" />
-                    I Have Questions
+                    <MapPin className="mr-2 h-5 w-5" />
+                    Agendar uma visita pra melhorar o preço
                   </Button>
                   <Button
                     variant="outline"
