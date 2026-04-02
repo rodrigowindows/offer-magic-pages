@@ -63,16 +63,23 @@ export const getPreDenialSuggestions = (prop: QueueProperty): PreDenialSuggestio
     suggestions.push({ reason: 'land', label: 'Terreno (Land)' });
   }
 
-  // Condominium / Apartment detection
-  if (addr.includes(' APT ') || addr.includes(' UNIT ') || addr.includes(' STE ') ||
-      propType.includes('condo') || propType.includes('apartment') || propType.includes('townhouse')) {
-    suggestions.push({ reason: 'condominium', label: 'Condomínio / Apartamento' });
+  // Condominium detection (property type based)
+  if (propType.includes('condo') || propType.includes('townhouse')) {
+    suggestions.push({ reason: 'condominium', label: 'Condomínio' });
   }
 
-  // Commercial (but NOT if already flagged as condo)
+  // Apartment detection (address-based: APT, UNIT, STE)
+  if (addr.includes(' APT ') || addr.includes(' UNIT ') || addr.includes(' STE ') ||
+      propType.includes('apartment')) {
+    suggestions.push({ reason: 'apartment', label: 'Apartamento' });
+  }
+
+  // Commercial - only flag if property_type explicitly says commercial/warehouse/industrial
+  // Do NOT auto-flag based on location or proximity to downtown
   if ((propType.includes('commercial') || propType.includes('comercial') ||
        propType.includes('warehouse') || propType.includes('industrial')) &&
-      !suggestions.some(s => s.reason === 'condominium')) {
+      !suggestions.some(s => s.reason === 'condominium') &&
+      !suggestions.some(s => s.reason === 'apartment')) {
     suggestions.push({ reason: 'commercial', label: 'Imóvel Comercial' });
   }
 
