@@ -1,19 +1,12 @@
 import { useCallback, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, XCircle, Target, Undo2 } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Undo2 } from "lucide-react";
 import { EmptyState } from "./EmptyState";
 import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
-import { InlineCompsList } from "@/components/review/InlineCompsList";
-import { InlineCompForm } from "@/components/review/InlineCompForm";
-import { SpeedTracker } from "@/components/review/SpeedTracker";
-import { CompletenessIndicator } from "@/components/review/CompletenessIndicator";
-import { ExportDecisions } from "@/components/review/ExportDecisions";
-import { PropertyComparison } from "@/components/review/PropertyComparison";
-import { BulkActions } from "@/components/review/BulkActions";
-import { InlineMAOCalculator } from "@/components/review/InlineMAOCalculator";
 import { SwipeOverlay } from "@/components/review/SwipeOverlay";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useReviewActions } from "@/hooks/useReviewActions";
@@ -93,7 +86,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
   // ── Auto-score: trigger AI score for properties without one ──
   useEffect(() => {
     if (queue.currentProperty && queue.currentProperty.ai_score == null && queue.statusFilter === 'pending') {
-      // Trigger AI score automatically (fire-and-forget)
       import('@/hooks/useAIScore').then(({ useAIScoreStatic }) => {
         useAIScoreStatic(queue.currentProperty!).catch(() => {});
       });
@@ -123,54 +115,30 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
   return (
     <div className="flex flex-col h-full px-1 sm:px-0">
-      {/* Stats + Speed Tracker + Filters */}
+      {/* Filters + Undo - compact top bar */}
       <div className="shrink-0 space-y-1 mb-1">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-[11px] shrink-0">
-            <Target className="h-3 w-3 text-blue-500" />
-            <span className="font-bold">{queue.dailyStats?.reviewed_today || 0}</span>
-            <span className="text-muted-foreground text-[10px]">hoje</span>
-            <div className="w-px h-3 bg-border" />
-            <CheckCircle className="h-2.5 w-2.5 text-green-500" />
-            <span className="font-bold text-green-700 dark:text-green-400">{queue.dailyStats?.approved_today || 0}</span>
-            <div className="w-px h-3 bg-border" />
-            <XCircle className="h-2.5 w-2.5 text-red-500" />
-            <span className="font-bold text-red-700 dark:text-red-400">{queue.dailyStats?.rejected_today || 0}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <SpeedTracker dailyStats={queue.dailyStats} />
-            <ExportDecisions />
-            <PropertyComparison
-              properties={queue.filteredProperties}
-              currentProperty={queue.currentProperty}
-            />
-            <BulkActions
-              properties={queue.filteredProperties}
-              onComplete={advanceAfterAction}
-            />
-            {undo.canUndo && (
-              <Button variant="outline" size="sm" onClick={undo.undoLastAction} className="h-5 px-1.5 text-[10px] gap-1 text-amber-700 border-amber-300 hover:bg-amber-50">
-                <Undo2 className="h-2.5 w-2.5" />
-                Desfazer
-              </Button>
-            )}
-          </div>
+        <div className="flex items-center justify-between gap-1">
+          <FilterBar
+            statusFilter={queue.statusFilter}
+            onStatusChange={queue.setStatusFilter}
+            statusCounts={queue.statusCounts}
+            visualFilter={queue.visualFilter}
+            onVisualChange={queue.setVisualFilter}
+            visualCounts={queue.visualCounts}
+            totalProperties={queue.properties.length}
+            searchQuery={queue.searchQuery}
+            onSearchChange={queue.setSearchQuery}
+          />
+          {undo.canUndo && (
+            <Button variant="outline" size="sm" onClick={undo.undoLastAction} className="h-6 px-2 text-[10px] gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 shrink-0">
+              <Undo2 className="h-2.5 w-2.5" />
+              Desfazer
+            </Button>
+          )}
         </div>
-
-        <FilterBar
-          statusFilter={queue.statusFilter}
-          onStatusChange={queue.setStatusFilter}
-          statusCounts={queue.statusCounts}
-          visualFilter={queue.visualFilter}
-          onVisualChange={queue.setVisualFilter}
-          visualCounts={queue.visualCounts}
-          totalProperties={queue.properties.length}
-          searchQuery={queue.searchQuery}
-          onSearchChange={queue.setSearchQuery}
-        />
       </div>
 
-      {/* Property Card */}
+      {/* Property Card + Action Area - fills remaining space */}
       {queue.currentProperty && (
         <Card ref={cardRef} className="relative flex-1 flex flex-col overflow-hidden min-h-0 bg-card">
           {/* Swipe overlay for mobile */}
@@ -181,51 +149,24 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           />
 
           <CardContent className="flex flex-col flex-1 p-1 sm:p-1.5 space-y-1 min-h-0">
-            {/* Completeness badge + MAO */}
-            <div className="flex items-center justify-between px-1">
-              <InlineMAOCalculator
-                property={queue.currentProperty}
-                compsARV={actions.compsARV}
-                onSaved={queue.fetchProperties}
-              />
-              <CompletenessIndicator property={queue.currentProperty} />
-            </div>
-
+            {/* Property card - scrollable content area */}
             <div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-lg">
               <PropertyCard
                 property={queue.currentProperty}
                 allProperties={queue.properties}
                 onScoreSaved={queue.fetchProperties}
                 avgCompPrice={queue.avgCompPrice}
-              />
-            </div>
-
-            {/* Inline comp form + saved comps list - all inline, no modal */}
-            <div className="shrink-0 space-y-1" id="inline-comps-section">
-              <InlineCompForm
-                property={{
-                  id: queue.currentProperty.id,
-                  address: queue.currentProperty.address,
-                  city: queue.currentProperty.city ?? null,
-                  state: queue.currentProperty.state ?? null,
-                  zip_code: (queue.currentProperty as any).zip_code ?? null,
-                  square_feet: queue.currentProperty.square_feet ?? null,
-                }}
+                comps={queue.currentComps}
                 onCompAdded={() => queue.fetchCurrentComps(queue.currentProperty!.id)}
+                onDeleteComp={async (compId) => {
+                  const { supabase } = await import('@/integrations/supabase/client');
+                  await supabase.from('manual_comps_links').delete().eq('id', compId);
+                  queue.fetchCurrentComps(queue.currentProperty!.id);
+                }}
               />
-              {queue.currentComps.length > 0 && (
-                <InlineCompsList
-                  comps={queue.currentComps}
-                  subjectSqft={queue.currentProperty.square_feet}
-                  onDeleteComp={async (compId) => {
-                    const { supabase } = await import('@/integrations/supabase/client');
-                    await supabase.from('manual_comps_links').delete().eq('id', compId);
-                    queue.fetchCurrentComps(queue.currentProperty!.id);
-                  }}
-                />
-              )}
             </div>
 
+            {/* Action area - always visible at bottom, never scrolls */}
             <div className="shrink-0">
               <ActionArea
                 statusFilter={queue.statusFilter}
@@ -260,7 +201,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                   renovation_pct: (queue.currentProperty as any).renovation_pct ?? null,
                   city: queue.currentProperty.city ?? null,
                   zip_code: (queue.currentProperty as any).zip_code ?? null,
-                  // Comps quality fields derived from saved comps
                   comps_count: compsQuality.comps_count,
                   comps_zip_codes: compsQuality.comps_zip_codes,
                   comps_min_sqft: compsQuality.comps_min_sqft,
@@ -294,8 +234,6 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
           </CardContent>
         </Card>
       )}
-
-      {/* CompsModal removed - all comp management is inline now */}
     </div>
   );
 };

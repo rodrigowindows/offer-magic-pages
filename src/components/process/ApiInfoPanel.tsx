@@ -239,8 +239,8 @@ export const ApiInfoPanel = ({ embedded = false }: { embedded?: boolean }) => {
             <div className="flex flex-wrap gap-1">
               {[
                 'new-construction', 'recent-sale', 'too-good-condition', 'multi-family',
-                'hoa-restrictions', 'condominium', 'land', 'no-equity', 'agent-listed',
-                'commercial', 'photo-unavailable', 'bad-neighborhood', 'llc-owned',
+                'hoa-restrictions', 'condominium', 'apartment', 'land', 'no-equity', 'agent-listed',
+                'commercial', 'photo-unavailable', 'llc-owned',
                 'no-address-number', 'no-wholesale-margin', 'duplicate', 'wrong-location', 'other',
               ].map(r => (
                 <Badge key={r} variant="outline" className="text-[9px] font-mono">{r}</Badge>
