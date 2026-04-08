@@ -87,6 +87,25 @@ export const FilterBar = ({
           </button>
         ))}
 
+        {/* Smart filter: Ready to Contact */}
+        {onSmartFilterChange && (
+          <>
+            <div className="w-px h-4 bg-border shrink-0 mx-0.5" />
+            <button
+              onClick={() => onSmartFilterChange(smartFilter === 'ready' ? 'none' : 'ready')}
+              className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                smartFilter === 'ready'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+              }`}
+            >
+              <PhoneCall className="h-2.5 w-2.5" />
+              Ready
+              <span className="font-bold text-[10px] opacity-80">{readyToContactCount}</span>
+            </button>
+          </>
+        )}
+
         {/* Divider */}
         {hasVisualData && <div className="w-px h-4 bg-border shrink-0 mx-0.5" />}
 
