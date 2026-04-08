@@ -11,7 +11,7 @@ import type { QueueProperty, StatusFilter, DailyStats, StatusCounts } from '@/co
 import type { SavedComp } from '@/hooks/useComps';
 import { getVisualCategory, countByVisual } from '@/components/review/helpers';
 
-const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning, mao, total_tax_due, years_delinquent, taxable_value, arv, avg_price_per_sqft, dnc_flag, deceased, wholesale_value, wholesale_pct, renovation_value, renovation_pct";
+const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning, mao, total_tax_due, years_delinquent, taxable_value, arv, avg_price_per_sqft, dnc_flag, deceased, wholesale_value, wholesale_pct, renovation_value, renovation_pct, email1, email2";
 
 export const useReviewQueue = (selectedBatch?: string) => {
   const [properties, setProperties] = useState<QueueProperty[]>([]);
@@ -22,6 +22,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [visualFilter, setVisualFilter] = useState<string>('all');
+  const [smartFilter, setSmartFilter] = useState<string>('none');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({ pending: 0, approved: 0, rejected: 0 });
 
@@ -34,12 +35,29 @@ export const useReviewQueue = (selectedBatch?: string) => {
 
   // Derived
   const visualCounts = countByVisual(properties);
+  // Smart filter: "Ready to Contact"
+  const isReadyToContact = useCallback((p: QueueProperty): boolean => {
+    const hasContact = !!(p.owner_phone || p.email1 || p.email2);
+    const hasCompleteData = !!(p.address && p.square_feet && p.year_built && p.estimated_value && p.cash_offer_amount);
+    const hasPositiveAI = (p.ai_score ?? 0) >= 5;
+    const notBlocked = !p.dnc_flag && !p.deceased;
+    return hasContact && hasCompleteData && hasPositiveAI && notBlocked;
+  }, []);
+
+  const readyToContactCount = useMemo(() =>
+    properties.filter(isReadyToContact).length,
+    [properties, isReadyToContact]
+  );
+
   const searchFiltered = searchQuery.trim()
     ? properties.filter(p => p.address.toLowerCase().includes(searchQuery.toLowerCase()))
     : properties;
+  const smartFiltered = smartFilter === 'ready'
+    ? searchFiltered.filter(isReadyToContact)
+    : searchFiltered;
   const filteredProperties = visualFilter === 'all'
-    ? searchFiltered
-    : searchFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
+    ? smartFiltered
+    : smartFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
   const currentProperty = filteredProperties[currentIndex];
 
   const avgCompPrice = useMemo(() => {
@@ -215,7 +233,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, selectedBatch, statusFilter, fetchProperties, fetchStatusCounts]);
 
-  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery]);
+  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery, smartFilter]);
 
   useEffect(() => {
     if (currentProperty?.id) fetchCurrentComps(currentProperty.id);
@@ -238,12 +256,13 @@ export const useReviewQueue = (selectedBatch?: string) => {
   return {
     // Data
     properties, currentProperty, filteredProperties, isLoading,
-    dailyStats, statusCounts, visualCounts,
+    dailyStats, statusCounts, visualCounts, readyToContactCount,
     currentComps, currentCompsCount, avgCompPrice,
     currentIndex,
     // Filters
     statusFilter, setStatusFilter,
     visualFilter, setVisualFilter,
+    smartFilter, setSmartFilter,
     searchQuery, setSearchQuery,
     // Actions
     fetchProperties, fetchDailyStats, fetchStatusCounts, fetchCurrentComps,
