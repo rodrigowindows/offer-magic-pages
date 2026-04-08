@@ -128,6 +128,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             totalProperties={queue.properties.length}
             searchQuery={queue.searchQuery}
             onSearchChange={queue.setSearchQuery}
+            contactCount={queue.contactCount}
           />
           {undo.canUndo && (
             <Button variant="outline" size="sm" onClick={undo.undoLastAction} className="h-6 px-2 text-[10px] gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 shrink-0">

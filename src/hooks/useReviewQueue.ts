@@ -34,12 +34,50 @@ export const useReviewQueue = (selectedBatch?: string) => {
 
   // Derived
   const visualCounts = countByVisual(properties);
+  const hasContact = (p: QueueProperty) => !!(p.owner_phone || (p as any).pref_phone_1 || (p as any).pref_email_1);
+  const contactCount = properties.filter(hasContact).length;
   const searchFiltered = searchQuery.trim()
     ? properties.filter(p => p.address.toLowerCase().includes(searchQuery.toLowerCase()))
     : properties;
-  const filteredProperties = visualFilter === 'all'
+  const visualFiltered = visualFilter === 'all'
     ? searchFiltered
+    : visualFilter === 'CONTACT'
+    ? searchFiltered.filter(hasContact)
     : searchFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
+
+  // Smart sorting: has contact data first → highest AI score → most complete data
+  const filteredProperties = useMemo(() => {
+    if (statusFilter !== 'pending') return visualFiltered; // don't re-sort approved/rejected
+    return [...visualFiltered].sort((a, b) => {
+      // 1. Properties with contact data first
+      const aHasContact = !!(a.owner_phone || (a as any).pref_phone_1 || (a as any).pref_email_1);
+      const bHasContact = !!(b.owner_phone || (b as any).pref_phone_1 || (b as any).pref_email_1);
+      if (aHasContact !== bHasContact) return bHasContact ? 1 : -1;
+
+      // 2. Higher AI score first
+      const aScore = a.ai_score ?? 0;
+      const bScore = b.ai_score ?? 0;
+      if (aScore !== bScore) return bScore - aScore;
+
+      // 3. More complete data first
+      const completeness = (p: QueueProperty) => {
+        let c = 0;
+        if (p.estimated_value) c++;
+        if (p.square_feet) c++;
+        if (p.bedrooms) c++;
+        if (p.bathrooms) c++;
+        if (p.year_built) c++;
+        if (p.property_type) c++;
+        if (p.lot_size) c++;
+        if (p.owner_name) c++;
+        if (p.property_image_url) c++;
+        if (p.cash_offer_amount) c++;
+        return c;
+      };
+      return completeness(b) - completeness(a);
+    });
+  }, [visualFiltered, statusFilter]);
+
   const currentProperty = filteredProperties[currentIndex];
 
   const avgCompPrice = useMemo(() => {
@@ -201,7 +239,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
   return {
     // Data
     properties, currentProperty, filteredProperties, isLoading,
-    dailyStats, statusCounts, visualCounts,
+    dailyStats, statusCounts, visualCounts, contactCount,
     currentComps, currentCompsCount, avgCompPrice,
     currentIndex,
     // Filters

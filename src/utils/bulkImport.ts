@@ -128,6 +128,20 @@ export const bulkImportOrlandoLeads = async (
         continue;
       }
 
+      // 0a. Flag incomplete properties (missing critical fields)
+      const missingFields: string[] = [];
+      if (!lead.square_feet) missingFields.push('sqft');
+      if (!lead.bedrooms) missingFields.push('quartos');
+      if (!lead.year_built) missingFields.push('ano');
+      if (!lead.estimated_value) missingFields.push('preço');
+      if (missingFields.length >= 3) {
+        result.errors.push(`Dados incompletos (falta: ${missingFields.join(', ')}): "${addressTrimmed}"`);
+        continue;
+      }
+      if (missingFields.length > 0) {
+        result.errors.push(`Aviso: "${addressTrimmed}" sem: ${missingFields.join(', ')}`);
+      }
+
       // 0b. Flag suspicious price variations (>40% drop)
       if (lead.estimated_value && lead.cash_offer_amount &&
           lead.cash_offer_amount > 0 && lead.estimated_value > 0 &&
