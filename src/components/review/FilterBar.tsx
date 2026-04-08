@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react';
+import { Search, X, PhoneCall } from 'lucide-react';
 import type { StatusFilter, StatusCounts } from './types';
 
 interface FilterBarProps {
@@ -11,6 +11,9 @@ interface FilterBarProps {
   totalProperties: number;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  smartFilter?: string;
+  onSmartFilterChange?: (filter: string) => void;
+  readyToContactCount?: number;
 }
 
 const STATUS_OPTIONS = [
@@ -38,6 +41,9 @@ export const FilterBar = ({
   totalProperties,
   searchQuery,
   onSearchChange,
+  smartFilter = 'none',
+  onSmartFilterChange,
+  readyToContactCount = 0,
 }: FilterBarProps) => {
   const hasVisualData = Object.keys(visualCounts).length > 0;
 
