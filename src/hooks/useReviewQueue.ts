@@ -233,7 +233,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, selectedBatch, statusFilter, fetchProperties, fetchStatusCounts]);
 
-  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery]);
+  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery, smartFilter]);
 
   useEffect(() => {
     if (currentProperty?.id) fetchCurrentComps(currentProperty.id);
@@ -256,12 +256,13 @@ export const useReviewQueue = (selectedBatch?: string) => {
   return {
     // Data
     properties, currentProperty, filteredProperties, isLoading,
-    dailyStats, statusCounts, visualCounts,
+    dailyStats, statusCounts, visualCounts, readyToContactCount,
     currentComps, currentCompsCount, avgCompPrice,
     currentIndex,
     // Filters
     statusFilter, setStatusFilter,
     visualFilter, setVisualFilter,
+    smartFilter, setSmartFilter,
     searchQuery, setSearchQuery,
     // Actions
     fetchProperties, fetchDailyStats, fetchStatusCounts, fetchCurrentComps,
