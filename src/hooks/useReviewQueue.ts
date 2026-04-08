@@ -52,6 +52,39 @@ export const useReviewQueue = (selectedBatch?: string) => {
     return prices.length > 0 ? Math.round(prices.reduce((s, p) => s + p, 0) / prices.length) : null;
   }, [currentComps]);
 
+  // ── Smart sorting ──────────────────────────────────────────────
+
+  /**
+   * Compute a composite priority score (higher = better lead).
+   * - Data completeness (0-50 pts): key fields present
+   * - AI Score (0-30 pts): normalized from ai_score (1-10 → 3-30)
+   * - Contact availability (0-20 pts): phone/email presence
+   */
+  const computeLeadScore = useCallback((p: QueueProperty): number => {
+    let score = 0;
+
+    // Data completeness (0-50)
+    const fields = [
+      p.address, p.city, p.state, p.zip_code,
+      p.estimated_value, p.cash_offer_amount,
+      p.square_feet, p.year_built, p.bedrooms, p.bathrooms,
+    ];
+    const filled = fields.filter(f => f != null && f !== '' && f !== 0).length;
+    score += (filled / fields.length) * 50;
+
+    // AI Score (0-30)
+    if (p.ai_score && p.ai_score > 0) {
+      score += Math.min(p.ai_score, 10) * 3;
+    }
+
+    // Contact data (0-20)
+    if (p.owner_name) score += 5;
+    if (p.owner_phone) score += 10;
+    if (p.owner_address) score += 5;
+
+    return score;
+  }, []);
+
   // ── Data fetching ─────────────────────────────────────────────
 
   const fetchProperties = useCallback(async () => {
@@ -74,13 +107,17 @@ export const useReviewQueue = (selectedBatch?: string) => {
 
       const { data, error } = await query;
       if (error) throw error;
-      setProperties((data as unknown as QueueProperty[]) || []);
+
+      // Smart sort: best leads first (highest composite score)
+      const raw = (data as unknown as QueueProperty[]) || [];
+      const sorted = [...raw].sort((a, b) => computeLeadScore(b) - computeLeadScore(a));
+      setProperties(sorted);
     } catch (error: any) {
       toast({ title: "Erro ao carregar", description: error.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, selectedBatch, toast]);
+  }, [statusFilter, selectedBatch, toast, computeLeadScore]);
 
   const fetchStatusCounts = useCallback(async () => {
     try {
