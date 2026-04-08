@@ -35,12 +35,29 @@ export const useReviewQueue = (selectedBatch?: string) => {
 
   // Derived
   const visualCounts = countByVisual(properties);
+  // Smart filter: "Ready to Contact"
+  const isReadyToContact = useCallback((p: QueueProperty): boolean => {
+    const hasContact = !!(p.owner_phone || p.email1 || p.email2);
+    const hasCompleteData = !!(p.address && p.square_feet && p.year_built && p.estimated_value && p.cash_offer_amount);
+    const hasPositiveAI = (p.ai_score ?? 0) >= 5;
+    const notBlocked = !p.dnc_flag && !p.deceased;
+    return hasContact && hasCompleteData && hasPositiveAI && notBlocked;
+  }, []);
+
+  const readyToContactCount = useMemo(() =>
+    properties.filter(isReadyToContact).length,
+    [properties, isReadyToContact]
+  );
+
   const searchFiltered = searchQuery.trim()
     ? properties.filter(p => p.address.toLowerCase().includes(searchQuery.toLowerCase()))
     : properties;
+  const smartFiltered = smartFilter === 'ready'
+    ? searchFiltered.filter(isReadyToContact)
+    : searchFiltered;
   const filteredProperties = visualFilter === 'all'
-    ? searchFiltered
-    : searchFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
+    ? smartFiltered
+    : smartFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
   const currentProperty = filteredProperties[currentIndex];
 
   const avgCompPrice = useMemo(() => {
