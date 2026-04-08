@@ -20,7 +20,7 @@ interface PropertyCardProps {
   avgCompPrice?: number | null;
   comps?: any[];
   onCompAdded?: () => void;
-  onDeleteComp?: (compId: string) => void;
+  onDeleteComp?: (compId: string) => Promise<void>;
 }
 
 const getStatusBackground = (status: string | null | undefined) => {
