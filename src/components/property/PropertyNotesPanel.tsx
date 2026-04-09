@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, Calendar, StickyNote, Camera } from "lucide-react";
+import { Loader2, Plus, Trash2, Calendar, StickyNote, Camera, UserCircle } from "lucide-react";
 import { format } from "date-fns";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface PropertyNote {
   id: string;
@@ -25,6 +26,7 @@ interface PropertyNotesPanelProps {
 
 export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged }: PropertyNotesPanelProps) => {
   const { toast } = useToast();
+  const { userId, user } = useCurrentUser();
   const [notes, setNotes] = useState<PropertyNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -77,6 +79,7 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
         note_text: noteText.trim(),
         follow_up_date: followUpDate || null,
         image_urls: uploadedUrls.length > 0 ? uploadedUrls : null,
+        created_by: userId || null,
       });
 
       if (error) throw error;
@@ -166,9 +169,10 @@ export const PropertyNotesPanel = ({ propertyId, propertyAddress, onNoteChanged 
         <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
           {notes.map((note) => (
             <div key={note.id} className="group relative border-l-2 border-muted-foreground/20 pl-2 py-1">
-              {/* Timestamp */}
+              {/* Timestamp + author */}
               <div className="flex items-center justify-between gap-1">
-                <span className="text-[10px] text-muted-foreground font-medium">
+                <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                  <UserCircle className="h-3 w-3" />
                   {format(new Date(note.created_at), "dd/MM/yyyy HH:mm")}
                 </span>
                 <div className="flex items-center gap-1">

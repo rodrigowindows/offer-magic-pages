@@ -193,9 +193,19 @@ export const bulkImportOrlandoLeads = async (
           status: "active",
           created_by: userId,
           created_by_name: userName,
-          // Store PID and score in custom fields
-          origem: lead.PID, // Store PID in 'origem' field
-          focar: lead.score?.toString(), // Store score in 'focar' field
+          origem: lead.PID,
+          focar: lead.score?.toString(),
+          // Additional fields from enriched CSVs
+          lot_size: (lead as any).lot_size || null,
+          total_tax_due: (lead as any).total_tax_due || (lead as any).total_taxes || null,
+          years_delinquent: (lead as any).years_delinquent || null,
+          last_sale_price: (lead as any).last_sale_price || null,
+          last_sale_date: (lead as any).last_sale_date || (lead as any).last_sold || null,
+          latitude: (lead as any).latitude || null,
+          longitude: (lead as any).longitude || null,
+          email1: (lead as any).email || (lead as any).email1 || null,
+          email2: (lead as any).email2 || null,
+          county: (lead as any).county || null,
         })
         .select()
         .single();

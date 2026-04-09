@@ -7,6 +7,9 @@ import { EmptyState } from "./EmptyState";
 import { FilterBar } from "@/components/review/FilterBar";
 import { PropertyCard } from "@/components/review/PropertyCard";
 import { ActionArea } from "@/components/review/ActionArea";
+import { SpeedTracker } from "@/components/review/SpeedTracker";
+import { ExportDecisions } from "@/components/review/ExportDecisions";
+import { BulkActions } from "@/components/review/BulkActions";
 import { SwipeOverlay } from "@/components/review/SwipeOverlay";
 import { useReviewQueue } from "@/hooks/useReviewQueue";
 import { useReviewActions } from "@/hooks/useReviewActions";
@@ -130,12 +133,20 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             onSearchChange={queue.setSearchQuery}
             contactCount={queue.contactCount}
           />
-          {undo.canUndo && (
-            <Button variant="outline" size="sm" onClick={undo.undoLastAction} className="h-6 px-2 text-[10px] gap-1 text-amber-700 border-amber-300 hover:bg-amber-50 shrink-0">
-              <Undo2 className="h-2.5 w-2.5" />
-              Desfazer
-            </Button>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            <SpeedTracker dailyStats={queue.dailyStats} />
+            <ExportDecisions />
+            <BulkActions
+              properties={queue.filteredProperties}
+              onComplete={advanceAfterAction}
+            />
+            {undo.canUndo && (
+              <Button variant="outline" size="sm" onClick={undo.undoLastAction} className="h-6 px-2 text-[10px] gap-1 text-amber-700 border-amber-300 hover:bg-amber-50">
+                <Undo2 className="h-2.5 w-2.5" />
+                Desfazer
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

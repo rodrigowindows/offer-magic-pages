@@ -18,13 +18,34 @@ serve(async (req) => {
 - "reasoning": string (2-3 sentences in Portuguese explaining the score)
 - "recommendation": "approve" | "reject" | "review" (based on score: >=70 approve, <30 reject, else review)
 
+IMPORTANT CLASSIFICATION RULES:
+1. VACANT LAND: If bedrooms AND bathrooms AND square_feet are ALL null/0, OR if property_type contains "land" or "vacant":
+   - This is LAND (terreno), NOT a house. NEVER say "casa em bom estado" for land.
+   - Score based on: lot size, location, price per acre, zoning potential.
+   - In reasoning, always start with "TERRENO:"
+
+2. NO PHOTO: If property_image_url is null or empty:
+   - DO NOT make any visual/condition assessment about the property.
+   - State "Sem foto disponível - avaliação visual não realizada"
+   - Reduce score by 10 points (missing visual data = higher risk)
+
+3. COMMERCIAL: ONLY classify as "Imóvel Comercial" if property_type EXPLICITLY contains "commercial", "warehouse", "industrial", or "office".
+   Proximity to downtown or commercial areas does NOT make a property commercial.
+
+4. MULTI-FAMILY: ONLY classify as "Multi-Family" if property_type contains "multi", "duplex", "triplex", or "fourplex".
+   Address containing "APT" or "UNIT" means it is a CONDO/APARTMENT unit, NOT multi-family.
+
+5. PRICE ANOMALY: If last_sale_price exists and differs from estimated_value by >30%:
+   - Flag this in reasoning: "ALERTA: Preço anterior diferente do estimado atual"
+   - This is a risk factor - adjust score accordingly.
+
 Scoring criteria:
 - Location quality (zip code, neighborhood)
 - Price vs estimated value ratio (lower = better deal)
 - Property characteristics (sqft, beds, baths, year built, lot size)
 - Owner situation (out of state, deceased = higher urgency)
 - Contact availability (phones, emails available)
-- Market indicators (days on market, last sale price vs current)
+- Market indicators (last sale price vs current estimated value)
 
 Property data:
 ${JSON.stringify(property, null, 2)}`;

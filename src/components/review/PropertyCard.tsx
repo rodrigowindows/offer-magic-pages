@@ -1,15 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MessageSquare, User, BarChart3, Mail, FileText, Phone, AtSign } from 'lucide-react';
+import { MessageSquare, User, BarChart3, Mail, FileText, Phone, AtSign, AlertTriangle, Skull, PhoneOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { PropertyNotesPanel } from '../property/PropertyNotesPanel';
 import { PropertyImageDisplay } from '../property/PropertyImageDisplay';
 import { ScoresTable } from './ScoresTable';
 import { ExternalLinks } from './ExternalLinks';
 import { PropertyInfoColumn } from './PropertyInfoColumn';
 import { AIScoreButton } from '../ai/AIScoreButton';
-import { InlineCompsList } from './InlineCompsList';
-import { InlineCompForm } from './InlineCompForm';
 import type { QueueProperty } from './types';
 import { getVisualCategory } from './helpers';
 
@@ -30,6 +27,25 @@ const getCompleteness = (p: QueueProperty): { pct: number; missing: string[] } =
   const filled = fields.filter(([, v]) => v != null && v !== '' && v !== 0).length;
   const missing = fields.filter(([, v]) => !v || v === 0).map(([k]) => k);
   return { pct: Math.round((filled / fields.length) * 100), missing };
+};
+
+/** Detect critical issues for inline badges */
+const getInlineBadges = (p: QueueProperty): { label: string; color: string }[] => {
+  const badges: { label: string; color: string }[] = [];
+  // Ghost property
+  if (!p.square_feet && !p.bedrooms && !p.bathrooms && !p.year_built) {
+    badges.push({ label: 'DADOS INCOMPLETOS', color: 'bg-red-100 text-red-700 border-red-300' });
+  }
+  // No photo
+  if (!p.property_image_url) {
+    badges.push({ label: 'SEM FOTO', color: 'bg-amber-100 text-amber-700 border-amber-300' });
+  }
+  // Low $/sqft
+  if (p.avg_price_per_sqft && p.square_feet && p.estimated_value) {
+    const psf = p.estimated_value / p.square_feet;
+    if (psf < 80) badges.push({ label: `$/sqft: $${Math.round(psf)} ⚠️`, color: 'bg-amber-100 text-amber-700 border-amber-300' });
+  }
+  return badges;
 };
 
 interface PropertyCardProps {
@@ -67,7 +83,10 @@ const TABS: { key: TabKey; label: string; icon: React.ReactNode; shortLabel: str
   { key: 'notas', label: 'Notas', icon: <MessageSquare className="h-3 w-3" />, shortLabel: 'Notas' },
 ];
 
-/** Communications tab - fetches sent messages for this property from campaign_logs */
+/** Lazy-loaded tab content components */
+const LazyNotesPanel = lazy(() => import('../property/PropertyNotesPanel').then(m => ({ default: m.PropertyNotesPanel })));
+
+/** Communications tab - fetches sent messages from campaign_logs */
 const CommunicationsTab = ({ propertyId, propertyAddress }: { propertyId: string; propertyAddress: string }) => {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,10 +95,9 @@ const CommunicationsTab = ({ propertyId, propertyAddress }: { propertyId: string
     const fetchLogs = async () => {
       setLoading(true);
       try {
-        // Search campaign_logs by property_id or address match
         const { data } = await supabase
           .from('campaign_logs')
-          .select('id, channel, status, recipient_name, recipient_phone, recipient_email, created_at, tracking_id, campaign_type')
+          .select('id, channel, status, recipient_name, recipient_phone, recipient_email, created_at, tracking_id, campaign_type, link_clicked, click_count, first_response_at')
           .or(`property_id.eq.${propertyId},recipient_name.ilike.%${propertyAddress.split(' ').slice(0, 3).join(' ')}%`)
           .order('created_at', { ascending: false })
           .limit(20);
@@ -95,13 +113,23 @@ const CommunicationsTab = ({ propertyId, propertyAddress }: { propertyId: string
 
   if (loading) return <div className="p-4 text-center text-xs text-muted-foreground">Carregando...</div>;
 
+  const totalSent = logs.length;
+  const totalClicked = logs.filter(l => l.link_clicked).length;
+  const totalResponded = logs.filter(l => l.first_response_at).length;
+
   return (
     <div className="p-2 space-y-2">
-      <h4 className="text-sm font-bold">Comunicações ({logs.length})</h4>
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-bold">Comunicações ({totalSent})</h4>
+        {totalSent > 0 && (
+          <div className="flex gap-2 text-[10px]">
+            <span className="text-muted-foreground">Cliques: <strong className="text-blue-600">{totalClicked}</strong></span>
+            <span className="text-muted-foreground">Respostas: <strong className="text-emerald-600">{totalResponded}</strong></span>
+          </div>
+        )}
+      </div>
       {logs.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-4">
-          Nenhuma comunicação enviada para esta propriedade.
-        </p>
+        <p className="text-xs text-muted-foreground text-center py-4">Nenhuma comunicação enviada.</p>
       ) : (
         <div className="space-y-1 max-h-[250px] overflow-y-auto">
           {logs.map(log => (
@@ -112,6 +140,8 @@ const CommunicationsTab = ({ propertyId, propertyAddress }: { propertyId: string
               <span className="text-muted-foreground truncate flex-1">
                 {log.recipient_name || log.recipient_phone || log.recipient_email || '—'}
               </span>
+              {log.link_clicked && <Badge variant="default" className="text-[7px] px-0.5 bg-blue-500">clicou</Badge>}
+              {log.first_response_at && <Badge variant="default" className="text-[7px] px-0.5 bg-emerald-500">respondeu</Badge>}
               <Badge variant={log.status === 'sent' || log.status === 'delivered' ? 'default' : 'secondary'} className="text-[8px] shrink-0">
                 {log.status}
               </Badge>
@@ -142,15 +172,31 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
   useEffect(() => { setActiveTab('avaliacao'); }, [property.id]);
 
   const visual = getVisualCategory(property.evaluation);
+  const isDnc = property.dnc_flag === 'DNC' || (Array.isArray(property.tags) && property.tags.some(t => t?.includes?.('DNC')));
+  const isDeceased = property.deceased === 'Deceased' || (Array.isArray(property.tags) && property.tags.some(t => t?.includes?.('DECEASED')));
+  const inlineBadges = getInlineBadges(property);
+  const hasContact = !!(property.owner_phone || (property as any).pref_phone_1 || property.email1 || (property as any).pref_email_1);
 
   return (
     <div className={`rounded-lg border-2 ${getStatusBackground(property.approval_status)} flex flex-col`} data-property-id={property.id}>
-      {/* Temperature badge + Tabs row */}
+      {/* Temperature badge + DNC/Deceased + Tabs row */}
       <div className="flex items-stretch border-b">
         {/* Temperature indicator */}
         {visual && (
           <div className={`flex items-center px-2 text-[10px] font-bold ${TEMP_COLORS[visual] || 'bg-gray-400 text-white'}`}>
             {visual}
+          </div>
+        )}
+        {/* DNC badge */}
+        {isDnc && (
+          <div className="flex items-center px-1.5 text-[9px] font-bold bg-red-600 text-white gap-0.5">
+            <PhoneOff className="h-2.5 w-2.5" /> DNC
+          </div>
+        )}
+        {/* Deceased badge */}
+        {isDeceased && (
+          <div className="flex items-center px-1.5 text-[9px] font-bold bg-gray-700 text-white gap-0.5">
+            <Skull className="h-2.5 w-2.5" /> FALECIDO
           </div>
         )}
 
@@ -179,10 +225,9 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
         ))}
       </div>
 
-      {/* TAB 1: Avaliação - Property data, photo, scores */}
+      {/* TAB 1: Avaliação */}
       {activeTab === 'avaliacao' && (
         <div className="p-1.5">
-          {/* 2-column: photo | data */}
           <div className="grid grid-cols-[100px_1fr] sm:grid-cols-[120px_1fr] gap-1.5">
             {/* Photo + AI Score */}
             <div className="space-y-1">
@@ -201,9 +246,9 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
               <AIScoreButton property={property} onScoreUpdate={onScoreSaved ? () => onScoreSaved() : undefined} />
             </div>
 
-            {/* Right column: Address + Owner + Links + Scores */}
+            {/* Right column */}
             <div className="space-y-1 min-w-0">
-              {/* Address line */}
+              {/* Address + neighborhood + links */}
               <div>
                 <div className="flex items-start gap-1">
                   <h3 className="text-sm sm:text-base font-extrabold leading-tight line-clamp-1 flex-1" data-field="address">
@@ -213,23 +258,19 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">
                   {[property.city, property.state, property.zip_code].filter(Boolean).join(', ')}
+                  {property.neighborhood && <span className="italic ml-1">· {property.neighborhood}</span>}
                 </p>
               </div>
 
-              {/* Owner + contact indicator + completeness */}
-              <div className="flex items-center gap-1 min-w-0">
+              {/* Owner + contact + completeness + flags */}
+              <div className="flex items-center gap-1 min-w-0 flex-wrap">
                 {property.owner_name && (
-                  <p className="text-xs font-semibold text-muted-foreground truncate flex-1" data-field="owner-name">
+                  <p className="text-xs font-semibold text-muted-foreground truncate" data-field="owner-name">
                     Dono: {property.owner_name}
                   </p>
                 )}
-                {/* Contact indicators */}
-                {(property.owner_phone || (property as any).pref_phone_1) && (
-                  <Phone className="h-3 w-3 text-emerald-600 shrink-0" title="Tem telefone" />
-                )}
-                {((property as any).pref_email_1) && (
-                  <AtSign className="h-3 w-3 text-blue-600 shrink-0" title="Tem email" />
-                )}
+                {hasContact && <Phone className="h-3 w-3 text-emerald-600 shrink-0" title="Tem contato" />}
+                {property.email1 && <AtSign className="h-3 w-3 text-blue-600 shrink-0" title="Tem email" />}
                 {/* Completeness badge */}
                 {(() => {
                   const { pct, missing } = getCompleteness(property);
@@ -244,21 +285,34 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
                 })()}
               </div>
 
-              {/* Compact scores grid - 1 score only + key data */}
+              {/* Inline alert badges */}
+              {inlineBadges.length > 0 && (
+                <div className="flex flex-wrap gap-0.5">
+                  {inlineBadges.map((b, i) => (
+                    <Badge key={i} variant="outline" className={`text-[8px] px-1 ${b.color}`}>{b.label}</Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Scores */}
               <ScoresTable property={property} onScoreSaved={onScoreSaved} avgCompPrice={avgCompPrice} expanded />
 
-              {/* Pre-denial warnings + Status banner */}
+              {/* Pre-denial + Status */}
               <PropertyInfoColumn property={property} hideAddress hideOwner compactAlerts />
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 2: Contatos/Dono - Owner details, phones, emails */}
+      {/* TAB 2: Contatos - expanded with all contact data */}
       {activeTab === 'contatos' && (
         <div className="p-2 space-y-2">
-          <h4 className="text-sm font-bold">Dados do Proprietário</h4>
-          {/* Company name on top if LLC */}
+          <h4 className="text-sm font-bold flex items-center gap-2">
+            Dados do Proprietário
+            {isDnc && <Badge variant="destructive" className="text-[9px]"><PhoneOff className="h-2.5 w-2.5 mr-0.5" /> DNC - Não Ligar</Badge>}
+            {isDeceased && <Badge variant="secondary" className="text-[9px] bg-gray-600 text-white"><Skull className="h-2.5 w-2.5 mr-0.5" /> Falecido</Badge>}
+          </h4>
+          {/* Owner name */}
           {property.owner_name && (
             <div className="p-2 bg-muted/50 rounded-md">
               <p className="text-xs text-muted-foreground font-medium">Proprietário</p>
@@ -272,72 +326,118 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
               <p className="text-sm font-semibold">{property.owner_address}</p>
             </div>
           )}
-          {/* Phones */}
+          {/* All Phones */}
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground font-medium">Telefones</p>
             <div className="flex flex-wrap gap-1">
-              {property.owner_phone ? (
-                <Badge variant="outline" className="text-sm font-mono px-2 py-1">{property.owner_phone}</Badge>
-              ) : (
+              {[property.owner_phone, (property as any).pref_phone_1, (property as any).pref_phone_2, (property as any).pref_phone_3,
+                (property as any).person2_phone1, (property as any).person3_phone1
+              ].filter(Boolean).map((phone, i) => (
+                <Badge key={i} variant="outline" className="text-sm font-mono px-2 py-1">{phone}</Badge>
+              ))}
+              {!property.owner_phone && !(property as any).pref_phone_1 && (
                 <span className="text-xs text-muted-foreground italic">Sem telefone</span>
               )}
-              {(property as any).pref_phone_1 && <Badge variant="outline" className="text-sm font-mono px-2 py-1">{(property as any).pref_phone_1}</Badge>}
-              {(property as any).pref_phone_2 && <Badge variant="outline" className="text-sm font-mono px-2 py-1">{(property as any).pref_phone_2}</Badge>}
-              {(property as any).pref_phone_3 && <Badge variant="outline" className="text-sm font-mono px-2 py-1">{(property as any).pref_phone_3}</Badge>}
             </div>
           </div>
-          {/* Emails */}
+          {/* All Emails */}
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground font-medium">Emails</p>
             <div className="flex flex-wrap gap-1">
-              {(property as any).pref_email_1 && <Badge variant="outline" className="text-sm px-2 py-1">{(property as any).pref_email_1}</Badge>}
-              {(property as any).pref_email_2 && <Badge variant="outline" className="text-sm px-2 py-1">{(property as any).pref_email_2}</Badge>}
-              {!(property as any).pref_email_1 && <span className="text-xs text-muted-foreground italic">Sem email</span>}
+              {[property.email1, property.email2, (property as any).pref_email_1, (property as any).pref_email_2,
+                (property as any).person2_email1, (property as any).person3_email1
+              ].filter(Boolean).map((email, i) => (
+                <Badge key={i} variant="outline" className="text-sm px-2 py-1">{email}</Badge>
+              ))}
+              {!property.email1 && !(property as any).pref_email_1 && (
+                <span className="text-xs text-muted-foreground italic">Sem email</span>
+              )}
             </div>
           </div>
+          {/* Additional contacts (person2, person3) */}
+          {((property as any).person2_first_name || (property as any).person3_first_name) && (
+            <div className="space-y-1 pt-1 border-t">
+              <p className="text-xs text-muted-foreground font-medium">Contatos Adicionais</p>
+              {(property as any).person2_first_name && (
+                <div className="text-xs">
+                  <span className="font-semibold">{(property as any).person2_first_name} {(property as any).person2_last_name}</span>
+                  {(property as any).person2_phone1 && <span className="ml-2 font-mono">{(property as any).person2_phone1}</span>}
+                </div>
+              )}
+              {(property as any).person3_first_name && (
+                <div className="text-xs">
+                  <span className="font-semibold">{(property as any).person3_first_name} {(property as any).person3_last_name}</span>
+                  {(property as any).person3_phone1 && <span className="ml-2 font-mono">{(property as any).person3_phone1}</span>}
+                </div>
+              )}
+            </div>
+          )}
           {/* Tags */}
           <PropertyInfoColumn property={property} hideAddress hideOwner showTagsOnly />
         </div>
       )}
 
-      {/* TAB 3: Comps */}
+      {/* TAB 3: Comps - lazy loaded */}
       {activeTab === 'comps' && (
         <div className="p-2 space-y-2" id="inline-comps-section">
-          <InlineCompForm
-            property={{
-              id: property.id,
-              address: property.address,
-              city: property.city ?? null,
-              state: property.state ?? null,
-              zip_code: (property as any).zip_code ?? null,
-              square_feet: property.square_feet ?? null,
-            }}
-            onCompAdded={onCompAdded || (() => {})}
-          />
-          {comps && comps.length > 0 && (
-            <InlineCompsList
-              comps={comps}
-              subjectSqft={property.square_feet}
-              onDeleteComp={onDeleteComp || (async () => {})}
-            />
-          )}
-          {(!comps || comps.length === 0) && (
-            <p className="text-xs text-muted-foreground text-center py-4">Nenhum comp adicionado ainda.</p>
-          )}
+          <Suspense fallback={<div className="p-4 text-center text-xs text-muted-foreground">Carregando...</div>}>
+            <CompsTabContent property={property} comps={comps} onCompAdded={onCompAdded} onDeleteComp={onDeleteComp} />
+          </Suspense>
         </div>
       )}
 
-      {/* TAB 4: Comunicações */}
+      {/* TAB 4: Comunicações - lazy loaded */}
       {activeTab === 'comunicacoes' && (
         <CommunicationsTab propertyId={property.id} propertyAddress={property.address} />
       )}
 
-      {/* TAB 5: Notas */}
+      {/* TAB 5: Notas - lazy loaded */}
       {activeTab === 'notas' && (
         <div className="p-2" data-section="notes-panel">
-          <PropertyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
+          <Suspense fallback={<div className="p-4 text-center text-xs text-muted-foreground">Carregando...</div>}>
+            <LazyNotesPanel propertyId={property.id} propertyAddress={property.address} onNoteChanged={fetchNoteCount} />
+          </Suspense>
         </div>
       )}
     </div>
   );
 };
+
+/** Comps tab content - separated for lazy loading */
+import { InlineCompsList } from './InlineCompsList';
+import { InlineCompForm } from './InlineCompForm';
+import { InlineMAOCalculator } from './InlineMAOCalculator';
+
+const CompsTabContent = ({ property, comps, onCompAdded, onDeleteComp }: {
+  property: QueueProperty; comps?: any[]; onCompAdded?: () => void; onDeleteComp?: (id: string) => void;
+}) => (
+  <>
+    <InlineCompForm
+      property={{
+        id: property.id,
+        address: property.address,
+        city: property.city ?? null,
+        state: property.state ?? null,
+        zip_code: property.zip_code ?? null,
+        square_feet: property.square_feet ?? null,
+      }}
+      onCompAdded={onCompAdded || (() => {})}
+    />
+    {comps && comps.length > 0 && (
+      <InlineCompsList
+        comps={comps}
+        subjectSqft={property.square_feet}
+        onDeleteComp={onDeleteComp || (async () => {})}
+      />
+    )}
+    {(!comps || comps.length === 0) && (
+      <p className="text-xs text-muted-foreground text-center py-4">Nenhum comp adicionado ainda.</p>
+    )}
+    {/* Inline MAO Calculator */}
+    <InlineMAOCalculator
+      property={property}
+      compsARV={null}
+      onSaved={() => {}}
+    />
+  </>
+);
