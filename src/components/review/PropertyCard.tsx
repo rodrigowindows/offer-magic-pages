@@ -55,7 +55,7 @@ interface PropertyCardProps {
   avgCompPrice?: number | null;
   comps?: any[];
   onCompAdded?: () => void;
-  onDeleteComp?: (compId: string) => void;
+  onDeleteComp?: (compId: string) => Promise<void>;
 }
 
 const getStatusBackground = (status: string | null | undefined) => {
@@ -172,8 +172,8 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
   useEffect(() => { setActiveTab('avaliacao'); }, [property.id]);
 
   const visual = getVisualCategory(property.evaluation);
-  const isDnc = property.dnc_flag === 'DNC' || (Array.isArray(property.tags) && property.tags.some(t => t?.includes?.('DNC')));
-  const isDeceased = property.deceased === 'Deceased' || (Array.isArray(property.tags) && property.tags.some(t => t?.includes?.('DECEASED')));
+  const isDnc = !!property.dnc_flag || (Array.isArray(property.tags) && property.tags.some(t => t?.includes?.('DNC')));
+  const isDeceased = !!property.deceased || (Array.isArray(property.tags) && property.tags.some(t => t?.includes?.('DECEASED')));
   const inlineBadges = getInlineBadges(property);
   const hasContact = !!(property.owner_phone || (property as any).pref_phone_1 || property.email1 || (property as any).pref_email_1);
 

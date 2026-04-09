@@ -22,6 +22,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [visualFilter, setVisualFilter] = useState<string>('all');
+  const [smartFilter, setSmartFilter] = useState<string>('none');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({ pending: 0, approved: 0, rejected: 0 });
 
@@ -34,50 +35,29 @@ export const useReviewQueue = (selectedBatch?: string) => {
 
   // Derived
   const visualCounts = countByVisual(properties);
-  const hasContact = (p: QueueProperty) => !!(p.owner_phone || (p as any).pref_phone_1 || (p as any).pref_email_1);
-  const contactCount = properties.filter(hasContact).length;
+  // Smart filter: "Ready to Contact"
+  const isReadyToContact = useCallback((p: QueueProperty): boolean => {
+    const hasContact = !!(p.owner_phone || p.email1 || p.email2);
+    const hasCompleteData = !!(p.address && p.square_feet && p.year_built && p.estimated_value && p.cash_offer_amount);
+    const hasPositiveAI = (p.ai_score ?? 0) >= 5;
+    const notBlocked = !p.dnc_flag && !p.deceased;
+    return hasContact && hasCompleteData && hasPositiveAI && notBlocked;
+  }, []);
+
+  const readyToContactCount = useMemo(() =>
+    properties.filter(isReadyToContact).length,
+    [properties, isReadyToContact]
+  );
+
   const searchFiltered = searchQuery.trim()
     ? properties.filter(p => p.address.toLowerCase().includes(searchQuery.toLowerCase()))
     : properties;
-  const visualFiltered = visualFilter === 'all'
-    ? searchFiltered
-    : visualFilter === 'CONTACT'
-    ? searchFiltered.filter(hasContact)
-    : searchFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
-
-  // Smart sorting: has contact data first → highest AI score → most complete data
-  const filteredProperties = useMemo(() => {
-    if (statusFilter !== 'pending') return visualFiltered; // don't re-sort approved/rejected
-    return [...visualFiltered].sort((a, b) => {
-      // 1. Properties with contact data first
-      const aHasContact = !!(a.owner_phone || (a as any).pref_phone_1 || (a as any).pref_email_1);
-      const bHasContact = !!(b.owner_phone || (b as any).pref_phone_1 || (b as any).pref_email_1);
-      if (aHasContact !== bHasContact) return bHasContact ? 1 : -1;
-
-      // 2. Higher AI score first
-      const aScore = a.ai_score ?? 0;
-      const bScore = b.ai_score ?? 0;
-      if (aScore !== bScore) return bScore - aScore;
-
-      // 3. More complete data first
-      const completeness = (p: QueueProperty) => {
-        let c = 0;
-        if (p.estimated_value) c++;
-        if (p.square_feet) c++;
-        if (p.bedrooms) c++;
-        if (p.bathrooms) c++;
-        if (p.year_built) c++;
-        if (p.property_type) c++;
-        if (p.lot_size) c++;
-        if (p.owner_name) c++;
-        if (p.property_image_url) c++;
-        if (p.cash_offer_amount) c++;
-        return c;
-      };
-      return completeness(b) - completeness(a);
-    });
-  }, [visualFiltered, statusFilter]);
-
+  const smartFiltered = smartFilter === 'ready'
+    ? searchFiltered.filter(isReadyToContact)
+    : searchFiltered;
+  const filteredProperties = visualFilter === 'all'
+    ? smartFiltered
+    : smartFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
   const currentProperty = filteredProperties[currentIndex];
 
   const avgCompPrice = useMemo(() => {
@@ -89,6 +69,39 @@ export const useReviewQueue = (selectedBatch?: string) => {
       .filter((p): p is number => typeof p === 'number' && p > 0);
     return prices.length > 0 ? Math.round(prices.reduce((s, p) => s + p, 0) / prices.length) : null;
   }, [currentComps]);
+
+  // ── Smart sorting ──────────────────────────────────────────────
+
+  /**
+   * Compute a composite priority score (higher = better lead).
+   * - Data completeness (0-50 pts): key fields present
+   * - AI Score (0-30 pts): normalized from ai_score (1-10 → 3-30)
+   * - Contact availability (0-20 pts): phone/email presence
+   */
+  const computeLeadScore = useCallback((p: QueueProperty): number => {
+    let score = 0;
+
+    // Data completeness (0-50)
+    const fields = [
+      p.address, p.city, p.state, p.zip_code,
+      p.estimated_value, p.cash_offer_amount,
+      p.square_feet, p.year_built, p.bedrooms, p.bathrooms,
+    ];
+    const filled = fields.filter(f => f != null && f !== '' && f !== 0).length;
+    score += (filled / fields.length) * 50;
+
+    // AI Score (0-30)
+    if (p.ai_score && p.ai_score > 0) {
+      score += Math.min(p.ai_score, 10) * 3;
+    }
+
+    // Contact data (0-20)
+    if (p.owner_name) score += 5;
+    if (p.owner_phone) score += 10;
+    if (p.owner_address) score += 5;
+
+    return score;
+  }, []);
 
   // ── Data fetching ─────────────────────────────────────────────
 
@@ -112,13 +125,17 @@ export const useReviewQueue = (selectedBatch?: string) => {
 
       const { data, error } = await query;
       if (error) throw error;
-      setProperties((data as unknown as QueueProperty[]) || []);
+
+      // Smart sort: best leads first (highest composite score)
+      const raw = (data as unknown as QueueProperty[]) || [];
+      const sorted = [...raw].sort((a, b) => computeLeadScore(b) - computeLeadScore(a));
+      setProperties(sorted);
     } catch (error: any) {
       toast({ title: "Erro ao carregar", description: error.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, selectedBatch, toast]);
+  }, [statusFilter, selectedBatch, toast, computeLeadScore]);
 
   const fetchStatusCounts = useCallback(async () => {
     try {
@@ -216,7 +233,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, selectedBatch, statusFilter, fetchProperties, fetchStatusCounts]);
 
-  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery]);
+  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery, smartFilter]);
 
   useEffect(() => {
     if (currentProperty?.id) fetchCurrentComps(currentProperty.id);
@@ -239,12 +256,13 @@ export const useReviewQueue = (selectedBatch?: string) => {
   return {
     // Data
     properties, currentProperty, filteredProperties, isLoading,
-    dailyStats, statusCounts, visualCounts, contactCount,
+    dailyStats, statusCounts, visualCounts, readyToContactCount,
     currentComps, currentCompsCount, avgCompPrice,
     currentIndex,
     // Filters
     statusFilter, setStatusFilter,
     visualFilter, setVisualFilter,
+    smartFilter, setSmartFilter,
     searchQuery, setSearchQuery,
     // Actions
     fetchProperties, fetchDailyStats, fetchStatusCounts, fetchCurrentComps,

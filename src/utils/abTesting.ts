@@ -155,6 +155,8 @@ export type ABEventType =
   | 'form_submitted'     // Completed contact form
   | 'phone_collected'    // Provided phone number
   | 'clicked_download_pdf' // Clicked Download PDF
+  | 'clicked_schedule_call' // Clicked Schedule Call
+  | 'clicked_schedule_visit' // Clicked Schedule Visit
   | 'exit';              // Left the page
 
 export interface ABTestEvent {

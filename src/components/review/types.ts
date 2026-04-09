@@ -35,17 +35,14 @@ export interface QueueProperty {
   total_tax_due: number | null;
   years_delinquent: number | null;
   taxable_value: number | null;
-  // Financial analysis fields
   arv: number | null;
   avg_price_per_sqft: number | null;
+  dnc_flag: boolean | null;
+  deceased: boolean | null;
   wholesale_value: number | null;
   wholesale_pct: number | null;
   renovation_value: number | null;
   renovation_pct: number | null;
-  // Flags
-  dnc_flag: string | null;
-  deceased: string | null;
-  // Additional contacts
   email1: string | null;
   email2: string | null;
   last_sale_price: number | null;

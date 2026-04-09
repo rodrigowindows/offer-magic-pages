@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react';
+import { Search, X, PhoneCall } from 'lucide-react';
 import type { StatusFilter, StatusCounts } from './types';
 
 interface FilterBarProps {
@@ -11,7 +11,9 @@ interface FilterBarProps {
   totalProperties: number;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  contactCount?: number;
+  smartFilter?: string;
+  onSmartFilterChange?: (filter: string) => void;
+  readyToContactCount?: number;
 }
 
 const STATUS_OPTIONS = [
@@ -25,7 +27,6 @@ const VISUAL_CONFIG: Record<string, { icon: string; color: string }> = {
   WARM: { icon: '🟡', color: 'amber' },
   COLD: { icon: '❄️', color: 'blue' },
   LAND: { icon: '🏜️', color: 'stone' },
-  CONTACT: { icon: '📞', color: 'emerald' },
 };
 
 const VISUAL_ORDER = ['HOT', 'WARM', 'COLD', 'LAND'] as const;
@@ -40,12 +41,14 @@ export const FilterBar = ({
   totalProperties,
   searchQuery,
   onSearchChange,
-  contactCount,
+  smartFilter = 'none',
+  onSmartFilterChange,
+  readyToContactCount = 0,
 }: FilterBarProps) => {
   const hasVisualData = Object.keys(visualCounts).length > 0;
 
   return (
-    <div className="space-y-1 flex-1 min-w-0">
+    <div className="space-y-1">
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
@@ -65,7 +68,7 @@ export const FilterBar = ({
         )}
       </div>
 
-      {/* Status + Visual + Contact filters - all in one row */}
+      {/* Status + Visual filters - all in one row */}
       <div className="flex items-center gap-1 overflow-x-auto">
         {/* Status tabs */}
         {STATUS_OPTIONS.map(s => (
@@ -84,24 +87,27 @@ export const FilterBar = ({
           </button>
         ))}
 
-        {/* Divider */}
-        <div className="w-px h-4 bg-border shrink-0 mx-0.5" />
-
-        {/* "Ready to Contact" filter */}
-        {contactCount != null && contactCount > 0 && (
-          <button
-            onClick={() => onVisualChange(visualFilter === 'CONTACT' ? 'all' : 'CONTACT')}
-            title="Propriedades com telefone ou email"
-            className={`shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold border transition-all ${
-              visualFilter === 'CONTACT'
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-            }`}
-          >
-            <span className="text-[10px]">📞</span>
-            <span className="font-bold text-[10px]">{contactCount}</span>
-          </button>
+        {/* Smart filter: Ready to Contact */}
+        {onSmartFilterChange && (
+          <>
+            <div className="w-px h-4 bg-border shrink-0 mx-0.5" />
+            <button
+              onClick={() => onSmartFilterChange(smartFilter === 'ready' ? 'none' : 'ready')}
+              className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                smartFilter === 'ready'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                  : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+              }`}
+            >
+              <PhoneCall className="h-2.5 w-2.5" />
+              Ready
+              <span className="font-bold text-[10px] opacity-80">{readyToContactCount}</span>
+            </button>
+          </>
         )}
+
+        {/* Divider */}
+        {hasVisualData && <div className="w-px h-4 bg-border shrink-0 mx-0.5" />}
 
         {/* Visual filters */}
         {hasVisualData && (
