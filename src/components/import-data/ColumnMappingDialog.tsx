@@ -22,6 +22,8 @@ export const DATABASE_FIELDS = [
   { key: 'owner_name', label: 'Nome do Proprietário', required: false, group: 'owner' },
   { key: 'owner_phone', label: 'Telefone', required: false, group: 'owner' },
   { key: 'owner_address', label: 'Endereço do Proprietário', required: false, group: 'owner' },
+  { key: 'email1', label: 'Email', required: false, group: 'owner' },
+  { key: 'email2', label: 'Email 2', required: false, group: 'owner' },
   
   { key: 'bedrooms', label: 'Quartos', required: false, group: 'property' },
   { key: 'bathrooms', label: 'Banheiros', required: false, group: 'property' },
@@ -37,7 +39,12 @@ export const DATABASE_FIELDS = [
   { key: 'total_tax_due', label: 'Tax Due', required: false, group: 'financial' },
   { key: 'years_delinquent', label: 'Years Delinquent', required: false, group: 'financial' },
   { key: 'taxable_value', label: 'Taxable Value', required: false, group: 'financial' },
+  { key: 'last_sale_price', label: 'Último Preço de Venda', required: false, group: 'financial' },
+  { key: 'last_sale_date', label: 'Última Data de Venda', required: false, group: 'financial' },
+  { key: 'equity_percentage', label: 'Equity %', required: false, group: 'financial' },
   
+  { key: 'latitude', label: 'Latitude', required: false, group: 'system' },
+  { key: 'longitude', label: 'Longitude', required: false, group: 'system' },
   { key: 'origem', label: 'ID Único (Account Number)', required: false, group: 'system' },
   { key: 'property_image_url', label: 'URL da Imagem', required: false, group: 'system' },
   { key: 'zillow_url', label: 'URL Zillow', required: false, group: 'system' },
@@ -303,6 +310,35 @@ const autoDetectField = (csvHeader: string): DatabaseFieldKey | '' => {
     'etiquetas': 'tags',
     'categorias': 'tags',
     'category': 'tags',
+
+    // Financial - enriched data
+    'lastsaleprice': 'last_sale_price',
+    'lastsale': 'last_sale_price',
+    'lastprice': 'last_sale_price',
+    'previousprice': 'last_sale_price',
+    'saleprice': 'last_sale_price',
+    'precoultimavenda': 'last_sale_price',
+
+    'lastsaledate': 'last_sale_date',
+    'lastsold': 'last_sale_date',
+    'saledate': 'last_sale_date',
+    'datavenda': 'last_sale_date',
+
+    'equitypercentage': 'equity_percentage',
+    'equity': 'equity_percentage',
+    'equitypct': 'equity_percentage',
+
+    'email': 'email1',
+    'email1': 'email1',
+    'owneremail': 'email1',
+    'emailproprietario': 'email1',
+    'email2': 'email2',
+
+    'lat': 'latitude',
+    'latitude': 'latitude',
+    'lng': 'longitude',
+    'longitude': 'longitude',
+    'lon': 'longitude',
   };
 
   return mappings[header] || '';

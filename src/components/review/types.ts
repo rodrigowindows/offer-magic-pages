@@ -45,6 +45,12 @@ export interface QueueProperty {
   renovation_pct: number | null;
   email1: string | null;
   email2: string | null;
+  last_sale_price: number | null;
+  last_sale_date: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  answer_flag: boolean | null;
+  lead_status: string | null;
 }
 
 export type ApprovePhase = 'choose' | 'comps' | 'offer' | null;

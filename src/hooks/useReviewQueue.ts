@@ -11,7 +11,7 @@ import type { QueueProperty, StatusFilter, DailyStats, StatusCounts } from '@/co
 import type { SavedComp } from '@/hooks/useComps';
 import { getVisualCategory, countByVisual } from '@/components/review/helpers';
 
-const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning, mao, total_tax_due, years_delinquent, taxable_value, arv, avg_price_per_sqft, dnc_flag, deceased, wholesale_value, wholesale_pct, renovation_value, renovation_pct, email1, email2";
+const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning, mao, total_tax_due, years_delinquent, taxable_value, arv, avg_price_per_sqft, dnc_flag, deceased, wholesale_value, wholesale_pct, renovation_value, renovation_pct, email1, email2, last_sale_price, last_sale_date, latitude, longitude, answer_flag, lead_status";
 
 export const useReviewQueue = (selectedBatch?: string) => {
   const [properties, setProperties] = useState<QueueProperty[]>([]);
