@@ -269,8 +269,8 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
                     Dono: {property.owner_name}
                   </p>
                 )}
-                {hasContact && <Phone className="h-3 w-3 text-emerald-600 shrink-0" title="Tem contato" />}
-                {property.email1 && <AtSign className="h-3 w-3 text-blue-600 shrink-0" title="Tem email" />}
+                {hasContact && <Phone className="h-3 w-3 text-emerald-600 shrink-0" />}
+                {property.email1 && <AtSign className="h-3 w-3 text-blue-600 shrink-0" />}
                 {/* Completeness badge */}
                 {(() => {
                   const { pct, missing } = getCompleteness(property);
@@ -409,7 +409,7 @@ import { InlineCompForm } from './InlineCompForm';
 import { InlineMAOCalculator } from './InlineMAOCalculator';
 
 const CompsTabContent = ({ property, comps, onCompAdded, onDeleteComp }: {
-  property: QueueProperty; comps?: any[]; onCompAdded?: () => void; onDeleteComp?: (id: string) => void;
+  property: QueueProperty; comps?: any[]; onCompAdded?: () => void; onDeleteComp?: (id: string) => Promise<void>;
 }) => (
   <>
     <InlineCompForm
@@ -427,7 +427,7 @@ const CompsTabContent = ({ property, comps, onCompAdded, onDeleteComp }: {
       <InlineCompsList
         comps={comps}
         subjectSqft={property.square_feet}
-        onDeleteComp={onDeleteComp || (async () => {})}
+        onDeleteComp={onDeleteComp ? onDeleteComp : async () => {}}
       />
     )}
     {(!comps || comps.length === 0) && (
