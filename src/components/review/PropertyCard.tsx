@@ -409,7 +409,7 @@ import { InlineCompForm } from './InlineCompForm';
 import { InlineMAOCalculator } from './InlineMAOCalculator';
 
 const CompsTabContent = ({ property, comps, onCompAdded, onDeleteComp }: {
-  property: QueueProperty; comps?: any[]; onCompAdded?: () => void; onDeleteComp?: (id: string) => void;
+  property: QueueProperty; comps?: any[]; onCompAdded?: () => void; onDeleteComp?: (id: string) => Promise<void>;
 }) => (
   <>
     <InlineCompForm
