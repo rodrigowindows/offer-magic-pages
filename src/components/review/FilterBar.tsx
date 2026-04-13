@@ -1,4 +1,4 @@
-import { Search, X, PhoneCall } from 'lucide-react';
+import { Search, X, PhoneCall, ArrowDownWideNarrow } from 'lucide-react';
 import type { StatusFilter, StatusCounts } from './types';
 
 interface FilterBarProps {
@@ -17,6 +17,8 @@ interface FilterBarProps {
   conditionFilter?: string;
   onConditionChange?: (condition: string) => void;
   conditionCounts?: Record<string, number>;
+  sortBy?: 'smart' | 'score';
+  onSortChange?: (sort: 'smart' | 'score') => void;
 }
 
 const STATUS_OPTIONS = [
@@ -36,12 +38,14 @@ const VISUAL_ORDER = ['HOT', 'WARM', 'COLD', 'LAND'] as const;
 
 const CONDITION_ORDER = ['SEVERE', 'POOR', 'FAIR', 'GOOD', 'EXCELLENT'] as const;
 
-const CONDITION_CONFIG: Record<string, { icon: string; activeClass: string }> = {
-  SEVERE:    { icon: '🔴', activeClass: 'bg-red-600 text-white border-red-600' },
-  POOR:      { icon: '🟠', activeClass: 'bg-orange-500 text-white border-orange-500' },
-  FAIR:      { icon: '🟡', activeClass: 'bg-amber-500 text-white border-amber-500' },
-  GOOD:      { icon: '🟢', activeClass: 'bg-green-600 text-white border-green-600' },
-  EXCELLENT: { icon: '✨', activeClass: 'bg-emerald-600 text-white border-emerald-600' },
+// For wholesaling: SEVERE = most distressed = best target (hot 🔥)
+//                  EXCELLENT = least distressed = lowest priority (cold ❄️)
+const CONDITION_CONFIG: Record<string, { icon: string; label: string; activeClass: string }> = {
+  SEVERE:    { icon: '🔥', label: 'SEV',   activeClass: 'bg-orange-500 text-white border-orange-500' },
+  POOR:      { icon: '⚡', label: 'POOR',  activeClass: 'bg-amber-500 text-white border-amber-500' },
+  FAIR:      { icon: '🏠', label: 'FAIR',  activeClass: 'bg-yellow-500 text-white border-yellow-500' },
+  GOOD:      { icon: '💧', label: 'GOOD',  activeClass: 'bg-blue-500 text-white border-blue-500' },
+  EXCELLENT: { icon: '❄️', label: 'EXCE',  activeClass: 'bg-slate-400 text-white border-slate-400' },
 };
 
 export const FilterBar = ({
@@ -60,6 +64,8 @@ export const FilterBar = ({
   conditionFilter = 'all',
   onConditionChange,
   conditionCounts = {},
+  sortBy = 'smart',
+  onSortChange,
 }: FilterBarProps) => {
   const hasVisualData = Object.keys(visualCounts).length > 0;
   const hasConditionData = Object.keys(conditionCounts).length > 0;
@@ -192,10 +198,29 @@ export const FilterBar = ({
                 }`}
               >
                 <span className="text-[10px]">{config.icon}</span>
-                <span className="font-bold text-[10px]">{count}</span>
+                <span className="text-[10px]">{config.label}</span>
+                <span className="font-bold text-[10px] opacity-80">{count}</span>
               </button>
             );
           })}
+
+          {/* Sort toggle */}
+          {onSortChange && (
+            <>
+              <div className="w-px h-4 bg-border shrink-0 mx-0.5" />
+              <button
+                onClick={() => onSortChange(sortBy === 'score' ? 'smart' : 'score')}
+                className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                  sortBy === 'score'
+                    ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                    : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                }`}
+              >
+                <ArrowDownWideNarrow className="h-2.5 w-2.5" />
+                Score
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

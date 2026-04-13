@@ -23,6 +23,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [visualFilter, setVisualFilter] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'smart' | 'score'>('smart');
   const [smartFilter, setSmartFilter] = useState<string>('none');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({ pending: 0, approved: 0, rejected: 0 });
@@ -60,9 +61,12 @@ export const useReviewQueue = (selectedBatch?: string) => {
   const visualFiltered = visualFilter === 'all'
     ? smartFiltered
     : smartFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
-  const filteredProperties = conditionFilter === 'all'
+  const conditionFiltered = conditionFilter === 'all'
     ? visualFiltered
     : visualFiltered.filter(p => getConditionCategory(p.evaluation) === conditionFilter);
+  const filteredProperties = sortBy === 'score'
+    ? [...conditionFiltered].sort((a, b) => (b.lead_score ?? 0) - (a.lead_score ?? 0))
+    : conditionFiltered;
   const currentProperty = filteredProperties[currentIndex];
 
   const avgCompPrice = useMemo(() => {
@@ -238,7 +242,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, selectedBatch, statusFilter, fetchProperties, fetchStatusCounts]);
 
-  useEffect(() => { setCurrentIndex(0); }, [visualFilter, conditionFilter, statusFilter, searchQuery, smartFilter]);
+  useEffect(() => { setCurrentIndex(0); }, [visualFilter, conditionFilter, sortBy, statusFilter, searchQuery, smartFilter]);
 
   useEffect(() => {
     if (currentProperty?.id) fetchCurrentComps(currentProperty.id);
@@ -268,6 +272,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     statusFilter, setStatusFilter,
     visualFilter, setVisualFilter,
     conditionFilter, setConditionFilter, conditionCounts,
+    sortBy, setSortBy,
     smartFilter, setSmartFilter,
     searchQuery, setSearchQuery,
     // Actions

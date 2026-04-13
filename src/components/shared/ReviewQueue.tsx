@@ -137,6 +137,8 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
             conditionFilter={queue.conditionFilter}
             onConditionChange={queue.setConditionFilter}
             conditionCounts={queue.conditionCounts}
+            sortBy={queue.sortBy}
+            onSortChange={queue.setSortBy}
           />
           <div className="flex items-center gap-1 shrink-0">
             <SpeedTracker dailyStats={queue.dailyStats} />
