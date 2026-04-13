@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.ai-auto-tagger]
 verify_jwt = false
+
+[functions.import-properties]
+verify_jwt = false
