@@ -9,7 +9,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
 import type { QueueProperty, StatusFilter, DailyStats, StatusCounts } from '@/components/review/types';
 import type { SavedComp } from '@/hooks/useComps';
-import { getVisualCategory, countByVisual } from '@/components/review/helpers';
+import { getVisualCategory, countByVisual, getConditionCategory, countByCondition } from '@/components/review/helpers';
 
 const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner_name, property_image_url, estimated_value, cash_offer_amount, approval_status, approved_by_name, approved_at, rejection_reason, rejection_notes, decision_photos, property_type, year_built, square_feet, bedrooms, bathrooms, lot_size, owner_phone, lead_score, zillow_url, focar, evaluation, tags, owner_address, origem, ai_score, ai_reasoning, mao, total_tax_due, years_delinquent, taxable_value, arv, avg_price_per_sqft, dnc_flag, deceased, wholesale_value, wholesale_pct, renovation_value, renovation_pct, email1, email2, last_sale_price, last_sale_date, latitude, longitude, answer_flag, lead_status";
 
@@ -22,6 +22,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [visualFilter, setVisualFilter] = useState<string>('all');
+  const [conditionFilter, setConditionFilter] = useState<string>('all');
   const [smartFilter, setSmartFilter] = useState<string>('none');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({ pending: 0, approved: 0, rejected: 0 });
@@ -35,6 +36,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
 
   // Derived
   const visualCounts = countByVisual(properties);
+  const conditionCounts = countByCondition(properties);
   // Smart filter: "Ready to Contact"
   const isReadyToContact = useCallback((p: QueueProperty): boolean => {
     const hasContact = !!(p.owner_phone || p.email1 || p.email2);
@@ -55,9 +57,12 @@ export const useReviewQueue = (selectedBatch?: string) => {
   const smartFiltered = smartFilter === 'ready'
     ? searchFiltered.filter(isReadyToContact)
     : searchFiltered;
-  const filteredProperties = visualFilter === 'all'
+  const visualFiltered = visualFilter === 'all'
     ? smartFiltered
     : smartFiltered.filter(p => getVisualCategory(p.evaluation) === visualFilter);
+  const filteredProperties = conditionFilter === 'all'
+    ? visualFiltered
+    : visualFiltered.filter(p => getConditionCategory(p.evaluation) === conditionFilter);
   const currentProperty = filteredProperties[currentIndex];
 
   const avgCompPrice = useMemo(() => {
@@ -233,7 +238,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, selectedBatch, statusFilter, fetchProperties, fetchStatusCounts]);
 
-  useEffect(() => { setCurrentIndex(0); }, [visualFilter, statusFilter, searchQuery, smartFilter]);
+  useEffect(() => { setCurrentIndex(0); }, [visualFilter, conditionFilter, statusFilter, searchQuery, smartFilter]);
 
   useEffect(() => {
     if (currentProperty?.id) fetchCurrentComps(currentProperty.id);
@@ -262,6 +267,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     // Filters
     statusFilter, setStatusFilter,
     visualFilter, setVisualFilter,
+    conditionFilter, setConditionFilter, conditionCounts,
     smartFilter, setSmartFilter,
     searchQuery, setSearchQuery,
     // Actions

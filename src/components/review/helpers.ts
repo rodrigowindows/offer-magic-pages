@@ -109,6 +109,25 @@ export const countByVisual = (properties: QueueProperty[]): Record<string, numbe
   }, {} as Record<string, number>);
 };
 
+const CONDITION_VALUES = ['SEVERE', 'POOR', 'FAIR', 'GOOD', 'EXCELLENT'] as const;
+
+/** Extract condition category (SEVERE/POOR/FAIR/GOOD/EXCELLENT) from evaluation string.
+ *  Miami stores raw values; Orlando uses "Tier:... Visual:... Cond:..." format. */
+export const getConditionCategory = (evaluation: string | null): string | null => {
+  if (!evaluation) return null;
+  const upper = evaluation.trim().toUpperCase();
+  return (CONDITION_VALUES as readonly string[]).includes(upper) ? upper : null;
+};
+
+/** Count properties per condition category */
+export const countByCondition = (properties: QueueProperty[]): Record<string, number> => {
+  return properties.reduce((acc, p) => {
+    const c = getConditionCategory(p.evaluation);
+    if (c) acc[c] = (acc[c] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+};
+
 /** Load visible fields from localStorage */
 export const loadVisibleFields = (): Set<string> => {
   try {

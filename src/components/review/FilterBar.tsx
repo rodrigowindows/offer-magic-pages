@@ -14,6 +14,9 @@ interface FilterBarProps {
   smartFilter?: string;
   onSmartFilterChange?: (filter: string) => void;
   readyToContactCount?: number;
+  conditionFilter?: string;
+  onConditionChange?: (condition: string) => void;
+  conditionCounts?: Record<string, number>;
 }
 
 const STATUS_OPTIONS = [
@@ -31,6 +34,16 @@ const VISUAL_CONFIG: Record<string, { icon: string; color: string }> = {
 
 const VISUAL_ORDER = ['HOT', 'WARM', 'COLD', 'LAND'] as const;
 
+const CONDITION_ORDER = ['SEVERE', 'POOR', 'FAIR', 'GOOD', 'EXCELLENT'] as const;
+
+const CONDITION_CONFIG: Record<string, { icon: string; activeClass: string }> = {
+  SEVERE:    { icon: '🔴', activeClass: 'bg-red-600 text-white border-red-600' },
+  POOR:      { icon: '🟠', activeClass: 'bg-orange-500 text-white border-orange-500' },
+  FAIR:      { icon: '🟡', activeClass: 'bg-amber-500 text-white border-amber-500' },
+  GOOD:      { icon: '🟢', activeClass: 'bg-green-600 text-white border-green-600' },
+  EXCELLENT: { icon: '✨', activeClass: 'bg-emerald-600 text-white border-emerald-600' },
+};
+
 export const FilterBar = ({
   statusFilter,
   onStatusChange,
@@ -44,8 +57,12 @@ export const FilterBar = ({
   smartFilter = 'none',
   onSmartFilterChange,
   readyToContactCount = 0,
+  conditionFilter = 'all',
+  onConditionChange,
+  conditionCounts = {},
 }: FilterBarProps) => {
   const hasVisualData = Object.keys(visualCounts).length > 0;
+  const hasConditionData = Object.keys(conditionCounts).length > 0;
 
   return (
     <div className="space-y-1">
@@ -145,6 +162,42 @@ export const FilterBar = ({
           </>
         )}
       </div>
+
+      {/* Condition filter row - only shown when Miami condition data exists */}
+      {hasConditionData && onConditionChange && (
+        <div className="flex items-center gap-1 overflow-x-auto">
+          <button
+            onClick={() => onConditionChange('all')}
+            className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+              conditionFilter === 'all'
+                ? 'bg-slate-700 text-white border-slate-700'
+                : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+            }`}
+          >
+            Cond
+            <span className="font-bold text-[10px] opacity-80">{Object.values(conditionCounts).reduce((s, n) => s + n, 0)}</span>
+          </button>
+          {CONDITION_ORDER.map(c => {
+            const count = conditionCounts[c] || 0;
+            if (count === 0) return null;
+            const config = CONDITION_CONFIG[c];
+            return (
+              <button
+                key={c}
+                onClick={() => onConditionChange(c)}
+                className={`shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold border transition-all ${
+                  conditionFilter === c
+                    ? config.activeClass + ' shadow-sm'
+                    : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                }`}
+              >
+                <span className="text-[10px]">{config.icon}</span>
+                <span className="font-bold text-[10px]">{count}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
