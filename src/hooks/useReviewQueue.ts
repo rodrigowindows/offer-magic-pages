@@ -65,7 +65,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
     ? visualFiltered
     : visualFiltered.filter(p => getConditionCategory(p.evaluation) === conditionFilter);
   const filteredProperties = sortBy === 'score'
-    ? [...conditionFiltered].sort((a, b) => (b.ai_score ?? 0) - (a.ai_score ?? 0))
+    ? [...conditionFiltered].sort((a, b) => (b.lead_score ?? 0) - (a.lead_score ?? 0))
     : conditionFiltered;
   const currentProperty = filteredProperties[currentIndex];
 

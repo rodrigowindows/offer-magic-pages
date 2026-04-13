@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { QueueProperty } from './types';
-import { getScoreColor } from './constants';
+import { getScoreColor, getLeadScoreColor } from './constants';
 import { formatCurrency } from '@/lib/utils';
 
 interface ScoresTableProps {
@@ -21,6 +21,7 @@ const Tip = ({ text, tip }: { text: string; tip: string }) => (
 export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
   const [showReasoning, setShowReasoning] = useState(false);
   const aiC = getScoreColor(property.ai_score);
+  const leadC = getLeadScoreColor(property.lead_score ?? null);
 
   const pricePsf = property.estimated_value && property.square_feet && property.square_feet > 0
     ? Math.round(property.estimated_value / property.square_feet)
@@ -75,6 +76,19 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
             )}
           </div>
         </div>
+
+        {/* Lead Score (Step 2) */}
+        {property.lead_score != null && (
+          <div className="bg-card px-1.5 py-1">
+            <p className="text-[9px] text-muted-foreground font-medium">
+              <Tip text="Lead Sc." tip="Score do Step 2 (pipeline) — quanto maior melhor" />
+            </p>
+            <div className="flex items-center gap-0.5">
+              <span className={`font-extrabold text-base ${leadC.text}`}>{property.lead_score}</span>
+              <Badge variant="outline" className={`text-[7px] px-0.5 leading-tight ${leadC.text}`}>{leadC.label}</Badge>
+            </div>
+          </div>
+        )}
 
         {/* Preço */}
         <div className="bg-card px-1.5 py-1">
