@@ -23,7 +23,7 @@ export const useReviewQueue = (selectedBatch?: string) => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
   const [visualFilter, setVisualFilter] = useState<string>('all');
   const [conditionFilter, setConditionFilter] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'smart' | 'score'>('smart');
+  const [sortBy, setSortBy] = useState<'smart' | 'score'>('score');
   const [smartFilter, setSmartFilter] = useState<string>('none');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusCounts, setStatusCounts] = useState<StatusCounts>({ pending: 0, approved: 0, rejected: 0 });
