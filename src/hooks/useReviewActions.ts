@@ -91,7 +91,15 @@ export const useReviewActions = ({
   const handleStartApprove = useCallback(() => {
     if (!currentProperty) return;
     setPendingApproveProperty(currentProperty);
-    setApprovePhase('choose');
+    // Skip the 'choose' phase — go directly to offer input.
+    // Comps can be added independently via the Comps tab at any time.
+    setApprovePhase('offer');
+    // Use ARV if available (Miami data), otherwise fall back to estimated_value
+    const base = (currentProperty as any).arv || currentProperty.estimated_value;
+    if (base) {
+      setQuickOfferAmount(defaultOffer(base).toString());
+      if ((currentProperty as any).arv) setCompsARV((currentProperty as any).arv);
+    }
   }, [currentProperty]);
 
   const handleOpenComps = useCallback(() => {
