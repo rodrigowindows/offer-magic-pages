@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.batch-stats]
 verify_jwt = false
+
+[functions.db-query]
+verify_jwt = false
