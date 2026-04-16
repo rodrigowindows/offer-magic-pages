@@ -22,28 +22,42 @@ serve(async (req: Request) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Try requested field first; fall back to the other if zero matches.
-    let { rows, usedField } = await fetchRows(supabase, field, batch);
-    if (rows.length === 0 && !requestedField) {
-      const fallback = field === "batch_name" ? "import_batch" : "batch_name";
-      const alt = await fetchRows(supabase, fallback, batch);
-      if (alt.rows.length > 0) {
-        rows = alt.rows;
-        usedField = alt.usedField;
+    // Fetch both fields for diagnostic
+    const [byBatchName, byImportBatch] = await Promise.all([
+      fetchRows(supabase, "batch_name", batch),
+      fetchRows(supabase, "import_batch", batch),
+    ]);
+
+    const requestedFieldKey = requestedField === "import_batch" ? "import_batch" : "batch_name";
+
+    // Pick primary result: requested field, or whichever has rows
+    let primary = requestedFieldKey === "batch_name" ? byBatchName : byImportBatch;
+    let usedField = requestedFieldKey;
+    if (primary.rows.length === 0 && !requestedField) {
+      const other = requestedFieldKey === "batch_name" ? byImportBatch : byBatchName;
+      if (other.rows.length > 0) {
+        primary = other;
+        usedField = other.usedField;
       }
     }
 
-    const counts = { approved: 0, rejected: 0, pending: 0 } as Record<string, number>;
-    for (const r of rows) {
-      const s = (r.approval_status ?? "pending") as string;
-      counts[s] = (counts[s] ?? 0) + 1;
-    }
+    const toCounts = (rows: { approval_status: string | null }[]) => {
+      const c = { approved: 0, rejected: 0, pending: 0 } as Record<string, number>;
+      for (const r of rows) {
+        const s = (r.approval_status ?? "pending") as string;
+        c[s] = (c[s] ?? 0) + 1;
+      }
+      return { total: rows.length, ...c };
+    };
 
     return json({
       batch,
-      field: usedField,
-      total: rows.length,
-      counts,
+      used_field: usedField,
+      counts: toCounts(primary.rows),
+      diagnostic: {
+        batch_name: toCounts(byBatchName.rows),
+        import_batch: toCounts(byImportBatch.rows),
+      },
     });
   } catch (err) {
     console.error("batch-stats error:", err);
