@@ -52,7 +52,7 @@ serve(async (req: Request) => {
 });
 
 async function fetchRows(
-  supabase: ReturnType<typeof createClient>,
+  supabase: any,
   field: "batch_name" | "import_batch",
   value: string,
 ) {
@@ -62,7 +62,7 @@ async function fetchRows(
     .eq(field, value);
 
   if (error) throw error;
-  return { rows: data ?? [], usedField: field };
+  return { rows: (data ?? []) as { approval_status: string | null }[], usedField: field };
 }
 
 function json(body: unknown, status = 200) {
