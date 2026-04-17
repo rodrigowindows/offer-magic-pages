@@ -38,9 +38,12 @@ const HeaderActions = ({ selectedBatch, onBatchChange }: Pick<ProcessHeaderProps
           <span className="hidden sm:inline">API</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Informações da API</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Code className="h-4 w-4 text-violet-500" />
+            process-api v2.0 — Documentação
+          </DialogTitle>
         </DialogHeader>
         <ApiInfoPanel embedded />
       </DialogContent>
