@@ -26,6 +26,11 @@ interface Property {
   cash_offer_amount: number;
   owner_name?: string | null;
   owner_phone?: string | null;
+  confirmed_mailing_address?: string | null;
+  confirmed_mailing_city?: string | null;
+  confirmed_mailing_state?: string | null;
+  confirmed_mailing_zip?: string | null;
+  owner_address?: string | null;
 }
 
 interface CashOfferDialogProps {
