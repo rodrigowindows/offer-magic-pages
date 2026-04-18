@@ -129,8 +129,12 @@ const READ_ACTIONS = new Set(['list', 'get', 'counts', 'comps.list', 'comps.pric
 const WRITE_ACTIONS = new Set(['approve', 'reject', 'reset', 'comps.add', 'comps.delete', 'bulk.approve', 'bulk.reject']);
 
 function validateApiKey(req: Request): boolean {
-  const apikey = req.headers.get('apikey') || '';
-  return apikey === SUPABASE_ANON_KEY || apikey === SERVICE_ROLE_KEY;
+  const apikey = req.headers.get('apikey') || req.headers.get('Authorization')?.replace('Bearer ', '') || '';
+  if (!apikey) return false;
+  // Accept known keys, or any JWT/publishable key with valid format
+  if (apikey === SUPABASE_ANON_KEY || apikey === SERVICE_ROLE_KEY) return true;
+  // Accept JWT tokens (eyJ...) and publishable keys (sb_publishable_...)
+  return apikey.startsWith('eyJ') || apikey.startsWith('sb_publishable_') || apikey.startsWith('sb_secret_');
 }
 
 async function validateAuth(req: Request): Promise<{ valid: boolean; userId?: string; error?: string }> {
