@@ -17,6 +17,11 @@ interface Property {
   estimated_value: number;
   cash_offer_amount: number;
   owner_name?: string | null;
+  confirmed_mailing_address?: string | null;
+  confirmed_mailing_city?: string | null;
+  confirmed_mailing_state?: string | null;
+  confirmed_mailing_zip?: string | null;
+  owner_address?: string | null;
 }
 
 interface BatchOfferPrintDialogProps {
@@ -136,6 +141,10 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
                   ownerName={property.owner_name || undefined}
                   language={language}
                   source="letter"
+                  mailingAddress={property.confirmed_mailing_address || property.owner_address || undefined}
+                  mailingCity={property.confirmed_mailing_city || undefined}
+                  mailingState={property.confirmed_mailing_state || undefined}
+                  mailingZip={property.confirmed_mailing_zip || undefined}
                 />
               </div>
             ))}
