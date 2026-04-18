@@ -101,12 +101,26 @@ export const CashOfferLetter = ({
   source = "letter",
   ownerName,
   language = "en",
+  mailingAddress,
+  mailingCity,
+  mailingState,
+  mailingZip,
 }: CashOfferLetterProps) => {
   const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
   const offerUrl = `${window.location.origin}/property/${propertySlug}?src=${source}`;
   const t = content[language];
 
   const formattedPhone = formatPhone(phone) || "786 882 8251";
+
+  // Build recipient mailing block. Falls back to property address when no mailing data.
+  const mailLine1 = mailingAddress || address;
+  const mailCity = mailingCity || city;
+  const mailState = mailingState || state;
+  const mailZip = mailingZip || zipCode;
+  const mailingFullAddress = `${mailLine1}, ${mailCity}, ${mailState} ${mailZip}`;
+  const mailingDiffersFromProperty =
+    !!mailingAddress &&
+    mailingFullAddress.trim().toLowerCase() !== fullAddress.trim().toLowerCase();
 
   // Use new offer config or fallback to legacy props
   const currentOfferConfig = offerConfig || {
