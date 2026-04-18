@@ -263,6 +263,10 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 source="letter"
                 ownerName={property.owner_name || undefined}
                 language={language}
+                mailingAddress={property.confirmed_mailing_address || property.owner_address || undefined}
+                mailingCity={property.confirmed_mailing_city || undefined}
+                mailingState={property.confirmed_mailing_state || undefined}
+                mailingZip={property.confirmed_mailing_zip || undefined}
               />
             </div>
           </TabsContent>
