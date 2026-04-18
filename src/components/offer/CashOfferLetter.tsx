@@ -154,6 +154,23 @@ export const CashOfferLetter = ({
       </div>
 
       <div className="p-6 space-y-5 print:px-6 print:py-3 print:space-y-2.5">
+        {/* Recipient mailing block (envelope-style) */}
+        <div className="letter-recipient border border-border rounded-md p-3 print:p-2 bg-muted/30 print:bg-transparent">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+            {language === 'es' ? 'Enviado a' : 'Mail to'}
+          </p>
+          {ownerName && (
+            <p className="text-sm print:text-sm font-semibold text-foreground leading-tight">{ownerName}</p>
+          )}
+          <p className="text-sm print:text-sm text-foreground leading-tight">{mailLine1}</p>
+          <p className="text-sm print:text-sm text-foreground leading-tight">{mailCity}, {mailState} {mailZip}</p>
+          {mailingDiffersFromProperty && (
+            <p className="text-[10px] text-muted-foreground italic mt-1 print:hidden">
+              ⚠ Different from property address
+            </p>
+          )}
+        </div>
+
         {/* Personalized Greeting & Property */}
         <div className="text-center space-y-1 print:space-y-0.5">
           {ownerName && (
@@ -161,7 +178,10 @@ export const CashOfferLetter = ({
           )}
           <h1 className="text-2xl print:text-2xl font-bold text-foreground">{t.headline}</h1>
           <p className="text-base print:text-base text-muted-foreground">{t.subheadline}</p>
-          <p className="text-sm print:text-sm font-medium text-primary mt-2 print:mt-1">{fullAddress}</p>
+          <p className="text-[11px] print:text-[11px] uppercase tracking-wider text-muted-foreground mt-2">
+            {language === 'es' ? 'Imóvel' : 'Property'}
+          </p>
+          <p className="text-sm print:text-sm font-medium text-primary mt-0.5">{fullAddress}</p>
         </div>
 
         {/* Main Offer Box with Urgency - NO PRICE SHOWN */}
