@@ -22,6 +22,11 @@ interface CashOfferLetterProps {
   source?: string;
   ownerName?: string;
   language?: "en" | "es";
+  // Recipient mailing block (envelope-style). Falls back to property address when missing.
+  mailingAddress?: string | null;
+  mailingCity?: string | null;
+  mailingState?: string | null;
+  mailingZip?: string | null;
 }
 
 const content = {
