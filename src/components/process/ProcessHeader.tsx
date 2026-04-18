@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { AdminChat } from '@/components/ai/AdminChat';
 import { BatchSelector } from './BatchSelector';
+import { BatchExportButton } from './BatchExportButton';
 import { ApiInfoPanel } from './ApiInfoPanel';
 import { StepperNav } from './StepperNav';
 
@@ -48,6 +49,7 @@ const HeaderActions = ({ selectedBatch, onBatchChange }: Pick<ProcessHeaderProps
         <ApiInfoPanel embedded />
       </DialogContent>
     </Dialog>
+    <BatchExportButton />
     <BatchSelector value={selectedBatch} onChange={onBatchChange} />
   </>
 );
