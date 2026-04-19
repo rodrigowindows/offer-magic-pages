@@ -88,7 +88,7 @@ export const BatchExportButton = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuLabel className="text-xs">
-          Batches ~1k propriedades
+          Batches disponíveis (100+ propriedades)
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {loading && (
