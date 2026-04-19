@@ -42,23 +42,30 @@ Deno.serve(async (req) => {
 
     // List batches with ~1000 properties
     if (action === 'list') {
-      const { data, error } = await supabase
-        .from('properties')
-        .select('batch_name, import_batch')
-        .or('batch_name.not.is.null,import_batch.not.is.null');
-
-      if (error) throw error;
-
+      // Paginate to bypass 1000-row limit
       const counts = new Map<string, number>();
-      for (const row of data || []) {
-        const name = (row as any).batch_name || (row as any).import_batch;
-        if (name) counts.set(name, (counts.get(name) || 0) + 1);
+      const pageSize = 1000;
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from('properties')
+          .select('batch_name, import_batch')
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const row of data) {
+          const name = (row as any).batch_name || (row as any).import_batch;
+          if (name) counts.set(name, (counts.get(name) || 0) + 1);
+        }
+        if (data.length < pageSize) break;
+        from += pageSize;
       }
 
+      // Show all batches with 100+ properties (was 800-1200, too restrictive)
       const batches = Array.from(counts.entries())
-        .filter(([, c]) => c >= 800 && c <= 1200)
+        .filter(([, c]) => c >= 100)
         .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.name.localeCompare(a.name));
+        .sort((a, b) => b[1] ? b.count - a.count : 0);
 
       return new Response(JSON.stringify({ batches }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
