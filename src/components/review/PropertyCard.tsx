@@ -228,10 +228,10 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
       {/* TAB 1: Avaliação */}
       {activeTab === 'avaliacao' && (
         <div className="p-1.5">
-          <div className="grid grid-cols-[100px_1fr] sm:grid-cols-[120px_1fr] gap-1.5">
+          <div className="grid grid-cols-[160px_1fr] sm:grid-cols-[200px_1fr] gap-1.5">
             {/* Photo + AI Score */}
             <div className="space-y-1">
-              <div className="h-[90px] sm:h-[100px] overflow-hidden rounded-md">
+              <div className="h-[140px] sm:h-[180px] overflow-hidden rounded-md">
                 <PropertyImageDisplay imageUrl={property.property_image_url} address={property.address} />
               </div>
               {property.decision_photos && property.decision_photos.length > 0 && (
