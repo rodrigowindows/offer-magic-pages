@@ -130,6 +130,9 @@ export const ActionArea = ({
   pendingEstimatedValue,
   approvalNotes,
   onApprovalNotesChange,
+  compsUrl,
+  onCompsUrlChange,
+  gateOverride,
   decisionPhotos,
   onDecisionPhotosChange,
   onStartApprove,
@@ -324,21 +327,32 @@ export const ActionArea = ({
           )}
 
           <div>
-            <Label className="text-[10px] text-green-800">Notas (opcional)</Label>
+            <Label className="text-[10px] text-green-800">Notas (mín. 30 chars se sem comps)</Label>
             <Textarea
               value={approvalNotes}
               onChange={(e) => onApprovalNotesChange(e.target.value)}
-              placeholder="Ex: Score 280, bairro bom no Maps..."
+              placeholder="Ex: Vi Zillow $480k, comps área 33157, owner out-of-state..."
               rows={1}
               className="mt-0.5 text-xs bg-white"
             />
           </div>
 
+          <div>
+            <Label className="text-[10px] text-green-800">Comps URL (Zillow / Trulia / Sunbiz) — auditoria</Label>
+            <input
+              type="url"
+              value={compsUrl}
+              onChange={(e) => onCompsUrlChange(e.target.value)}
+              placeholder="https://www.zillow.com/homedetails/..."
+              className="mt-0.5 w-full text-xs bg-white border border-input rounded px-2 py-1.5"
+            />
+          </div>
+
           <DecisionPhotoUpload files={decisionPhotos} onChange={onDecisionPhotosChange} accent="green" />
 
-          <Button type="button" onClick={onConfirmOffer} disabled={isProcessing} data-action="confirm-offer" className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold gap-2">
+          <Button type="button" onClick={onConfirmOffer} disabled={isProcessing} data-action="confirm-offer" className={`w-full h-10 ${gateOverride ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white font-bold gap-2`}>
             {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
-            {isProcessing ? "Aprovando..." : quickOfferAmount ? `APROVAR (${formatCurrency(Number(quickOfferAmount))})` : "APROVAR SEM OFERTA"}
+            {isProcessing ? "Aprovando..." : gateOverride ? `⚠ CONFIRMAR OVERRIDE (${formatCurrency(Number(quickOfferAmount))})` : quickOfferAmount ? `APROVAR (${formatCurrency(Number(quickOfferAmount))})` : "APROVAR SEM OFERTA"}
             <kbd className="hidden sm:inline ml-1 px-1 py-0.5 text-[10px] font-normal bg-green-800/40 rounded">Enter</kbd>
           </Button>
         </div>
