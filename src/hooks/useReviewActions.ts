@@ -67,6 +67,8 @@ export const useReviewActions = ({
     setCompsARV(null);
     setDecisionPhotos([]);
     setApprovalNotes("");
+    setCompsUrl("");
+    setGateOverride(false);
   }, []);
 
   const uploadDecisionPhotos = useCallback(async (propertyId: string, decision: string): Promise<string[]> => {
