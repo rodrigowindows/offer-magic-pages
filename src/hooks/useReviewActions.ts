@@ -49,6 +49,8 @@ export const useReviewActions = ({
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
   const [decisionPhotos, setDecisionPhotos] = useState<File[]>([]);
   const [approvalNotes, setApprovalNotes] = useState("");
+  const [compsUrl, setCompsUrl] = useState("");
+  const [gateOverride, setGateOverride] = useState(false);
 
   // Reset on navigation
   useEffect(() => {
