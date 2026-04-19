@@ -42,6 +42,10 @@ interface ActionAreaProps {
   // Approval notes
   approvalNotes: string;
   onApprovalNotesChange: (notes: string) => void;
+  // Comps audit URL
+  compsUrl: string;
+  onCompsUrlChange: (url: string) => void;
+  gateOverride?: boolean;
   // Photos
   decisionPhotos: File[];
   onDecisionPhotosChange: (files: File[]) => void;
