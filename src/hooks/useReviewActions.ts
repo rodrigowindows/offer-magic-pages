@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { QueueProperty, ApprovePhase } from '@/components/review/types';
 import { REJECTION_REASONS } from '@/components/review/constants';
 import { defaultOffer, formatCurrency } from '@/lib/utils';
+import { validateApproval } from '@/lib/approvalValidation';
 
 interface UseReviewActionsOptions {
   currentProperty: QueueProperty | undefined;
@@ -48,6 +49,8 @@ export const useReviewActions = ({
   const [quickOfferAmount, setQuickOfferAmount] = useState("");
   const [decisionPhotos, setDecisionPhotos] = useState<File[]>([]);
   const [approvalNotes, setApprovalNotes] = useState("");
+  const [compsUrl, setCompsUrl] = useState("");
+  const [gateOverride, setGateOverride] = useState(false);
 
   // Reset on navigation
   useEffect(() => {
@@ -64,6 +67,8 @@ export const useReviewActions = ({
     setCompsARV(null);
     setDecisionPhotos([]);
     setApprovalNotes("");
+    setCompsUrl("");
+    setGateOverride(false);
   }, []);
 
   const uploadDecisionPhotos = useCallback(async (propertyId: string, decision: string): Promise<string[]> => {
@@ -162,11 +167,40 @@ export const useReviewActions = ({
 
   const handleConfirmOffer = useCallback(async () => {
     if (!userId || !userName || !pendingApproveProperty) return;
+
+    const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
+
+    // ── Approval Gate: comps + pricing sanity-check + audit URL ─────
+    const gate = await validateApproval({
+      property: pendingApproveProperty,
+      offerAmount: offerValue,
+      approvalNotes,
+      compsUrl,
+    });
+
+    if (gate.blockers.length > 0) {
+      toast({
+        title: "Aprovação bloqueada",
+        description: gate.blockers.join(' • '),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (gate.warnings.length > 0 && !gateOverride) {
+      toast({
+        title: "⚠ Atenção — clique novamente para confirmar override",
+        description: gate.warnings.join(' • '),
+        variant: "destructive",
+      });
+      setGateOverride(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const photoUrls = await uploadDecisionPhotos(pendingApproveProperty.id, 'approved');
 
-      const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
       const updateData: any = {
         approval_status: "approved",
         approved_by: userId,
@@ -186,10 +220,11 @@ export const useReviewActions = ({
         .eq("id", pendingApproveProperty.id);
       if (error) throw error;
 
-      // Auto-save decision to property_notes
+      // Auto-save decision to property_notes (includes audit URL if provided)
       const noteParts: string[] = [`✅ APROVADO`];
       if (offerValue) noteParts.push(`Oferta: ${formatCurrency(offerValue)}`);
       if (approvalNotes.trim()) noteParts.push(approvalNotes.trim());
+      if (compsUrl.trim()) noteParts.push(`Comps URL: ${compsUrl.trim()}`);
       await supabase.from("property_notes").insert({
         property_id: pendingApproveProperty.id,
         note_text: noteParts.join(' — '),
@@ -215,7 +250,7 @@ export const useReviewActions = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [userId, userName, pendingApproveProperty, quickOfferAmount, approvalNotes, uploadDecisionPhotos, onAdvance, resetActionState, toast]);
+  }, [userId, userName, pendingApproveProperty, quickOfferAmount, approvalNotes, compsUrl, gateOverride, uploadDecisionPhotos, onAdvance, resetActionState, toast]);
 
   const handleCancelApprove = useCallback(() => resetActionState(), [resetActionState]);
 
@@ -335,6 +370,8 @@ export const useReviewActions = ({
     quickOfferAmount, setQuickOfferAmount,
     decisionPhotos, setDecisionPhotos,
     approvalNotes, setApprovalNotes,
+    compsUrl, setCompsUrl,
+    gateOverride,
     // Actions
     handleStartApprove,
     handleOpenComps,

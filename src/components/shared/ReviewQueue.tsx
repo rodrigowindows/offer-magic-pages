@@ -234,6 +234,9 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
                 pendingEstimatedValue={actions.pendingApproveProperty?.estimated_value ?? null}
                 approvalNotes={actions.approvalNotes}
                 onApprovalNotesChange={actions.setApprovalNotes}
+                compsUrl={actions.compsUrl}
+                onCompsUrlChange={actions.setCompsUrl}
+                gateOverride={actions.gateOverride}
                 decisionPhotos={actions.decisionPhotos}
                 onDecisionPhotosChange={actions.setDecisionPhotos}
                 onStartApprove={actions.handleStartApprove}
