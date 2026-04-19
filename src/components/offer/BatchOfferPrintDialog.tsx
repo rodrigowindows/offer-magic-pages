@@ -34,6 +34,7 @@ interface BatchOfferPrintDialogProps {
 export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchOfferPrintDialogProps) => {
   const { toast } = useToast();
   const [language, setLanguage] = useState<"en" | "es">("en");
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
