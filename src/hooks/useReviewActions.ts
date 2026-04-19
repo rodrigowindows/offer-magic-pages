@@ -167,11 +167,40 @@ export const useReviewActions = ({
 
   const handleConfirmOffer = useCallback(async () => {
     if (!userId || !userName || !pendingApproveProperty) return;
+
+    const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
+
+    // ── Approval Gate: comps + pricing sanity-check + audit URL ─────
+    const gate = await validateApproval({
+      property: pendingApproveProperty,
+      offerAmount: offerValue,
+      approvalNotes,
+      compsUrl,
+    });
+
+    if (gate.blockers.length > 0) {
+      toast({
+        title: "Aprovação bloqueada",
+        description: gate.blockers.join(' • '),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (gate.warnings.length > 0 && !gateOverride) {
+      toast({
+        title: "⚠ Atenção — clique novamente para confirmar override",
+        description: gate.warnings.join(' • '),
+        variant: "destructive",
+      });
+      setGateOverride(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const photoUrls = await uploadDecisionPhotos(pendingApproveProperty.id, 'approved');
 
-      const offerValue = quickOfferAmount ? parseFloat(quickOfferAmount) : null;
       const updateData: any = {
         approval_status: "approved",
         approved_by: userId,
