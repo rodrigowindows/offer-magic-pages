@@ -117,11 +117,21 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
         </DialogHeader>
 
         <div className="flex gap-2 justify-end">
+          <Button onClick={() => setLabelsOpen(true)} variant="outline" className="gap-2">
+            <Tag className="w-4 h-4" />
+            Etiquetas Avery ({properties.length})
+          </Button>
           <Button onClick={handlePrint} className="gap-2">
             <Printer className="w-4 h-4" />
             Print All ({properties.length})
           </Button>
         </div>
+
+        <AveryLabelsPrintDialog
+          properties={properties}
+          open={labelsOpen}
+          onOpenChange={setLabelsOpen}
+        />
 
         <div className="border rounded-lg p-4 max-h-[60vh] overflow-y-auto bg-muted/30">
           <div ref={printRef}>
