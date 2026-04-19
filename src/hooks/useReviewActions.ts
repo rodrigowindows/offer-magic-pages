@@ -220,10 +220,11 @@ export const useReviewActions = ({
         .eq("id", pendingApproveProperty.id);
       if (error) throw error;
 
-      // Auto-save decision to property_notes
+      // Auto-save decision to property_notes (includes audit URL if provided)
       const noteParts: string[] = [`✅ APROVADO`];
       if (offerValue) noteParts.push(`Oferta: ${formatCurrency(offerValue)}`);
       if (approvalNotes.trim()) noteParts.push(approvalNotes.trim());
+      if (compsUrl.trim()) noteParts.push(`Comps URL: ${compsUrl.trim()}`);
       await supabase.from("property_notes").insert({
         property_id: pendingApproveProperty.id,
         note_text: noteParts.join(' — '),
@@ -249,7 +250,7 @@ export const useReviewActions = ({
     } finally {
       setIsProcessing(false);
     }
-  }, [userId, userName, pendingApproveProperty, quickOfferAmount, approvalNotes, uploadDecisionPhotos, onAdvance, resetActionState, toast]);
+  }, [userId, userName, pendingApproveProperty, quickOfferAmount, approvalNotes, compsUrl, gateOverride, uploadDecisionPhotos, onAdvance, resetActionState, toast]);
 
   const handleCancelApprove = useCallback(() => resetActionState(), [resetActionState]);
 
