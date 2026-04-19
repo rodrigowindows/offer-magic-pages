@@ -370,6 +370,8 @@ export const useReviewActions = ({
     quickOfferAmount, setQuickOfferAmount,
     decisionPhotos, setDecisionPhotos,
     approvalNotes, setApprovalNotes,
+    compsUrl, setCompsUrl,
+    gateOverride,
     // Actions
     handleStartApprove,
     handleOpenComps,
