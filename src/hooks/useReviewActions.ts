@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { QueueProperty, ApprovePhase } from '@/components/review/types';
 import { REJECTION_REASONS } from '@/components/review/constants';
 import { defaultOffer, formatCurrency } from '@/lib/utils';
+import { validateApproval } from '@/lib/approvalValidation';
 
 interface UseReviewActionsOptions {
   currentProperty: QueueProperty | undefined;
