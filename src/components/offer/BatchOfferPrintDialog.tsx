@@ -2,7 +2,8 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CashOfferLetter } from "./CashOfferLetter";
-import { Download, Printer, Globe } from "lucide-react";
+import { AveryLabelsPrintDialog } from "./AveryLabelsPrintDialog";
+import { Download, Printer, Globe, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ interface BatchOfferPrintDialogProps {
 export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchOfferPrintDialogProps) => {
   const { toast } = useToast();
   const [language, setLanguage] = useState<"en" | "es">("en");
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
@@ -115,11 +117,21 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
         </DialogHeader>
 
         <div className="flex gap-2 justify-end">
+          <Button onClick={() => setLabelsOpen(true)} variant="outline" className="gap-2">
+            <Tag className="w-4 h-4" />
+            Etiquetas Avery ({properties.length})
+          </Button>
           <Button onClick={handlePrint} className="gap-2">
             <Printer className="w-4 h-4" />
             Print All ({properties.length})
           </Button>
         </div>
+
+        <AveryLabelsPrintDialog
+          properties={properties}
+          open={labelsOpen}
+          onOpenChange={setLabelsOpen}
+        />
 
         <div className="border rounded-lg p-4 max-h-[60vh] overflow-y-auto bg-muted/30">
           <div ref={printRef}>
