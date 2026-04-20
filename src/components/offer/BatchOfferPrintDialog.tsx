@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CashOfferLetter } from "./CashOfferLetter";
 import { AveryLabelsPrintDialog } from "./AveryLabelsPrintDialog";
-import { Download, Printer, Globe, Tag } from "lucide-react";
+import { Download, Printer, Globe, Tag, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
