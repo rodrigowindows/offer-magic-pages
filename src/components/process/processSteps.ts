@@ -37,6 +37,14 @@ export const PROCESS_STEPS: ProcessStep[] = [
   },
   {
     number: 3,
+    title: 'Endereços',
+    path: 'mailing',
+    fullPath: '/process/mailing',
+    icon: Mail,
+    description: 'Upload em massa de mailing addresses (CSV)',
+  },
+  {
+    number: 4,
     title: 'Contatos',
     path: 'contacts',
     fullPath: '/process/contacts',
