@@ -35,7 +35,24 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
   const { toast } = useToast();
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [labelsOpen, setLabelsOpen] = useState(false);
+  const [showAudit, setShowAudit] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+
+  // ── Address audit: which source each property will use ───────────
+  const audit = properties.reduce(
+    (acc, p) => {
+      const hasConfirmed = !!(p.confirmed_mailing_address && p.confirmed_mailing_address.trim());
+      const hasOwner = !!(p.owner_address && p.owner_address.trim());
+      const hasName = !!(p.owner_name && p.owner_name.trim());
+      if (hasConfirmed) acc.confirmed.push(p);
+      else if (hasOwner) acc.ownerAddr.push(p);
+      else acc.fallback.push(p);
+      if (!hasName) acc.noName.push(p);
+      return acc;
+    },
+    { confirmed: [] as Property[], ownerAddr: [] as Property[], fallback: [] as Property[], noName: [] as Property[] }
+  );
+  const allCovered = audit.fallback.length === 0;
 
   const handlePrint = () => {
     const printContent = printRef.current;
