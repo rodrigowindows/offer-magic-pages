@@ -52,7 +52,7 @@ export const PROCESS_STEPS: ProcessStep[] = [
     description: 'Skip trace e dados de contato',
   },
   {
-    number: 4,
+    number: 5,
     title: 'Comps',
     path: 'comps',
     fullPath: '/process/comps',
@@ -60,7 +60,7 @@ export const PROCESS_STEPS: ProcessStep[] = [
     description: 'Comparativos de mercado',
   },
   {
-    number: 5,
+    number: 6,
     title: 'Oferta',
     path: 'mao',
     fullPath: '/process/mao',
@@ -68,7 +68,7 @@ export const PROCESS_STEPS: ProcessStep[] = [
     description: 'Calcular oferta máxima (MAO)',
   },
   {
-    number: 6,
+    number: 7,
     title: 'Respostas',
     path: 'responses',
     fullPath: '/process/responses',
@@ -76,7 +76,7 @@ export const PROCESS_STEPS: ProcessStep[] = [
     description: 'Dashboard de respostas e engajamento',
   },
   {
-    number: 7,
+    number: 8,
     title: 'Qualidade',
     path: 'quality',
     fullPath: '/process/quality',
