@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CashOfferLetter } from "./CashOfferLetter";
 import { AveryLabelsPrintDialog } from "./AveryLabelsPrintDialog";
-import { Download, Printer, Globe, Tag } from "lucide-react";
+import { Download, Printer, Globe, Tag, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -35,7 +35,24 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
   const { toast } = useToast();
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [labelsOpen, setLabelsOpen] = useState(false);
+  const [showAudit, setShowAudit] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+
+  // ── Address audit: which source each property will use ───────────
+  const audit = properties.reduce(
+    (acc, p) => {
+      const hasConfirmed = !!(p.confirmed_mailing_address && p.confirmed_mailing_address.trim());
+      const hasOwner = !!(p.owner_address && p.owner_address.trim());
+      const hasName = !!(p.owner_name && p.owner_name.trim());
+      if (hasConfirmed) acc.confirmed.push(p);
+      else if (hasOwner) acc.ownerAddr.push(p);
+      else acc.fallback.push(p);
+      if (!hasName) acc.noName.push(p);
+      return acc;
+    },
+    { confirmed: [] as Property[], ownerAddr: [] as Property[], fallback: [] as Property[], noName: [] as Property[] }
+  );
+  const allCovered = audit.fallback.length === 0;
 
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -132,6 +149,42 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
           open={labelsOpen}
           onOpenChange={setLabelsOpen}
         />
+
+        {/* Address audit banner */}
+        <div className={`rounded-lg border p-3 text-sm ${allCovered ? 'bg-success/10 border-success/30' : 'bg-warning/10 border-warning/30'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-medium">
+              {allCovered ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-success" />
+                  <span>Todas as {properties.length} propriedades têm endereço do dono ✓</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-warning" />
+                  <span>{audit.fallback.length} propriedade(s) sem endereço — vão imprimir o endereço do imóvel</span>
+                </>
+              )}
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setShowAudit(!showAudit)}>
+              {showAudit ? 'Ocultar' : 'Ver detalhes'}
+            </Button>
+          </div>
+          <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
+            <span>📬 Confirmed mailing: <strong>{audit.confirmed.length}</strong></span>
+            <span>🏠 Owner address: <strong>{audit.ownerAddr.length}</strong></span>
+            <span>⚠️ Fallback (imóvel): <strong>{audit.fallback.length}</strong></span>
+            {audit.noName.length > 0 && <span>👤 Sem owner_name: <strong>{audit.noName.length}</strong></span>}
+          </div>
+          {showAudit && audit.fallback.length > 0 && (
+            <div className="mt-2 max-h-32 overflow-auto bg-background/50 rounded p-2 text-xs">
+              <div className="font-semibold mb-1">Sem endereço do dono:</div>
+              {audit.fallback.map(p => (
+                <div key={p.id} className="font-mono">{p.address} — {p.owner_name || '(sem nome)'}</div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="border rounded-lg p-4 max-h-[60vh] overflow-y-auto bg-muted/30">
           <div ref={printRef}>
