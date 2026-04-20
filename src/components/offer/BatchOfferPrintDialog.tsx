@@ -151,7 +151,7 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
         />
 
         {/* Address audit banner */}
-        <div className={`rounded-lg border p-3 text-sm ${allCovered ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900' : 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-900'}`}>
+        <div className={`rounded-lg border p-3 text-sm ${allCovered ? 'bg-success/10 border-success/30' : 'bg-warning/10 border-warning/30'}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-medium">
               {allCovered ? (
