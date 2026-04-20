@@ -150,6 +150,42 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
           onOpenChange={setLabelsOpen}
         />
 
+        {/* Address audit banner */}
+        <div className={`rounded-lg border p-3 text-sm ${allCovered ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900' : 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950/20 dark:border-yellow-900'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 font-medium">
+              {allCovered ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <span>Todas as {properties.length} propriedades têm endereço do dono ✓</span>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                  <span>{audit.fallback.length} propriedade(s) sem endereço — vão imprimir o endereço do imóvel</span>
+                </>
+              )}
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => setShowAudit(!showAudit)}>
+              {showAudit ? 'Ocultar' : 'Ver detalhes'}
+            </Button>
+          </div>
+          <div className="mt-1 flex gap-4 text-xs text-muted-foreground">
+            <span>📬 Confirmed mailing: <strong>{audit.confirmed.length}</strong></span>
+            <span>🏠 Owner address: <strong>{audit.ownerAddr.length}</strong></span>
+            <span>⚠️ Fallback (imóvel): <strong>{audit.fallback.length}</strong></span>
+            {audit.noName.length > 0 && <span>👤 Sem owner_name: <strong>{audit.noName.length}</strong></span>}
+          </div>
+          {showAudit && audit.fallback.length > 0 && (
+            <div className="mt-2 max-h-32 overflow-auto bg-background/50 rounded p-2 text-xs">
+              <div className="font-semibold mb-1">Sem endereço do dono:</div>
+              {audit.fallback.map(p => (
+                <div key={p.id} className="font-mono">{p.address} — {p.owner_name || '(sem nome)'}</div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="border rounded-lg p-4 max-h-[60vh] overflow-y-auto bg-muted/30">
           <div ref={printRef}>
             {properties.map((property, index) => (
