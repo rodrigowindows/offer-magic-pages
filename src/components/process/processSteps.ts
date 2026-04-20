@@ -6,6 +6,7 @@ import {
   DollarSign,
   MessageSquare,
   ShieldCheck,
+  Mail,
 } from 'lucide-react';
 
 export interface ProcessStep {
