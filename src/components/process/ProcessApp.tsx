@@ -69,6 +69,7 @@ export const ProcessApp = () => {
               <Route path="/" element={<ReviewQueue selectedBatch={selectedBatch} />} />
               <Route path="/import" element={<ImportProperties />} />
               <Route path="/contacts" element={<SkipTrace />} />
+              <Route path="/mailing" element={<MailingAddressUpload />} />
               <Route path="/comps" element={<ManualCompsManager />} />
               <Route path="/mao" element={<MAOCalculator />} />
               <Route path="/responses" element={<ResponseDashboard />} />
