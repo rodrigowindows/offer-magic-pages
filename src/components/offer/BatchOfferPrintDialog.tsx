@@ -156,12 +156,12 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
             <div className="flex items-center gap-2 font-medium">
               {allCovered ? (
                 <>
-                  <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  <CheckCircle2 className="w-4 h-4 text-success" />
                   <span>Todas as {properties.length} propriedades têm endereço do dono ✓</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                  <AlertTriangle className="w-4 h-4 text-warning" />
                   <span>{audit.fallback.length} propriedade(s) sem endereço — vão imprimir o endereço do imóvel</span>
                 </>
               )}
