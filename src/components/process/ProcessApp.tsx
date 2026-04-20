@@ -10,6 +10,7 @@ import { lazy, Suspense } from 'react';
 
 const ImportProperties = lazy(() => import('@/pages/ImportProperties'));
 const SkipTrace = lazy(() => import('@/pages/SkipTrace'));
+const MailingAddressUpload = lazy(() => import('@/pages/MailingAddressUpload'));
 const ManualCompsManager = lazy(() =>
   import('@/components/shared/ManualCompsManager').then(m => ({ default: m.ManualCompsManager }))
 );
