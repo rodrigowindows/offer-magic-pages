@@ -43,6 +43,11 @@ interface Property {
   zip_code: string;
   owner_name?: string | null;
   owner_phone?: string | null;
+  owner_address?: string | null;
+  confirmed_mailing_address?: string | null;
+  confirmed_mailing_city?: string | null;
+  confirmed_mailing_state?: string | null;
+  confirmed_mailing_zip?: string | null;
   email1?: string | null;
   cash_offer_amount?: number | null;
   estimated_value?: number | null;
