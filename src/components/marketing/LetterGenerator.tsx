@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CashOfferLetter } from '@/components/offer/CashOfferLetter';
+import { AveryLabelsPrintDialog } from '@/components/offer/AveryLabelsPrintDialog';
 import {
   FileText,
   Download,
@@ -27,6 +28,7 @@ import {
   CheckCircle2,
   Mail,
   RefreshCw,
+  Tag,
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +43,11 @@ interface Property {
   zip_code: string;
   owner_name?: string | null;
   owner_phone?: string | null;
+  owner_address?: string | null;
+  confirmed_mailing_address?: string | null;
+  confirmed_mailing_city?: string | null;
+  confirmed_mailing_state?: string | null;
+  confirmed_mailing_zip?: string | null;
   email1?: string | null;
   cash_offer_amount?: number | null;
   estimated_value?: number | null;
@@ -61,6 +68,7 @@ export const LetterGenerator = () => {
   const [minOffer, setMinOffer] = useState<string>('');
   const [maxOffer, setMaxOffer] = useState<string>('');
   const [selectedBatch, setSelectedBatch] = useState<string>('all');
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const { toast} = useToast();
 
   useEffect(() => {
@@ -350,6 +358,14 @@ export const LetterGenerator = () => {
                   <Printer className="w-4 h-4 mr-2" />
                   Print Selected
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setLabelsOpen(true)}
+                  disabled={selectedCount === 0}
+                >
+                  <Tag className="w-4 h-4 mr-2" />
+                  Etiquetas Avery ({selectedCount})
+                </Button>
                 <Button variant="outline" onClick={handleDownloadPDF}>
                   <Download className="w-4 h-4 mr-2" />
                   Download PDF
@@ -359,6 +375,12 @@ export const LetterGenerator = () => {
           )}
         </CardContent>
       </Card>
+
+      <AveryLabelsPrintDialog
+        properties={properties.filter((p) => selectedProperties.has(p.id))}
+        open={labelsOpen}
+        onOpenChange={setLabelsOpen}
+      />
 
       {/* Property List */}
       <Card>
