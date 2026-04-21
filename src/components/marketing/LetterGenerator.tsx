@@ -358,6 +358,14 @@ export const LetterGenerator = () => {
                   <Printer className="w-4 h-4 mr-2" />
                   Print Selected
                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setLabelsOpen(true)}
+                  disabled={selectedCount === 0}
+                >
+                  <Tag className="w-4 h-4 mr-2" />
+                  Etiquetas Avery ({selectedCount})
+                </Button>
                 <Button variant="outline" onClick={handleDownloadPDF}>
                   <Download className="w-4 h-4 mr-2" />
                   Download PDF
@@ -367,6 +375,12 @@ export const LetterGenerator = () => {
           )}
         </CardContent>
       </Card>
+
+      <AveryLabelsPrintDialog
+        properties={properties.filter((p) => selectedProperties.has(p.id))}
+        open={labelsOpen}
+        onOpenChange={setLabelsOpen}
+      />
 
       {/* Property List */}
       <Card>
