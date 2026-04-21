@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CashOfferLetter } from '@/components/offer/CashOfferLetter';
+import { AveryLabelsPrintDialog } from '@/components/offer/AveryLabelsPrintDialog';
 import {
   FileText,
   Download,
@@ -27,6 +28,7 @@ import {
   CheckCircle2,
   Mail,
   RefreshCw,
+  Tag,
   X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
