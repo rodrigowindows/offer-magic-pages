@@ -68,6 +68,7 @@ export const LetterGenerator = () => {
   const [minOffer, setMinOffer] = useState<string>('');
   const [maxOffer, setMaxOffer] = useState<string>('');
   const [selectedBatch, setSelectedBatch] = useState<string>('all');
+  const [labelsOpen, setLabelsOpen] = useState(false);
   const { toast} = useToast();
 
   useEffect(() => {
