@@ -68,11 +68,17 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
       return;
     }
 
+    // Collect all stylesheets and inline styles from the current page
+    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map((node) => node.outerHTML)
+      .join('\n');
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
           <title>Batch Offer Letters</title>
+          ${styleTags}
           <style>
             @page { size: letter; margin: 0.3in; }
             * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -91,7 +97,6 @@ export const BatchOfferPrintDialog = ({ properties, open, onOpenChange }: BatchO
               .letter-page { padding: 0; }
             }
           </style>
-          <link href="${window.location.origin}/src/index.css" rel="stylesheet" />
         </head>
         <body>
           ${printContent.innerHTML}
