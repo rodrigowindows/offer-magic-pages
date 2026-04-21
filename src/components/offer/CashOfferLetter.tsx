@@ -152,21 +152,18 @@ export const CashOfferLetter = ({
         </div>
 
         <div className="p-6 space-y-5 print:px-4 print:py-2 print:space-y-1.5">
-          <div className="letter-recipient border border-border rounded-md p-3 print:p-1.5 bg-muted/30 print:bg-transparent">
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1 print:text-[9px] print:mb-0.5">
-              {language === "es" ? "Enviado a" : "Mail to"}
-            </p>
-            {ownerName && (
-              <p className="text-sm font-semibold text-foreground leading-tight print:text-[11px]">{ownerName}</p>
-            )}
-            <p className="text-sm text-foreground leading-tight print:text-[11px]">{mailLine1}</p>
-            <p className="text-sm text-foreground leading-tight print:text-[11px]">
-              {mailCity}, {mailState} {mailZip}
-            </p>
+          <div className="letter-recipient border border-border rounded-md px-2 py-1 print:px-1.5 print:py-0.5 bg-muted/30 print:bg-transparent flex flex-wrap items-baseline gap-x-2 gap-y-0">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground print:text-[9px] shrink-0">
+              {language === "es" ? "Enviado a:" : "Mail to:"}
+            </span>
+            <span className="text-sm text-foreground leading-tight print:text-[11px]">
+              {ownerName && <span className="font-semibold">{ownerName} — </span>}
+              {mailLine1}, {mailCity}, {mailState} {mailZip}
+            </span>
             {mailingDiffersFromProperty && (
-              <p className="text-[10px] text-muted-foreground italic mt-1 print:hidden">
-                ⚠ Different from property address
-              </p>
+              <span className="text-[10px] text-muted-foreground italic print:hidden">
+                ⚠ Different from property
+              </span>
             )}
           </div>
 
