@@ -276,13 +276,14 @@ export const CashOfferLetter = ({
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer — compact single line */}
         <div
-          className="text-center pt-3 print:pt-1 border-t border-border"
+          className="text-center pt-2 print:pt-1 border-t border-border"
           style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}
         >
-          <p className="text-xs print:text-xs text-muted-foreground">{email}</p>
-          <p className="text-xs print:text-xs italic text-muted-foreground mt-1 print:mt-0">{t.footer}</p>
+          <p className="text-[11px] print:text-[10px] text-muted-foreground italic leading-tight">
+            {email} • {t.footer}
+          </p>
         </div>
       </div>
 
