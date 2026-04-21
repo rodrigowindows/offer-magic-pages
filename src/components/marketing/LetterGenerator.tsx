@@ -241,6 +241,16 @@ export const LetterGenerator = () => {
               <SelectItem value="es">Español</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLabelsOpen(true)}
+            disabled={selectedCount === 0}
+            title={selectedCount === 0 ? 'Selecione propriedades primeiro' : `Imprimir ${selectedCount} etiquetas`}
+          >
+            <Tag className="w-4 h-4 mr-2" />
+            Etiquetas Avery ({selectedCount})
+          </Button>
           <Button variant="outline" size="sm" onClick={fetchProperties} disabled={loading}>
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
