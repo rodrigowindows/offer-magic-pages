@@ -231,7 +231,7 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
           <div className="grid grid-cols-[100px_1fr] sm:grid-cols-[120px_1fr] gap-1.5">
             {/* Photo + AI Score */}
             <div className="space-y-1">
-              <div className="h-[90px] sm:h-[100px] overflow-hidden rounded-md">
+              <div className="h-[180px] sm:h-[220px] overflow-hidden rounded-md">
                 <PropertyImageDisplay imageUrl={property.property_image_url} address={property.address} />
               </div>
               {property.decision_photos && property.decision_photos.length > 0 && (
