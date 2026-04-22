@@ -178,10 +178,15 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
         {/* Avg Comps */}
         {avgCompPrice != null && avgCompPrice > 0 && (
           <div className="bg-card px-3 py-3">
-            <p className="text-sm text-muted-foreground font-medium">
-              <Tip text="Comps" tip="Média de preço dos comps salvos" />
+            <p className="text-sm text-muted-foreground font-medium flex items-center gap-1">
+              <Tip text="Comps" tip="Média de preço dos comps salvos — dados de mercado" />
             </p>
-            <p className="font-bold text-2xl text-blue-600 mt-1" data-field="avg-comps">{formatCurrency(avgCompPrice)}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="font-bold text-2xl text-blue-600" data-field="avg-comps">{formatCurrency(avgCompPrice)}</span>
+              <Badge variant="outline" className="text-[10px] px-1.5 leading-tight bg-blue-50 text-blue-700 border-blue-300">
+                MKT
+              </Badge>
+            </div>
           </div>
         )}
 
