@@ -90,12 +90,19 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
           </div>
         )}
 
-        {/* Preço */}
+        {/* Estimado (sistema) */}
         <div className="bg-card px-3 py-3">
-          <p className="text-sm text-muted-foreground font-medium">Preço</p>
-          <p className="font-bold text-2xl mt-1" data-field="price">
-            {property.estimated_value ? formatCurrency(property.estimated_value) : '—'}
+          <p className="text-sm text-muted-foreground font-medium flex items-center gap-1">
+            <Tip text="Estimado (sistema)" tip="Valor armazenado no banco de dados (estimated_value). NÃO é o valor de mercado atual — pode divergir de Zillow/Comps." />
           </p>
+          <div className="flex items-center gap-1.5 mt-1" data-field="price">
+            <span className="font-bold text-2xl">
+              {property.estimated_value ? formatCurrency(property.estimated_value) : '—'}
+            </span>
+            <Badge variant="outline" className="text-[10px] px-1.5 leading-tight bg-muted/50 text-muted-foreground border-muted-foreground/30">
+              BD
+            </Badge>
+          </div>
         </div>
 
         {/* Oferta */}
