@@ -64,61 +64,61 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
       {/* Main data grid - 3-4 columns */}
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-px bg-border">
         {/* Score with reasoning toggle */}
-        <div className="bg-card px-1.5 py-1 cursor-pointer" onClick={() => property.ai_reasoning && setShowReasoning(!showReasoning)}>
-          <p className="text-[9px] text-muted-foreground font-medium flex items-center gap-0.5">
+        <div className="bg-card px-2.5 py-2 cursor-pointer" onClick={() => property.ai_reasoning && setShowReasoning(!showReasoning)}>
+          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
             <Tip text="Score" tip="70+ = FORTE, 50-69 = REVISAR, 30-49 = ATENÇÃO, <30 = FRACO" />
-            {property.ai_reasoning && (showReasoning ? <ChevronUp className="h-2.5 w-2.5" /> : <ChevronDown className="h-2.5 w-2.5" />)}
+            {property.ai_reasoning && (showReasoning ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
           </p>
-          <div className="flex items-center gap-0.5" data-field="ai-score">
-            <span className={`font-extrabold text-base ${aiC.text}`}>{property.ai_score ?? '—'}</span>
+          <div className="flex items-center gap-1 mt-0.5" data-field="ai-score">
+            <span className={`font-extrabold text-2xl ${aiC.text}`}>{property.ai_score ?? '—'}</span>
             {property.ai_score != null && (
-              <Badge variant="outline" className={`text-[7px] px-0.5 leading-tight ${aiC.text} ${aiC.bg} ${aiC.border}`}>{aiC.label}</Badge>
+              <Badge variant="outline" className={`text-[9px] px-1 leading-tight ${aiC.text} ${aiC.bg} ${aiC.border}`}>{aiC.label}</Badge>
             )}
           </div>
         </div>
 
         {/* Lead Score (Step 2) */}
         {property.lead_score != null && (
-          <div className="bg-card px-1.5 py-1">
-            <p className="text-[9px] text-muted-foreground font-medium">
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-xs text-muted-foreground font-medium">
               <Tip text="Lead Sc." tip="Score do Step 2 (pipeline) — quanto maior melhor" />
             </p>
-            <div className="flex items-center gap-0.5">
-              <span className={`font-extrabold text-base ${leadC.text}`}>{property.lead_score}</span>
-              <Badge variant="outline" className={`text-[7px] px-0.5 leading-tight ${leadC.text}`}>{leadC.label}</Badge>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className={`font-extrabold text-2xl ${leadC.text}`}>{property.lead_score}</span>
+              <Badge variant="outline" className={`text-[9px] px-1 leading-tight ${leadC.text}`}>{leadC.label}</Badge>
             </div>
           </div>
         )}
 
         {/* Preço */}
-        <div className="bg-card px-1.5 py-1">
-          <p className="text-[9px] text-muted-foreground font-medium">Preço</p>
-          <p className="font-bold text-sm" data-field="price">
+        <div className="bg-card px-2.5 py-2">
+          <p className="text-xs text-muted-foreground font-medium">Preço</p>
+          <p className="font-bold text-lg mt-0.5" data-field="price">
             {property.estimated_value ? formatCurrency(property.estimated_value) : '—'}
           </p>
         </div>
 
         {/* Oferta */}
-        <div className="bg-card px-1.5 py-1">
-          <p className="text-[9px] text-muted-foreground font-medium">Oferta</p>
-          <div className="flex items-center gap-0.5" data-field="offer">
-            <span className="font-bold text-sm">
+        <div className="bg-card px-2.5 py-2">
+          <p className="text-xs text-muted-foreground font-medium">Oferta</p>
+          <div className="flex items-center gap-1 mt-0.5" data-field="offer">
+            <span className="font-bold text-lg">
               {property.cash_offer_amount ? formatCurrency(property.cash_offer_amount) : '—'}
             </span>
             {offerPct != null && (
-              <Badge variant={offerPct <= 70 ? 'default' : 'secondary'} className="text-[7px] px-0.5">{offerPct}%</Badge>
+              <Badge variant={offerPct <= 70 ? 'default' : 'secondary'} className="text-[9px] px-1">{offerPct}%</Badge>
             )}
           </div>
         </div>
 
         {/* Sqft + market comparison */}
-        <div className="bg-card px-1.5 py-1">
-          <p className="text-[9px] text-muted-foreground font-medium">Sqft</p>
-          <div data-field="sqft">
-            <span className="font-bold text-sm">{property.square_feet ? property.square_feet.toLocaleString() : '—'}</span>
-            {pricePsf && <span className="text-muted-foreground text-[8px] ml-0.5">${pricePsf}</span>}
+        <div className="bg-card px-2.5 py-2">
+          <p className="text-xs text-muted-foreground font-medium">Sqft</p>
+          <div className="mt-0.5" data-field="sqft">
+            <span className="font-bold text-lg">{property.square_feet ? property.square_feet.toLocaleString() : '—'}</span>
+            {pricePsf && <span className="text-muted-foreground text-[10px] ml-1">${pricePsf}</span>}
             {property.avg_price_per_sqft && pricePsf && (
-              <span className={`text-[7px] ml-0.5 ${pricePsf < property.avg_price_per_sqft * 0.8 ? 'text-emerald-600 font-bold' : 'text-muted-foreground'}`}>
+              <span className={`text-[9px] ml-1 ${pricePsf < property.avg_price_per_sqft * 0.8 ? 'text-emerald-600 font-bold' : 'text-muted-foreground'}`}>
                 (mkt ${Math.round(property.avg_price_per_sqft)})
               </span>
             )}
@@ -126,41 +126,41 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
         </div>
 
         {/* Q/B */}
-        <div className="bg-card px-1.5 py-1">
-          <p className="text-[9px] text-muted-foreground font-medium">Q/B</p>
-          <p className="font-bold text-sm">{property.bedrooms || '—'}/{property.bathrooms || '—'}</p>
+        <div className="bg-card px-2.5 py-2">
+          <p className="text-xs text-muted-foreground font-medium">Q/B</p>
+          <p className="font-bold text-lg mt-0.5">{property.bedrooms || '—'}/{property.bathrooms || '—'}</p>
         </div>
 
         {/* Ano */}
-        <div className="bg-card px-1.5 py-1">
-          <p className="text-[9px] text-muted-foreground font-medium">Ano</p>
-          <p className="font-bold text-sm">{property.year_built || '—'}</p>
+        <div className="bg-card px-2.5 py-2">
+          <p className="text-xs text-muted-foreground font-medium">Ano</p>
+          <p className="font-bold text-lg mt-0.5">{property.year_built || '—'}</p>
         </div>
 
         {/* Tipo */}
-        <div className="bg-card px-1.5 py-1">
-          <p className="text-[9px] text-muted-foreground font-medium">Tipo</p>
-          <p className="font-bold text-xs leading-tight">{property.property_type || '—'}</p>
+        <div className="bg-card px-2.5 py-2">
+          <p className="text-xs text-muted-foreground font-medium">Tipo</p>
+          <p className="font-bold text-sm leading-tight mt-0.5">{property.property_type || '—'}</p>
         </div>
 
         {/* Lote */}
         {property.lot_size != null && property.lot_size > 0 && (
-          <div className="bg-card px-1.5 py-1">
-            <p className="text-[9px] text-muted-foreground font-medium">Lote</p>
-            <p className="font-bold text-sm">{property.lot_size.toLocaleString()}</p>
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-xs text-muted-foreground font-medium">Lote</p>
+            <p className="font-bold text-lg mt-0.5">{property.lot_size.toLocaleString()}</p>
           </div>
         )}
 
         {/* ARV - NEW */}
         {property.arv != null && property.arv > 0 && (
-          <div className="bg-card px-1.5 py-1">
-            <p className="text-[9px] text-muted-foreground font-medium">
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-xs text-muted-foreground font-medium">
               <Tip text="ARV" tip="After Repair Value - valor após reforma" />
             </p>
-            <div className="flex items-center gap-0.5">
-              <span className="font-bold text-sm text-blue-600">{formatCurrency(property.arv)}</span>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className="font-bold text-lg text-blue-600">{formatCurrency(property.arv)}</span>
               {offerArvPct != null && (
-                <Badge variant={offerArvPct <= 70 ? 'default' : offerArvPct <= 85 ? 'secondary' : 'destructive'} className="text-[7px] px-0.5">
+                <Badge variant={offerArvPct <= 70 ? 'default' : offerArvPct <= 85 ? 'secondary' : 'destructive'} className="text-[9px] px-1">
                   {offerArvPct}%
                 </Badge>
               )}
@@ -170,21 +170,21 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
 
         {/* Avg Comps */}
         {avgCompPrice != null && avgCompPrice > 0 && (
-          <div className="bg-card px-1.5 py-1">
-            <p className="text-[9px] text-muted-foreground font-medium">
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-xs text-muted-foreground font-medium">
               <Tip text="Comps" tip="Média de preço dos comps salvos" />
             </p>
-            <p className="font-bold text-sm text-blue-600" data-field="avg-comps">{formatCurrency(avgCompPrice)}</p>
+            <p className="font-bold text-lg text-blue-600 mt-0.5" data-field="avg-comps">{formatCurrency(avgCompPrice)}</p>
           </div>
         )}
 
         {/* MAO */}
         {property.mao != null && (
-          <div className="bg-card px-1.5 py-1">
-            <p className="text-[9px] text-muted-foreground font-medium">
+          <div className="bg-card px-2.5 py-2">
+            <p className="text-xs text-muted-foreground font-medium">
               <Tip text="MAO" tip="Maximum Allowable Offer" />
             </p>
-            <p className="font-bold text-sm text-blue-600" data-field="mao">{formatCurrency(property.mao)}</p>
+            <p className="font-bold text-lg text-blue-600 mt-0.5" data-field="mao">{formatCurrency(property.mao)}</p>
           </div>
         )}
       </div>
