@@ -51,6 +51,10 @@ export interface QueueProperty {
   longitude: number | null;
   answer_flag: boolean | null;
   lead_status: string | null;
+  flood_zone?: string | null;
+  flood_zone_checked_at?: string | null;
+  lead_temperature?: string | null;
+  lead_temperature_manual?: boolean | null;
 }
 
 export type ApprovePhase = 'choose' | 'comps' | 'offer' | null;

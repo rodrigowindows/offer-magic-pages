@@ -52,8 +52,8 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
         </div>
       )}
 
-      {/* Last sale price anomaly warning */}
-      {priceAnomaly !== null && Math.abs(priceAnomaly) > 30 && (
+      {/* Last sale price anomaly warning — skip family-transfer noise (<$1k) */}
+      {priceAnomaly !== null && Math.abs(priceAnomaly) > 30 && (property.last_sale_price ?? 0) >= 1000 && (
         <div className="px-2 py-0.5 bg-red-50 border-b border-red-200 text-[10px] text-red-800 font-semibold">
           ⚠️ Preço anterior: {formatCurrency(property.last_sale_price!)}
           {property.last_sale_date && <span className="font-normal"> ({new Date(property.last_sale_date).toLocaleDateString('pt-BR')})</span>}
@@ -61,12 +61,23 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
         </div>
       )}
 
+      {/* Flood Zone warning */}
+      {property.flood_zone && ['AE', 'VE', 'A', 'V', 'AH', 'AO'].includes(property.flood_zone.toUpperCase()) && (
+        <div className="px-2 py-0.5 bg-red-100 border-b border-red-300 text-[10px] text-red-900 font-bold flex items-center gap-1.5">
+          <span>🌊 FLOOD RISK — Zone {property.flood_zone.toUpperCase()}</span>
+          <span className="font-normal text-red-700">(FEMA high-risk area)</span>
+        </div>
+      )}
+
       {/* Main data grid - 3-4 columns */}
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-px bg-border">
-        {/* Score with reasoning toggle */}
+        {/* AI Score with reasoning toggle */}
         <div className="bg-card px-3 py-3 cursor-pointer" onClick={() => property.ai_reasoning && setShowReasoning(!showReasoning)}>
           <p className="text-sm text-muted-foreground font-medium flex items-center gap-1">
-            <Tip text="Score" tip="70+ = FORTE, 50-69 = REVISAR, 30-49 = ATENÇÃO, <30 = FRACO" />
+            <Tip
+              text="AI Score"
+              tip="Qualidade da propriedade como ativo de wholesale. Avalia idade, condição, localização, equity e margem. Escala 0-100. 70+ = FORTE • 50-69 = REVISAR • 30-49 = ATENÇÃO • <30 = FRACO."
+            />
             {property.ai_reasoning && (showReasoning ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
           </p>
           <div className="flex items-center gap-1.5 mt-1" data-field="ai-score">
@@ -81,7 +92,10 @@ export const ScoresTable = ({ property, avgCompPrice }: ScoresTableProps) => {
         {property.lead_score != null && (
           <div className="bg-card px-3 py-3">
             <p className="text-sm text-muted-foreground font-medium">
-              <Tip text="Lead Sc." tip="Score do Step 2 (pipeline) — quanto maior melhor" />
+              <Tip
+                text="Lead Score"
+                tip="Probabilidade de resposta do dono ao contato. Considera completude de dados, qualidade do telefone/email, histórico de skip-tracing e sinais de motivação. Escala 0-500. 230+ = ALTA • 150-229 = PADRÃO • <150 = BAIXA."
+              />
             </p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className={`font-extrabold text-4xl ${leadC.text}`}>{property.lead_score}</span>

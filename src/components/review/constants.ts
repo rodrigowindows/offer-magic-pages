@@ -19,11 +19,13 @@ export const REJECTION_REASONS = [
   { value: "investor-owned", label: "Proprietário Investidor / Repetido" },
   { value: "mobile-home", label: "Mobile Home / Trailer" },
   { value: "public-property", label: "Propriedade Pública / Governo" },
-  { value: "too-expensive", label: "Valor Muito Alto / Sem Margem" },
+  { value: "too-expensive", label: "Valor Muito Alto" },
   { value: "rural", label: "Área Rural / Roça" },
   { value: "vacant-lot", label: "Lote Vazio (sem estrutura)" },
   { value: "duplicate", label: "Duplicado" },
   { value: "wrong-location", label: "Localização errada" },
+  { value: "unwanted-area", label: "Área não desejada" },
+  { value: "flood-zone", label: "Área de Alagamento (Flood Zone)" },
   { value: "other", label: "Outro motivo" },
 ];
 
