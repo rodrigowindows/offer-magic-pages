@@ -20,6 +20,9 @@ const ResponseDashboard = lazy(() =>
 const QualityMonitor = lazy(() =>
   import('@/components/process/QualityMonitor').then(m => ({ default: m.QualityMonitor }))
 );
+const RequirementsPage = lazy(() =>
+  import('@/components/process/RequirementsPage').then(m => ({ default: m.RequirementsPage }))
+);
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
@@ -74,6 +77,7 @@ export const ProcessApp = () => {
               <Route path="/mao" element={<MAOCalculator />} />
               <Route path="/responses" element={<ResponseDashboard />} />
               <Route path="/quality" element={<QualityMonitor />} />
+              <Route path="/requirements" element={<RequirementsPage />} />
               <Route path="*" element={<Navigate to="/process" replace />} />
             </Routes>
           </Suspense>
