@@ -61,7 +61,12 @@ async function queryFloodZone(lon: number, lat: number): Promise<{
     returnGeometry: "false",
     f: "json",
   });
-  const res = await fetch(`${NFHL_FLOOD_HAZARD_LAYER}?${params.toString()}`);
+  const res = await fetch(`${NFHL_FLOOD_HAZARD_LAYER}?${params.toString()}`, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; OfferMagicPages/1.0; +https://offer.mylocalinvest.com)",
+      "Accept": "application/json",
+    },
+  });
   if (!res.ok) {
     throw new Error(`FEMA NFHL query failed: ${res.status} ${res.statusText}`);
   }
