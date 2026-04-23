@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.db-query]
 verify_jwt = false
+
+[functions.check-flood-zone]
+verify_jwt = false

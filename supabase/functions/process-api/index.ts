@@ -28,9 +28,11 @@ const PROPERTY_FIELDS = "id, address, city, state, zip_code, neighborhood, owner
 
 const REJECTION_REASONS = [
   "new-construction", "recent-sale", "too-good-condition", "multi-family",
-  "hoa-restrictions", "condominium", "land", "no-equity", "agent-listed",
+  "hoa-restrictions", "condominium", "apartment", "land", "no-equity", "agent-listed",
   "commercial", "photo-unavailable", "bad-neighborhood", "llc-owned",
-  "no-address-number", "no-wholesale-margin", "duplicate", "wrong-location", "other",
+  "no-address-number", "no-wholesale-margin", "investor-owned", "mobile-home",
+  "public-property", "too-expensive", "rural", "vacant-lot",
+  "duplicate", "wrong-location", "unwanted-area", "flood-zone", "other",
 ];
 
 const VALID_STATUSES = ['pending', 'approved', 'rejected'];
@@ -730,8 +732,9 @@ function handleInfo() {
         'recent-sale': 'Recém Vendida (menos de 2 anos)',
         'too-good-condition': 'Casa em Bom Estado',
         'multi-family': 'Multi-Family',
-        'hoa-restrictions': 'Propriedade com HOA',
-        'condominium': 'Condomínio / Apartamento',
+        'hoa-restrictions': 'Propriedade com HOA / HOI',
+        'condominium': 'Condomínio',
+        'apartment': 'Apartamento',
         'land': 'Terreno (Land)',
         'no-equity': 'Low-Equity',
         'agent-listed': 'Anunciada por Corretor',
@@ -741,8 +744,16 @@ function handleInfo() {
         'llc-owned': 'Proprietário LLC/Empresa',
         'no-address-number': 'Endereço sem Número',
         'no-wholesale-margin': 'Sem Margem p/ Wholesale',
+        'investor-owned': 'Proprietário Investidor / Repetido',
+        'mobile-home': 'Mobile Home / Trailer',
+        'public-property': 'Propriedade Pública / Governo',
+        'too-expensive': 'Valor Muito Alto',
+        'rural': 'Área Rural / Roça',
+        'vacant-lot': 'Lote Vazio (sem estrutura)',
         'duplicate': 'Duplicado',
         'wrong-location': 'Localização errada',
+        'unwanted-area': 'Área não desejada',
+        'flood-zone': 'Área de Alagamento (Flood Zone)',
         'other': 'Outro motivo',
       }[r] || r,
     })),
