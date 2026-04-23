@@ -10,6 +10,7 @@ import { AIScoreButton } from '../ai/AIScoreButton';
 import { LeadTemperatureBadge } from './LeadTemperatureBadge';
 import type { QueueProperty } from './types';
 import { getVisualCategory } from './helpers';
+import { TriageChecklist } from './TriageChecklist';
 
 /** Calculate data completeness percentage */
 const getCompleteness = (p: QueueProperty): { pct: number; missing: string[] } => {
@@ -303,6 +304,9 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
 
               {/* Scores */}
               <ScoresTable property={property} onScoreSaved={onScoreSaved} avgCompPrice={avgCompPrice} expanded />
+
+              {/* Triage checklist — agent listed, flood zone, rejection rules */}
+              <TriageChecklist property={property} />
 
               {/* Pre-denial + Status */}
               <PropertyInfoColumn property={property} hideAddress hideOwner compactAlerts />
