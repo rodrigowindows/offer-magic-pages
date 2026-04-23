@@ -1,6 +1,7 @@
-import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { REJECTION_REASONS } from './constants';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { REJECTION_REASONS, FLOOD_ZONE_EXPLANATIONS } from './constants';
 import { analyzePropertyAlerts, type PropertyAlertInput } from '@/services/propertyAlerts';
 import type { QueueProperty } from './types';
 
@@ -238,40 +239,61 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
 
       {/* Blockers + warnings list */}
       {(blockers.length > 0 || warnings.length > 0) && (
-        <ul className="space-y-1">
-          {[...blockers.filter(b => b.key !== 'agent-listed'), ...warnings].map(c => {
-            const styles = SEVERITY_STYLES[c.severity];
-            const Icon = c.key === 'flood-zone' ? Waves : styles.icon;
-            const reasonLabel = c.rejectionCode
-              ? REJECTION_REASONS.find(r => r.value === c.rejectionCode)?.label
-              : undefined;
-            return (
-              <li
-                key={c.key}
-                className={`flex items-start gap-1.5 p-1 rounded border ${styles.bg} ${styles.border}`}
-              >
-                <Icon className={`h-3 w-3 shrink-0 mt-0.5 ${styles.iconColor}`} />
-                <div className={`flex-1 text-[11px] leading-tight ${styles.text}`}>
-                  <span className="font-semibold">{c.label}</span>
-                  {c.detail && <span className="opacity-80"> — {c.detail}</span>}
-                  {reasonLabel && (
-                    <span className="ml-1 text-[9px] opacity-70 italic">({reasonLabel})</span>
+        <TooltipProvider delayDuration={150}>
+          <ul className="space-y-1">
+            {[...blockers.filter(b => b.key !== 'agent-listed'), ...warnings].map(c => {
+              const styles = SEVERITY_STYLES[c.severity];
+              const Icon = c.key === 'flood-zone' ? Waves : styles.icon;
+              const reason = c.rejectionCode
+                ? REJECTION_REASONS.find(r => r.value === c.rejectionCode)
+                : undefined;
+              // Flood zone gets its own zone-specific explanation
+              const floodZone = c.key === 'flood-zone' ? (property.flood_zone || '').toUpperCase() : '';
+              const floodInfo = floodZone ? FLOOD_ZONE_EXPLANATIONS[floodZone] : undefined;
+              const tooltipText = floodInfo?.explanation || reason?.explanation;
+              return (
+                <li
+                  key={c.key}
+                  className={`flex items-start gap-1.5 p-1 rounded border ${styles.bg} ${styles.border}`}
+                >
+                  <Icon className={`h-3 w-3 shrink-0 mt-0.5 ${styles.iconColor}`} />
+                  <div className={`flex-1 text-[11px] leading-tight ${styles.text}`}>
+                    <span className="font-semibold inline-flex items-center gap-1">
+                      {c.label}
+                      {tooltipText && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" className="inline-flex" aria-label="Por que esta regra">
+                              <Info className="h-2.5 w-2.5 opacity-60 hover:opacity-100" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
+                            <p className="font-bold mb-1">{reason?.label || c.label}</p>
+                            <p className="opacity-90">{tooltipText}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </span>
+                    {c.detail && <span className="opacity-80"> — {c.detail}</span>}
+                    {reason && (
+                      <span className="ml-1 text-[9px] opacity-70 italic">({reason.label})</span>
+                    )}
+                  </div>
+                  {c.rejectionCode && onSuggestRejection && (
+                    <button
+                      type="button"
+                      onClick={() => onSuggestRejection(c.rejectionCode!)}
+                      className="text-[9px] font-bold bg-white/80 text-red-700 px-1.5 py-0.5 rounded hover:bg-white border border-red-300 shrink-0"
+                      title="Usar este motivo na rejeição"
+                    >
+                      Usar
+                    </button>
                   )}
-                </div>
-                {c.rejectionCode && onSuggestRejection && (
-                  <button
-                    type="button"
-                    onClick={() => onSuggestRejection(c.rejectionCode!)}
-                    className="text-[9px] font-bold bg-white/80 text-red-700 px-1.5 py-0.5 rounded hover:bg-white border border-red-300 shrink-0"
-                    title="Usar este motivo na rejeição"
-                  >
-                    Usar
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        </TooltipProvider>
       )}
 
       {/* All clear */}

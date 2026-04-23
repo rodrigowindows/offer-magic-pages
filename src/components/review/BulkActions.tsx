@@ -9,6 +9,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { REJECTION_REASONS } from './constants';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { QueueProperty } from './types';
 
 interface BulkActionsProps {
@@ -155,19 +156,28 @@ export const BulkActions = ({ properties, onComplete }: BulkActionsProps) => {
           ) : action === 'reject' ? (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">Motivo para rejeitar {selected.size} propriedades:</p>
-              <div className="grid grid-cols-2 gap-1">
-                {REJECTION_REASONS.map(r => (
-                  <button
-                    key={r.value}
-                    onClick={() => setRejectReason(r.value)}
-                    className={`text-left px-2 py-1.5 rounded text-xs border ${
-                      rejectReason === r.value ? 'bg-red-600 text-white border-red-600' : 'hover:bg-red-50 border-red-200'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
+              <TooltipProvider delayDuration={200}>
+                <div className="grid grid-cols-2 gap-1">
+                  {REJECTION_REASONS.map(r => (
+                    <Tooltip key={r.value}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => setRejectReason(r.value)}
+                          className={`text-left px-2 py-1.5 rounded text-xs border ${
+                            rejectReason === r.value ? 'bg-red-600 text-white border-red-600' : 'hover:bg-red-50 border-red-200'
+                          }`}
+                        >
+                          {r.label}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
+                        <p className="font-bold mb-1">{r.label}</p>
+                        <p className="opacity-90">{r.explanation}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </TooltipProvider>
               <DialogFooter className="gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setAction(null)}>Voltar</Button>
                 <Button
