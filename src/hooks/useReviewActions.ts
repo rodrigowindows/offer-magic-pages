@@ -11,6 +11,7 @@ import type { QueueProperty, ApprovePhase } from '@/components/review/types';
 import { REJECTION_REASONS } from '@/components/review/constants';
 import { defaultOffer, formatCurrency } from '@/lib/utils';
 import { validateApproval } from '@/lib/approvalValidation';
+import { logTriageDecision } from '@/services/triageAuditLog';
 
 interface UseReviewActionsOptions {
   currentProperty: QueueProperty | undefined;
@@ -287,6 +288,18 @@ export const useReviewActions = ({
         property_id: currentProperty.id,
         note_text: noteParts.join(' — '),
         image_urls: photoUrls.length > 0 ? photoUrls : null,
+      });
+
+      // Audit log: capture which triage rules were active at decision time
+      await logTriageDecision({
+        property: currentProperty,
+        decision: 'rejected',
+        decisionReason: selectedReason,
+        notes: rejectionNotes.trim() || null,
+        decidedBy: userId,
+        decidedByName: userName,
+        bulkAction: false,
+        metadata: { decision_photos_count: photoUrls.length },
       });
 
       toast({ title: "Rejeitado", description: `${currentProperty.address} - ${reasonLabel}` });

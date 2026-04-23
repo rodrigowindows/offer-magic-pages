@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { REJECTION_REASONS } from './constants';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { logTriageDecision } from '@/services/triageAuditLog';
 import type { QueueProperty } from './types';
 
 interface BulkActionsProps {
@@ -73,6 +74,20 @@ export const BulkActions = ({ properties, onComplete }: BulkActionsProps) => {
 
       if (error) throw error;
 
+      // Audit log: one row per property processed in the batch
+      if (action === 'reject') {
+        const selectedProps = properties.filter(p => selected.has(p.id));
+        await Promise.all(selectedProps.map(p => logTriageDecision({
+          property: p,
+          decision: 'rejected',
+          decisionReason: rejectReason,
+          decidedBy: userId,
+          decidedByName: userName,
+          bulkAction: true,
+          metadata: { batch_size: ids.length },
+        })));
+      }
+
       toast({
         title: action === 'approve' ? 'Aprovadas em lote!' : 'Rejeitadas em lote!',
         description: `${ids.length} propriedades ${action === 'approve' ? 'aprovadas' : 'rejeitadas'}.`,
@@ -88,7 +103,7 @@ export const BulkActions = ({ properties, onComplete }: BulkActionsProps) => {
     } finally {
       setProcessing(false);
     }
-  }, [userId, userName, selected, action, rejectReason, toast, onComplete]);
+  }, [userId, userName, selected, action, rejectReason, toast, onComplete, properties]);
 
   return (
     <>
