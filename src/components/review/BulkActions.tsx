@@ -103,7 +103,7 @@ export const BulkActions = ({ properties, onComplete }: BulkActionsProps) => {
     } finally {
       setProcessing(false);
     }
-  }, [userId, userName, selected, action, rejectReason, toast, onComplete]);
+  }, [userId, userName, selected, action, rejectReason, toast, onComplete, properties]);
 
   return (
     <>
