@@ -464,6 +464,51 @@ export type Database = {
           },
         ]
       }
+      contact_settings: {
+        Row: {
+          calendly_url: string | null
+          created_at: string
+          email_subject_template: string | null
+          id: string
+          retell_agent_id: string | null
+          retell_phone_number: string | null
+          sms_message_template: string | null
+          sms_number: string | null
+          support_email: string | null
+          updated_at: string
+          whatsapp_message_template: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          calendly_url?: string | null
+          created_at?: string
+          email_subject_template?: string | null
+          id?: string
+          retell_agent_id?: string | null
+          retell_phone_number?: string | null
+          sms_message_template?: string | null
+          sms_number?: string | null
+          support_email?: string | null
+          updated_at?: string
+          whatsapp_message_template?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          calendly_url?: string | null
+          created_at?: string
+          email_subject_template?: string | null
+          id?: string
+          retell_agent_id?: string | null
+          retell_phone_number?: string | null
+          sms_message_template?: string | null
+          sms_number?: string | null
+          support_email?: string | null
+          updated_at?: string
+          whatsapp_message_template?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           id: string
@@ -916,6 +961,8 @@ export type Database = {
           email2: string | null
           estimated_value: number
           evaluation: string | null
+          flood_zone: string | null
+          flood_zone_checked_at: string | null
           focar: string | null
           id: string
           import_batch: string | null
@@ -941,6 +988,8 @@ export type Database = {
           lead_captured_at: string | null
           lead_score: number | null
           lead_status: string
+          lead_temperature: string | null
+          lead_temperature_manual: boolean | null
           letter_sent: boolean
           longitude: number | null
           lot_size: number | null
@@ -1272,6 +1321,8 @@ export type Database = {
           email2?: string | null
           estimated_value: number
           evaluation?: string | null
+          flood_zone?: string | null
+          flood_zone_checked_at?: string | null
           focar?: string | null
           id?: string
           import_batch?: string | null
@@ -1297,6 +1348,8 @@ export type Database = {
           lead_captured_at?: string | null
           lead_score?: number | null
           lead_status?: string
+          lead_temperature?: string | null
+          lead_temperature_manual?: boolean | null
           letter_sent?: boolean
           longitude?: number | null
           lot_size?: number | null
@@ -1628,6 +1681,8 @@ export type Database = {
           email2?: string | null
           estimated_value?: number
           evaluation?: string | null
+          flood_zone?: string | null
+          flood_zone_checked_at?: string | null
           focar?: string | null
           id?: string
           import_batch?: string | null
@@ -1653,6 +1708,8 @@ export type Database = {
           lead_captured_at?: string | null
           lead_score?: number | null
           lead_status?: string
+          lead_temperature?: string | null
+          lead_temperature_manual?: boolean | null
           letter_sent?: boolean
           longitude?: number | null
           lot_size?: number | null
