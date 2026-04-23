@@ -21,6 +21,7 @@ import { REJECTION_REASONS } from './constants';
 import { formatCurrency } from '@/lib/utils';
 import { DecisionPhotoUpload } from './DecisionPhotoUpload';
 import { hasBlockingAlerts, getCriticalAlerts, type PropertyAlertInput } from '@/services/propertyAlerts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ActionAreaProps {
   statusFilter: StatusFilter;
@@ -374,28 +375,37 @@ export const ActionArea = ({
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-            {REJECTION_REASONS.map((reason, index) => (
-              <button
-                key={reason.value}
-                onClick={() => onReasonChange(reason.value)}
-                className={`text-left px-2 py-1.5 rounded-md text-[10px] sm:text-xs border transition-colors ${
-                  selectedReason === reason.value
-                    ? 'bg-red-600 text-white border-red-600 font-semibold'
-                    : 'bg-white text-red-800 border-red-200 hover:bg-red-100'
-                }`}
-              >
-                <span className="inline-flex items-center gap-1">
-                  <kbd className={`px-0.5 py-0 text-[9px] rounded ${
-                    selectedReason === reason.value ? 'bg-red-800/40' : 'bg-red-100 border border-red-200'
-                  }`}>
-                    {index + 1 <= 9 ? index + 1 : ''}
-                  </kbd>
-                  {reason.label}
-                </span>
-              </button>
-            ))}
-          </div>
+          <TooltipProvider delayDuration={200}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+              {REJECTION_REASONS.map((reason, index) => (
+                <Tooltip key={reason.value}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onReasonChange(reason.value)}
+                      className={`text-left px-2 py-1.5 rounded-md text-[10px] sm:text-xs border transition-colors ${
+                        selectedReason === reason.value
+                          ? 'bg-red-600 text-white border-red-600 font-semibold'
+                          : 'bg-white text-red-800 border-red-200 hover:bg-red-100'
+                      }`}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <kbd className={`px-0.5 py-0 text-[9px] rounded ${
+                          selectedReason === reason.value ? 'bg-red-800/40' : 'bg-red-100 border border-red-200'
+                        }`}>
+                          {index + 1 <= 9 ? index + 1 : ''}
+                        </kbd>
+                        {reason.label}
+                      </span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-xs leading-snug">
+                    <p className="font-bold mb-1">{reason.label}</p>
+                    <p className="opacity-90">{reason.explanation}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </TooltipProvider>
 
           <div>
             <Label className="text-[10px] text-red-800">Notas (opcional)</Label>

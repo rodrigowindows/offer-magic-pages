@@ -1,33 +1,54 @@
 import type { DetailField } from './types';
 
-export const REJECTION_REASONS = [
-  { value: "new-construction", label: "Casa Nova (menos de 20 anos)" },
-  { value: "recent-sale", label: "Recém Vendida (menos de 2 anos)" },
-  { value: "too-good-condition", label: "Casa em Bom Estado" },
-  { value: "multi-family", label: "Multi-Family" },
-  { value: "hoa-restrictions", label: "Propriedade com HOA / HOI" },
-  { value: "condominium", label: "Condomínio" },
-  { value: "apartment", label: "Apartamento" },
-  { value: "land", label: "Terreno (Land)" },
-  { value: "no-equity", label: "Low-Equity" },
-  { value: "agent-listed", label: "Anunciada por Corretor" },
-  { value: "commercial", label: "Imóvel Comercial" },
-  { value: "photo-unavailable", label: "Foto Indisponível" },
-  { value: "llc-owned", label: "Proprietário LLC/Empresa" },
-  { value: "no-address-number", label: "Endereço sem Número" },
-  { value: "no-wholesale-margin", label: "Sem Margem p/ Wholesale" },
-  { value: "investor-owned", label: "Proprietário Investidor / Repetido" },
-  { value: "mobile-home", label: "Mobile Home / Trailer" },
-  { value: "public-property", label: "Propriedade Pública / Governo" },
-  { value: "too-expensive", label: "Valor Muito Alto" },
-  { value: "rural", label: "Área Rural / Roça" },
-  { value: "vacant-lot", label: "Lote Vazio (sem estrutura)" },
-  { value: "duplicate", label: "Duplicado" },
-  { value: "wrong-location", label: "Localização errada" },
-  { value: "unwanted-area", label: "Área não desejada" },
-  { value: "flood-zone", label: "Área de Alagamento (Flood Zone)" },
-  { value: "other", label: "Outro motivo" },
+export interface RejectionReason {
+  value: string;
+  label: string;
+  /** Detailed reason explaining WHY this rule blocks the deal (shown in tooltips). */
+  explanation: string;
+}
+
+export const REJECTION_REASONS: RejectionReason[] = [
+  { value: "new-construction", label: "Casa Nova (menos de 20 anos)", explanation: "Casas com menos de 20 anos raramente têm distress visual ou margem para wholesale. Regra: year_built > (ano atual − 20)." },
+  { value: "recent-sale", label: "Recém Vendida (menos de 2 anos)", explanation: "Vendida nos últimos 24 meses → owner ainda pagando hipoteca e sem equity suficiente para wholesale." },
+  { value: "too-good-condition", label: "Casa em Bom Estado", explanation: "Sem sinais visuais de distress (telhado, jardim, exterior). Owner não tem motivação para vender abaixo do mercado." },
+  { value: "multi-family", label: "Multi-Family", explanation: "Duplex/triplex/4-plex saem do nosso buy-box (avaliação e financiamento diferentes). Não fazemos wholesale destes." },
+  { value: "hoa-restrictions", label: "Propriedade com HOA / HOI", explanation: "HOA ativa pode bloquear cessão de contrato e impõe taxas/restrições que matam a margem do wholesale." },
+  { value: "condominium", label: "Condomínio", explanation: "Condos têm taxas mensais altas, regras de associação e baixa liquidez para cash buyers." },
+  { value: "apartment", label: "Apartamento", explanation: "Apartamentos não fazem parte do nosso buy-box de single-family / tax deed." },
+  { value: "land", label: "Terreno (Land)", explanation: "Sem estrutura construída — cash buyers da nossa lista compram casas, não terrenos." },
+  { value: "no-equity", label: "Low-Equity", explanation: "Equity estimada < 30% do valor. Sem espaço para oferta + margem do wholesaler." },
+  { value: "agent-listed", label: "Anunciada por Corretor", explanation: "⛔ Imóvel listado em MLS/com agent. Não fazemos wholesale em listings ativos — pular skip trace, comps, oferta e comunicação." },
+  { value: "commercial", label: "Imóvel Comercial", explanation: "Comercial requer due diligence diferente (zoning, leases, NOI). Fora do nosso buy-box residencial." },
+  { value: "photo-unavailable", label: "Foto Indisponível", explanation: "Sem foto = não conseguimos avaliar condição visual (HOT/WARM/COLD) nem validar distress." },
+  { value: "llc-owned", label: "Proprietário LLC/Empresa", explanation: "Owner LLC/INC/CORP/TRUST é tipicamente investidor profissional — não vai vender com desconto wholesale." },
+  { value: "no-address-number", label: "Endereço sem Número", explanation: "Endereço sem street number impede skip trace, envio de carta e geolocalização." },
+  { value: "no-wholesale-margin", label: "Sem Margem p/ Wholesale", explanation: "Margem < 15% sobre ARV. Após assignment fee não sobra spread para o cash buyer fechar." },
+  { value: "investor-owned", label: "Proprietário Investidor / Repetido", explanation: "Owner aparece em múltiplos deals do banco — perfil de investidor profissional, não motivado seller." },
+  { value: "mobile-home", label: "Mobile Home / Trailer", explanation: "Mobile/manufactured homes têm financiamento e revenda muito específicos — fora do buy-box." },
+  { value: "public-property", label: "Propriedade Pública / Governo", explanation: "Owner é município/estado/governo. Aquisição segue processo de leilão público, não wholesale." },
+  { value: "too-expensive", label: "Valor Muito Alto", explanation: "estimated_value acima do teto da estratégia. Cash buyers do nosso pool não cobrem essa faixa." },
+  { value: "rural", label: "Área Rural / Roça", explanation: "Fora de zona urbana alvo. Revenda lenta, poucos comps e cash buyers limitados." },
+  { value: "vacant-lot", label: "Lote Vazio (sem estrutura)", explanation: "Lote sem casa — mesma lógica de Land. Não temos buyers para lote puro." },
+  { value: "duplicate", label: "Duplicado", explanation: "Já existe no banco em outro registro. Evita retrabalho e contatos duplicados ao mesmo owner." },
+  { value: "wrong-location", label: "Localização errada", explanation: "Fora do mercado alvo (FL — Miami / Orlando). Não atendemos esta região." },
+  { value: "unwanted-area", label: "Área não desejada", explanation: "Bairro fora da lista de targets (alta criminalidade, sem demanda de cash buyer, etc.)." },
+  { value: "flood-zone", label: "Área de Alagamento (Flood Zone)", explanation: "Zona FEMA de alto risco (AE/VE/A/V/AH/AO). Seguro caro + revenda difícil. Analista decide caso a caso." },
+  { value: "other", label: "Outro motivo", explanation: "Motivo livre — preencha as notas explicando a razão da rejeição." },
 ];
+
+/** Detailed explanations for FEMA flood zones (used in TriageChecklist tooltip). */
+export const FLOOD_ZONE_EXPLANATIONS: Record<string, { risk: 'high' | 'safe'; explanation: string }> = {
+  AE: { risk: 'high', explanation: 'Zone AE — Risco ALTO. Inundação anual de 1% (100-year flood). Seguro federal obrigatório, prêmios altos, revenda difícil.' },
+  VE: { risk: 'high', explanation: 'Zone VE — Risco ALTO costeiro com ondas. Construção restrita, seguro caríssimo. Quase sempre rejeitar.' },
+  A: { risk: 'high', explanation: 'Zone A — Risco ALTO sem estudo detalhado de elevação. Seguro federal obrigatório.' },
+  V: { risk: 'high', explanation: 'Zone V — Risco ALTO costeiro (sem estudo). Sujeito a ondas e maré. Restrições severas de construção.' },
+  AH: { risk: 'high', explanation: 'Zone AH — Risco ALTO de inundação rasa (1-3ft). Seguro federal obrigatório.' },
+  AO: { risk: 'high', explanation: 'Zone AO — Risco ALTO de inundação por enxurrada (sheet flow). Seguro federal obrigatório.' },
+  X: { risk: 'safe', explanation: 'Zone X — Risco mínimo de inundação. Seguro não obrigatório. OK para wholesale.' },
+  B: { risk: 'safe', explanation: 'Zone B (Shaded X) — Risco moderado entre 100-500-year flood. Seguro opcional.' },
+  C: { risk: 'safe', explanation: 'Zone C — Acima do 500-year flood. Risco mínimo, sem exigência de seguro.' },
+  D: { risk: 'safe', explanation: 'Zone D — Não estudado. Tratado como risco indeterminado, mas sem exigência de seguro.' },
+};
 
 export const DETAIL_FIELDS: DetailField[] = [
   // Decisao
