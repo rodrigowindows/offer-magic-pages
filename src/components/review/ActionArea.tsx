@@ -21,6 +21,7 @@ import { REJECTION_REASONS } from './constants';
 import { formatCurrency } from '@/lib/utils';
 import { DecisionPhotoUpload } from './DecisionPhotoUpload';
 import { hasBlockingAlerts, getCriticalAlerts, type PropertyAlertInput } from '@/services/propertyAlerts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ActionAreaProps {
   statusFilter: StatusFilter;
