@@ -5,6 +5,7 @@ import { ResponseTimeAnalytics } from "@/components/dashboard/ResponseTimeAnalyt
 import { CampaignAnalytics } from "@/components/campaign/CampaignAnalytics";
 import { EmailCampaignStats } from "@/components/campaign/EmailCampaignStats";
 import { CampaignExport } from "@/components/campaign/CampaignExport";
+import { ContactSettingsPanel } from "@/components/admin/ContactSettingsPanel";
 
 interface Props {
   onOpenTemplates: () => void;
@@ -21,6 +22,7 @@ export const AdminCampaignsTab = ({ onOpenTemplates }: Props) => (
         <CampaignExport />
       </div>
     </div>
+    <ContactSettingsPanel />
     <SequenceManager />
     <div className="bg-card rounded-lg border border-border p-6 space-y-6">
       <ResponseTimeAnalytics />
