@@ -118,6 +118,22 @@ const handler = async (req: Request): Promise<Response> => {
             console.log(`✅ Campaign click tracked: ${cl.id}`);
           }
         }
+
+        // 🌡️ Auto-transition lead temperature COLD → WARM on first tracked visit
+        // (only when not manually overridden by analyst)
+        try {
+          const { data: tempRow } = await supabase
+            .from('properties')
+            .select('lead_temperature, lead_temperature_manual')
+            .eq('id', property.id)
+            .maybeSingle();
+          if (tempRow && !tempRow.lead_temperature_manual && (tempRow.lead_temperature ?? 'COLD') === 'COLD') {
+            await supabase.from('properties').update({ lead_temperature: 'WARM' }).eq('id', property.id);
+            console.log(`🌡️ Lead temperature auto-bumped to WARM for property ${property.id}`);
+          }
+        } catch (tempErr) {
+          console.warn('Temperature auto-update skipped:', tempErr);
+        }
       }
 
       // Redirect to property page (keep src param so page knows source)
