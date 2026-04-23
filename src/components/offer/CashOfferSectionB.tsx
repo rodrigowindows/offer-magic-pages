@@ -1,5 +1,5 @@
-import { Check, MessageCircle, Phone, Mail, Calendar, PhoneCall } from "lucide-react";
-import ContactFormModal from "@/components/lead/ContactFormModal";
+import { Check, MessageCircle, MessageSquare, Mail, Calendar, PhoneCall } from "lucide-react";
+import { useContactSettings, renderTemplate } from "@/hooks/useContactSettings";
 
 interface CashOfferSectionBProps {
   offerAmount?: string;
@@ -8,118 +8,171 @@ interface CashOfferSectionBProps {
   propertyId?: string;
 }
 
+interface ContactButtonProps {
+  href?: string;
+  onClick?: () => void;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  highlight?: "light" | "dark" | "none";
+  external?: boolean;
+}
+
+const ContactButton = ({ href, onClick, icon, title, subtitle, highlight = "none", external }: ContactButtonProps) => {
+  const baseClasses = "w-full flex items-center gap-4 px-5 py-4 rounded-xl border transition-all hover:shadow-md text-left";
+  const variantClasses =
+    highlight === "light"
+      ? "bg-green-50 border-green-200 hover:bg-green-100"
+      : highlight === "dark"
+      ? "bg-green-600 border-green-700 hover:bg-green-700 text-white"
+      : "bg-white border-gray-200 hover:bg-gray-50";
+
+  const titleColor = highlight === "dark" ? "text-white" : "text-gray-900";
+  const subtitleColor = highlight === "dark" ? "text-green-100" : "text-gray-500";
+  const iconBg = highlight === "dark" ? "bg-white/20 text-white" : highlight === "light" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700";
+
+  const content = (
+    <>
+      <div className={`shrink-0 w-11 h-11 rounded-full flex items-center justify-center ${iconBg}`}>
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className={`font-bold text-base ${titleColor}`}>{title}</div>
+        <div className={`text-xs ${subtitleColor}`}>{subtitle}</div>
+      </div>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+        onClick={onClick}
+        className={`${baseClasses} ${variantClasses}`}
+      >
+        {content}
+      </a>
+    );
+  }
+  return (
+    <button type="button" onClick={onClick} className={`${baseClasses} ${variantClasses}`}>
+      {content}
+    </button>
+  );
+};
+
 const CashOfferSectionB = ({
   offerAmount = "$285,000",
   onViewOffer,
   propertyAddress = "",
-  propertyId
+  propertyId,
 }: CashOfferSectionBProps) => {
+  const { settings } = useContactSettings();
 
-  const phoneNumber = "7868828251";
+  const vars = {
+    address: propertyAddress || "your property",
+    propertyId: propertyId || "",
+  };
+
+  const wppNumber = (settings.whatsapp_number || "").replace(/[^\d]/g, "");
+  const smsNumber = settings.sms_number || "";
+  const email = settings.support_email || "offers@mylocalinvest.com";
+  const calendly = settings.calendly_url;
+  const retellNumber = settings.retell_phone_number || smsNumber;
+
+  const wppMessage = encodeURIComponent(renderTemplate(settings.whatsapp_message_template, vars));
+  const smsBody = encodeURIComponent(renderTemplate(settings.sms_message_template, vars));
+  const emailSubject = encodeURIComponent(renderTemplate(settings.email_subject_template, vars));
+
+  const trackAndOpen = () => {
+    onViewOffer?.();
+  };
 
   return (
     <section className="py-12 bg-gradient-to-br from-secondary/10 to-primary/5">
       <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center space-y-6">
-          <p className="text-lg text-muted-foreground font-medium">Your Fair Cash Offer</p>
-
-          <div className="text-6xl md:text-7xl font-black text-secondary">
-            {offerAmount}
-          </div>
-
-          <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            For {propertyAddress || 'your property'}
-          </p>
-
-          {/* Preliminary offer disclaimer */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-lg mx-auto">
-            <p className="text-sm font-semibold text-amber-900">
-              This is a preliminary offer. In many cases, we significantly improve it.
+        <div className="max-w-xl mx-auto space-y-6">
+          {/* Heading */}
+          <div className="text-center space-y-3">
+            <p className="text-base text-gray-600 font-medium">Your fair cash offer</p>
+            <div className="text-6xl md:text-7xl font-black text-green-600 tracking-tight">
+              {offerAmount}
+            </div>
+            <p className="text-sm text-gray-500">
+              For {propertyAddress || "your property"}
             </p>
           </div>
 
-          {/* Benefits */}
-          <div className="space-y-3 max-w-sm mx-auto">
-            <div className="flex items-center justify-center gap-2">
-              <Check className="h-5 w-5 text-green-600" />
-              <span className="text-base font-medium">Close in 7-14 Days</span>
-            </div>
-            <p className="text-xs text-muted-foreground">Fast closing guaranteed</p>
-
-            <div className="flex items-center justify-center gap-2">
-              <Check className="h-5 w-5 text-green-600" />
-              <span className="text-base font-medium">No Repairs Needed</span>
-            </div>
-            <p className="text-xs text-muted-foreground">We buy as-is</p>
-
-            <div className="flex items-center justify-center gap-2">
-              <Check className="h-5 w-5 text-green-600" />
-              <span className="text-base font-medium">No Realtor Fees</span>
-            </div>
-            <p className="text-xs text-muted-foreground">Save thousands</p>
+          {/* Beige preliminary disclaimer */}
+          <div className="rounded-xl p-5 border" style={{ backgroundColor: "#FDF4E3", borderColor: "#F0DFB6" }}>
+            <p className="text-sm font-semibold text-amber-900 leading-relaxed">
+              This is a preliminary offer. In many cases, we significantly improve it after talking with you.
+            </p>
           </div>
 
-          {/* Accept offer button */}
-          <ContactFormModal
-            propertyAddress={propertyAddress}
-            propertyId={propertyId}
-            onSubmit={onViewOffer}
-            buttonText="Accept This Offer"
-            buttonClassName="bg-green-600 hover:bg-green-700 text-white text-lg px-10 py-6 h-auto font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-          />
-
-          {/* Communication buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-lg mx-auto pt-2">
-            <a
-              href={`https://wa.me/${phoneNumber}?text=${encodeURIComponent(`Hi, I'm interested in the offer for ${propertyAddress}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-colors"
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </a>
-            <a
-              href={`sms:${phoneNumber}?body=${encodeURIComponent(`Hi, I'm interested in the offer for ${propertyAddress}`)}`}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold transition-colors"
-            >
-              <Phone className="h-4 w-4" />
-              SMS
-            </a>
-            <a
-              href={`mailto:offers@mylocalinvest.com?subject=${encodeURIComponent(`Question about offer for ${propertyAddress}`)}`}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-purple-500 hover:bg-purple-600 text-white text-sm font-semibold transition-colors"
-            >
-              <Mail className="h-4 w-4" />
-              Email
-            </a>
-            <a
-              href={`tel:${phoneNumber}`}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors"
-            >
-              <Calendar className="h-4 w-4" />
-              Schedule Call
-            </a>
-            <a
-              href={`tel:${phoneNumber}`}
-              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors sm:col-span-1 col-span-2"
-            >
-              <PhoneCall className="h-4 w-4" />
-              Call Now
-            </a>
+          {/* Bullets */}
+          <div className="space-y-3">
+            {[
+              { title: "Close in 7-14 days", subtitle: null },
+              { title: "No repairs needed", subtitle: "we buy as-is" },
+              { title: "No realtor fees", subtitle: "save thousands" },
+            ].map((b) => (
+              <div key={b.title} className="flex items-start gap-3">
+                <div className="shrink-0 mt-0.5 w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                  <Check className="h-3.5 w-3.5 text-green-700" />
+                </div>
+                <p className="text-base text-gray-800">
+                  <span className="font-semibold">{b.title}</span>
+                  {b.subtitle && <span className="text-gray-600"> — {b.subtitle}</span>}
+                </p>
+              </div>
+            ))}
           </div>
 
-          <p className="text-xs text-muted-foreground pt-2">
-            <ContactFormModal
-              propertyAddress={propertyAddress}
-              propertyId={propertyId}
-              onSubmit={onViewOffer}
-              buttonText="I Have Questions"
-              buttonClassName="text-primary underline hover:no-underline text-xs bg-transparent hover:bg-transparent p-0 h-auto font-normal"
+          {/* Contact buttons stack */}
+          <div className="space-y-2.5 pt-2">
+            <ContactButton
+              href={wppNumber ? `https://wa.me/${wppNumber}?text=${wppMessage}` : undefined}
+              external
+              onClick={trackAndOpen}
+              icon={<MessageCircle className="h-5 w-5" />}
+              title="Chat on WhatsApp"
+              subtitle="Quick answers, instant reply"
+              highlight="light"
             />
-            {' · '}
-            <span>Call: 786 882 8251</span>
-          </p>
+            <ContactButton
+              href={smsNumber ? `sms:${smsNumber}?body=${smsBody}` : undefined}
+              onClick={trackAndOpen}
+              icon={<MessageSquare className="h-5 w-5" />}
+              title="Text us by SMS"
+              subtitle="Ask anything from your phone"
+            />
+            <ContactButton
+              href={`mailto:${email}?subject=${emailSubject}`}
+              onClick={trackAndOpen}
+              icon={<Mail className="h-5 w-5" />}
+              title="Ask questions by email"
+              subtitle="Detailed reply within hours"
+            />
+            <ContactButton
+              href={calendly || undefined}
+              external
+              onClick={trackAndOpen}
+              icon={<Calendar className="h-5 w-5" />}
+              title="Schedule a call"
+              subtitle={calendly ? "Pick a time that works for you" : "Coming soon — call us for now"}
+            />
+            <ContactButton
+              href={retellNumber ? `tel:${retellNumber}` : undefined}
+              onClick={trackAndOpen}
+              icon={<PhoneCall className="h-5 w-5" />}
+              title="Call us now"
+              subtitle="Answered instantly by AI assistant"
+              highlight="dark"
+            />
+          </div>
         </div>
       </div>
     </section>

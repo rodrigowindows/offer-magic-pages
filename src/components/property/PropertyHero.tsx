@@ -134,19 +134,6 @@ const PropertyHero = ({
               ))}
             </ul>
 
-            {/* CTA Buttons - Amazon-style stacked buttons */}
-            <div className="space-y-3 pt-2">
-              <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-6 rounded-lg shadow-sm transition-colors text-base">
-                Schedule a Call
-              </button>
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-sm transition-colors text-sm">
-                I Have Questions
-              </button>
-              <button className="w-full bg-white hover:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg border border-gray-300 transition-colors text-sm">
-                Download PDF
-              </button>
-            </div>
-
             {/* External Property Links */}
             <div className="flex flex-wrap gap-2 pt-2">
               {[
