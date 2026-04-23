@@ -7,6 +7,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Mail,
+  BookOpen,
 } from 'lucide-react';
 
 export interface ProcessStep {
@@ -82,5 +83,13 @@ export const PROCESS_STEPS: ProcessStep[] = [
     fullPath: '/process/quality',
     icon: ShieldCheck,
     description: 'Monitorar qualidade dos dados e decisões',
+  },
+  {
+    number: 9,
+    title: 'Requisitos',
+    path: 'requirements',
+    fullPath: '/process/requirements',
+    icon: BookOpen,
+    description: 'Regras de triagem: flood zone, agent-skip, rejeição',
   },
 ];
