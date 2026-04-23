@@ -7,6 +7,7 @@ import { ScoresTable } from './ScoresTable';
 import { ExternalLinks } from './ExternalLinks';
 import { PropertyInfoColumn } from './PropertyInfoColumn';
 import { AIScoreButton } from '../ai/AIScoreButton';
+import { LeadTemperatureBadge } from './LeadTemperatureBadge';
 import type { QueueProperty } from './types';
 import { getVisualCategory } from './helpers';
 
@@ -181,9 +182,15 @@ export const PropertyCard = ({ property, allProperties, onScoreSaved, avgCompPri
     <div className={`rounded-lg border-2 ${getStatusBackground(property.approval_status)} flex flex-col`} data-property-id={property.id}>
       {/* Temperature badge + DNC/Deceased + Tabs row */}
       <div className="flex items-stretch border-b">
-        {/* Temperature indicator */}
-        {visual && (
-          <div className={`flex items-center px-2 text-[10px] font-bold ${TEMP_COLORS[visual] || 'bg-gray-400 text-white'}`}>
+        {/* Lead temperature (clickable, cycles COLD→WARM→HOT) */}
+        <LeadTemperatureBadge
+          propertyId={property.id}
+          value={property.lead_temperature}
+          isManual={property.lead_temperature_manual}
+        />
+        {/* Legacy evaluation marker (LAND, etc.) */}
+        {visual && visual === 'LAND' && (
+          <div className={`flex items-center px-2 text-[10px] font-bold ${TEMP_COLORS[visual]}`}>
             {visual}
           </div>
         )}
