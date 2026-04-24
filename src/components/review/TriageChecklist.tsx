@@ -41,6 +41,7 @@ const SEVERITY_STYLES: Record<Severity, { icon: any; bg: string; text: string; b
 
 export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklistProps) => {
   const [policyOpen, setPolicyOpen] = useState(false);
+  const [policyGuardKey, setPolicyGuardKey] = useState<string | null>(null);
   const dismissKey = `triage:guard-dismissed:${property.id}`;
   const [guardDismissed, setGuardDismissed] = useState<boolean>(() => {
     try {
