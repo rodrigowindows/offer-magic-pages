@@ -2408,6 +2408,57 @@ export type Database = {
         }
         Relationships: []
       }
+      triage_audit_log: {
+        Row: {
+          bulk_action: boolean
+          created_at: string
+          decided_by: string | null
+          decided_by_name: string | null
+          decision: string
+          decision_reason: string | null
+          decision_reason_label: string | null
+          flood_zone: string | null
+          id: string
+          metadata: Json | null
+          notes: string | null
+          property_address: string | null
+          property_id: string
+          triggered_rules: string[]
+        }
+        Insert: {
+          bulk_action?: boolean
+          created_at?: string
+          decided_by?: string | null
+          decided_by_name?: string | null
+          decision: string
+          decision_reason?: string | null
+          decision_reason_label?: string | null
+          flood_zone?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          property_address?: string | null
+          property_id: string
+          triggered_rules?: string[]
+        }
+        Update: {
+          bulk_action?: boolean
+          created_at?: string
+          decided_by?: string | null
+          decided_by_name?: string | null
+          decision?: string
+          decision_reason?: string | null
+          decision_reason_label?: string | null
+          flood_zone?: string | null
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          property_address?: string | null
+          property_id?: string
+          triggered_rules?: string[]
+        }
+        Relationships: []
+      }
     }
     Views: {
       properties_public: {
