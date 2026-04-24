@@ -1,6 +1,8 @@
-import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info, ShieldAlert, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { REJECTION_REASONS, FLOOD_ZONE_EXPLANATIONS } from './constants';
 import { evaluateTriage, getGuardTriggers, type TriageSeverity } from '@/services/triageEvaluator';
 import type { QueueProperty } from './types';
