@@ -1,8 +1,8 @@
-import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { REJECTION_REASONS, FLOOD_ZONE_EXPLANATIONS } from './constants';
-import { evaluateTriage, type TriageSeverity } from '@/services/triageEvaluator';
+import { evaluateTriage, getGuardTriggers, type TriageSeverity } from '@/services/triageEvaluator';
 import type { QueueProperty } from './types';
 
 type Severity = TriageSeverity;
@@ -42,9 +42,11 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
   const blockers = checks.filter(c => c.severity === 'block');
   const warnings = checks.filter(c => c.severity === 'warn');
   const passes = checks.filter(c => c.severity === 'pass');
+  const guardTriggers = getGuardTriggers(property);
 
   const hasBlockers = blockers.length > 0;
   const agentBlock = blockers.find(b => b.key === 'agent-listed');
+  const guardFired = guardTriggers.length > 0;
 
   return (
     <div className={`rounded-md border-2 ${hasBlockers ? 'border-red-400 bg-red-50/50 dark:bg-red-950/20' : 'border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/20'} p-2 space-y-1.5`}>
@@ -86,6 +88,22 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
               Usar motivo
             </button>
           )}
+        </div>
+      )}
+
+      {/* Flood-zone safety guard notice — analyst must decide */}
+      {guardFired && (
+        <div className="flex items-start gap-1.5 p-1.5 rounded border-2 border-amber-400 bg-amber-100 dark:bg-amber-950/40 dark:border-amber-700">
+          <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-300" />
+          <div className="flex-1 text-[11px] leading-tight text-amber-900 dark:text-amber-100">
+            <strong className="block">🛡️ Guard de segurança ativado — Flood Zone forçada para AVISO</strong>
+            <span className="opacity-90">
+              Zona FEMA{property.flood_zone ? ` ${String(property.flood_zone).toUpperCase()}` : ''} é alto-risco, mas o sistema <u>nunca auto-rejeita</u> por flood zone. A decisão de rejeitar é exclusiva do analista.
+            </span>
+            {guardTriggers[0]?.reason && (
+              <span className="block mt-0.5 text-[10px] opacity-75 italic">{guardTriggers[0].reason}</span>
+            )}
+          </div>
         </div>
       )}
 
