@@ -1,8 +1,8 @@
-import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info, ShieldAlert } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { REJECTION_REASONS, FLOOD_ZONE_EXPLANATIONS } from './constants';
-import { evaluateTriage, type TriageSeverity } from '@/services/triageEvaluator';
+import { evaluateTriage, getGuardTriggers, type TriageSeverity } from '@/services/triageEvaluator';
 import type { QueueProperty } from './types';
 
 type Severity = TriageSeverity;
