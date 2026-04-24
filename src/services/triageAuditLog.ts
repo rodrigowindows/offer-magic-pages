@@ -30,6 +30,7 @@ export interface LogTriageDecisionInput {
 export async function logTriageDecision(input: LogTriageDecisionInput): Promise<void> {
   try {
     const triggered = input.triggeredRules ?? getTriggeredRuleKeys(input.property as QueueProperty);
+    const guardTriggers = getGuardTriggers(input.property as QueueProperty);
     const reasonLabel = input.decisionReason
       ? REJECTION_REASONS.find(r => r.value === input.decisionReason)?.label ?? null
       : null;
@@ -51,6 +52,8 @@ export async function logTriageDecision(input: LogTriageDecisionInput): Promise<
         estimated_value: input.property.estimated_value ?? null,
         ai_score: input.property.ai_score ?? null,
         lead_score: input.property.lead_score ?? null,
+        guard_triggers: guardTriggers,
+        guard_fired: guardTriggers.length > 0,
         ...(input.metadata ?? {}),
       },
     };
