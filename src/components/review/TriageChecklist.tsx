@@ -118,14 +118,24 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
             {guardTriggers[0]?.reason && (
               <span className="block mt-0.5 text-[10px] opacity-75 italic">{guardTriggers[0].reason}</span>
             )}
-            <button
-              type="button"
-              onClick={() => setPolicyOpen(true)}
-              className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold underline underline-offset-2 hover:opacity-80"
-            >
-              <BookOpen className="h-2.5 w-2.5" />
-              Ver política de rejeição
-            </button>
+            <div className="mt-1 flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setPolicyOpen(true)}
+                className="inline-flex items-center gap-1 text-[10px] font-semibold underline underline-offset-2 hover:opacity-80"
+              >
+                <BookOpen className="h-2.5 w-2.5" />
+                Ver política de rejeição
+              </button>
+              <button
+                type="button"
+                onClick={dismissGuard}
+                className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-600 text-white px-2 py-0.5 rounded hover:bg-amber-700"
+                title="Ocultar este aviso para esta propriedade nesta sessão"
+              >
+                Entendi
+              </button>
+            </div>
           </div>
         </div>
       )}
