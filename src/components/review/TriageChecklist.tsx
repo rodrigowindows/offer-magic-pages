@@ -122,7 +122,10 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
             <div className="mt-1 flex items-center gap-2 flex-wrap">
               <button
                 type="button"
-                onClick={() => setPolicyOpen(true)}
+                onClick={() => {
+                  setPolicyGuardKey(guardTriggers[0]?.key ?? 'flood-zone');
+                  setPolicyOpen(true);
+                }}
                 className="inline-flex items-center gap-1 text-[10px] font-semibold underline underline-offset-2 hover:opacity-80"
               >
                 <BookOpen className="h-2.5 w-2.5" />
