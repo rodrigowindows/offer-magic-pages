@@ -58,7 +58,7 @@ export async function logTriageDecision(input: LogTriageDecisionInput): Promise<
       },
     };
 
-    const { error } = await supabase.from('triage_audit_log').insert(payload);
+    const { error } = await (supabase.from('triage_audit_log') as any).insert(payload);
     if (error) {
       console.error('[triage_audit_log] insert failed', error, payload);
     }
