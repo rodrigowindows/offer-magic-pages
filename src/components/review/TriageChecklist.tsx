@@ -40,6 +40,7 @@ const SEVERITY_STYLES: Record<Severity, { icon: any; bg: string; text: string; b
 };
 
 export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklistProps) => {
+  const [policyOpen, setPolicyOpen] = useState(false);
   const checks = evaluateTriage(property);
   const blockers = checks.filter(c => c.severity === 'block');
   const warnings = checks.filter(c => c.severity === 'warn');
