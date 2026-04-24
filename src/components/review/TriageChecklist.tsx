@@ -41,6 +41,7 @@ const SEVERITY_STYLES: Record<Severity, { icon: any; bg: string; text: string; b
 
 export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklistProps) => {
   const [policyOpen, setPolicyOpen] = useState(false);
+  const [policyGuardKey, setPolicyGuardKey] = useState<string | null>(null);
   const dismissKey = `triage:guard-dismissed:${property.id}`;
   const [guardDismissed, setGuardDismissed] = useState<boolean>(() => {
     try {
@@ -121,7 +122,10 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
             <div className="mt-1 flex items-center gap-2 flex-wrap">
               <button
                 type="button"
-                onClick={() => setPolicyOpen(true)}
+                onClick={() => {
+                  setPolicyGuardKey(guardTriggers[0]?.key ?? 'flood-zone');
+                  setPolicyOpen(true);
+                }}
                 className="inline-flex items-center gap-1 text-[10px] font-semibold underline underline-offset-2 hover:opacity-80"
               >
                 <BookOpen className="h-2.5 w-2.5" />
@@ -215,7 +219,7 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
       )}
 
       {/* Rejection policy dialog */}
-      <Dialog open={policyOpen} onOpenChange={setPolicyOpen}>
+      <Dialog open={policyOpen} onOpenChange={(open) => { setPolicyOpen(open); if (!open) setPolicyGuardKey(null); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -223,12 +227,19 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
               Política de Rejeição — Flood Zone
             </DialogTitle>
             <DialogDescription>
-              Por que zonas FEMA de alto risco nunca rejeitam automaticamente.
+              {policyGuardKey === 'flood-zone'
+                ? `Regra destacada: ${guardTriggers.find(t => t.key === policyGuardKey)?.label || 'Flood Zone (FEMA)'}`
+                : 'Por que zonas FEMA de alto risco nunca rejeitam automaticamente.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-sm leading-relaxed">
-            <section>
-              <h4 className="font-semibold mb-1">🛡️ Princípio do Guard de Segurança</h4>
+            <section className={policyGuardKey === 'flood-zone' ? 'rounded-md ring-2 ring-amber-400 bg-amber-50/60 dark:bg-amber-950/30 p-2 -m-1' : ''}>
+              <h4 className="font-semibold mb-1 flex items-center gap-1.5">
+                🛡️ Princípio do Guard de Segurança
+                {policyGuardKey === 'flood-zone' && (
+                  <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-500 text-white px-1.5 py-0.5 rounded">Regra ativa</span>
+                )}
+              </h4>
               <p className="text-muted-foreground">
                 Mesmo que uma propriedade esteja em zona FEMA classificada como alto-risco
                 (AE, VE, A, V, AH, AO), o sistema <strong>nunca</strong> auto-rejeita por flood zone.
