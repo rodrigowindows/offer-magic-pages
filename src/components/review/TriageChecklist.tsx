@@ -91,6 +91,22 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
         </div>
       )}
 
+      {/* Flood-zone safety guard notice — analyst must decide */}
+      {guardFired && (
+        <div className="flex items-start gap-1.5 p-1.5 rounded border-2 border-amber-400 bg-amber-100 dark:bg-amber-950/40 dark:border-amber-700">
+          <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-amber-700 dark:text-amber-300" />
+          <div className="flex-1 text-[11px] leading-tight text-amber-900 dark:text-amber-100">
+            <strong className="block">🛡️ Guard de segurança ativado — Flood Zone forçada para AVISO</strong>
+            <span className="opacity-90">
+              Zona FEMA{property.flood_zone ? ` ${String(property.flood_zone).toUpperCase()}` : ''} é alto-risco, mas o sistema <u>nunca auto-rejeita</u> por flood zone. A decisão de rejeitar é exclusiva do analista.
+            </span>
+            {guardTriggers[0]?.reason && (
+              <span className="block mt-0.5 text-[10px] opacity-75 italic">{guardTriggers[0].reason}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Blockers + warnings list */}
       {(blockers.length > 0 || warnings.length > 0) && (
         <TooltipProvider delayDuration={150}>
