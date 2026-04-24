@@ -1,6 +1,8 @@
-import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, XCircle, AlertTriangle, Waves, UserX, Ban, Info, ShieldAlert, BookOpen } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { REJECTION_REASONS, FLOOD_ZONE_EXPLANATIONS } from './constants';
 import { evaluateTriage, getGuardTriggers, type TriageSeverity } from '@/services/triageEvaluator';
 import type { QueueProperty } from './types';
@@ -38,6 +40,7 @@ const SEVERITY_STYLES: Record<Severity, { icon: any; bg: string; text: string; b
 };
 
 export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklistProps) => {
+  const [policyOpen, setPolicyOpen] = useState(false);
   const checks = evaluateTriage(property);
   const blockers = checks.filter(c => c.severity === 'block');
   const warnings = checks.filter(c => c.severity === 'warn');
@@ -103,6 +106,14 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
             {guardTriggers[0]?.reason && (
               <span className="block mt-0.5 text-[10px] opacity-75 italic">{guardTriggers[0].reason}</span>
             )}
+            <button
+              type="button"
+              onClick={() => setPolicyOpen(true)}
+              className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold underline underline-offset-2 hover:opacity-80"
+            >
+              <BookOpen className="h-2.5 w-2.5" />
+              Ver política de rejeição
+            </button>
           </div>
         </div>
       )}
@@ -180,6 +191,59 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
           Resolva os bloqueios ou rejeite usando um dos motivos sugeridos acima.
         </p>
       )}
+
+      {/* Rejection policy dialog */}
+      <Dialog open={policyOpen} onOpenChange={setPolicyOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-amber-600" />
+              Política de Rejeição — Flood Zone
+            </DialogTitle>
+            <DialogDescription>
+              Por que zonas FEMA de alto risco nunca rejeitam automaticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm leading-relaxed">
+            <section>
+              <h4 className="font-semibold mb-1">🛡️ Princípio do Guard de Segurança</h4>
+              <p className="text-muted-foreground">
+                Mesmo que uma propriedade esteja em zona FEMA classificada como alto-risco
+                (AE, VE, A, V, AH, AO), o sistema <strong>nunca</strong> auto-rejeita por flood zone.
+                Qualquer regra que tente bloquear é forçada para <strong>aviso</strong> pelo guard.
+              </p>
+            </section>
+
+            <section>
+              <h4 className="font-semibold mb-1">📋 Por quê?</h4>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Mapas FEMA contêm imprecisões — um lote pode estar parcialmente fora da zona.</li>
+                <li>Elevação real, base flood elevation (BFE) e seguro NFIP mudam o cálculo.</li>
+                <li>Compradores cash aceitam zonas de risco com desconto adequado.</li>
+                <li>Decisão envolve due diligence local que o algoritmo não vê.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4 className="font-semibold mb-1">✅ Responsabilidade do Analista</h4>
+              <p className="text-muted-foreground">
+                Use o aviso como sinal para investigar (elevação, histórico de claims,
+                custo de seguro). A decisão final de rejeitar ou prosseguir é
+                <strong> exclusivamente humana</strong> e deve ser registrada nas notas com
+                justificativa.
+              </p>
+            </section>
+
+            <section className="rounded border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-2">
+              <p className="text-xs text-amber-900 dark:text-amber-200">
+                <strong>Auditoria:</strong> Todo acionamento do guard é registrado em
+                <code className="mx-1 px-1 bg-amber-100 dark:bg-amber-900/50 rounded text-[10px]">triage_audit_log.metadata.guard_triggers</code>
+                para revisão posterior.
+              </p>
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
