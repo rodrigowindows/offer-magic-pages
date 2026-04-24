@@ -42,9 +42,11 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
   const blockers = checks.filter(c => c.severity === 'block');
   const warnings = checks.filter(c => c.severity === 'warn');
   const passes = checks.filter(c => c.severity === 'pass');
+  const guardTriggers = getGuardTriggers(property);
 
   const hasBlockers = blockers.length > 0;
   const agentBlock = blockers.find(b => b.key === 'agent-listed');
+  const guardFired = guardTriggers.length > 0;
 
   return (
     <div className={`rounded-md border-2 ${hasBlockers ? 'border-red-400 bg-red-50/50 dark:bg-red-950/20' : 'border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/20'} p-2 space-y-1.5`}>
