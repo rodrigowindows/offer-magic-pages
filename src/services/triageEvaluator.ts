@@ -155,7 +155,32 @@ export function evaluateTriage(p: QueueProperty): TriageCheckItem[] {
     });
   });
 
-  return checks;
+  // GUARD: Flood-zone outcomes must never auto-reject (analyst-only decision).
+  // Downgrade any 'block' on flood-related checks to 'warn' regardless of upstream rules.
+  return checks.map(c => enforceFloodZoneWarningGuard(c));
+}
+
+/**
+ * GUARD — Flood-zone rules must NEVER auto-reject a property. FEMA flagging
+ * is informational; the analyst always makes the final call. This guard runs
+ * AFTER all evaluator rules, so even if a future rule change accidentally
+ * promotes a flood-zone check to 'block', it gets clamped back to 'warn'.
+ */
+export function enforceFloodZoneWarningGuard(check: TriageCheckItem): TriageCheckItem {
+  const isFloodCheck =
+    check.key === 'flood-zone' ||
+    check.rejectionCode === 'flood-zone' ||
+    check.key.startsWith('alert-flood') ||
+    /flood/i.test(check.label);
+
+  if (isFloodCheck && check.severity === 'block') {
+    return {
+      ...check,
+      severity: 'warn',
+      detail: (check.detail ? check.detail + ' · ' : '') + '[guard] flood-zone nunca auto-rejeita',
+    };
+  }
+  return check;
 }
 
 /** Return the list of triggered (block + warn) rule keys, suitable for audit log. */
