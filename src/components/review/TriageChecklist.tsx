@@ -191,6 +191,59 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
           Resolva os bloqueios ou rejeite usando um dos motivos sugeridos acima.
         </p>
       )}
+
+      {/* Rejection policy dialog */}
+      <Dialog open={policyOpen} onOpenChange={setPolicyOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-amber-600" />
+              Política de Rejeição — Flood Zone
+            </DialogTitle>
+            <DialogDescription>
+              Por que zonas FEMA de alto risco nunca rejeitam automaticamente.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm leading-relaxed">
+            <section>
+              <h4 className="font-semibold mb-1">🛡️ Princípio do Guard de Segurança</h4>
+              <p className="text-muted-foreground">
+                Mesmo que uma propriedade esteja em zona FEMA classificada como alto-risco
+                (AE, VE, A, V, AH, AO), o sistema <strong>nunca</strong> auto-rejeita por flood zone.
+                Qualquer regra que tente bloquear é forçada para <strong>aviso</strong> pelo guard.
+              </p>
+            </section>
+
+            <section>
+              <h4 className="font-semibold mb-1">📋 Por quê?</h4>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Mapas FEMA contêm imprecisões — um lote pode estar parcialmente fora da zona.</li>
+                <li>Elevação real, base flood elevation (BFE) e seguro NFIP mudam o cálculo.</li>
+                <li>Compradores cash aceitam zonas de risco com desconto adequado.</li>
+                <li>Decisão envolve due diligence local que o algoritmo não vê.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h4 className="font-semibold mb-1">✅ Responsabilidade do Analista</h4>
+              <p className="text-muted-foreground">
+                Use o aviso como sinal para investigar (elevação, histórico de claims,
+                custo de seguro). A decisão final de rejeitar ou prosseguir é
+                <strong> exclusivamente humana</strong> e deve ser registrada nas notas com
+                justificativa.
+              </p>
+            </section>
+
+            <section className="rounded border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-2">
+              <p className="text-xs text-amber-900 dark:text-amber-200">
+                <strong>Auditoria:</strong> Todo acionamento do guard é registrado em
+                <code className="mx-1 px-1 bg-amber-100 dark:bg-amber-900/50 rounded text-[10px]">triage_audit_log.metadata.guard_triggers</code>
+                para revisão posterior.
+              </p>
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
