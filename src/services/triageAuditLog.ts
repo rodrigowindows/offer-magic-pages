@@ -4,7 +4,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 import { REJECTION_REASONS } from '@/components/review/constants';
-import { getTriggeredRuleKeys } from './triageEvaluator';
+import { getTriggeredRuleKeys, getGuardTriggers } from './triageEvaluator';
 import type { QueueProperty } from '@/components/review/types';
 
 export type TriageDecision = 'rejected' | 'skipped' | 'approved_with_warnings';
