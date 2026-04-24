@@ -41,6 +41,18 @@ const SEVERITY_STYLES: Record<Severity, { icon: any; bg: string; text: string; b
 
 export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklistProps) => {
   const [policyOpen, setPolicyOpen] = useState(false);
+  const dismissKey = `triage:guard-dismissed:${property.id}`;
+  const [guardDismissed, setGuardDismissed] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem(dismissKey) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const dismissGuard = () => {
+    try { sessionStorage.setItem(dismissKey, '1'); } catch {}
+    setGuardDismissed(true);
+  };
   const checks = evaluateTriage(property);
   const blockers = checks.filter(c => c.severity === 'block');
   const warnings = checks.filter(c => c.severity === 'warn');
@@ -49,7 +61,7 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
 
   const hasBlockers = blockers.length > 0;
   const agentBlock = blockers.find(b => b.key === 'agent-listed');
-  const guardFired = guardTriggers.length > 0;
+  const guardFired = guardTriggers.length > 0 && !guardDismissed;
 
   return (
     <div className={`rounded-md border-2 ${hasBlockers ? 'border-red-400 bg-red-50/50 dark:bg-red-950/20' : 'border-emerald-300 bg-emerald-50/40 dark:bg-emerald-950/20'} p-2 space-y-1.5`}>
