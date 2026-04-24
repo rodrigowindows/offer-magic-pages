@@ -189,3 +189,65 @@ export function getTriggeredRuleKeys(p: QueueProperty): string[] {
     .filter(c => c.severity !== 'pass')
     .map(c => c.key);
 }
+
+export interface GuardTrigger {
+  key: string;
+  label: string;
+  originalSeverity: TriageSeverity;
+  finalSeverity: TriageSeverity;
+  reason: string;
+}
+
+/**
+ * Detect which checks would have been 'block' but were downgraded to 'warn'
+ * by enforceFloodZoneWarningGuard. Used to feed the audit log so we can prove
+ * the guard fired for a given property/decision.
+ */
+export function getGuardTriggers(p: QueueProperty): GuardTrigger[] {
+  const triggers: GuardTrigger[] = [];
+  const tags = Array.isArray(p.tags) ? p.tags.map(t => String(t).toLowerCase()) : [];
+  const floodZone = (p.flood_zone || '').toUpperCase();
+  const inFloodRisk = !!floodZone && HIGH_RISK_FLOOD_ZONES.includes(floodZone);
+
+  // The flood-zone rule itself uses 'warn' as its native severity, but if the
+  // guard catches *anything* flood-related (including data-quality alerts) at
+  // 'block', we record it. Re-run the raw rule emission to compare.
+  if (inFloodRisk) {
+    const raw = { key: 'flood-zone', label: 'Flood Zone (FEMA)', severity: 'warn' as TriageSeverity, rejectionCode: 'flood-zone' };
+    const guarded = enforceFloodZoneWarningGuard({ ...raw, severity: 'block' });
+    if (guarded.severity === 'warn') {
+      triggers.push({
+        key: raw.key,
+        label: raw.label,
+        originalSeverity: 'block',
+        finalSeverity: 'warn',
+        reason: `Zone ${floodZone} is high-risk (FEMA) but flood-zone never auto-rejects — analyst decides.`,
+      });
+    }
+  }
+
+  // Also surface any evaluator-emitted flood check that ended at 'warn' when
+  // the natural severity could have been 'block' (defensive — covers future rules).
+  evaluateTriage(p).forEach(c => {
+    const isFlood =
+      c.key === 'flood-zone' ||
+      c.rejectionCode === 'flood-zone' ||
+      c.key.startsWith('alert-flood') ||
+      /flood/i.test(c.label);
+    if (isFlood && c.severity === 'warn' && c.detail?.includes('[guard]')) {
+      if (!triggers.some(t => t.key === c.key)) {
+        triggers.push({
+          key: c.key,
+          label: c.label,
+          originalSeverity: 'block',
+          finalSeverity: 'warn',
+          reason: 'enforceFloodZoneWarningGuard downgraded block → warn',
+        });
+      }
+    }
+  });
+
+  // Tags hint (e.g. importer set agent-listed manually) — not flood-related, skip.
+  void tags;
+  return triggers;
+}
