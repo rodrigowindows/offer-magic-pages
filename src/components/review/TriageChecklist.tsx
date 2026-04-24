@@ -106,6 +106,14 @@ export const TriageChecklist = ({ property, onSuggestRejection }: TriageChecklis
             {guardTriggers[0]?.reason && (
               <span className="block mt-0.5 text-[10px] opacity-75 italic">{guardTriggers[0].reason}</span>
             )}
+            <button
+              type="button"
+              onClick={() => setPolicyOpen(true)}
+              className="mt-1 inline-flex items-center gap-1 text-[10px] font-semibold underline underline-offset-2 hover:opacity-80"
+            >
+              <BookOpen className="h-2.5 w-2.5" />
+              Ver política de rejeição
+            </button>
           </div>
         </div>
       )}
