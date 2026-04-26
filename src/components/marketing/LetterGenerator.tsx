@@ -312,14 +312,40 @@ export const LetterGenerator = () => {
             Generate personalized cash offer letters for your properties
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={language} onValueChange={(v: 'en' | 'es') => setLanguage(v)}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="en">English</SelectItem>
               <SelectItem value="es">Español</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={globalTemplate} onValueChange={(v) => setGlobalTemplate(v as LetterTemplateId)}>
+            <SelectTrigger className="w-[200px]">
+              <Palette className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Template" />
+            </SelectTrigger>
+            <SelectContent>
+              {LETTER_TEMPLATES.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={strategy} onValueChange={(v) => setStrategy(v as any)}>
+            <SelectTrigger className="w-[200px]">
+              <Shuffle className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Strategy" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixed">Fixed (use template)</SelectItem>
+              <SelectItem value="rotate">Rotate (1→10)</SelectItem>
+              <SelectItem value="random">Random per property</SelectItem>
+              <SelectItem value="by-city">By city</SelectItem>
+              <SelectItem value="by-status">By status</SelectItem>
             </SelectContent>
           </Select>
           <Button
