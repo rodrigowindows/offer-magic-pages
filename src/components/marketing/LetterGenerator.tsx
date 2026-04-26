@@ -593,6 +593,30 @@ export const LetterGenerator = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Select
+                            value={perPropertyTemplate[property.id] ?? '__auto__'}
+                            onValueChange={(v) =>
+                              setPropertyTemplate(
+                                property.id,
+                                v === '__auto__' ? null : (v as LetterTemplateId),
+                              )
+                            }
+                          >
+                            <SelectTrigger className="w-[150px] h-8 text-xs">
+                              <Palette className="w-3 h-3 mr-1 text-muted-foreground" />
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__auto__">
+                                Auto ({resolveTemplateFor(property)})
+                              </SelectItem>
+                              {LETTER_TEMPLATES.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>
+                                  {t.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Button
                             variant="outline"
                             size="sm"
