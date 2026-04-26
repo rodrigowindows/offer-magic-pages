@@ -22,6 +22,10 @@ import { CashOfferLetter } from '@/components/offer/CashOfferLetter';
 import { resolveMailingAddress } from '@/utils/mailingAddress';
 import { AveryLabelsPrintDialog } from '@/components/offer/AveryLabelsPrintDialog';
 import {
+  LETTER_TEMPLATES,
+  type LetterTemplateId,
+} from '@/components/offer/letterTemplates';
+import {
   FileText,
   Download,
   Printer,
@@ -31,6 +35,8 @@ import {
   RefreshCw,
   Tag,
   X,
+  Palette,
+  Shuffle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BatchSelector } from '@/components/process/BatchSelector';
@@ -70,7 +76,81 @@ export const LetterGenerator = () => {
   const [maxOffer, setMaxOffer] = useState<string>('');
   const [selectedBatch, setSelectedBatch] = useState<string>('all');
   const [labelsOpen, setLabelsOpen] = useState(false);
-  const { toast} = useToast();
+  const [globalTemplate, setGlobalTemplate] = useState<LetterTemplateId>(() => {
+    return (localStorage.getItem('letter-global-template') as LetterTemplateId) || 'classic';
+  });
+  const [strategy, setStrategy] = useState<'fixed' | 'rotate' | 'random' | 'by-city' | 'by-status'>(() => {
+    return (localStorage.getItem('letter-strategy') as any) || 'fixed';
+  });
+  const [perPropertyTemplate, setPerPropertyTemplate] = useState<Record<string, LetterTemplateId>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('letter-per-property') || '{}');
+    } catch {
+      return {};
+    }
+  });
+  const { toast } = useToast();
+
+  // Persist preferences
+  useEffect(() => {
+    localStorage.setItem('letter-global-template', globalTemplate);
+  }, [globalTemplate]);
+  useEffect(() => {
+    localStorage.setItem('letter-strategy', strategy);
+  }, [strategy]);
+  useEffect(() => {
+    localStorage.setItem('letter-per-property', JSON.stringify(perPropertyTemplate));
+  }, [perPropertyTemplate]);
+
+  /**
+   * Resolve which template to use for a given property based on selected strategy.
+   * Priority: per-property override > strategy > global default.
+   */
+  const resolveTemplateFor = (property: Property, index: number = 0): LetterTemplateId => {
+    if (perPropertyTemplate[property.id]) return perPropertyTemplate[property.id];
+
+    const ids = LETTER_TEMPLATES.map((t) => t.id);
+
+    switch (strategy) {
+      case 'rotate':
+        return ids[index % ids.length];
+      case 'random': {
+        // Stable hash so same property keeps same random template across renders
+        let h = 0;
+        for (const ch of property.id) h = (h * 31 + ch.charCodeAt(0)) | 0;
+        return ids[Math.abs(h) % ids.length];
+      }
+      case 'by-city': {
+        const key = (property.city || '').toLowerCase();
+        let h = 0;
+        for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) | 0;
+        return ids[Math.abs(h) % ids.length];
+      }
+      case 'by-status': {
+        const map: Record<string, LetterTemplateId> = {
+          approved: 'premium',
+          pending: 'modern',
+          rejected: 'minimal',
+        };
+        return map[property.approval_status || ''] || globalTemplate;
+      }
+      case 'fixed':
+      default:
+        return globalTemplate;
+    }
+  };
+
+  const setPropertyTemplate = (propertyId: string, tpl: LetterTemplateId | null) => {
+    setPerPropertyTemplate((prev) => {
+      const next = { ...prev };
+      if (tpl === null) {
+        delete next[propertyId];
+      } else {
+        next[propertyId] = tpl;
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     setSelectedProperties(new Set());
@@ -232,14 +312,40 @@ export const LetterGenerator = () => {
             Generate personalized cash offer letters for your properties
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={language} onValueChange={(v: 'en' | 'es') => setLanguage(v)}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[140px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="en">English</SelectItem>
               <SelectItem value="es">Español</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={globalTemplate} onValueChange={(v) => setGlobalTemplate(v as LetterTemplateId)}>
+            <SelectTrigger className="w-[200px]">
+              <Palette className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Template" />
+            </SelectTrigger>
+            <SelectContent>
+              {LETTER_TEMPLATES.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={strategy} onValueChange={(v) => setStrategy(v as any)}>
+            <SelectTrigger className="w-[200px]">
+              <Shuffle className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Strategy" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixed">Fixed (use template)</SelectItem>
+              <SelectItem value="rotate">Rotate (1→10)</SelectItem>
+              <SelectItem value="random">Random per property</SelectItem>
+              <SelectItem value="by-city">By city</SelectItem>
+              <SelectItem value="by-status">By status</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -487,6 +593,30 @@ export const LetterGenerator = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          <Select
+                            value={perPropertyTemplate[property.id] ?? '__auto__'}
+                            onValueChange={(v) =>
+                              setPropertyTemplate(
+                                property.id,
+                                v === '__auto__' ? null : (v as LetterTemplateId),
+                              )
+                            }
+                          >
+                            <SelectTrigger className="w-[150px] h-8 text-xs">
+                              <Palette className="w-3 h-3 mr-1 text-muted-foreground" />
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__auto__">
+                                Auto ({resolveTemplateFor(property)})
+                              </SelectItem>
+                              {LETTER_TEMPLATES.map((t) => (
+                                <SelectItem key={t.id} value={t.id}>
+                                  {t.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Button
                             variant="outline"
                             size="sm"
@@ -543,6 +673,7 @@ export const LetterGenerator = () => {
                   ownerName={getOwnerName(previewProperty)}
                   source="letter"
                   language={language}
+                  template={resolveTemplateFor(previewProperty)}
                   mailingAddress={m.line1}
                   mailingCity={m.city}
                   mailingState={m.state}
@@ -580,6 +711,7 @@ export const LetterGenerator = () => {
                     ownerName={getOwnerName(property)}
                     source="letter"
                     language={language}
+                    template={resolveTemplateFor(property, index)}
                     mailingAddress={m.line1}
                     mailingCity={m.city}
                     mailingState={m.state}
