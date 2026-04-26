@@ -22,6 +22,10 @@ import { CashOfferLetter } from '@/components/offer/CashOfferLetter';
 import { resolveMailingAddress } from '@/utils/mailingAddress';
 import { AveryLabelsPrintDialog } from '@/components/offer/AveryLabelsPrintDialog';
 import {
+  LETTER_TEMPLATES,
+  type LetterTemplateId,
+} from '@/components/offer/letterTemplates';
+import {
   FileText,
   Download,
   Printer,
@@ -31,6 +35,8 @@ import {
   RefreshCw,
   Tag,
   X,
+  Palette,
+  Shuffle,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BatchSelector } from '@/components/process/BatchSelector';
