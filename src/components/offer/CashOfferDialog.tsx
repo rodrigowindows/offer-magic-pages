@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CashOfferLetter } from "./CashOfferLetter";
+import { LETTER_TEMPLATES, type LetterTemplateId } from "./letterTemplates";
 import { resolveMailingAddress } from "@/utils/mailingAddress";
 import { OfferConfiguration } from "./OfferConfiguration";
 import { Copy, Download, MessageSquare, Mail, Send, Globe } from "lucide-react";
@@ -47,6 +48,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   const [recipientEmail, setRecipientEmail] = useState("");
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [template, setTemplate] = useState<LetterTemplateId>("classic");
   const [offerConfig, setOfferConfig] = useState<OfferConfig>({
     type: 'fixed',
     fixedAmount: property?.cash_offer_amount,
@@ -239,17 +241,36 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
           </TabsList>
 
           <TabsContent value="preview" className="space-y-4">
-            <div className="flex gap-2 justify-end print:hidden">
-              <Button onClick={handlePrint} variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Print/PDF
-              </Button>
-              <Button onClick={() => handleCopyUrl("letter")} variant="outline" size="sm">
-                <Copy className="w-4 h-4 mr-2" />
-                Copy Letter URL
-              </Button>
+            <div className="flex flex-wrap gap-2 justify-between items-center print:hidden">
+              <div className="flex flex-wrap gap-1.5">
+                {LETTER_TEMPLATES.map((tpl) => (
+                  <Button
+                    key={tpl.id}
+                    size="sm"
+                    variant={template === tpl.id ? "default" : "outline"}
+                    onClick={() => setTemplate(tpl.id)}
+                    title={tpl.description}
+                    className="h-7 text-xs"
+                  >
+                    {tpl.name}
+                  </Button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handlePrint} variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Print/PDF
+                </Button>
+                <Button onClick={() => handleCopyUrl("letter")} variant="outline" size="sm">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy Letter URL
+                </Button>
+              </div>
             </div>
-            
+            <p className="text-xs text-muted-foreground print:hidden">
+              {LETTER_TEMPLATES.find((t) => t.id === template)?.description}
+            </p>
+
             <div className="print:p-0">
               <CashOfferLetter
                 address={property.address}
@@ -264,6 +285,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 source="letter"
                 ownerName={property.owner_name || undefined}
                 language={language}
+                template={template}
                 {...(() => {
                   const m = resolveMailingAddress(property);
                   return {
