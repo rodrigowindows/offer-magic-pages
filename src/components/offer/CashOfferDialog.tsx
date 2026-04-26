@@ -48,6 +48,7 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
   const [recipientEmail, setRecipientEmail] = useState("");
   const [language, setLanguage] = useState<"en" | "es">("en");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [template, setTemplate] = useState<LetterTemplateId>("classic");
   const [offerConfig, setOfferConfig] = useState<OfferConfig>({
     type: 'fixed',
     fixedAmount: property?.cash_offer_amount,
