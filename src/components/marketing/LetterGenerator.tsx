@@ -687,6 +687,7 @@ export const LetterGenerator = () => {
                     ownerName={getOwnerName(property)}
                     source="letter"
                     language={language}
+                    template={resolveTemplateFor(property, index)}
                     mailingAddress={m.line1}
                     mailingCity={m.city}
                     mailingState={m.state}
