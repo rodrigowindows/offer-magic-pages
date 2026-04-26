@@ -76,7 +76,81 @@ export const LetterGenerator = () => {
   const [maxOffer, setMaxOffer] = useState<string>('');
   const [selectedBatch, setSelectedBatch] = useState<string>('all');
   const [labelsOpen, setLabelsOpen] = useState(false);
-  const { toast} = useToast();
+  const [globalTemplate, setGlobalTemplate] = useState<LetterTemplateId>(() => {
+    return (localStorage.getItem('letter-global-template') as LetterTemplateId) || 'classic';
+  });
+  const [strategy, setStrategy] = useState<'fixed' | 'rotate' | 'random' | 'by-city' | 'by-status'>(() => {
+    return (localStorage.getItem('letter-strategy') as any) || 'fixed';
+  });
+  const [perPropertyTemplate, setPerPropertyTemplate] = useState<Record<string, LetterTemplateId>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('letter-per-property') || '{}');
+    } catch {
+      return {};
+    }
+  });
+  const { toast } = useToast();
+
+  // Persist preferences
+  useEffect(() => {
+    localStorage.setItem('letter-global-template', globalTemplate);
+  }, [globalTemplate]);
+  useEffect(() => {
+    localStorage.setItem('letter-strategy', strategy);
+  }, [strategy]);
+  useEffect(() => {
+    localStorage.setItem('letter-per-property', JSON.stringify(perPropertyTemplate));
+  }, [perPropertyTemplate]);
+
+  /**
+   * Resolve which template to use for a given property based on selected strategy.
+   * Priority: per-property override > strategy > global default.
+   */
+  const resolveTemplateFor = (property: Property, index: number = 0): LetterTemplateId => {
+    if (perPropertyTemplate[property.id]) return perPropertyTemplate[property.id];
+
+    const ids = LETTER_TEMPLATES.map((t) => t.id);
+
+    switch (strategy) {
+      case 'rotate':
+        return ids[index % ids.length];
+      case 'random': {
+        // Stable hash so same property keeps same random template across renders
+        let h = 0;
+        for (const ch of property.id) h = (h * 31 + ch.charCodeAt(0)) | 0;
+        return ids[Math.abs(h) % ids.length];
+      }
+      case 'by-city': {
+        const key = (property.city || '').toLowerCase();
+        let h = 0;
+        for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) | 0;
+        return ids[Math.abs(h) % ids.length];
+      }
+      case 'by-status': {
+        const map: Record<string, LetterTemplateId> = {
+          approved: 'premium',
+          pending: 'modern',
+          rejected: 'minimal',
+        };
+        return map[property.approval_status || ''] || globalTemplate;
+      }
+      case 'fixed':
+      default:
+        return globalTemplate;
+    }
+  };
+
+  const setPropertyTemplate = (propertyId: string, tpl: LetterTemplateId | null) => {
+    setPerPropertyTemplate((prev) => {
+      const next = { ...prev };
+      if (tpl === null) {
+        delete next[propertyId];
+      } else {
+        next[propertyId] = tpl;
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     setSelectedProperties(new Set());
