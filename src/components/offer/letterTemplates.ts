@@ -116,9 +116,9 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     qrCalloutEs: "O escanee — acceso instantáneo",
     ctaPosition: "top",
     cardClass: "bg-white border-4 border-black text-black",
-    headerClass: "bg-black text-white",
+    headerClass: "bg-white text-black border-b-4 border-black",
     offerBoxClass: "bg-white border-4 border-black text-black",
-    ctaClass: "bg-black text-white border-2 border-black",
+    ctaClass: "bg-white text-black border-2 border-black",
     headlineClass:
       "text-4xl print:text-3xl font-black uppercase tracking-tight text-black",
     showTrustBadges: false,
@@ -163,7 +163,7 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     cardClass: "bg-white border-2 border-black text-black",
     headerClass:
       "bg-white text-black border-b-4 border-double border-black",
-    offerBoxClass: "bg-neutral-100 border border-black text-black",
+    offerBoxClass: "bg-white border border-black text-black",
     ctaClass: "bg-white border-2 border-black text-black",
     headlineClass:
       "text-3xl print:text-2xl font-serif font-bold text-black",
@@ -185,11 +185,11 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     qrCalloutEs: "Escanee para conversar",
     ctaPosition: "top",
     cardClass: "bg-white border-2 border-black rounded-2xl text-black",
-    headerClass: "bg-neutral-100 text-black border-b border-black",
+    headerClass: "bg-white text-black border-b border-black",
     offerBoxClass:
       "bg-white border-2 border-black rounded-xl text-black",
     ctaClass:
-      "bg-neutral-100 border-2 border-black rounded-xl text-black",
+      "bg-white border-2 border-black rounded-xl text-black",
     headlineClass:
       "text-3xl print:text-2xl font-bold text-black",
     showTrustBadges: true,
@@ -211,7 +211,7 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     ctaPosition: "bottom",
     cardClass: "bg-white border-2 border-black text-black",
     headerClass:
-      "bg-neutral-200 text-black border-b-2 border-black",
+      "bg-white text-black border-b-2 border-black",
     offerBoxClass:
       "bg-white border-2 border-dashed border-black text-black",
     ctaClass: "bg-white border-2 border-black text-black",
@@ -237,7 +237,7 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     cardClass: "bg-white border border-neutral-300 text-black",
     headerClass: "bg-white text-black",
     offerBoxClass:
-      "bg-neutral-100 border border-neutral-300 rounded-lg text-black",
+      "bg-white border border-neutral-400 rounded-lg text-black",
     ctaClass:
       "bg-white border-2 border-black rounded-lg text-black",
     headlineClass:
@@ -266,7 +266,7 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     offerBoxClass:
       "bg-white border-l-4 border-black rounded-lg text-black",
     ctaClass:
-      "bg-black text-white rounded-lg border border-black",
+      "bg-white text-black rounded-lg border-2 border-black",
     headlineClass:
       "text-3xl print:text-2xl font-semibold tracking-tight text-black",
     showTrustBadges: true,
@@ -286,10 +286,10 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     qrCalloutEs: "Escanee de inmediato",
     ctaPosition: "top",
     cardClass: "bg-white border-4 border-black text-black",
-    headerClass: "bg-black text-white",
+    headerClass: "bg-white text-black border-b-4 border-black",
     offerBoxClass:
-      "bg-neutral-100 border-2 border-black text-black",
-    ctaClass: "bg-black text-white border-2 border-black",
+      "bg-white border-2 border-black text-black",
+    ctaClass: "bg-white text-black border-4 border-black",
     headlineClass:
       "text-4xl print:text-3xl font-black uppercase text-black",
     showTrustBadges: false,
