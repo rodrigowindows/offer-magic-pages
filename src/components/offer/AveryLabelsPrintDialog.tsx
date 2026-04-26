@@ -6,20 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Printer, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { resolveMailingAddress, formatCityStateZip, type PropertyForMailing } from "@/utils/mailingAddress";
 
-interface LabelProperty {
-  id: string;
-  owner_name?: string | null;
-  confirmed_mailing_address?: string | null;
-  confirmed_mailing_city?: string | null;
-  confirmed_mailing_state?: string | null;
-  confirmed_mailing_zip?: string | null;
-  owner_address?: string | null;
-  address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-}
+type LabelProperty = PropertyForMailing & { id: string };
 
 interface AveryLabelsPrintDialogProps {
   properties: LabelProperty[];
@@ -42,16 +31,13 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
   const [returnCityStateZip, setReturnCityStateZip] = useState(DEFAULT_RETURN.cityStateZip);
   const [returnCount, setReturnCount] = useState(6);
 
-  // Build label data — use confirmed_mailing_* with owner_address fallback, then property address
+  // Build label data via shared resolver so labels match the printed letter exactly
   const labels = properties.map((p) => {
-    const addr = p.confirmed_mailing_address || p.owner_address || p.address;
-    const city = p.confirmed_mailing_city || p.city;
-    const state = p.confirmed_mailing_state || p.state;
-    const zip = p.confirmed_mailing_zip || p.zip_code;
+    const parts = resolveMailingAddress(p);
     return {
-      name: p.owner_name || "Current Resident",
-      line1: addr,
-      cityStateZip: `${city}, ${state} ${zip}`.trim(),
+      name: parts.name,
+      line1: parts.line1,
+      cityStateZip: formatCityStateZip(parts),
     };
   });
 
