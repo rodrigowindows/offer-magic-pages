@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CashOfferLetter } from '@/components/offer/CashOfferLetter';
+import { resolveMailingAddress } from '@/utils/mailingAddress';
 import { AveryLabelsPrintDialog } from '@/components/offer/AveryLabelsPrintDialog';
 import {
   FileText,
@@ -529,22 +530,31 @@ export const LetterGenerator = () => {
                 </Button>
               </div>
             </div>
-            <CashOfferLetter
-              address={previewProperty.address}
-              city={previewProperty.city}
-              state={previewProperty.state}
-              zipCode={previewProperty.zip_code}
-              estimatedValue={previewProperty.estimated_value || 0}
-              propertySlug={previewProperty.slug}
-              ownerName={getOwnerName(previewProperty)}
-              source="letter"
-              language={language}
-              offerConfig={{
-                type: 'fixed',
-                fixedAmount: previewProperty.cash_offer_amount,
-                estimatedValue: previewProperty.estimated_value || 0,
-              }}
-            />
+            {(() => {
+              const m = resolveMailingAddress(previewProperty);
+              return (
+                <CashOfferLetter
+                  address={previewProperty.address}
+                  city={previewProperty.city}
+                  state={previewProperty.state}
+                  zipCode={previewProperty.zip_code}
+                  estimatedValue={previewProperty.estimated_value || 0}
+                  propertySlug={previewProperty.slug}
+                  ownerName={getOwnerName(previewProperty)}
+                  source="letter"
+                  language={language}
+                  mailingAddress={m.line1}
+                  mailingCity={m.city}
+                  mailingState={m.state}
+                  mailingZip={m.zip}
+                  offerConfig={{
+                    type: 'fixed',
+                    fixedAmount: previewProperty.cash_offer_amount,
+                    estimatedValue: previewProperty.estimated_value || 0,
+                  }}
+                />
+              );
+            })()}
           </div>
         </div>
       )}
@@ -557,22 +567,31 @@ export const LetterGenerator = () => {
 
           return (
             <div key={property.id} className={index > 0 ? 'page-break-before' : ''}>
-              <CashOfferLetter
-                address={property.address}
-                city={property.city}
-                state={property.state}
-                zipCode={property.zip_code}
-                estimatedValue={property.estimated_value || 0}
-                propertySlug={property.slug}
-                ownerName={getOwnerName(property)}
-                source="letter"
-                language={language}
-                offerConfig={{
-                  type: 'fixed',
-                  fixedAmount: property.cash_offer_amount,
-                  estimatedValue: property.estimated_value || 0,
-                }}
-              />
+              {(() => {
+                const m = resolveMailingAddress(property);
+                return (
+                  <CashOfferLetter
+                    address={property.address}
+                    city={property.city}
+                    state={property.state}
+                    zipCode={property.zip_code}
+                    estimatedValue={property.estimated_value || 0}
+                    propertySlug={property.slug}
+                    ownerName={getOwnerName(property)}
+                    source="letter"
+                    language={language}
+                    mailingAddress={m.line1}
+                    mailingCity={m.city}
+                    mailingState={m.state}
+                    mailingZip={m.zip}
+                    offerConfig={{
+                      type: 'fixed',
+                      fixedAmount: property.cash_offer_amount,
+                      estimatedValue: property.estimated_value || 0,
+                    }}
+                  />
+                );
+              })()}
             </div>
           );
         })}

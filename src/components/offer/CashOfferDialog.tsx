@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CashOfferLetter } from "./CashOfferLetter";
+import { resolveMailingAddress } from "@/utils/mailingAddress";
 import { OfferConfiguration } from "./OfferConfiguration";
 import { Copy, Download, MessageSquare, Mail, Send, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -263,10 +264,15 @@ export const CashOfferDialog = ({ property, open, onOpenChange }: CashOfferDialo
                 source="letter"
                 ownerName={property.owner_name || undefined}
                 language={language}
-                mailingAddress={property.confirmed_mailing_address || property.owner_address || undefined}
-                mailingCity={property.confirmed_mailing_city || undefined}
-                mailingState={property.confirmed_mailing_state || undefined}
-                mailingZip={property.confirmed_mailing_zip || undefined}
+                {...(() => {
+                  const m = resolveMailingAddress(property);
+                  return {
+                    mailingAddress: m.line1,
+                    mailingCity: m.city,
+                    mailingState: m.state,
+                    mailingZip: m.zip,
+                  };
+                })()}
               />
             </div>
           </TabsContent>
