@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CashOfferLetter } from "./CashOfferLetter";
+import { LETTER_TEMPLATES, type LetterTemplateId } from "./letterTemplates";
 import { resolveMailingAddress } from "@/utils/mailingAddress";
 import { OfferConfiguration } from "./OfferConfiguration";
 import { Copy, Download, MessageSquare, Mail, Send, Globe } from "lucide-react";
