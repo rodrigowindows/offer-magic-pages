@@ -164,15 +164,15 @@ export const CashOfferLetter = ({
 
   const trustBlock = tpl.showTrustBadges && (
     <div className="grid grid-cols-3 gap-3 text-center">
-      <div className="letter-trust-badge bg-neutral-100 border border-neutral-300 rounded-lg p-3">
+      <div className="letter-trust-badge bg-white border border-black rounded-lg p-3">
         <Clock className="h-5 w-5 mx-auto text-black mb-1.5" />
         <p className="text-xs font-medium text-black leading-tight">{t.fastClose}</p>
       </div>
-      <div className="letter-trust-badge bg-neutral-100 border border-neutral-300 rounded-lg p-3">
+      <div className="letter-trust-badge bg-white border border-black rounded-lg p-3">
         <Shield className="h-5 w-5 mx-auto text-black mb-1.5" />
         <p className="text-xs font-medium text-black leading-tight">{t.guarantee}</p>
       </div>
-      <div className="letter-trust-badge bg-neutral-100 border border-neutral-300 rounded-lg p-3">
+      <div className="letter-trust-badge bg-white border border-black rounded-lg p-3">
         <CheckCircle2 className="h-5 w-5 mx-auto text-black mb-1.5" />
         <p className="text-xs font-medium text-black leading-tight">{t.noCost}</p>
       </div>
@@ -222,7 +222,16 @@ export const CashOfferLetter = ({
           {/* CTA position: MIDDLE (after offer + trust) */}
           {tpl.ctaPosition === "middle" && ctaBlock}
 
-          {/* OWNER / MAILING ADDRESS — BOTTOM */}
+          {/* CTA position: BOTTOM (before mailing, mailing always last) */}
+          {tpl.ctaPosition === "bottom" && ctaBlock}
+
+          <div className="text-center">
+            <p className="text-[11px] print:text-[10px] text-neutral-700 italic leading-tight">
+              {email} • {t.footer}
+            </p>
+          </div>
+
+          {/* OWNER / MAILING ADDRESS — ALWAYS AT THE VERY BOTTOM */}
           <div className="letter-recipient border-t border-black pt-3 mt-auto flex flex-wrap items-baseline gap-x-2">
             <span className="text-[10px] uppercase tracking-wider text-neutral-700 shrink-0">
               {language === "es" ? "Enviado a:" : "Mail to:"}
@@ -236,15 +245,6 @@ export const CashOfferLetter = ({
                 ⚠ Different from property
               </span>
             )}
-          </div>
-
-          {/* CTA position: BOTTOM (after mailing) */}
-          {tpl.ctaPosition === "bottom" && ctaBlock}
-
-          <div className="text-center">
-            <p className="text-[11px] print:text-[10px] text-neutral-700 italic leading-tight">
-              {email} • {t.footer}
-            </p>
           </div>
         </div>
 
