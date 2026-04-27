@@ -21,42 +21,35 @@ export const AutoFollowUpSystem = ({
   const { toast } = useToast();
   const [lastClickId, setLastClickId] = useState<string | null>(null);
 
-  // Detectar cliques na página da propriedade
+  // Detectar cliques na página da propriedade (via edge function — anon-safe)
   useEffect(() => {
     const detectClick = async () => {
       if (!propertyId || !clickSource) return;
 
       try {
-        // Registrar o clique usando campaign_logs (tabela que existe)
-        const trackingId = `click-${Date.now()}-${propertyId}`;
-        const { data: clickData, error } = await supabase
-          .from("campaign_logs")
-          .insert({
-            tracking_id: trackingId,
-            property_id: propertyId,
-            campaign_type: 'click_tracking',
-            channel: clickSource,
-            sent_at: new Date().toISOString(),
-            metadata: {
-              user_agent: navigator.userAgent,
-              referrer: document.referrer,
-              click_source: clickSource
-            }
-          })
-          .select()
-          .single();
+        const { data, error } = await supabase.functions.invoke("track-analytics", {
+          body: {
+            propertyId,
+            eventType: "click",
+            source: clickSource,
+            referrer: document.referrer || window.location.href,
+            userAgent: navigator.userAgent,
+          },
+        });
 
         if (error) throw error;
 
-        if (clickData) {
-          setLastClickId(clickData.id);
+        const clickId =
+          (data as { id?: string; eventId?: string } | null)?.id ??
+          (data as { eventId?: string } | null)?.eventId ??
+          `click-${Date.now()}-${propertyId}`;
 
-          // Agendar follow-up automático após 5 minutos
-          setTimeout(() => {
-            triggerAutoFollowUp(clickData.id, propertyId);
-          }, 5 * 60 * 1000); // 5 minutos
-        }
+        setLastClickId(clickId);
 
+        // Agendar follow-up automático após 5 minutos
+        setTimeout(() => {
+          triggerAutoFollowUp(clickId, propertyId);
+        }, 5 * 60 * 1000);
       } catch (error) {
         console.error("Error registering click:", error);
       }
@@ -66,8 +59,10 @@ export const AutoFollowUpSystem = ({
   }, [propertyId, clickSource]);
 
   const triggerAutoFollowUp = async (clickId: string, propId: string) => {
+    // Skip on public pages where the visitor is anonymous (RLS would block these reads/writes).
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session) return;
     try {
-      // Buscar dados da propriedade
       const { data: property } = await supabase
         .from("properties")
         .select("*")
