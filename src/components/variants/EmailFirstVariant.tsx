@@ -80,24 +80,20 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
       });
     }
 
-    const { error } = await supabase.from('property_leads').upsert(
-      {
-        property_id: property.id,
-        email,
-        full_name: data.fullName.trim(),
-        phone: sanitizedPhone,
-        selling_timeline: data.sellingTimeline,
-        interest_level: 'interested',
-        status: 'interested',
-        notes: 'Lead submitted full interest form from email-first variant',
-        user_agent: navigator.userAgent,
-      },
-      {
-        onConflict: 'property_id,email,interest_level',
-      },
-    );
+    const { error } = await supabase.from('property_leads').insert({
+      property_id: property.id,
+      email,
+      full_name: data.fullName.trim(),
+      phone: sanitizedPhone,
+      selling_timeline: data.sellingTimeline,
+      interest_level: 'interested',
+      status: 'interested',
+      notes: 'Lead submitted full interest form from email-first variant',
+      user_agent: navigator.userAgent,
+    });
 
-    if (error) {
+    // 23505 = unique violation — treat as success (lead already exists for this email/property/level).
+    if (error && error.code !== '23505') {
       throw error;
     }
 
