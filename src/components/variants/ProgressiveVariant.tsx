@@ -69,23 +69,18 @@ export const ProgressiveVariant = ({ property }: ProgressiveVariantProps) => {
 
     const { error } = await supabase
       .from("property_leads")
-      .upsert(
-        {
-          property_id: property.id,
-          email: normalizedEmail,
-          interest_level: "email-only",
-          status: "new",
-          notes: `Email captured via progressive variant (${intent})`,
-          offer_viewed_at: new Date().toISOString(),
-          user_agent: navigator.userAgent,
-        },
-        {
-          onConflict: "property_id,email,interest_level",
-          ignoreDuplicates: true,
-        },
-      );
+      .insert({
+        property_id: property.id,
+        email: normalizedEmail,
+        interest_level: "email-only",
+        status: "new",
+        notes: `Email captured via progressive variant (${intent})`,
+        offer_viewed_at: new Date().toISOString(),
+        user_agent: navigator.userAgent,
+      });
 
-    if (error) {
+    // 23505 = unique violation — ignore (email already captured).
+    if (error && error.code !== "23505") {
       throw error;
     }
 
@@ -110,24 +105,20 @@ export const ProgressiveVariant = ({ property }: ProgressiveVariantProps) => {
 
     const { error } = await supabase
       .from("property_leads")
-      .upsert(
-        {
-          property_id: property.id,
-          email,
-          full_name: normalizedName,
-          phone: normalizedPhone,
-          selling_timeline: data.sellingTimeline,
-          interest_level: "interested",
-          status: "interested",
-          notes: `Progressive variant completed (${intent})`,
-          user_agent: navigator.userAgent,
-        },
-        {
-          onConflict: "property_id,email,interest_level",
-        },
-      );
+      .insert({
+        property_id: property.id,
+        email,
+        full_name: normalizedName,
+        phone: normalizedPhone,
+        selling_timeline: data.sellingTimeline,
+        interest_level: "interested",
+        status: "interested",
+        notes: `Progressive variant completed (${intent})`,
+        user_agent: navigator.userAgent,
+      });
 
-    if (error) {
+    // 23505 = unique violation — treat as success.
+    if (error && error.code !== "23505") {
       throw error;
     }
 

@@ -139,23 +139,19 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     try {
       const { error } = await supabase
         .from('property_leads')
-        .upsert(
-          {
-            property_id: property.id,
-            full_name: normalizedName,
-            email: normalizedEmail,
-            phone: normalizedPhone,
-            interest_level: 'interested',
-            status: 'new',
-            notes: formType === 'accept' ? 'Accepted offer from ultra-simple variant' : 'Asked questions from ultra-simple variant',
-            user_agent: navigator.userAgent,
-          },
-          {
-            onConflict: 'property_id,email,interest_level',
-          },
-        );
+        .insert({
+          property_id: property.id,
+          full_name: normalizedName,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          interest_level: 'interested',
+          status: 'new',
+          notes: formType === 'accept' ? 'Accepted offer from ultra-simple variant' : 'Asked questions from ultra-simple variant',
+          user_agent: navigator.userAgent,
+        });
 
-      if (error) throw error;
+      // 23505 = unique violation — treat as success.
+      if (error && error.code !== '23505') throw error;
 
       await supabase.from('property_analytics').insert({
         property_id: property.id,
