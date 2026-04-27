@@ -34,25 +34,18 @@ export const EmailFirstVariant = ({ property }: EmailFirstVariantProps) => {
       email_domain: getEmailDomain(normalizedEmail),
     });
 
-    const { error } = await supabase
-      .from('property_leads')
-      .upsert(
-        {
-          property_id: property.id,
-          email: normalizedEmail,
-          interest_level: 'email-only',
-          status: 'new',
-          notes: 'Email captured via email-first variant',
-          offer_viewed_at: new Date().toISOString(),
-          user_agent: navigator.userAgent,
-        },
-        {
-          onConflict: 'property_id,email,interest_level',
-          ignoreDuplicates: true,
-        },
-      );
+    const { error } = await supabase.from('property_leads').insert({
+      property_id: property.id,
+      email: normalizedEmail,
+      interest_level: 'email-only',
+      status: 'new',
+      notes: 'Email captured via email-first variant',
+      offer_viewed_at: new Date().toISOString(),
+      user_agent: navigator.userAgent,
+    });
 
-    if (error) {
+    // 23505 = unique violation — ignore (email already captured for this property).
+    if (error && error.code !== '23505') {
       console.error('Error storing email-first lead:', error);
     }
 
