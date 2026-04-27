@@ -78,23 +78,19 @@ export const SocialProofVariant = ({ property }: SocialProofVariantProps) => {
     try {
       const { error } = await supabase
         .from("property_leads")
-        .upsert(
-          {
-            property_id: property.id,
-            full_name: normalizedName,
-            email: normalizedEmail,
-            phone: normalizedPhone,
-            interest_level: "interested",
-            status: flow === "interested" ? "interested" : "new",
-            notes: `Social proof variant (${flow})`,
-            user_agent: navigator.userAgent,
-          },
-          {
-            onConflict: "property_id,email,interest_level",
-          },
-        );
+        .insert({
+          property_id: property.id,
+          full_name: normalizedName,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          interest_level: "interested",
+          status: flow === "interested" ? "interested" : "new",
+          notes: `Social proof variant (${flow})`,
+          user_agent: navigator.userAgent,
+        });
 
-      if (error) {
+      // 23505 = unique violation — treat as success.
+      if (error && error.code !== "23505") {
         throw error;
       }
 
