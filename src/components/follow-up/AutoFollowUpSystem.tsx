@@ -59,8 +59,10 @@ export const AutoFollowUpSystem = ({
   }, [propertyId, clickSource]);
 
   const triggerAutoFollowUp = async (clickId: string, propId: string) => {
+    // Skip on public pages where the visitor is anonymous (RLS would block these reads/writes).
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session) return;
     try {
-      // Buscar dados da propriedade
       const { data: property } = await supabase
         .from("properties")
         .select("*")
