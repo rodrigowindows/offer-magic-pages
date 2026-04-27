@@ -28,7 +28,7 @@ serve(async (req: Request) => {
       .from("properties")
       .select("id, slug, address, city, state, zip_code, property_image_url, estimated_value, cash_offer_amount, status, neighborhood, zillow_url, owner_name, bedrooms, bathrooms, square_feet, property_type, latitude, longitude, lot_size, year_built, pool")
       .eq("slug", slug)
-      .eq("status", "active")
+      .eq("approval_status", "approved")
       .maybeSingle();
 
     if (error) {
