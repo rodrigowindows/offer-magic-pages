@@ -26,7 +26,7 @@ interface AveryLabelsPrintDialogProps {
 const SPEC_18262 = {
   id: "18262",
   perSheet: 14,
-  cols: 3 - 1, // 2
+  cols: 2,
   rows: 7,
   labelW: "4in",
   labelH: "1.33in",
@@ -36,6 +36,23 @@ const SPEC_18262 = {
   fontSize: "11pt",
   nameSize: "11pt",
   addrSize: "10.5pt",
+};
+
+// 8160 — Address labels: 30/sheet, 3 col × 10 rows, 1" × 2.625"
+//   top margin 0.5", left margin 0.19", col pitch 2.75", row pitch 1.0"
+const SPEC_8160 = {
+  id: "8160",
+  perSheet: 30,
+  cols: 3,
+  rows: 10,
+  labelW: "2.625in",
+  labelH: "1in",
+  padTop: "0.5in",
+  padLeft: "0.19in",
+  colGap: "0.125in", // 2.75 pitch − 2.625 width
+  fontSize: "9.5pt",
+  nameSize: "9.5pt",
+  addrSize: "9pt",
 };
 
 const SPEC_18294 = {
