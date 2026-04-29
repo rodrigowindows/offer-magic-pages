@@ -33,6 +33,7 @@ export interface FeatureFlags {
   showPropertyImages: boolean;          // Show property images in lists
   enableCompactView: boolean;           // Compact property card view
   showOwnerInfo: boolean;               // Display owner information
+  showPublicPropertyValues: boolean;    // Show offer/ARV/comps/estimated values on public property page (QR code landing)
   
   // Campaign Features
   enableQuickCampaign: boolean;         // Quick campaign dialog
