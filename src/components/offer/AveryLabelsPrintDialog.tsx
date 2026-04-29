@@ -108,7 +108,7 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
     cityStateZip: returnCityStateZip,
   });
 
-  const recipientPages = Math.ceil(recipientLabels.length / SPEC_18262.perSheet);
+  const recipientPages = Math.ceil(recipientLabels.length / recipientSpec.perSheet);
   const returnPages = includeReturn ? Math.ceil(returnLabels.length / SPEC_18294.perSheet) : 0;
 
   const buildSheetCss = (spec: typeof SPEC_18262) => `
