@@ -175,7 +175,7 @@ const FeatureToggleContext = createContext<FeatureToggleContextType | undefined>
 
 const STORAGE_KEY = 'campaign_feature_flags';
 const STORAGE_VERSION_KEY = 'campaign_feature_flags_version';
-const CURRENT_VERSION = 2; // Bump this to force reset on all clients
+const CURRENT_VERSION = 3; // Bump this to force reset on all clients
 
 export const FeatureToggleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [flags, setFlags] = useState<FeatureFlags>(() => {
