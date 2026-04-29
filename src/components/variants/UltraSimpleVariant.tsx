@@ -259,9 +259,19 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                   onClick={handleScheduleCall}
                   size="lg"
                   className="w-full md:w-auto px-12 text-lg"
+                  data-action="schedule-call"
                 >
                   <CalendarClock className="mr-2 h-5 w-5" />
                   Schedule a Call
+                </Button>
+                <Button
+                  onClick={handleIncreaseOffer}
+                  size="lg"
+                  variant="secondary"
+                  className="w-full md:w-auto px-12 text-lg border-2 border-primary/40"
+                  data-action="increase-offer"
+                >
+                  📈 Increase My Offer
                 </Button>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Button
