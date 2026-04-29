@@ -156,12 +156,13 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Avery ${which === "recipient" ? "18262" : "18294"} Labels</title>
+          <title>Avery ${which === "recipient" ? recipientSpec.id : "18294"} Labels</title>
           <style>
             @page { size: 8.5in 11in; margin: 0; }
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { font-family: Arial, Helvetica, sans-serif; }
             ${buildSheetCss(SPEC_18262)}
+            ${buildSheetCss(SPEC_8160)}
             ${buildSheetCss(SPEC_18294)}
             @media screen {
               body { background: #e5e5e5; padding: 20px; }
