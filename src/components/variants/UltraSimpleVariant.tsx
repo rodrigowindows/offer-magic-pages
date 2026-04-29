@@ -155,7 +155,11 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
           phone: normalizedPhone,
           interest_level: 'interested',
           status: 'new',
-          notes: formType === 'accept' ? 'Accepted offer from ultra-simple variant' : 'Asked questions from ultra-simple variant',
+          notes: formType === 'accept'
+            ? 'Accepted offer from ultra-simple variant'
+            : formType === 'increase'
+            ? '🔼 Wants HIGHER offer — requested callback (ultra-simple variant)'
+            : 'Asked questions from ultra-simple variant',
           user_agent: navigator.userAgent,
         });
 
