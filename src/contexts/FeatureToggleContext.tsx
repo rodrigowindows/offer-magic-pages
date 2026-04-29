@@ -74,6 +74,7 @@ export const FEATURE_PRESETS = {
     showPropertyImages: true,
     enableCompactView: false,
     showOwnerInfo: true,
+    showPublicPropertyValues: false,  // Hide offer/ARV/comps on public landing (Phase 1)
     enableQuickCampaign: true,
     enableScheduledSends: true,
     enableTestMode: true,
@@ -99,6 +100,7 @@ export const FEATURE_PRESETS = {
     showPropertyImages: true,
     enableCompactView: false,
     showOwnerInfo: true,
+    showPublicPropertyValues: true,  // Legacy keeps values visible
     enableQuickCampaign: true,
     enableScheduledSends: true,
     enableTestMode: true,
@@ -124,6 +126,7 @@ export const FEATURE_PRESETS = {
     showPropertyImages: true,
     enableCompactView: false,
     showOwnerInfo: true,
+    showPublicPropertyValues: false,  // Hide offer/ARV/comps on public landing (Phase 1)
     enableQuickCampaign: true,
     enableScheduledSends: true,
     enableTestMode: true,
@@ -149,6 +152,7 @@ export const FEATURE_PRESETS = {
     showPropertyImages: false,
     enableCompactView: true,
     showOwnerInfo: true,
+    showPublicPropertyValues: false,  // Hide offer/ARV/comps on public landing (Phase 1)
     enableQuickCampaign: false,
     enableScheduledSends: false,
     enableTestMode: false,
