@@ -28,7 +28,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [formType, setFormType] = useState<'accept' | 'questions'>('accept');
+  const [formType, setFormType] = useState<'accept' | 'questions' | 'increase'>('accept');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -46,6 +46,13 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     void trackABEvent(property.id, 'ultra-simple', 'clicked_schedule_visit');
     void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'schedule_visit' });
     setFormType('questions');
+    setShowContactForm(true);
+  };
+
+  const handleIncreaseOffer = () => {
+    void trackABEvent(property.id, 'ultra-simple', 'clicked_increase_offer');
+    void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'increase_offer' });
+    setFormType('increase');
     setShowContactForm(true);
   };
 
@@ -148,7 +155,11 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
           phone: normalizedPhone,
           interest_level: 'interested',
           status: 'new',
-          notes: formType === 'accept' ? 'Accepted offer from ultra-simple variant' : 'Asked questions from ultra-simple variant',
+          notes: formType === 'accept'
+            ? 'Accepted offer from ultra-simple variant'
+            : formType === 'increase'
+            ? '🔼 Wants HIGHER offer — requested callback (ultra-simple variant)'
+            : 'Asked questions from ultra-simple variant',
           user_agent: navigator.userAgent,
         });
 
@@ -248,9 +259,19 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                   onClick={handleScheduleCall}
                   size="lg"
                   className="w-full md:w-auto px-12 text-lg"
+                  data-action="schedule-call"
                 >
                   <CalendarClock className="mr-2 h-5 w-5" />
                   Schedule a Call
+                </Button>
+                <Button
+                  onClick={handleIncreaseOffer}
+                  size="lg"
+                  variant="secondary"
+                  className="w-full md:w-auto px-12 text-lg border-2 border-primary/40"
+                  data-action="increase-offer"
+                >
+                  📈 Increase My Offer
                 </Button>
                 <div className="flex flex-wrap gap-3 justify-center">
                   <Button
@@ -280,6 +301,14 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             ) : (
               /* Contact Form */
               <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4 text-left">
+                {formType === 'increase' && (
+                  <div className="bg-primary/10 border border-primary/30 rounded-md p-3 text-center">
+                    <p className="font-semibold text-primary">📈 Want a Higher Offer?</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Leave your contact and we'll call you to discuss a better price.
+                    </p>
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="name">Name</Label>
                   <Input

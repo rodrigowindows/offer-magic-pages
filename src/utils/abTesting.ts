@@ -157,6 +157,7 @@ export type ABEventType =
   | 'clicked_download_pdf' // Clicked Download PDF
   | 'clicked_schedule_call' // Clicked Schedule Call
   | 'clicked_schedule_visit' // Clicked Schedule Visit
+  | 'clicked_increase_offer' // Clicked Increase My Offer
   | 'exit';              // Left the page
 
 export interface ABTestEvent {
