@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action') || 'download';
     const batch = url.searchParams.get('batch');
+    const approvedOnly = url.searchParams.get('approved_only') === '1';
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
