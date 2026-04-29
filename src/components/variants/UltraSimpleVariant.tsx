@@ -28,7 +28,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [formType, setFormType] = useState<'accept' | 'questions'>('accept');
+  const [formType, setFormType] = useState<'accept' | 'questions' | 'increase'>('accept');
   const { toast } = useToast();
 
   useEffect(() => {
