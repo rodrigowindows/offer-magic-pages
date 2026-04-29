@@ -3,6 +3,7 @@ import { PropertyDetails } from "@/components/property/PropertyDetails";
 import CashOfferSectionB from "@/components/offer/CashOfferSectionB";
 import TrustCredentials from "@/components/shared/TrustCredentials";
 import { formatCurrency } from "@/lib/utils";
+import { useFeature } from "@/contexts/FeatureToggleContext";
 
 interface PropertyData {
   id: string;
@@ -35,6 +36,7 @@ interface PropertyPageMinimalProps {
 }
 
 const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPageMinimalProps) => {
+  const showValues = useFeature('showPublicPropertyValues');
   const fullAddress = `${property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
   const propertyUrl = `${window.location.origin}/property/${property.slug}`;
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(propertyUrl)}`;
@@ -63,10 +65,10 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
         propertySlug={property.slug}
         imageUrl={imageUrl}
         qrCodeUrl={qrCodeUrl}
-        offerValue={property.cash_offer_amount}
+        offerValue={showValues ? property.cash_offer_amount : undefined}
       />
 
-      {/* Property Details Section */}
+      {/* Property Details Section — estimated_value hidden in Phase 1 */}
       <PropertyDetails
         bedrooms={property.bedrooms}
         bathrooms={property.bathrooms}
@@ -80,11 +82,11 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
         city={property.city}
         state={property.state}
         neighborhood={property.neighborhood}
-        estimated_value={property.estimated_value}
+        estimated_value={showValues ? property.estimated_value : undefined}
       />
 
       <CashOfferSectionB
-        offerAmount={formatCurrency(property.cash_offer_amount)}
+        offerAmount={showValues ? formatCurrency(property.cash_offer_amount) : 'Personalized Cash Offer'}
         onViewOffer={() => {
           trackEvent('viewed_offer');
           onFormSubmit();
