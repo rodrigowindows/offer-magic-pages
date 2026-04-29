@@ -34,6 +34,7 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action') || 'download';
     const batch = url.searchParams.get('batch');
+    const approvedOnly = url.searchParams.get('approved_only') === '1';
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -80,20 +81,24 @@ Deno.serve(async (req) => {
     }
 
     // Fetch properties (try batch_name first, fallback to import_batch)
-    let { data: properties, error: pErr } = await supabase
+    let query = supabase
       .from('properties')
       .select('*')
       .eq('batch_name', batch)
       .order('lead_score', { ascending: false, nullsFirst: false });
+    if (approvedOnly) query = query.eq('approval_status', 'approved');
+    let { data: properties, error: pErr } = await query;
 
     if (pErr) throw pErr;
 
     if (!properties || properties.length === 0) {
-      const fallback = await supabase
+      let fbQuery = supabase
         .from('properties')
         .select('*')
         .eq('import_batch', batch)
         .order('lead_score', { ascending: false, nullsFirst: false });
+      if (approvedOnly) fbQuery = fbQuery.eq('approval_status', 'approved');
+      const fallback = await fbQuery;
       if (fallback.error) throw fallback.error;
       properties = fallback.data || [];
     }
@@ -107,10 +112,15 @@ Deno.serve(async (req) => {
 
     const ids = properties.map((p: any) => p.id);
 
-    // Fetch related data in parallel
-    const [comps, history] = await Promise.all([
+    // Fetch related data in parallel (comps + history + ALL history notes)
+    const [comps, history, allHistory] = await Promise.all([
       supabase.from('manual_comps_links').select('*').in('property_id', ids),
       supabase.from('comps_analysis_history').select('*').in('property_id', ids),
+      supabase
+        .from('comps_analysis_history')
+        .select('property_id, notes, created_at, data_source')
+        .in('property_id', ids)
+        .order('created_at', { ascending: true }),
     ]);
 
     const compsByProp = new Map<string, any[]>();
@@ -129,6 +139,17 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Aggregate ALL notes from history (chronological)
+    const allNotesByProp = new Map<string, string>();
+    for (const h of allHistory.data || []) {
+      const pid = (h as any).property_id;
+      if (!(h as any).notes) continue;
+      const stamp = new Date((h as any).created_at).toISOString().slice(0, 16).replace('T', ' ');
+      const entry = `[${stamp}] (${(h as any).data_source || 'manual'}) ${(h as any).notes}`;
+      const existing = allNotesByProp.get(pid);
+      allNotesByProp.set(pid, existing ? existing + '\n---\n' + entry : entry);
+    }
+
     const enriched = properties.map((p: any) => {
       const cs = compsByProp.get(p.id) || [];
       const h = histByProp.get(p.id);
@@ -141,6 +162,7 @@ Deno.serve(async (req) => {
               `[${c.source}] ${c.url}${c.notes ? ' | notes: ' + c.notes : ''}`
           )
           .join('\n---\n'),
+        all_comps_notes_history: allNotesByProp.get(p.id) || '',
         latest_comps_radius: h?.search_radius_miles || null,
         latest_comps_source: h?.data_source || null,
         latest_comps_value_min: h?.suggested_value_min || null,
@@ -151,12 +173,13 @@ Deno.serve(async (req) => {
     });
 
     const csv = toCsv(enriched);
+    const suffix = approvedOnly ? '_APPROVED' : '_FULL';
 
     return new Response(csv, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${batch}_FULL.csv"`,
+        'Content-Disposition': `attachment; filename="${batch}${suffix}.csv"`,
       },
     });
   } catch (e) {

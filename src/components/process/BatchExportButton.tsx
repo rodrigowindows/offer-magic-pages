@@ -49,11 +49,14 @@ export const BatchExportButton = () => {
     }
   };
 
-  const handleDownload = async (batch: string) => {
-    setDownloading(batch);
+  const handleDownload = async (batch: string, approvedOnly = false) => {
+    const key = `${batch}${approvedOnly ? ':approved' : ''}`;
+    setDownloading(key);
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      const resp = await fetch(`${FUNCTIONS_URL}?batch=${encodeURIComponent(batch)}`, {
+      const qs = new URLSearchParams({ batch });
+      if (approvedOnly) qs.set('approved_only', '1');
+      const resp = await fetch(`${FUNCTIONS_URL}?${qs.toString()}`, {
         headers: {
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
@@ -64,12 +67,12 @@ export const BatchExportButton = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${batch}_FULL.csv`;
+      a.download = `${batch}${approvedOnly ? '_APPROVED' : '_FULL'}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success(`${batch} exportado`);
+      toast.success(`${batch} exportado${approvedOnly ? ' (aprovados)' : ''}`);
     } catch (e) {
       console.error(e);
       toast.error('Erro ao exportar batch');
@@ -86,7 +89,7 @@ export const BatchExportButton = () => {
           <span className="hidden sm:inline">Exportar</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72">
+      <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel className="text-xs">
           Batches disponíveis (100+ propriedades)
         </DropdownMenuLabel>
@@ -101,26 +104,34 @@ export const BatchExportButton = () => {
             Nenhum batch encontrado
           </div>
         )}
-        {batches.map((b) => (
-          <DropdownMenuItem
-            key={b.name}
-            onClick={(e) => {
-              e.preventDefault();
-              handleDownload(b.name);
-            }}
-            disabled={downloading === b.name}
-            className="text-xs flex items-center justify-between gap-2"
-          >
-            <span className="truncate">{b.name}</span>
-            <span className="text-muted-foreground shrink-0">
-              {downloading === b.name ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                `${b.count}`
-              )}
-            </span>
-          </DropdownMenuItem>
-        ))}
+        {batches.map((b) => {
+          const fullKey = b.name;
+          const apprKey = `${b.name}:approved`;
+          return (
+            <div key={b.name} className="px-1 py-1 border-b last:border-0">
+              <div className="px-1 pb-1 text-[11px] font-medium text-muted-foreground flex justify-between">
+                <span className="truncate">{b.name}</span>
+                <span>{b.count}</span>
+              </div>
+              <DropdownMenuItem
+                onClick={(e) => { e.preventDefault(); handleDownload(b.name, false); }}
+                disabled={downloading === fullKey}
+                className="text-xs flex items-center gap-2"
+              >
+                {downloading === fullKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                Todos (Full)
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => { e.preventDefault(); handleDownload(b.name, true); }}
+                disabled={downloading === apprKey}
+                className="text-xs flex items-center gap-2 text-emerald-600 focus:text-emerald-700"
+              >
+                {downloading === apprKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                Somente Aprovados + Notas
+              </DropdownMenuItem>
+            </div>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
