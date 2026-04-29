@@ -195,7 +195,7 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
     return pages;
   };
 
-  const recipientPagesData = groupPages(recipientLabels, SPEC_18262.perSheet);
+  const recipientPagesData = groupPages(recipientLabels, recipientSpec.perSheet);
   const returnPagesData = groupPages(returnLabels, SPEC_18294.perSheet);
 
   const renderSheet = (
