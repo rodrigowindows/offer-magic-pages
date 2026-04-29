@@ -193,6 +193,12 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         description: 'Display owner name and contact info',
         impact: 'low',
       },
+      {
+        key: 'showPublicPropertyValues',
+        label: '💰 Mostrar Valores na Página Pública (QR Code)',
+        description: 'Quando OFF: esconde Oferta/ARV/Comps/MAO/Estimado/Score na landing que o cliente vê via QR Code (Fase 1 — só captura interesse). Quando ON: mostra a oferta em destaque (Fase 2 — após qualificação).',
+        impact: 'high',
+      },
     ],
   },
   {
