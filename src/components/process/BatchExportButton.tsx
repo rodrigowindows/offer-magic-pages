@@ -49,11 +49,14 @@ export const BatchExportButton = () => {
     }
   };
 
-  const handleDownload = async (batch: string) => {
-    setDownloading(batch);
+  const handleDownload = async (batch: string, approvedOnly = false) => {
+    const key = `${batch}${approvedOnly ? ':approved' : ''}`;
+    setDownloading(key);
     try {
       const session = (await supabase.auth.getSession()).data.session;
-      const resp = await fetch(`${FUNCTIONS_URL}?batch=${encodeURIComponent(batch)}`, {
+      const qs = new URLSearchParams({ batch });
+      if (approvedOnly) qs.set('approved_only', '1');
+      const resp = await fetch(`${FUNCTIONS_URL}?${qs.toString()}`, {
         headers: {
           apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           Authorization: `Bearer ${session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
@@ -64,12 +67,12 @@ export const BatchExportButton = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${batch}_FULL.csv`;
+      a.download = `${batch}${approvedOnly ? '_APPROVED' : '_FULL'}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast.success(`${batch} exportado`);
+      toast.success(`${batch} exportado${approvedOnly ? ' (aprovados)' : ''}`);
     } catch (e) {
       console.error(e);
       toast.error('Erro ao exportar batch');
