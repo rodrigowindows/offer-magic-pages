@@ -88,6 +88,8 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
   const [returnLine1, setReturnLine1] = useState(DEFAULT_RETURN.line1);
   const [returnCityStateZip, setReturnCityStateZip] = useState(DEFAULT_RETURN.cityStateZip);
   const [returnCount, setReturnCount] = useState(60);
+  const [recipientTemplate, setRecipientTemplate] = useState<"18262" | "8160">("18262");
+  const recipientSpec = recipientTemplate === "18262" ? SPEC_18262 : SPEC_8160;
 
   // Recipient labels (Avery 18262 — 14/sheet)
   const recipientLabels: LabelData[] = properties.map((p) => {
