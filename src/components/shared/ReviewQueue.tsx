@@ -169,7 +169,7 @@ export const ReviewQueue = ({ selectedBatch }: ReviewQueueProps) => {
 
           <CardContent className="flex flex-col flex-1 p-1 sm:p-1.5 space-y-1 min-h-0">
             {/* Property card - scrollable content area */}
-            <div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-lg">
+            <div className="flex-1 overflow-y-auto min-h-0 bg-card rounded-lg scrollbar-hide">
               <PropertyCard
                 property={queue.currentProperty}
                 allProperties={queue.properties}
