@@ -26,7 +26,7 @@ interface AveryLabelsPrintDialogProps {
 const SPEC_18262 = {
   id: "18262",
   perSheet: 14,
-  cols: 3 - 1, // 2
+  cols: 2,
   rows: 7,
   labelW: "4in",
   labelH: "1.33in",
@@ -36,6 +36,23 @@ const SPEC_18262 = {
   fontSize: "11pt",
   nameSize: "11pt",
   addrSize: "10.5pt",
+};
+
+// 8160 — Address labels: 30/sheet, 3 col × 10 rows, 1" × 2.625"
+//   top margin 0.5", left margin 0.19", col pitch 2.75", row pitch 1.0"
+const SPEC_8160 = {
+  id: "8160",
+  perSheet: 30,
+  cols: 3,
+  rows: 10,
+  labelW: "2.625in",
+  labelH: "1in",
+  padTop: "0.5in",
+  padLeft: "0.19in",
+  colGap: "0.125in", // 2.75 pitch − 2.625 width
+  fontSize: "9.5pt",
+  nameSize: "9.5pt",
+  addrSize: "9pt",
 };
 
 const SPEC_18294 = {
@@ -71,6 +88,8 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
   const [returnLine1, setReturnLine1] = useState(DEFAULT_RETURN.line1);
   const [returnCityStateZip, setReturnCityStateZip] = useState(DEFAULT_RETURN.cityStateZip);
   const [returnCount, setReturnCount] = useState(60);
+  const [recipientTemplate, setRecipientTemplate] = useState<"18262" | "8160">("18262");
+  const recipientSpec = recipientTemplate === "18262" ? SPEC_18262 : SPEC_8160;
 
   // Recipient labels (Avery 18262 — 14/sheet)
   const recipientLabels: LabelData[] = properties.map((p) => {
@@ -89,7 +108,7 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
     cityStateZip: returnCityStateZip,
   });
 
-  const recipientPages = Math.ceil(recipientLabels.length / SPEC_18262.perSheet);
+  const recipientPages = Math.ceil(recipientLabels.length / recipientSpec.perSheet);
   const returnPages = includeReturn ? Math.ceil(returnLabels.length / SPEC_18294.perSheet) : 0;
 
   const buildSheetCss = (spec: typeof SPEC_18262) => `
@@ -137,12 +156,13 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Avery ${which === "recipient" ? "18262" : "18294"} Labels</title>
+          <title>Avery ${which === "recipient" ? recipientSpec.id : "18294"} Labels</title>
           <style>
             @page { size: 8.5in 11in; margin: 0; }
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { font-family: Arial, Helvetica, sans-serif; }
             ${buildSheetCss(SPEC_18262)}
+            ${buildSheetCss(SPEC_8160)}
             ${buildSheetCss(SPEC_18294)}
             @media screen {
               body { background: #e5e5e5; padding: 20px; }
@@ -175,7 +195,7 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
     return pages;
   };
 
-  const recipientPagesData = groupPages(recipientLabels, SPEC_18262.perSheet);
+  const recipientPagesData = groupPages(recipientLabels, recipientSpec.perSheet);
   const returnPagesData = groupPages(returnLabels, SPEC_18294.perSheet);
 
   const renderSheet = (
@@ -246,29 +266,49 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
             Imprimir Etiquetas Avery
           </DialogTitle>
           <DialogDescription>
-            Destinatários: Avery <strong>18262</strong> (14/folha · 1.33" × 4") ·
-            Remetente: Avery <strong>18294</strong> (60/folha · 0.67" × 1.75")
+            Destinatários: Avery <strong>18262</strong> (14/folha) ou <strong>8160</strong> (30/folha) ·
+            Remetente: Avery <strong>18294</strong> (60/folha)
           </DialogDescription>
         </DialogHeader>
 
-        {/* ============ RECIPIENT (18262) ============ */}
+        {/* ============ RECIPIENT ============ */}
         <section className="space-y-3 border rounded-lg p-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <h3 className="font-semibold text-sm">Destinatários — Avery 18262</h3>
+              <h3 className="font-semibold text-sm">Destinatários — Avery {recipientSpec.id}</h3>
               <p className="text-xs text-muted-foreground">
-                {recipientLabels.length} etiquetas em {recipientPages} folha(s)
+                {recipientLabels.length} etiquetas em {recipientPages} folha(s) ·
+                {recipientSpec.id === "18262" ? ' 1.33" × 4"' : ' 1" × 2.625"'}
               </p>
             </div>
-            <Button onClick={() => handlePrint("recipient")} className="gap-2" disabled={recipientLabels.length === 0}>
-              <Printer className="w-4 h-4" />
-              Imprimir {recipientPages} folha(s)
-            </Button>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs">Template:</Label>
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setRecipientTemplate("18262")}
+                  className={`px-3 py-1 text-xs ${recipientTemplate === "18262" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  18262 (14)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecipientTemplate("8160")}
+                  className={`px-3 py-1 text-xs border-l ${recipientTemplate === "8160" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  8160 (30)
+                </button>
+              </div>
+              <Button onClick={() => handlePrint("recipient")} className="gap-2" disabled={recipientLabels.length === 0}>
+                <Printer className="w-4 h-4" />
+                Imprimir {recipientPages}
+              </Button>
+            </div>
           </div>
 
           <div className="border rounded-lg p-3 max-h-[40vh] overflow-y-auto bg-muted/20">
             <div ref={recipientRef}>
-              {recipientPagesData.map((pl, pi) => renderSheet(pl, SPEC_18262, pi))}
+              {recipientPagesData.map((pl, pi) => renderSheet(pl, recipientSpec, pi))}
             </div>
           </div>
         </section>
