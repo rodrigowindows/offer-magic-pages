@@ -16,8 +16,8 @@ interface ProcessHeaderProps {
   stepTitle: string;
 }
 
-/** Shared action buttons for both mobile and desktop headers */
-const HeaderActions = ({ selectedBatch, onBatchChange }: Pick<ProcessHeaderProps, 'selectedBatch' | 'onBatchChange'> & { compact?: boolean }) => (
+/** Secondary action buttons (without batch selector) */
+const SecondaryActions = () => (
   <>
     <Sheet>
       <SheetTrigger asChild>
@@ -50,7 +50,6 @@ const HeaderActions = ({ selectedBatch, onBatchChange }: Pick<ProcessHeaderProps
       </DialogContent>
     </Dialog>
     <BatchExportButton />
-    <BatchSelector value={selectedBatch} onChange={onBatchChange} />
   </>
 );
 
