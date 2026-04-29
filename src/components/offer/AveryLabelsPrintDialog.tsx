@@ -266,29 +266,49 @@ export const AveryLabelsPrintDialog = ({ properties, open, onOpenChange }: Avery
             Imprimir Etiquetas Avery
           </DialogTitle>
           <DialogDescription>
-            Destinatários: Avery <strong>18262</strong> (14/folha · 1.33" × 4") ·
-            Remetente: Avery <strong>18294</strong> (60/folha · 0.67" × 1.75")
+            Destinatários: Avery <strong>18262</strong> (14/folha) ou <strong>8160</strong> (30/folha) ·
+            Remetente: Avery <strong>18294</strong> (60/folha)
           </DialogDescription>
         </DialogHeader>
 
-        {/* ============ RECIPIENT (18262) ============ */}
+        {/* ============ RECIPIENT ============ */}
         <section className="space-y-3 border rounded-lg p-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
-              <h3 className="font-semibold text-sm">Destinatários — Avery 18262</h3>
+              <h3 className="font-semibold text-sm">Destinatários — Avery {recipientSpec.id}</h3>
               <p className="text-xs text-muted-foreground">
-                {recipientLabels.length} etiquetas em {recipientPages} folha(s)
+                {recipientLabels.length} etiquetas em {recipientPages} folha(s) ·
+                {recipientSpec.id === "18262" ? ' 1.33" × 4"' : ' 1" × 2.625"'}
               </p>
             </div>
-            <Button onClick={() => handlePrint("recipient")} className="gap-2" disabled={recipientLabels.length === 0}>
-              <Printer className="w-4 h-4" />
-              Imprimir {recipientPages} folha(s)
-            </Button>
+            <div className="flex items-center gap-2">
+              <Label className="text-xs">Template:</Label>
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setRecipientTemplate("18262")}
+                  className={`px-3 py-1 text-xs ${recipientTemplate === "18262" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  18262 (14)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecipientTemplate("8160")}
+                  className={`px-3 py-1 text-xs border-l ${recipientTemplate === "8160" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  8160 (30)
+                </button>
+              </div>
+              <Button onClick={() => handlePrint("recipient")} className="gap-2" disabled={recipientLabels.length === 0}>
+                <Printer className="w-4 h-4" />
+                Imprimir {recipientPages}
+              </Button>
+            </div>
           </div>
 
           <div className="border rounded-lg p-3 max-h-[40vh] overflow-y-auto bg-muted/20">
             <div ref={recipientRef}>
-              {recipientPagesData.map((pl, pi) => renderSheet(pl, SPEC_18262, pi))}
+              {recipientPagesData.map((pl, pi) => renderSheet(pl, recipientSpec, pi))}
             </div>
           </div>
         </section>
