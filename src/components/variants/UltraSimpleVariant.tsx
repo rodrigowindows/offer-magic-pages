@@ -9,6 +9,7 @@ import { trackABEvent } from "@/utils/abTesting";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useFeature } from "@/contexts/FeatureToggleContext";
 import jsPDF from "jspdf";
 
 interface UltraSimpleVariantProps {
@@ -22,6 +23,7 @@ interface UltraSimpleVariantProps {
 }
 
 export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
+  const showValues = useFeature('showPublicPropertyValues');
   const [showContactForm, setShowContactForm] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -183,21 +185,40 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
       <Card className="border-2 border-primary">
         <CardContent className="pt-8">
           <div className="text-center space-y-6">
-            {/* Offer Amount - SHOWN IMMEDIATELY */}
+            {/* Offer Amount - hidden in Phase 1 (showPublicPropertyValues OFF) */}
             <div>
-              <p className="text-lg text-muted-foreground mb-2">
-                {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
-              </p>
-              <h1 className="text-5xl md:text-6xl font-bold text-primary">
-                {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || defaultOffer(property.estimated_value))}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-2">
-                For {property.address}, {property.city}, {property.state}
-              </p>
-              {offerType === 'range' && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Final offer determined after property inspection
-                </p>
+              {showValues ? (
+                <>
+                  <p className="text-lg text-muted-foreground mb-2">
+                    {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
+                  </p>
+                  <h1 className="text-5xl md:text-6xl font-bold text-primary">
+                    {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || defaultOffer(property.estimated_value))}
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    For {property.address}, {property.city}, {property.state}
+                  </p>
+                  {offerType === 'range' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Final offer determined after property inspection
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-sm uppercase tracking-wide text-muted-foreground mb-2">
+                    Personalized Cash Offer Available
+                  </p>
+                  <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight">
+                    {property.address}
+                  </h1>
+                  <p className="text-base text-muted-foreground mt-2">
+                    {property.city}, {property.state}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
+                    We have a fair, no-obligation cash offer ready for your property. Request it below — no fees, no repairs needed.
+                  </p>
+                </>
               )}
             </div>
 
