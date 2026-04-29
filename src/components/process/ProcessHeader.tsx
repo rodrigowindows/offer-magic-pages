@@ -69,8 +69,12 @@ export const ProcessHeader = ({
         </Button>
         <h1 className="text-sm font-semibold truncate">{stepTitle}</h1>
         <div className="ml-auto flex items-center gap-1">
-          <HeaderActions selectedBatch={selectedBatch} onBatchChange={onBatchChange} />
+          <SecondaryActions />
         </div>
+      </div>
+      {/* Centered batch selector — prominent */}
+      <div className="px-2 py-1.5 flex justify-center border-t bg-muted/30">
+        <BatchSelector value={selectedBatch} onChange={onBatchChange} />
       </div>
       <div className="px-2 py-1 overflow-x-auto">
         <StepperNav currentIndex={currentStepIndex} compact />
@@ -79,6 +83,14 @@ export const ProcessHeader = ({
 
     {/* Desktop header */}
     <header className="hidden sm:block border-b bg-card shrink-0">
+      {/* Top row: centered batch selector */}
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-4 py-1.5 flex items-center justify-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Lote ativo:</span>
+          <BatchSelector value={selectedBatch} onChange={onBatchChange} />
+        </div>
+      </div>
+      {/* Bottom row: nav + actions */}
       <div className="container mx-auto px-4 py-1.5 flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 shrink-0 h-8 px-2">
           <ChevronLeft className="h-4 w-4" />
@@ -88,7 +100,7 @@ export const ProcessHeader = ({
           <StepperNav currentIndex={currentStepIndex} />
         </div>
         <div className="flex items-center gap-1.5">
-          <HeaderActions selectedBatch={selectedBatch} onBatchChange={onBatchChange} />
+          <SecondaryActions />
         </div>
       </div>
     </header>
