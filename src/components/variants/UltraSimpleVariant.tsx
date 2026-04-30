@@ -182,6 +182,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
       });
       setFormData({ name: '', email: '', phone: '' });
       setShowContactForm(false);
+      setShowIncreaseModal(false);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
