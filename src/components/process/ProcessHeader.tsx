@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { AdminChat } from '@/components/ai/AdminChat';
 import { BatchSelector } from './BatchSelector';
 import { BatchExportButton } from './BatchExportButton';
+import { ExportApprovedFiltered } from './ExportApprovedFiltered';
 import { ApiInfoPanel } from './ApiInfoPanel';
 import { StepperNav } from './StepperNav';
 
@@ -17,7 +18,7 @@ interface ProcessHeaderProps {
 }
 
 /** Secondary action buttons (without batch selector) */
-const SecondaryActions = () => (
+const SecondaryActions = ({ selectedBatch }: { selectedBatch: string }) => (
   <>
     <Sheet>
       <SheetTrigger asChild>
@@ -49,6 +50,7 @@ const SecondaryActions = () => (
         <ApiInfoPanel embedded />
       </DialogContent>
     </Dialog>
+    <ExportApprovedFiltered selectedBatch={selectedBatch} />
     <BatchExportButton />
   </>
 );
@@ -69,7 +71,7 @@ export const ProcessHeader = ({
         </Button>
         <h1 className="text-sm font-semibold truncate">{stepTitle}</h1>
         <div className="ml-auto flex items-center gap-1">
-          <SecondaryActions />
+          <SecondaryActions selectedBatch={selectedBatch} />
         </div>
       </div>
       {/* Centered batch selector — prominent */}
@@ -100,7 +102,7 @@ export const ProcessHeader = ({
           <StepperNav currentIndex={currentStepIndex} />
         </div>
         <div className="flex items-center gap-1.5">
-          <SecondaryActions />
+          <SecondaryActions selectedBatch={selectedBatch} />
         </div>
       </div>
     </header>
