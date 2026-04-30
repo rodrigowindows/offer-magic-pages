@@ -218,40 +218,21 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
       <Card className="border-2 border-primary">
         <CardContent className="pt-8">
           <div className="text-center space-y-6">
-            {/* Offer Amount - hidden in Phase 1 (showPublicPropertyValues OFF) */}
+            {/* Offer Amount */}
             <div>
-              {showValues ? (
-                <>
-                  <p className="text-lg text-muted-foreground mb-2">
-                    {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
-                  </p>
-                  <h1 className="text-5xl md:text-6xl font-bold text-primary">
-                    {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || defaultOffer(property.estimated_value))}
-                  </h1>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    For {property.address}, {property.city}, {property.state}
-                  </p>
-                  {offerType === 'range' && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Final offer determined after property inspection
-                    </p>
-                  )}
-                </>
-              ) : (
-                <>
-                  <p className="text-sm uppercase tracking-wide text-muted-foreground mb-2">
-                    Personalized Cash Offer Available
-                  </p>
-                  <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight">
-                    {property.address}
-                  </h1>
-                  <p className="text-base text-muted-foreground mt-2">
-                    {property.city}, {property.state}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-4 max-w-md mx-auto">
-                    We have a fair, no-obligation cash offer ready for your property. Request it below — no fees, no repairs needed.
-                  </p>
-                </>
+              <p className="text-lg text-muted-foreground mb-2">
+                {offerType === 'range' ? 'Your Cash Offer Range' : 'Your Fair Cash Offer'}
+              </p>
+              <h1 className="text-5xl md:text-6xl font-bold text-primary">
+                {offerType === 'range' ? offerDisplay : formatCurrency(property.cash_offer_amount || defaultOffer(property.estimated_value))}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-2">
+                For {property.address}, {property.city}, {property.state}
+              </p>
+              {offerType === 'range' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Final offer determined after property inspection
+                </p>
               )}
             </div>
 
