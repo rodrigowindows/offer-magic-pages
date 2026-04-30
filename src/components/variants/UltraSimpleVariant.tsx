@@ -305,14 +305,6 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             ) : (
               /* Contact Form */
               <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4 text-left">
-                {formType === 'increase' && (
-                  <div className="bg-primary/10 border border-primary/30 rounded-md p-3 text-center">
-                    <p className="font-semibold text-primary">📈 Want a Higher Offer?</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Leave your contact and we'll call you to discuss a better price.
-                    </p>
-                  </div>
-                )}
                 <div>
                   <Label htmlFor="name">Name</Label>
                   <Input
