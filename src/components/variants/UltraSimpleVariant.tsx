@@ -55,6 +55,11 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const handleIncreaseOffer = () => {
     void trackABEvent(property.id, 'ultra-simple', 'clicked_increase_offer');
     void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'increase_offer' });
+    trackGAEvent('offer_increase_clicked', {
+      offer_id: property.id,
+      property_address: `${property.address}, ${property.city}, ${property.state}`,
+      variant: 'ultra-simple',
+    });
     setFormType('increase');
     setFormData({ name: '', email: '', phone: '' });
     setShowIncreaseModal(true);
