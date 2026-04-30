@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { Check, Phone, MapPin, Download, Loader2, CalendarClock } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
@@ -25,6 +26,7 @@ interface UltraSimpleVariantProps {
 export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const showValues = useFeature('showPublicPropertyValues');
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showIncreaseModal, setShowIncreaseModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -53,7 +55,8 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     void trackABEvent(property.id, 'ultra-simple', 'clicked_increase_offer');
     void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'increase_offer' });
     setFormType('increase');
-    setShowContactForm(true);
+    setFormData({ name: '', email: '', phone: '' });
+    setShowIncreaseModal(true);
   };
 
   const handleDownloadPDF = async () => {
@@ -179,6 +182,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
       });
       setFormData({ name: '', email: '', phone: '' });
       setShowContactForm(false);
+      setShowIncreaseModal(false);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
@@ -301,14 +305,6 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
             ) : (
               /* Contact Form */
               <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4 text-left">
-                {formType === 'increase' && (
-                  <div className="bg-primary/10 border border-primary/30 rounded-md p-3 text-center">
-                    <p className="font-semibold text-primary">📈 Want a Higher Offer?</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Leave your contact and we'll call you to discuss a better price.
-                    </p>
-                  </div>
-                )}
                 <div>
                   <Label htmlFor="name">Name</Label>
                   <Input
@@ -374,6 +370,67 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Increase My Offer — Modal */}
+      <Dialog open={showIncreaseModal} onOpenChange={setShowIncreaseModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              📈 Request a Higher Offer
+            </DialogTitle>
+            <DialogDescription>
+              Leave your contact and our team will call you to discuss a better price for{' '}
+              <span className="font-medium text-foreground">{property.address}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div>
+              <Label htmlFor="increase-name">Name</Label>
+              <Input
+                id="increase-name"
+                data-field="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="increase-email">Email</Label>
+              <Input
+                id="increase-email"
+                data-field="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="increase-phone">Phone</Label>
+              <Input
+                id="increase-phone"
+                data-field="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting}
+              data-action="submit-increase-offer"
+            >
+              {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Phone className="mr-2 h-5 w-5" />}
+              {isSubmitting ? 'Submitting...' : "Request Higher Offer — Call Me"}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              No obligation. We'll call you within 1 business day.
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
