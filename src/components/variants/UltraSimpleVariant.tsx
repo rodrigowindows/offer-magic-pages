@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { Check, Phone, MapPin, Download, Loader2, CalendarClock } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
+import { trackGAEvent } from "@/utils/gtag";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
