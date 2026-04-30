@@ -182,6 +182,18 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
         referrer: document.referrer || 'direct',
       });
 
+      // Google Analytics — track the higher-offer request specifically
+      if (formType === 'increase') {
+        trackGAEvent('offer_increase_requested', {
+          offer_id: property.id,
+          property_address: `${property.address}, ${property.city}, ${property.state}`,
+          property_city: property.city,
+          property_state: property.state,
+          variant: 'ultra-simple',
+          has_phone: Boolean(normalizedPhone),
+        });
+      }
+
       toast({
         title: "Received!",
         description: "We'll contact you shortly.",
