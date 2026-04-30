@@ -5,6 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { AdminChat } from '@/components/ai/AdminChat';
 import { BatchSelector } from './BatchSelector';
 import { BatchExportButton } from './BatchExportButton';
+import { ExportApprovedFiltered } from './ExportApprovedFiltered';
 import { ApiInfoPanel } from './ApiInfoPanel';
 import { StepperNav } from './StepperNav';
 
