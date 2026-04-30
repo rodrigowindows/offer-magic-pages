@@ -55,7 +55,8 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
     void trackABEvent(property.id, 'ultra-simple', 'clicked_increase_offer');
     void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'increase_offer' });
     setFormType('increase');
-    setShowContactForm(true);
+    setFormData({ name: '', email: '', phone: '' });
+    setShowIncreaseModal(true);
   };
 
   const handleDownloadPDF = async () => {
