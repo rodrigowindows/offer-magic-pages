@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { defaultOffer, formatCurrency } from "@/lib/utils";
 import { Check, Phone, MapPin, Download, Loader2, CalendarClock } from "lucide-react";
 import { trackABEvent } from "@/utils/abTesting";
+import { trackGAEvent } from "@/utils/gtag";
 import { formatOffer, getOfferType, type OfferData } from "@/utils/offerUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +55,11 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const handleIncreaseOffer = () => {
     void trackABEvent(property.id, 'ultra-simple', 'clicked_increase_offer');
     void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: 'increase_offer' });
+    trackGAEvent('offer_increase_clicked', {
+      offer_id: property.id,
+      property_address: `${property.address}, ${property.city}, ${property.state}`,
+      variant: 'ultra-simple',
+    });
     setFormType('increase');
     setFormData({ name: '', email: '', phone: '' });
     setShowIncreaseModal(true);
@@ -175,6 +181,18 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
         user_agent: navigator.userAgent,
         referrer: document.referrer || 'direct',
       });
+
+      // Google Analytics — track the higher-offer request specifically
+      if (formType === 'increase') {
+        trackGAEvent('offer_increase_requested', {
+          offer_id: property.id,
+          property_address: `${property.address}, ${property.city}, ${property.state}`,
+          property_city: property.city,
+          property_state: property.state,
+          variant: 'ultra-simple',
+          has_phone: Boolean(normalizedPhone),
+        });
+      }
 
       toast({
         title: "Received!",
