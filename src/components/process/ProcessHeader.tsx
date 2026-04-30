@@ -18,7 +18,7 @@ interface ProcessHeaderProps {
 }
 
 /** Secondary action buttons (without batch selector) */
-const SecondaryActions = () => (
+const SecondaryActions = ({ selectedBatch }: { selectedBatch: string }) => (
   <>
     <Sheet>
       <SheetTrigger asChild>
@@ -50,6 +50,7 @@ const SecondaryActions = () => (
         <ApiInfoPanel embedded />
       </DialogContent>
     </Dialog>
+    <ExportApprovedFiltered selectedBatch={selectedBatch} />
     <BatchExportButton />
   </>
 );
