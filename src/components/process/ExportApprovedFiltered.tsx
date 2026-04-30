@@ -10,8 +10,10 @@ interface Props {
 
 const csvEscape = (val: any): string => {
   if (val === null || val === undefined) return '';
-  const s = typeof val === 'object' ? JSON.stringify(val) : String(val);
-  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  let s = typeof val === 'object' ? JSON.stringify(val) : String(val);
+  // Substitui quebras de linha reais por " | " para garantir 1 linha física por registro
+  s = s.replace(/\r\n/g, ' | ').replace(/[\r\n]+/g, ' | ');
+  if (/[",]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 };
 
