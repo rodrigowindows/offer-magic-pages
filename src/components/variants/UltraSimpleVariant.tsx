@@ -26,6 +26,7 @@ interface UltraSimpleVariantProps {
 export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
   const showValues = useFeature('showPublicPropertyValues');
   const [showContactForm, setShowContactForm] = useState(false);
+  const [showIncreaseModal, setShowIncreaseModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
