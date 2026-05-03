@@ -87,6 +87,7 @@ const PropertyPageMinimal = ({ property, onFormSubmit, trackEvent }: PropertyPag
 
       <CashOfferSectionB
         offerAmount={showValues ? formatCurrency(property.cash_offer_amount) : 'Personalized Cash Offer'}
+        currentOfferAmount={property.cash_offer_amount}
         onViewOffer={() => {
           trackEvent('viewed_offer');
           onFormSubmit();
