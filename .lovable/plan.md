@@ -1,52 +1,60 @@
+## Objetivo
 
-O usuário quer entender como fazer upload do **owner address** no fluxo `/process` e se isso é o mesmo que **mailing address**.
+Reorganizar a seção de contato da página pública de oferta seguindo o mockup, com hierarquia de CTAs orientados a intenção do lead, mantendo WhatsApp/SMS/Email pessoais como canais secundários.
 
-## Resposta direta
+## Contatos a usar
 
-**Sim, na prática são a mesma coisa para envio de cartas/etiquetas**, mas o sistema tem 3 campos diferentes com prioridades distintas:
+- **WhatsApp pessoal**: `+1 240 581 4595`
+- **SMS pessoal**: `+1 240 581 4595`
+- **Email pessoal**: `rodrigowindows@gmail.com`
+- **Call Us / fallback**: `(786) 882-8251` (mantém o existente)
 
-### Os 3 níveis de endereço (ordem de prioridade na hora de imprimir cartas/etiquetas):
+## Nova hierarquia de CTAs (substitui a lista atual)
 
+```text
+[ 🟢 Increase My Offer ]        ← primário (verde, destaque)
+[ 🔵 Schedule a Call ]          ← secundário (azul)
+[ 📍 Schedule a Visit to Improve the Price ]
+[ 💬 WhatsApp ]   [ 📱 SMS ]   ← lado a lado
+[ ✉️ Email ]      [ 📞 Call Us ]
+[ ⬇ Download PDF ]              ← terciário discreto
 ```
-1º  confirmed_mailing_address  ← MAIS CONFIÁVEL (skip trace verificou)
-2º  owner_address               ← Endereço do dono no county records
-3º  address (do imóvel)         ← Fallback (manda pro próprio imóvel)
-```
 
-A função `AveryLabelsPrintDialog` e `CashOfferLetter` usam essa cascata: se tiver `confirmed_mailing_address`, usa ele; senão `owner_address`; senão o endereço do imóvel.
+## Mudanças no código
 
-## Como fazer upload no `/process`
+### 1. Novo componente `src/components/offer/OfferActionsHub.tsx`
+Substitui o bloco vertical de canais em `CashOfferSectionB` (ou onde está hoje a lista WhatsApp/SMS/Email/Schedule/Call). Renderiza os botões na hierarquia acima.
 
-Hoje no `/process` **NÃO existe** uma tela dedicada para upload em massa de owner/mailing address. As opções atuais são:
+### 2. Novo modal `src/components/offer/IncreaseOfferModal.tsx`
+- Campos: `desired_amount` (USD, validação Zod > current offer), `reason` (textarea), `name`, `phone` (10 dígitos), `email`.
+- Submit → insere em `lead_activities` (ou nova coluna `counter_offer_amount` em `properties` via Edge Function `capture-lead`) e cria `notifications` (`event_type: 'counter_offer'`).
+- Toast de confirmação: "We received your counter-offer. We'll respond within 24h."
 
-| Método | Onde | Para quê |
-|---|---|---|
-| **Edit individual** | `/admin` → tabela → ✏️ Edit | 1 imóvel por vez (campo `owner_address` + `owner_name`) |
-| **Skip Trace** | `/process/contacts` | Enriquece via DataSift (preenche `confirmed_mailing_*` + telefones) |
-| **CSV Import** | `/process/import` | Importa em massa, mas mapeia pra `owner_address`/owner_name (não pro confirmed_*) |
-| **API endpoint** | `POST /functions/v1/update-mailing-address` | Atualização programática batch (preenche `confirmed_mailing_*`) |
+### 3. Novo modal `src/components/offer/ScheduleVisitModal.tsx`
+- Reusa Calendly URL de `contact_settings.calendly_url` se existir; senão mostra formulário simples (nome, telefone, 3 horários preferidos) que grava em `follow_up_reminders` com `reminder_type: 'visit'`.
 
-## O gap
+### 4. Links diretos (sem modal)
+- **WhatsApp**: `https://wa.me/12405814595?text=Hi! I'm interested in the offer for {address}`
+- **SMS**: `sms:+12405814595?body=Hi! Re: offer for {address}`
+- **Email**: `mailto:rodrigowindows@gmail.com?subject=Re: Cash offer for {address}`
+- **Call Us**: `tel:+17868828251`
+- **Download PDF**: chama o gerador existente (`src/utils/pdf/exportSingleCMA.ts` ou `cash-offer-letter`).
 
-Não há um **upload CSV específico de mailing addresses confirmados** dentro do `/process`. Se você tem uma planilha com endereços corretos validados (ex: pós-skip-trace manual), tem que:
-- Usar a Edge Function `update-mailing-address` via curl/Postman, OU
-- Editar 1 a 1 no `/admin`
+Todos com encoding seguro (`encodeURIComponent`) no endereço da propriedade.
 
-## Proposta (se você quiser que eu construa)
+### 5. Atualizar `contact_settings` (defaults no código, não DB)
+Os números pessoais ficam hardcoded como fallback no novo componente, mas continuam lendo `contact_settings` do banco se preenchido — assim você pode trocar depois pelo admin sem mexer no código.
 
-Adicionar em `/process` uma nova rota **`/process/mailing`** com:
+### 6. Tracking
+Cada CTA dispara `trackEvent` (já existe `track-button-click` Edge Function) com `action`: `increase_offer | schedule_call | schedule_visit | whatsapp | sms | email | call | download_pdf`.
 
-1. **Upload CSV** com colunas: `slug` (ou `property_id`), `owner_name`, `mailing_address`, `mailing_city`, `mailing_state`, `mailing_zip`
-2. **Preview** mostrando match por slug/address antes de salvar
-3. **Botão "Confirmar"** → chama a Edge Function `update-mailing-address` em batch (ela já existe e funciona)
-4. **Resultado** com contagem de sucesso/erro por linha
+### 7. Acessibilidade
+- `data-action` em todos os botões (padrão do projeto)
+- DialogTitle obrigatório nos modais (Radix)
+- Validação Zod nos formulários
 
-Reaproveita 100% a Edge Function que já está pronta. Só falta a UI.
+## Fora do escopo (fica para depois)
+- Integração WhatsApp via Twilio (por enquanto só link `wa.me`)
+- Notificação push/email pra você quando alguém clica (já fica registrado em `notifications` e dá pra ver no admin)
 
-## Esclarecimento sobre nomenclatura
-
-- **owner_address** = endereço bruto do county (geralmente igual ao do imóvel se o dono mora lá)
-- **mailing_address (confirmed_*)** = endereço pra onde MANDAR correspondência (pode ser diferente — out-of-state owners, trusts, etc.)
-- Para imprimir cartas/etiquetas → o sistema **prefere o confirmed_mailing**, então é nele que você quer fazer upload se quer garantir entrega
-
-Quer que eu implemente a tela de upload em `/process/mailing`?
+Confirma que pode seguir? Se quiser, ajusto o texto dos botões ou a ordem antes de implementar.
