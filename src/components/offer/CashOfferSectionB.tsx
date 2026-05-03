@@ -1,5 +1,5 @@
-import { Check, MessageCircle, MessageSquare, Mail, Calendar, PhoneCall } from "lucide-react";
-import { useContactSettings, renderTemplate } from "@/hooks/useContactSettings";
+import { Check } from "lucide-react";
+import OfferActionsHub from "./OfferActionsHub";
 
 interface CashOfferSectionBProps {
   offerAmount?: string;
