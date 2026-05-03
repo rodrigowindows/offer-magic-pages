@@ -14,9 +14,9 @@ export interface ContactSettings {
 }
 
 const DEFAULT_SETTINGS: ContactSettings = {
-  whatsapp_number: "+17868828251",
-  sms_number: "+17868828251",
-  support_email: "offers@mylocalinvest.com",
+  whatsapp_number: "+12405814595",
+  sms_number: "+12405814595",
+  support_email: "rodrigowindows@gmail.com",
   calendly_url: null,
   retell_phone_number: "+17868828251",
   retell_agent_id: null,
