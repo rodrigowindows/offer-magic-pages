@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { TrendingUp, Calendar, MapPin, MessageCircle, MessageSquare, Mail, PhoneCall, Download } from "lucide-react";
+import { TrendingUp, Calendar, MessageCircle, MessageSquare, Mail, PhoneCall, Download } from "lucide-react";
 import { useContactSettings, renderTemplate } from "@/hooks/useContactSettings";
-import IncreaseOfferModal from "./IncreaseOfferModal";
 import ScheduleVisitModal from "./ScheduleVisitModal";
 
 interface OfferActionsHubProps {
@@ -14,7 +13,6 @@ interface OfferActionsHubProps {
 
 const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownloadPdf, onTrack }: OfferActionsHubProps) => {
   const { settings } = useContactSettings();
-  const [increaseOpen, setIncreaseOpen] = useState(false);
   const [visitOpen, setVisitOpen] = useState(false);
 
   const vars = { address: propertyAddress || "your property", propertyId: propertyId || "" };
