@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useFeature } from "@/contexts/FeatureToggleContext";
 import jsPDF from "jspdf";
+import OfferActionsHub from "@/components/offer/OfferActionsHub";
 
 interface UltraSimpleVariantProps {
   property: OfferData & {
