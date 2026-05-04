@@ -1,0 +1,1 @@
+UPDATE public.contact_settings SET whatsapp_number='+12405814595', sms_number='+12405814595', support_email='rodrigowindows@gmail.com' WHERE id='b9370d8b-a3be-4355-a58d-11ca2c985d17';
