@@ -255,52 +255,17 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
               </div>
             </div>
 
-            {/* CTAs */}
+            {/* CTAs - Intent-driven hierarchy */}
             {!showContactForm ? (
-              <div className="space-y-3">
-                <Button
-                  onClick={handleScheduleCall}
-                  size="lg"
-                  className="w-full md:w-auto px-12 text-lg"
-                  data-action="schedule-call"
-                >
-                  <CalendarClock className="mr-2 h-5 w-5" />
-                  Schedule a Call
-                </Button>
-                <Button
-                  onClick={handleIncreaseOffer}
-                  size="lg"
-                  variant="secondary"
-                  className="w-full md:w-auto px-12 text-lg border-2 border-primary/40"
-                  data-action="increase-offer"
-                >
-                  📈 Increase My Offer
-                </Button>
-                <div className="flex flex-wrap gap-3 justify-center">
-                  <Button
-                    onClick={handleScheduleVisit}
-                    variant="outline"
-                    size="lg"
-                  >
-                    <MapPin className="mr-2 h-5 w-5" />
-                    Schedule a Visit to Improve the Price
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    asChild
-                  >
-                    <a href="tel:+17868828251">
-                      <Phone className="mr-2 h-5 w-5" />
-                      Call Us
-                    </a>
-                  </Button>
-                  <Button variant="outline" size="lg" onClick={handleDownloadPDF} disabled={isDownloading}>
-                    {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
-                    {isDownloading ? 'Generating...' : 'Download PDF'}
-                  </Button>
-                </div>
-              </div>
+              <OfferActionsHub
+                propertyId={property.id}
+                propertyAddress={property.address}
+                currentOffer={property.estimated_value}
+                onDownloadPdf={handleDownloadPDF}
+                onTrack={(action) => {
+                  void trackABEvent(property.id, 'ultra-simple', `clicked_${action}`);
+                }}
+              />
             ) : (
               /* Contact Form */
               <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4 text-left">
