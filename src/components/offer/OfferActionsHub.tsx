@@ -127,13 +127,6 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownload
         </button>
       )}
 
-      <IncreaseOfferModal
-        open={increaseOpen}
-        onOpenChange={setIncreaseOpen}
-        propertyId={propertyId}
-        propertyAddress={propertyAddress}
-        currentOffer={currentOffer}
-      />
       <ScheduleVisitModal
         open={visitOpen}
         onOpenChange={setVisitOpen}
