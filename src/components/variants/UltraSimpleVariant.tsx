@@ -264,7 +264,7 @@ export const UltraSimpleVariant = ({ property }: UltraSimpleVariantProps) => {
                 currentOffer={property.estimated_value}
                 onDownloadPdf={handleDownloadPDF}
                 onTrack={(action) => {
-                  void trackABEvent(property.id, 'ultra-simple', `clicked_${action}`);
+                  void trackABEvent(property.id, 'ultra-simple', 'form_started', { flow: action });
                 }}
               />
             ) : (
