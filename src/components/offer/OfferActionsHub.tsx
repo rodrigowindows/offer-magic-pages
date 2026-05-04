@@ -32,18 +32,7 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownload
 
   return (
     <div className="space-y-3 pt-2">
-      {/* Primary: Increase My Offer */}
-      <button
-        type="button"
-        data-action="open-increase-offer"
-        onClick={() => { track("increase_offer"); setIncreaseOpen(true); }}
-        className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-md hover:shadow-lg transition-all"
-      >
-        <TrendingUp className="h-5 w-5" />
-        Increase My Offer
-      </button>
-
-      {/* Secondary: Schedule a Call */}
+      {/* Primary: Schedule a Call (green) */}
       {calendly ? (
         <a
           href={calendly}
@@ -51,7 +40,7 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownload
           rel="noopener noreferrer"
           data-action="schedule-call"
           onClick={() => track("schedule_call")}
-          className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm transition-all"
+          className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-md hover:shadow-lg transition-all"
         >
           <Calendar className="h-5 w-5" />
           Schedule a Call
@@ -61,22 +50,22 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownload
           href={`tel:${callNumber}`}
           data-action="schedule-call"
           onClick={() => track("schedule_call")}
-          className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm transition-all"
+          className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-md hover:shadow-lg transition-all"
         >
           <Calendar className="h-5 w-5" />
           Schedule a Call
         </a>
       )}
 
-      {/* Tertiary: Schedule Visit */}
+      {/* Secondary: Schedule a Visit to Increase Offer (merged with Increase Offer) */}
       <button
         type="button"
         data-action="open-schedule-visit"
-        onClick={() => { track("schedule_visit"); setVisitOpen(true); }}
-        className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold text-sm transition-all"
+        onClick={() => { track("schedule_visit_increase"); setVisitOpen(true); }}
+        className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm transition-all"
       >
-        <MapPin className="h-4 w-4" />
-        Schedule a Visit to Improve the Price
+        <TrendingUp className="h-5 w-5" />
+        Schedule a Visit to Increase Offer
       </button>
 
       {/* Channel pair: WhatsApp / SMS */}
