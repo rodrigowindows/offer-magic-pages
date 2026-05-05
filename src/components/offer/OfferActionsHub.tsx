@@ -56,12 +56,12 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
         rel={rel}
         data-action={dataAction}
         onClick={onClick}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${styles} transition-all shadow-sm`}
+        className={`inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl border ${styles} transition-all shadow-sm mx-auto`}
       >
         <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center">
           {icon}
         </div>
-        <div className="flex flex-col leading-tight text-left">
+        <div className="flex flex-col leading-tight text-center">
           <span className="text-base font-bold">{title}</span>
           <span className={`text-xs ${subStyle}`}>{subtitle}</span>
         </div>
@@ -72,34 +72,38 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
   return (
     <div className="space-y-3 pt-2">
       {/* Schedule a Call (top, green) — opens lead capture form */}
-      <ContactFormModal
-        propertyAddress={propertyAddress}
-        propertyId={propertyId}
-        onSubmit={() => track("schedule_call")}
-        triggerElement={
-          <button
-            type="button"
-            data-action="schedule-call"
-            className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-sm transition-all"
-          >
-            <Calendar className="h-5 w-5" />
-            Schedule a Call
-          </button>
-        }
-      />
+      <div className="flex justify-center">
+        <ContactFormModal
+          propertyAddress={propertyAddress}
+          propertyId={propertyId}
+          onSubmit={() => track("schedule_call")}
+          triggerElement={
+            <button
+              type="button"
+              data-action="schedule-call"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-sm transition-all"
+            >
+              <Calendar className="h-5 w-5" />
+              Schedule a Call
+            </button>
+          }
+        />
+      </div>
       {/* (call number kept in URL fallback for AI agents) */}
       <a href={`tel:${callNumber}`} className="sr-only" aria-hidden="true">{callNumber}</a>
 
       {/* Schedule a Visit to Increase Offer (blue) */}
-      <button
-        type="button"
-        data-action="open-schedule-visit"
-        onClick={() => { track("schedule_visit_increase"); setVisitOpen(true); }}
-        className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm transition-all"
-      >
-        <TrendingUp className="h-5 w-5" />
-        Schedule a Visit to Increase Offer
-      </button>
+      <div className="flex justify-center">
+        <button
+          type="button"
+          data-action="open-schedule-visit"
+          onClick={() => { track("schedule_visit_increase"); setVisitOpen(true); }}
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm transition-all"
+        >
+          <TrendingUp className="h-5 w-5" />
+          Schedule a Visit to Increase Offer
+        </button>
+      </div>
 
       {/* Section header */}
       <div className="text-center pt-3">
@@ -109,7 +113,7 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
       </div>
 
       {/* Channels list */}
-      <div className="space-y-2">
+      <div className="flex flex-col items-center space-y-2">
         <ChannelCard
           variant="highlight"
           href={wppNumber ? `https://wa.me/${wppNumber}?text=${wppMsg}` : "#"}
