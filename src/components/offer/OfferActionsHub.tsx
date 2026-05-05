@@ -133,16 +133,6 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
           subtitle="Detailed reply within hours"
         />
 
-        <ChannelCard
-          href={calendly || `tel:${callNumber}`}
-          target={calendly ? "_blank" : undefined}
-          rel={calendly ? "noopener noreferrer" : undefined}
-          dataAction="schedule-call"
-          onClick={() => track("schedule_call")}
-          icon={<Calendar className="h-5 w-5 text-gray-700" />}
-          title="Schedule a call"
-          subtitle="Pick a time that works for you"
-        />
 
         <ChannelCard
           variant="primary"
