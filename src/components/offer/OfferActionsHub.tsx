@@ -70,7 +70,20 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
 
   return (
     <div className="space-y-3 pt-2">
-      {/* Schedule a Visit to Increase Offer (top, blue) */}
+      {/* Schedule a Call (top, green) */}
+      <a
+        href={calendly || `tel:${callNumber}`}
+        target={calendly ? "_blank" : undefined}
+        rel={calendly ? "noopener noreferrer" : undefined}
+        data-action="schedule-call"
+        onClick={() => track("schedule_call")}
+        className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-sm transition-all"
+      >
+        <Calendar className="h-5 w-5" />
+        Schedule a Call
+      </a>
+
+      {/* Schedule a Visit to Increase Offer (blue) */}
       <button
         type="button"
         data-action="open-schedule-visit"
@@ -120,16 +133,6 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
           subtitle="Detailed reply within hours"
         />
 
-        <ChannelCard
-          href={calendly || `tel:${callNumber}`}
-          target={calendly ? "_blank" : undefined}
-          rel={calendly ? "noopener noreferrer" : undefined}
-          dataAction="schedule-call"
-          onClick={() => track("schedule_call")}
-          icon={<Calendar className="h-5 w-5 text-gray-700" />}
-          title="Schedule a call"
-          subtitle="Pick a time that works for you"
-        />
 
         <ChannelCard
           variant="primary"
