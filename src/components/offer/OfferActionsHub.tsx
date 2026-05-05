@@ -56,12 +56,12 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
         rel={rel}
         data-action={dataAction}
         onClick={onClick}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${styles} transition-all shadow-sm`}
+        className={`inline-flex items-center justify-center gap-3 px-5 py-3 rounded-xl border ${styles} transition-all shadow-sm mx-auto`}
       >
         <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center">
           {icon}
         </div>
-        <div className="flex flex-col leading-tight text-left">
+        <div className="flex flex-col leading-tight text-center">
           <span className="text-base font-bold">{title}</span>
           <span className={`text-xs ${subStyle}`}>{subtitle}</span>
         </div>
