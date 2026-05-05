@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TrendingUp, Calendar, MessageCircle, MessageSquare, Mail, PhoneCall } from "lucide-react";
 import { useContactSettings, renderTemplate } from "@/hooks/useContactSettings";
 import ScheduleVisitModal from "./ScheduleVisitModal";
+import ContactFormModal from "@/components/lead/ContactFormModal";
 
 interface OfferActionsHubProps {
   propertyId?: string;
@@ -70,18 +71,24 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
 
   return (
     <div className="space-y-3 pt-2">
-      {/* Schedule a Call (top, green) */}
-      <a
-        href={calendly || `tel:${callNumber}`}
-        target={calendly ? "_blank" : undefined}
-        rel={calendly ? "noopener noreferrer" : undefined}
-        data-action="schedule-call"
-        onClick={() => track("schedule_call")}
-        className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-sm transition-all"
-      >
-        <Calendar className="h-5 w-5" />
-        Schedule a Call
-      </a>
+      {/* Schedule a Call (top, green) — opens lead capture form */}
+      <ContactFormModal
+        propertyAddress={propertyAddress}
+        propertyId={propertyId}
+        onSubmit={() => track("schedule_call")}
+        triggerElement={
+          <button
+            type="button"
+            data-action="schedule-call"
+            className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-sm transition-all"
+          >
+            <Calendar className="h-5 w-5" />
+            Schedule a Call
+          </button>
+        }
+      />
+      {/* (call number kept in URL fallback for AI agents) */}
+      <a href={`tel:${callNumber}`} className="sr-only" aria-hidden="true">{callNumber}</a>
 
       {/* Schedule a Visit to Increase Offer (blue) */}
       <button
