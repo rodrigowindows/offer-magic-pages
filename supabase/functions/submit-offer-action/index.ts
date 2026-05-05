@@ -58,8 +58,29 @@ serve(async (req) => {
     });
 
     if (error) {
-      console.error('Insert error:', error);
-      return new Response(JSON.stringify({ error: 'Failed to save request' }), {
+      console.error('Insert notifications error:', error);
+    }
+
+    // Also save to property_leads so it appears in /marketing/leads
+    const leadNotes = action_type === 'increase_offer'
+      ? `Counter-offer request${desired_amount ? ` for $${Number(desired_amount).toLocaleString()}` : ''}${reason ? `. Reason: ${reason}` : ''}`
+      : `Visit requested. Preferred times: ${preferred_times || 'n/a'}`;
+
+    const { error: leadError } = await admin.from('property_leads').insert({
+      property_id: property_id || null,
+      full_name: name,
+      phone,
+      email: email || null,
+      status: 'new',
+      selling_timeline: 'exploring',
+      interest_level: 'high',
+      notes: leadNotes,
+      lead_source: action_type,
+    });
+
+    if (leadError) {
+      console.error('Insert property_leads error:', leadError);
+      return new Response(JSON.stringify({ error: 'Failed to save lead' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
