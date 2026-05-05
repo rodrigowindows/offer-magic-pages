@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, Calendar, MessageCircle, MessageSquare, Mail, PhoneCall, Download } from "lucide-react";
+import { TrendingUp, Calendar, MessageCircle, MessageSquare, Mail, PhoneCall } from "lucide-react";
 import { useContactSettings, renderTemplate } from "@/hooks/useContactSettings";
 import ScheduleVisitModal from "./ScheduleVisitModal";
 
@@ -11,7 +11,7 @@ interface OfferActionsHubProps {
   onTrack?: (action: string) => void;
 }
 
-const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownloadPdf, onTrack }: OfferActionsHubProps) => {
+const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }: OfferActionsHubProps) => {
   const { settings } = useContactSettings();
   const [visitOpen, setVisitOpen] = useState(false);
 
@@ -28,34 +28,49 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownload
 
   const track = (a: string) => onTrack?.(a);
 
+  type ChannelCardProps = {
+    href: string;
+    icon: React.ReactNode;
+    title: string;
+    subtitle: string;
+    dataAction: string;
+    onClick?: () => void;
+    target?: string;
+    rel?: string;
+    variant?: "default" | "highlight" | "primary";
+  };
+
+  const ChannelCard = ({ href, icon, title, subtitle, dataAction, onClick, target, rel, variant = "default" }: ChannelCardProps) => {
+    const styles =
+      variant === "primary"
+        ? "bg-green-600 border-green-600 text-white hover:bg-green-700"
+        : variant === "highlight"
+        ? "bg-green-50 border-green-300 text-green-900 hover:bg-green-100"
+        : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50";
+    const subStyle = variant === "primary" ? "text-white/90" : variant === "highlight" ? "text-green-800" : "text-gray-500";
+    return (
+      <a
+        href={href}
+        target={target}
+        rel={rel}
+        data-action={dataAction}
+        onClick={onClick}
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${styles} transition-all shadow-sm`}
+      >
+        <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center">
+          {icon}
+        </div>
+        <div className="flex flex-col leading-tight text-left">
+          <span className="text-base font-bold">{title}</span>
+          <span className={`text-xs ${subStyle}`}>{subtitle}</span>
+        </div>
+      </a>
+    );
+  };
+
   return (
     <div className="space-y-3 pt-2">
-      {/* Primary: Schedule a Call (green) */}
-      {calendly ? (
-        <a
-          href={calendly}
-          target="_blank"
-          rel="noopener noreferrer"
-          data-action="schedule-call"
-          onClick={() => track("schedule_call")}
-          className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-md hover:shadow-lg transition-all"
-        >
-          <Calendar className="h-5 w-5" />
-          Schedule a Call
-        </a>
-      ) : (
-        <a
-          href={`tel:${callNumber}`}
-          data-action="schedule-call"
-          onClick={() => track("schedule_call")}
-          className="w-full flex items-center justify-center gap-2 px-5 py-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-md hover:shadow-lg transition-all"
-        >
-          <Calendar className="h-5 w-5" />
-          Schedule a Call
-        </a>
-      )}
-
-      {/* Secondary: Schedule a Visit to Increase Offer (merged with Increase Offer) */}
+      {/* Schedule a Visit to Increase Offer (top, blue) */}
       <button
         type="button"
         data-action="open-schedule-visit"
@@ -66,64 +81,66 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onDownload
         Schedule a Visit to Increase Offer
       </button>
 
-      {/* Channel pair: WhatsApp / SMS */}
-      <div className="grid grid-cols-2 gap-2">
-        <a
+      {/* Section header */}
+      <div className="text-center pt-3">
+        <p className="text-xs tracking-[0.2em] text-gray-500 font-semibold">
+          TALK TO US — CHOOSE HOW
+        </p>
+      </div>
+
+      {/* Channels list */}
+      <div className="space-y-2">
+        <ChannelCard
+          variant="highlight"
           href={wppNumber ? `https://wa.me/${wppNumber}?text=${wppMsg}` : "#"}
           target="_blank"
           rel="noopener noreferrer"
-          data-action="contact-whatsapp"
+          dataAction="contact-whatsapp"
           onClick={() => track("whatsapp")}
-          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-green-50 border border-green-200 hover:bg-green-100 text-green-800 font-semibold text-sm"
-        >
-          <MessageCircle className="h-4 w-4" />
-          WhatsApp
-        </a>
-        <a
+          icon={<MessageCircle className="h-5 w-5 text-green-700" />}
+          title="Chat on WhatsApp"
+          subtitle="Quick answers, instant reply"
+        />
+
+        <ChannelCard
           href={`sms:${smsNumber}?body=${smsBody}`}
-          data-action="contact-sms"
+          dataAction="contact-sms"
           onClick={() => track("sms")}
-          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold text-sm"
-        >
-          <MessageSquare className="h-4 w-4" />
-          SMS
-        </a>
-      </div>
+          icon={<MessageSquare className="h-5 w-5 text-blue-600" />}
+          title="Text us by SMS"
+          subtitle="Ask anything from your phone"
+        />
 
-      {/* Channel pair: Email / Call Us */}
-      <div className="grid grid-cols-2 gap-2">
-        <a
+        <ChannelCard
           href={`mailto:${email}?subject=${emailSubject}`}
-          data-action="contact-email"
+          dataAction="contact-email"
           onClick={() => track("email")}
-          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold text-sm"
-        >
-          <Mail className="h-4 w-4" />
-          Email
-        </a>
-        <a
-          href={`tel:${callNumber}`}
-          data-action="contact-call"
-          onClick={() => track("call")}
-          className="flex items-center justify-center gap-2 px-3 py-3 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold text-sm"
-        >
-          <PhoneCall className="h-4 w-4" />
-          Call Us
-        </a>
-      </div>
+          icon={<Mail className="h-5 w-5 text-gray-700" />}
+          title="Ask questions by email"
+          subtitle="Detailed reply within hours"
+        />
 
-      {/* Download PDF */}
-      {onDownloadPdf && (
-        <button
-          type="button"
-          data-action="download-pdf"
-          onClick={() => { track("download_pdf"); onDownloadPdf(); }}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-50 text-sm font-medium transition-all"
-        >
-          <Download className="h-4 w-4" />
-          Download PDF
-        </button>
-      )}
+        <ChannelCard
+          href={calendly || `tel:${callNumber}`}
+          target={calendly ? "_blank" : undefined}
+          rel={calendly ? "noopener noreferrer" : undefined}
+          dataAction="schedule-call"
+          onClick={() => track("schedule_call")}
+          icon={<Calendar className="h-5 w-5 text-gray-700" />}
+          title="Schedule a call"
+          subtitle="Pick a time that works for you"
+        />
+
+        <ChannelCard
+          variant="primary"
+          href={`tel:${callNumber}`}
+          dataAction="contact-call"
+          onClick={() => track("call")}
+          icon={<PhoneCall className="h-5 w-5 text-white" />}
+          title="Call us now"
+          subtitle="Answered instantly by AI assistant"
+        />
+      </div>
 
       <ScheduleVisitModal
         open={visitOpen}
