@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TrendingUp, Calendar, MessageCircle, MessageSquare, Mail, PhoneCall } from "lucide-react";
 import { useContactSettings, renderTemplate } from "@/hooks/useContactSettings";
 import ScheduleVisitModal from "./ScheduleVisitModal";
+import ContactFormModal from "@/components/lead/ContactFormModal";
 
 interface OfferActionsHubProps {
   propertyId?: string;
