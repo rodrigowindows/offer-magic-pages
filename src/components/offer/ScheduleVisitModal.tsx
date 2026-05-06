@@ -22,7 +22,6 @@ const schema = z.object({
   preferred_times: z.string().trim().min(1, "Please tell us your preferred time").max(500),
 });
 
-const ANALYTICS_REDIRECT_URL = "https://offer.mylocalinvest.com/marketing/analytics";
 
 const ScheduleVisitModal = ({ open, onOpenChange, propertyId, propertyAddress }: ScheduleVisitModalProps) => {
   const { toast } = useToast();
