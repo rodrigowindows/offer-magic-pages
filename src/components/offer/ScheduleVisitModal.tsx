@@ -50,9 +50,6 @@ const ScheduleVisitModal = ({ open, onOpenChange, propertyId, propertyAddress }:
       toast({ title: "Visit request received!", description: "We'll confirm your visit shortly." });
       setForm({ name: "", phone: "", preferred_times: "" });
       onOpenChange(false);
-      if (typeof window !== "undefined") {
-        window.location.assign(ANALYTICS_REDIRECT_URL);
-      }
     } catch {
       toast({ title: "Something went wrong", description: "Please try again or call us.", variant: "destructive" });
     } finally {

@@ -23,7 +23,7 @@ interface ContactFormModalProps {
   triggerElement?: React.ReactNode;
 }
 
-const ANALYTICS_REDIRECT_URL = "https://offer.mylocalinvest.com/marketing/analytics";
+
 
 const ContactFormModal = ({
   propertyAddress = "",
@@ -131,9 +131,6 @@ const ContactFormModal = ({
       });
 
       setOpen(false);
-      if (typeof window !== 'undefined') {
-        window.location.assign(ANALYTICS_REDIRECT_URL);
-      }
     } catch (error) {
       console.error('Form submission error:', error);
       toast({
