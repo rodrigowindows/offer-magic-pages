@@ -74,7 +74,7 @@ serve(async (req) => {
       property_id: property_id || null,
       full_name: name,
       phone,
-      email: email || null,
+      email: email || `noemail+${Date.now()}@mylocalinvest.com`,
       status: 'new',
       selling_timeline: 'exploring',
       interest_level: 'high',
