@@ -14,7 +14,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const {
-      action_type, // 'increase_offer' | 'schedule_visit'
+      action_type, // 'increase_offer' | 'schedule_visit' | 'schedule_call'
       property_id,
       property_address,
       name,
@@ -25,7 +25,7 @@ serve(async (req) => {
       preferred_times,
     } = body || {};
 
-    if (!action_type || !['increase_offer', 'schedule_visit'].includes(action_type)) {
+    if (!action_type || !['increase_offer', 'schedule_visit', 'schedule_call'].includes(action_type)) {
       return new Response(JSON.stringify({ error: 'Invalid action_type' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -48,7 +48,9 @@ serve(async (req) => {
 
     const message = action_type === 'increase_offer'
       ? `Counter-offer ${desired_amount ? '$' + Number(desired_amount).toLocaleString() : ''} from ${name} for ${property_address || 'property'}`
-      : `Visit request from ${name} for ${property_address || 'property'}`;
+      : action_type === 'schedule_visit'
+      ? `Visit request from ${name} for ${property_address || 'property'}`
+      : `Call request from ${name} for ${property_address || 'property'}`;
 
     const { error } = await admin.from('notifications').insert({
       property_id: property_id || null,
@@ -64,7 +66,9 @@ serve(async (req) => {
     // Also save to property_leads so it appears in /marketing/leads
     const leadNotes = action_type === 'increase_offer'
       ? `Counter-offer request${desired_amount ? ` for $${Number(desired_amount).toLocaleString()}` : ''}${reason ? `. Reason: ${reason}` : ''}`
-      : `Visit requested. Preferred times: ${preferred_times || 'n/a'}`;
+      : action_type === 'schedule_visit'
+      ? `Visit requested. Preferred times: ${preferred_times || 'n/a'}`
+      : `Schedule call request from landing page${property_address ? ` for ${property_address}` : ''}`;
 
     const { error: leadError } = await admin.from('property_leads').insert({
       property_id: property_id || null,
@@ -75,7 +79,7 @@ serve(async (req) => {
       selling_timeline: 'exploring',
       interest_level: 'high',
       notes: leadNotes,
-      lead_source: action_type,
+      user_agent: req.headers.get('user-agent') || null,
     });
 
     if (leadError) {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,13 @@ const ContactFormModal = ({
   buttonClassName,
   triggerElement
 }: ContactFormModalProps) => {
+  const formSchema = z.object({
+    name: z.string().trim().min(2, "Please enter your name").max(100),
+    email: z.string().trim().email("Please enter a valid email").max(255),
+    phone: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 10, "Valid 10-digit phone required"),
+    propertyAddress: z.string().trim().min(3),
+  });
+
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -60,27 +68,31 @@ const ContactFormModal = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const parsed = formSchema.safeParse(formData);
+    if (!parsed.success) {
+      toast({
+        title: "Please check the form",
+        description: parsed.error.issues[0].message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Save lead to database
       const { supabase } = await import("@/integrations/supabase/client");
 
-      const { data, error } = await supabase
-        .from('property_leads')
-        .insert({
-          email: formData.email,
-          phone: formData.phone,
-          property_id: propertyId || null,
-          full_name: formData.name || 'Not Provided',
-          status: 'new',
-          selling_timeline: 'exploring', // Default value required by schema
-          interest_level: 'high',
-          ip_address: null, // Can be detected if needed
-          user_agent: navigator.userAgent,
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke("submit-offer-action", {
+        body: {
+          action_type: "schedule_call",
+          property_id: propertyId,
+          property_address: parsed.data.propertyAddress,
+          name: parsed.data.name,
+          email: parsed.data.email,
+          phone: parsed.data.phone,
+        },
+      });
 
       if (error) {
         console.error('Error saving lead:', error);
