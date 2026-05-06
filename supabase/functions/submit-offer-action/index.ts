@@ -79,7 +79,6 @@ serve(async (req) => {
       selling_timeline: 'exploring',
       interest_level: 'high',
       notes: leadNotes,
-      lead_source: action_type,
       user_agent: req.headers.get('user-agent') || null,
     });
 
