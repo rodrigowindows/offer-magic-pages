@@ -19,8 +19,10 @@ interface ScheduleVisitModalProps {
 const schema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(100),
   phone: z.string().trim().refine((v) => v.replace(/\D/g, "").length >= 10, "Valid 10-digit phone required"),
-  preferred_times: z.string().trim().min(3, "Suggest a few times").max(500),
+  preferred_times: z.string().trim().min(1, "Please tell us your preferred time").max(500),
 });
+
+const ANALYTICS_REDIRECT_URL = "https://offer.mylocalinvest.com/marketing/analytics";
 
 const ScheduleVisitModal = ({ open, onOpenChange, propertyId, propertyAddress }: ScheduleVisitModalProps) => {
   const { toast } = useToast();
@@ -48,6 +50,9 @@ const ScheduleVisitModal = ({ open, onOpenChange, propertyId, propertyAddress }:
       toast({ title: "Visit request received!", description: "We'll confirm your visit shortly." });
       setForm({ name: "", phone: "", preferred_times: "" });
       onOpenChange(false);
+      if (typeof window !== "undefined") {
+        window.location.assign(ANALYTICS_REDIRECT_URL);
+      }
     } catch {
       toast({ title: "Something went wrong", description: "Please try again or call us.", variant: "destructive" });
     } finally {
