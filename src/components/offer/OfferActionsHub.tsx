@@ -61,9 +61,9 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
         <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center">
           {icon}
         </div>
-        <div className="flex flex-col leading-tight text-center">
-          <span className="text-base font-bold">{title}</span>
-          <span className={`text-xs ${subStyle}`}>{subtitle}</span>
+        <div className="flex flex-col items-center justify-center text-center">
+          <span className="text-base font-bold leading-tight">{title}</span>
+          <span className={`text-xs leading-tight ${subStyle}`}>{subtitle}</span>
         </div>
       </a>
     );
@@ -81,10 +81,10 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
             <button
               type="button"
               data-action="schedule-call"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-sm transition-all"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-base shadow-sm transition-all w-fit"
             >
-              <Calendar className="h-5 w-5" />
-              Schedule a Call
+              <Calendar className="h-5 w-5 shrink-0" />
+              <span>Schedule a Call</span>
             </button>
           }
         />
@@ -98,10 +98,10 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
           type="button"
           data-action="open-schedule-visit"
           onClick={() => { track("schedule_visit_increase"); setVisitOpen(true); }}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm transition-all"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-base shadow-sm transition-all w-fit"
         >
-          <TrendingUp className="h-5 w-5" />
-          Schedule a Visit to Increase Offer
+          <TrendingUp className="h-5 w-5 shrink-0" />
+          <span>Schedule a Visit to Increase Offer</span>
         </button>
       </div>
 
@@ -121,7 +121,7 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
           rel="noopener noreferrer"
           dataAction="contact-whatsapp"
           onClick={() => track("whatsapp")}
-          icon={<MessageCircle className="h-5 w-5 text-green-700" />}
+          icon={<MessageCircle className="h-5 w-5 text-green-700 shrink-0" />}
           title="Chat on WhatsApp"
           subtitle="Quick answers, instant reply"
         />
@@ -130,7 +130,7 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
           href={`sms:${smsNumber}?body=${smsBody}`}
           dataAction="contact-sms"
           onClick={() => track("sms")}
-          icon={<MessageSquare className="h-5 w-5 text-blue-600" />}
+          icon={<MessageSquare className="h-5 w-5 text-blue-600 shrink-0" />}
           title="Text us by SMS"
           subtitle="Ask anything from your phone"
         />
@@ -139,18 +139,17 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
           href={`mailto:${email}?subject=${emailSubject}`}
           dataAction="contact-email"
           onClick={() => track("email")}
-          icon={<Mail className="h-5 w-5 text-gray-700" />}
+          icon={<Mail className="h-5 w-5 text-gray-700 shrink-0" />}
           title="Ask questions by email"
           subtitle="Detailed reply within hours"
         />
-
 
         <ChannelCard
           variant="primary"
           href={`tel:${callNumber}`}
           dataAction="contact-call"
           onClick={() => track("call")}
-          icon={<PhoneCall className="h-5 w-5 text-white" />}
+          icon={<PhoneCall className="h-5 w-5 text-white shrink-0" />}
           title="Call us now"
           subtitle="Answered instantly by AI assistant"
         />
