@@ -61,9 +61,9 @@ const OfferActionsHub = ({ propertyId, propertyAddress, currentOffer, onTrack }:
         <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center">
           {icon}
         </div>
-        <div className="flex flex-col leading-tight text-center">
-          <span className="text-base font-bold">{title}</span>
-          <span className={`text-xs ${subStyle}`}>{subtitle}</span>
+        <div className="flex flex-col items-center justify-center text-center">
+          <span className="text-base font-bold leading-tight">{title}</span>
+          <span className={`text-xs leading-tight ${subStyle}`}>{subtitle}</span>
         </div>
       </a>
     );
