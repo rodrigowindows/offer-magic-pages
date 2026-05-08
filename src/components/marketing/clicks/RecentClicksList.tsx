@@ -79,6 +79,7 @@ export function RecentClicksList({ clicks }: Props) {
                           <Badge variant="secondary" className="text-xs">{click.event_type}</Badge>
                           {click.device_type && <Badge variant="outline" className="text-xs">{click.device_type}</Badge>}
                           {click.city && <Badge variant="outline" className="text-xs">{click.city}{click.country ? `, ${click.country}` : ''}</Badge>}
+                          {click.ip_address && <Badge variant="outline" className="text-xs font-mono">IP: {click.ip_address}</Badge>}
                         </div>
                         {click.referrer && <p className="text-xs text-muted-foreground truncate">Referrer: {click.referrer}</p>}
                       </div>
