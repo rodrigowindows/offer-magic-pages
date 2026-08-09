@@ -26,7 +26,8 @@ export type LetterTemplateId =
   | "handwritten"
   | "modern"
   | "urgent"
-  | "premium";
+  | "premium"
+  | "developer";
 
 export type CtaPosition = "top" | "middle" | "bottom";
 
@@ -322,7 +323,30 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     showUrgencyPill: true,
     accent: "PREMIUM CASH OFFER",
   },
+  {
+    id: "developer",
+    name: "Developer Outreach (DelfinOne)",
+    description:
+      "Full business letter for Florida developers — subject line, recipient block, QR to Developer Portal.",
+    headlineEn: "From lot to lender-ready in minutes",
+    headlineEs: "Del terreno al financiamiento en minutos",
+    subEn: "The new standard for Florida developers.",
+    subEs: "El nuevo estándar para desarrolladores de Florida.",
+    ctaEn: "Explore the Developer Portal",
+    ctaEs: "Explore el Portal de Desarrolladores",
+    qrCalloutEn: "Scan to explore the Developer Portal",
+    qrCalloutEs: "Escanee para ver el Portal de Desarrolladores",
+    ctaPosition: "bottom",
+    cardClass: "bg-white border border-neutral-300 text-black",
+    headerClass: "bg-white text-black border-b border-black",
+    offerBoxClass: "bg-white border border-neutral-300 text-black",
+    ctaClass: "bg-white border-2 border-black text-black",
+    headlineClass: "text-2xl print:text-xl font-semibold text-black",
+    showTrustBadges: false,
+    showUrgencyPill: false,
+  },
 ];
+
 
 export const getLetterTemplate = (id?: LetterTemplateId | null): LetterTemplate =>
   LETTER_TEMPLATES.find((t) => t.id === id) ?? LETTER_TEMPLATES[0];

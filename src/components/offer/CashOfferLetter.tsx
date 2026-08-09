@@ -5,6 +5,7 @@ import { formatOffer, getOfferType, getOfferAverage } from "@/utils/offerUtils";
 import { formatPhone } from "@/utils/formatters";
 import type { OfferConfig } from "./OfferConfiguration";
 import { getLetterTemplate, type LetterTemplateId } from "./letterTemplates";
+import { DeveloperLetter } from "./DeveloperLetter";
 
 interface CashOfferLetterProps {
   address: string;
@@ -83,6 +84,24 @@ export const CashOfferLetter = ({
   const offerUrl = `${window.location.origin}/property/${propertySlug}?src=${source}`;
   const t = content[language];
   const tpl = getLetterTemplate(template);
+
+  if (template === "developer") {
+    return (
+      <DeveloperLetter
+        ownerName={ownerName}
+        mailingAddress={mailingAddress}
+        mailingCity={mailingCity}
+        mailingState={mailingState}
+        mailingZip={mailingZip}
+        address={address}
+        city={city}
+        state={state}
+        zipCode={zipCode}
+        qrUrl={offerUrl}
+      />
+    );
+  }
+
 
   const formattedPhone = formatPhone(phone) || "786 882 8251";
 
