@@ -5,6 +5,7 @@ import { formatOffer, getOfferType, getOfferAverage } from "@/utils/offerUtils";
 import { formatPhone } from "@/utils/formatters";
 import type { OfferConfig } from "./OfferConfiguration";
 import { getLetterTemplate, type LetterTemplateId } from "./letterTemplates";
+import { DeveloperLetter } from "./DeveloperLetter";
 
 interface CashOfferLetterProps {
   address: string;
