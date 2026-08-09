@@ -26,7 +26,8 @@ export type LetterTemplateId =
   | "handwritten"
   | "modern"
   | "urgent"
-  | "premium";
+  | "premium"
+  | "developer";
 
 export type CtaPosition = "top" | "middle" | "bottom";
 
