@@ -84,6 +84,24 @@ export const CashOfferLetter = ({
   const t = content[language];
   const tpl = getLetterTemplate(template);
 
+  if (template === "developer") {
+    return (
+      <DeveloperLetter
+        ownerName={ownerName}
+        mailingAddress={mailingAddress}
+        mailingCity={mailingCity}
+        mailingState={mailingState}
+        mailingZip={mailingZip}
+        address={address}
+        city={city}
+        state={state}
+        zipCode={zipCode}
+        qrUrl={offerUrl}
+      />
+    );
+  }
+
+
   const formattedPhone = formatPhone(phone) || "786 882 8251";
 
   const mailLine1 = mailingAddress || address;
